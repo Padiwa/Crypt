@@ -64,7 +64,9 @@ Trois modes, tous avec un niveau de mission libre de 1 à 50, choisi sur l'écra
 
 **Sortie et mort** : sortir garde tout le butin. Mourir garde la moitié de l'or ramassé, les mods et l'équipement déjà équipé ; les objets et reliques trouvés sont perdus.
 
-**Difficulté** (écran de départ, en plus du niveau de mission) : Normal 1 Gardien toutes les 60 s ; Difficile 2 toutes les 45 s, butin et or +50 % ; Cauchemar 3 toutes les 35 s, +100 % ; Tourment 4 toutes les 25 s, +200 %. En Capture l'intervalle est multiplié par 1,5 ; en Défense, le nombre de Gardiens s'applique aux vagues 5, 10, 15… La barre de boss cumule la vie de tous les Gardiens vivants.
+**Difficulté** (écran de départ, en plus du niveau de mission) : Normal 1 Gardien toutes les 60 s ; Difficile 2 toutes les 45 s, butin et or +50 % ; Cauchemar 3 toutes les 35 s, +100 % ; Tourment avec 10 paliers I à X (sélecteur sous les chips) : palier t = 4 Gardiens (5 à partir de VI) toutes les max(16, 26 − t) s, butin et or +200 % + 50 % par palier au-delà du I (+650 % en X), vie des monstres × (1 + 0,35 t), dégâts × (1 + 0,18 t), valeurs d'affixes +5 % par palier, objets Ancestraux 0,4 % × t par objet (×3 sur les objets de Gardien et d'élite). En Capture l'intervalle est multiplié par 1,5 ; en Défense, le nombre de Gardiens s'applique aux vagues 5, 10, 15… La barre de boss cumule la vie de tous les Gardiens vivants.
+
+**Élites** : chaque groupe d'ennemis (sauf chauves-souris) a une chance de compter une élite (2,5 % + 1,2 % par cran de difficulté + 1 % par palier de Tourment, plafond 15 %). Une élite a ×4 vie, ×1,25 taille, ×1,3 dégâts, un anneau coloré et son nom au-dessus d'elle, et un pouvoir : **Rapide** (×1,55 vitesse), **Bouclier** (−50 % de dégâts subis tant qu'elle a plus de la moitié de sa vie), **Vampire** (rend 10 % de sa vie à chaque coup porté), **Explosif** (laisse une zone de flammes de rayon 95 en mourant). Butin garanti : 1 objet magique ou mieux, 40 % d'un second, 30 % d'une relique, or ×5 et expérience ×6.
 
 ## Ennemis et difficulté
 
@@ -80,6 +82,10 @@ Les ennemis apparaissent hors écran autour du héros ; ceux qui s'éloignent tr
 | Pyromancien | 24 | 80 | 6 | même comportement, bombe qui laisse des flammes de rayon 70 pendant 3 s | après 60 s ou niveau 3 |
 | Gelée | 34 → 15 → 7 | 72 → 86 → 104 | 8 | avance par sauts vers toi ; à moins de 170, signal rouge court (0,45 / 0,38 / 0,3 s selon la taille) puis bond de 150 (×1,4 dégâts au contact), toutes les 1,4–2,4 s, plus souvent pour les petites ; à sa mort se divise en 2 petites gelées projetées sur les côtés, qui se divisent à leur tour (3 tailles : 1 → 2 → 4, soit 7 ennemis à abattre). Chaque morceau compte comme un ennemi tué (XP, or, charge de l'ultime, butin réduit) ; seule la grande peut être corrompue | après 30 s ou niveau 2 |
 | Gardien | 650 | 60 | 22 | anneaux de projectiles, charge 1 fois sur 3, invoque 3 goules toutes les 7 s sous 50 % de vie | sur minuterie |
+
+**Équilibrage (passe 1, simulée)** : 300 parties de 3 min jouées par un bot, 3 classes × profils T0 (rien) à T4 (ancestral +100, prestige 60) × niveaux 1 à 50 × difficultés. Changements : vie des monstres × 1,025^(L−1) et dégâts × 1,012^(L−1) en plus de la croissance linéaire ; Tourment vie × (1 + 0,5 t), dégâts × (1 + 0,22 t) ; butin × (1 + 0,06 (L−1)) au lieu de 0,25 ; or × (1 + 0,15 (L−1)) au lieu de 0,6 ; bonus de difficulté : ×0,15 sur la quantité d'objets, ×0,5 sur l'or ; chances d'objet par monstre divisées par 2 ; Gardien : 1 objet de plus tous les 10 niveaux (au lieu de 3), 1 relique tous les 12 (au lieu de 4) ; légendaire plafonné à 9 % (+0,6 % par palier de Tourment), rare à 30 % ; affixes Dégâts +0,6 × niveau d'objet (au lieu de 1,2), Vie +2,5 × niveau (au lieu de 4) ; prestige n : 600 + 300 n + 15 n² or, 30 + 15 n + n²/2 essence ; Archer 115 PV et 5 % d'armure, Magicien 100 PV et 5 %. Résultat visé et obtenu : T2 (rare niveau 25 +25) tient jusqu'au niveau 20–30, T3 (légendaire 60 +60) jusqu'au niveau 50 et Tourment I–V, Tourment X demande T4 ; 20 à 90 objets par manche (au lieu de 400 à 2 600) et 1 000 à 55 000 or en Normal (au lieu de 150 000). Outil : `tools/sim/` dans le dépôt.
+
+**Anneau de vie** : un cercle autour du héros se vide dans le sens horaire avec la vie (vert au-dessus de 50 %, jaune, puis rouge pulsant sous 25 %), le bouclier du Magicien en arc bleu juste autour ; la barre en haut à gauche reste. Les objets trouvés (affixe recherchée, légendaire) ne passent plus par la bannière centrale : seulement par les messages sous la barre de vie (et le flash, s'il est activé).
 
 **Montée en difficulté** (niveau L, progression f de 0 à 1 dans la manche) :
 
@@ -135,6 +141,10 @@ Un bonus arrivé à son rang maximum n'est plus proposé, ni un bonus dont la st
 
 **Ultime** (4e bouton au-dessus de la compétence, touche F) : se charge en abattant 60 ennemis, un Gardien compte pour 10 ; la réduction de recharge ne s'applique pas. Guerrier, **Colère du Titan** : onde de choc de 320 de rayon (dégâts de compétence ×3, recul) et 3 s d'invulnérabilité. Archer, **Pluie d'acier** : pendant 3 s, 4 flèches toutes les 0,12 s sur les ennemis à moins de 450 (×0,7). Magicien, **Pluie de météores** : 3 météores de 150 de rayon (×3), en priorité sur les Gardiens. La portée des compétences agrandit ces zones. Bonus de niveau : **Fureur** (−15 % d'ennemis à abattre, 3 fois) et **Apothéose** (+30 % de dégâts de l'ultime, 3 fois).
 
+**Frénésie critique** : 8 coups critiques en 5 s déclenchent un bonus de 5 s (allongé par la durée des compétences), puis 3 s de recharge. Archer : projectiles 50 % plus rapides et +1 transpercement ; Magicien : +50 % de rayon d'explosion ; Guerrier : +30 % de portée de frappe et +25 % de vitesse d'attaque. Sous la barre de vie, « Critiques n / 8 » dès 3 critiques, puis « Frénésie · n s » ; étincelles dorées autour du héros.
+
+**Tremblements** : complément à celui des coups reçus, la compétence secoue légèrement l'écran (3,5 px), l'ultime davantage (7 px, 11 px pour la Colère du Titan), chaque météore 6 px, chaque flèche de la Pluie d'acier 1,5 px, et le déclenchement de la Frénésie 3 px.
+
 ## Butin, équipement, mods, reliques et schémas
 
 **Chances de butin par ennemi tué**
@@ -151,13 +161,23 @@ Au niveau L, les chances d'équipement, de relique et de fragment sont multipli�
 
 **Équipement** : armures (vie), amulettes (critique), bottes (vitesse) et anneaux (dégâts), en plus de l'arme, soit 5 emplacements, de rareté commune, magique, rare ou légendaire, avec 1 à 4 propriétés aléatoires (dégâts, vitesse, critique, vie, armure, régénération, recharge, compétence, portée des compétences…). Un objet trouvé s'équipe tout de suite depuis la pause (il est alors gardé même en cas de mort) ou part au coffre (taille illimitée, filtre par type, tri par rareté, amélioration, niveau ou date, pages de 24 objets) à la sortie. Recycler rapporte 2, 4, 8 ou 16 essence selon la rareté ; Un objet peut être verrouillé (cadenas) : il ne peut plus être recyclé. « Tout recycler » garde les objets verrouillés, améliorés et Prime.
 
+**Ancestral** : nouvelle rareté au-dessus de Légendaire (couleur rose-rouge), uniquement en Tourment. 4 affixes à ×1,6 (contre ×1,3 pour un légendaire), statistique de base ×1,25, nom « … ancestral », recyclage 32 essence. Il déclenche aussi l'alerte Légendaires.
+
+**Comparaison et Équiper le meilleur** : la fiche d'un objet (coffre ou butin de la partie) liste chaque statistique qui change avec sa nouvelle valeur et l'écart (▲ vert, ▼ rouge) face à l'objet porté. « Équiper le meilleur » (onglet Héros, et dans la pause pour le butin de la partie) choisit pour chaque emplacement l'objet qui maximise puissance + 0,3 × vie ; les objets remplacés partent au coffre.
+
+**Pastilles d'onglets** : Héros (améliorations d'équipement disponibles), Armurerie (objets fabricables maintenant), Reliques (reliques possédées quand aucune n'est équipée), Forge (points de prestige à placer, sinon améliorations et talents achetables).
+
+**Onglet Reliques** : file d'ouverture avec icônes, puis grille de tuiles (gemme à la couleur du niveau, nombre d'intactes et d'éclatantes ✦, pastille « n équipées », ★ si la relique contient le dernier fragment d'un schéma), filtrable par niveau. Toucher une tuile ouvre sa fiche : chaque récompense avec son état (✓ possédé, manquant n / 3, ★ complète le schéma, arme fabriquée) et deux barres de chances (intacte, éclatante), puis les réglages d'équipement et le raffinage.
+
 **Amélioration** : chaque arme et chaque pièce d'équipement s'améliore de +0 à +100 avec de l'essence (Camp › Héros, sélectionner l'objet, boutons +1 ou +10). Chaque niveau ajoute 2 % des valeurs de l'objet, soit ×3 à +100 ; le nombre de projectiles et la perforation ne changent pas. Passer du niveau n à n + 1 coûte 5 + 3n + n²/10 essence (5 au début, environ 1 280 pour le dernier, environ 48 000 au total). Recycler un objet amélioré rend la moitié de l'essence investie ; « Tout recycler » ignore les objets améliorés.
 
 **Transfert d'affixe** (onglet Affixes du Camp) : on touche Source ou Cible puis un objet dans l'inventaire affiché (équipement porté marqué « Équipé », autres armes, coffre filtrable et paginé ; les objets non valides sont grisés). On choisit un équipement source non verrouillé, une de ses affixes, puis une cible (arme possédée, équipement porté ou du coffre). Si la cible a déjà l'affixe, elle n'est remplacée que par une valeur strictement plus forte ; sinon elle est ajoutée s'il reste de la place (1 à 4 affixes selon la rareté), ou remplace une affixe choisie. La source est détruite et le transfert coûte 50 essence × (rareté de la source + 1). La valeur transférée est celle affichée sur la source, amélioration comprise ; les améliorations suivantes de la cible l'augmentent ensuite. Deux cartes côte à côte montrent la source et l'aperçu de la cible : ligne retirée barrée en rouge, ligne ajoutée en vert.
 
+**Fusion d'affixe** : quand la cible a déjà l'affixe prise sur la source, le transfert devient une fusion par défaut. Nouvelle valeur = la plus forte des deux + 50 % de la plus faible (valeurs affichées, amélioration comprise ; +1 pour projectiles et transpercement). 3 fusions au maximum par affixe et par objet ; coût 100 × (rareté de la source + 1) × (numéro de la fusion) essence. Si la source est plus forte, deux puces permettent de choisir « Fusionner » ou « Remplacer » (le remplacement remet le compteur de fusions à 0). L'aperçu indique « fusion n / 3 ».
+
 **Chercher par affixe** (onglet Affixes) : liste de toutes les affixes présentes sur tes objets non verrouillés (portés et coffre), filtrable en Offensives (dégâts, vitesse d'attaque, critique, dégâts critiques, dégâts et portée des compétences…), Défensives (vie, réduction des dégâts, régénération, vol de vie) et Utilitaires (vitesse de déplacement, recharge). Chaque ligne montre la meilleure valeur, l'objet qui la porte, le nombre d'objets et la valeur de ta cible si elle l'a déjà. Toucher la ligne déplie les objets classés du plus fort au plus faible ; « Prendre » désigne cet objet comme source avec cette affixe déjà choisie, puis passe au choix de la cible.
 
-**Alertes de butin** (onglet Affixes) : on coche les affixes recherchées (groupées en Offensives, Défensives, Utilitaires) et l'option Légendaires (active par défaut). En mission, quand un objet tombe avec une affixe cochée, ou un légendaire, l'écran s'illumine brièvement (halo doré, orangé pour un légendaire, au plus un flash toutes les 0,35 s), un message nomme l'affixe trouvée, et l'objet au sol porte un grand faisceau doré avec un anneau qui pulse jusqu'à son ramassage.
+**Alertes de butin** (onglet Affixes) : on coche les affixes recherchées (groupées en Offensives, Défensives, Utilitaires) et l'option Légendaires (active par défaut). En mission, quand un objet tombe avec une affixe cochée dont la valeur dépasse la meilleure valeur de cette affixe sur l'équipement porté (amélioration comprise ; toujours si aucune pièce portée ne l'a), ou un légendaire, l'écran s'illumine brièvement (halo doré, orangé pour un légendaire, au plus un flash toutes les 0,35 s), un message nomme l'affixe trouvée, et l'objet au sol porte un grand faisceau doré avec un anneau qui pulse jusqu'à son ramassage.
 
 **Mods** : deux builds séparés. Le **build d'arme** est attaché à chaque arme (4 cases, capacité 10 + Catalyseur jusqu'à +12 + maîtrise de l'arme jusqu'à +10) : changer d'arme change ses mods. Le **build de héros** est attaché à la classe (3 cases au départ, jusqu'à 6 en payant 15, 30 puis 50 fragments de schéma, + 1 case d'Aura ; capacité 10 + Réacteur jusqu'à +12 + maîtrise du héros jusqu'à +10 + bonus d'Aura). Un mod coûte sa valeur de base + son rang en capacité ; la fusion coûte 10 × 2^rang × (rareté + 1) essence. Un doublon rapporte 8, 16 ou 24 essence. Le tableau ci-dessous liste les mods d'arme.
 
@@ -203,6 +223,12 @@ Au niveau L, les chances d'équipement, de relique et de fragment sont multipli�
 
 **Schémas** : chaque arme ou équipement Prime se fabrique avec 3 fragments, obtenus uniquement dans les reliques, plus de l'or.
 
+**Recyclage des objets fabriqués** : à l'Armurerie, une arme fabriquée et non équipée peut être recyclée (confirmation) contre 40 × (rareté + 1) essence + la moitié de l'essence investie dans ses améliorations, et 1 fragment de son schéma (en priorité un fragment manquant) ; elle perd son niveau et ses affixes ajoutées, ses mods restent dans la collection. Un objet Prime du coffre se recycle de la même façon (essence + 1 fragment). « Tout recycler » continue d'épargner les objets Prime.
+
+**Fusion de reliques** (onglet Reliques) : 3 reliques non équipées d'un même niveau (intactes d'abord) → 1 relique aléatoire du niveau suivant, pour 20 / 40 / 80 essence (Cendre → Ossuaire → Sanguine → Abysse). 3 reliques Abysse + 150 essence → 1 fragment d'un schéma légendaire choisi (armes légendaires non fabriquées, celle du héros en premier, et les 6 équipements Prime), en priorité un fragment manquant.
+
+**Messages de butin** : aucun message n'apparaît plus au ramassage (objet, relique, mod, fragment, potion) ni à la chute d'un objet recherché ; le butin se consulte dans la pause (pastille sur le sac). Restent les sons, le flash réglable et le faisceau au sol.
+
 | Objet | Classe | Dégâts ou base | Bonus | Fabrication |
 | --- | --- | --- | --- | --- |
 | Arc court du Pèlerin | Archer | 10 | +15 % vitesse d'attaque | 75 or |
@@ -245,6 +271,14 @@ Chaque niveau suivant coûte ×1,7 du précédent. Les talents coûtent 150, 300
 ## Technique
 
 Une seule page HTML avec JavaScript, sans serveur.
+
+**Fichiers (site GitHub Pages, sans build)** : `index.html`, `css/game.css`, puis les scripts classiques dans cet ordre, qui partagent la portée globale : `js/data.js` (données, sauvegarde), `js/game.js` (partie, combat, butin), `js/render.js` (Canvas, PixiJS, HUD), `js/ui.js` (fiches, pause, niveaux, mods, fin), `js/camp.js` (Camp), `js/settings.js` (réglages, bannière, vibrations), `js/audio.js` (sons), `js/main.js` (boucle). PWA : `manifest.webmanifest`, `sw.js` (cache, réseau d'abord pour la page et les scripts, numéro `VERSION` à incrémenter à chaque mise à jour), `icons/`, `.nojekyll`.
+
+**Son** : entièrement synthétisé en Web Audio, aucun fichier. Coups (avec limite de cadence), critiques, coup reçu, ramassages par rareté, or, potion, esquive, compétence propre à chaque classe, ultime, météores, Gardien qui surgit et qui meurt, élite, Frénésie, montée de niveau, relique ouverte, vague, victoire, défaite, clics d'interface. Musique d'ambiance : bourdon grave filtré qui respire et cloches rares en mode mineur. Le son démarre au premier geste et se coupe quand l'onglet est masqué.
+
+**Réglages** (bouton sur l'écran de départ et dans la pause, propres à l'appareil, clé `crypte-set`) : volume des effets et de la musique, tremblement Normal / Réduit / Désactivé, flash de butin, chiffres de dégâts, vibrations (coup reçu, légendaire ou affixe recherchée), rendu WebGL ou standard.
+
+**Bannière d'événements** : au centre en haut, un message à la fois pendant \~2 s, file de 3 classée par priorité (affixe recherchée ou légendaire > Gardien, relique ouverte, Gardien vaincu > élite, Frénésie). Les ramassages restent dans les messages sous la barre de vie, qui ne peuvent donc plus chasser un événement important.
 
 | Sujet | Choix actuel |
 | --- | --- |

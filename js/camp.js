@@ -156,10 +156,16 @@ function xfGet(key){if(!key)return null;const t=key[0],v=key.slice(2);
   if(t==='w'){const c=wclsOf(v);return c&&ownedW(v)?weaponItem(c,v):null}return null}
 const xfCap=it=>Math.max(RAR[it.r].aff,Object.keys(it.aff).length);
 const xfCost=it=>50*(it.r+1);
+const FZ_MAX=3,FZ_K=.5,fzCost=(it,n)=>100*(it.r+1)*(n+1);
+function fzGet(key,k){if(!key)return 0;if(key[0]==='w'){const o=meta.wfz&&meta.wfz[key.slice(2)];return (o&&o[k])||0}const it=xfGet(key);return (it&&it.fz&&it.fz[k])||0}
 const xfLbl=(k,i,w)=>`${esc(itemName(i))} · ${RAR[i.r].n.toLowerCase()} · ${w}`;
 function xfState(){const s=xfGet(xf.src),d=xfGet(xf.dst);if(!s||!d||!xf.k||s.aff[xf.k]==null)return null;
   const k=xf.k,ns=!!NOSCALE[k],ve=ns?s.aff[k]:s.aff[k]*upMul(s.up),v=ns?ve:Math.round(ve/upMul(d.up)*10)/10,cur=d.aff[k],ce=cur==null?null:ns?cur:cur*upMul(d.up),cap=xfCap(d),n=Object.keys(d.aff).length,T=x=>xfV(d,k,x),r=o=>Object.assign(o,{nv:v});
-  if(cur!=null)return r(ce>=ve-1e-9?{ok:false,msg:`${esc(itemName(d))} a déjà ${T(cur)}, une valeur égale ou plus forte. Transfert impossible.`}:{ok:true,mode:'up',msg:`Remplace ${T(cur)} par ${T(v)} sur ${esc(itemName(d))}.`});
+  if(cur!=null){const n0=fzGet(xf.dst,k),fuseOk=n0<FZ_MAX,canUp=ve>ce+1e-9,hi=Math.max(ce,ve),lo=Math.min(ce,ve),fe=ns?hi+(lo>=1?1:0):hi+lo*FZ_K,fv=ns?fe:Math.round(fe/upMul(d.up)*10)/10;
+    if(!fuseOk&&!canUp)return r({ok:false,msg:`${esc(itemName(d))} a déjà ${T(cur)} (fusionnée ${FZ_MAX} fois, le maximum), une valeur égale ou plus forte.`});
+    const op=xf.op==='up'&&canUp?'up':fuseOk?'fuse':'up';
+    if(op==='fuse')return {ok:true,mode:'fuse',nv:fv,n:n0,fuseOk,canUp,cost:fzCost(s,n0),msg:`Fusionne ${T(v)} dans ${T(cur)} : ${T(fv)} sur ${esc(itemName(d))} (fusion ${n0+1} / ${FZ_MAX}).`};
+    return r({ok:true,mode:'up',fuseOk,canUp,msg:`Remplace ${T(cur)} par ${T(v)} sur ${esc(itemName(d))}.`})}
   if(n<cap)return r({ok:true,mode:'add',msg:`Ajoute ${T(v)} sur ${esc(itemName(d))} (${n+1} / ${cap} affixes).`});
   if(xf.rep&&d.aff[xf.rep]!=null)return r({ok:true,mode:'rep',msg:`Remplace ${xfV(d,xf.rep,d.aff[xf.rep])} par ${T(v)} sur ${esc(itemName(d))}.`});
   return r({ok:false,full:true,msg:`${esc(itemName(d))} a déjà ${cap} affixe${cap>1?'s':''} : choisis celle à remplacer.`})}
@@ -226,6 +232,7 @@ function campAffix(){
       tLines=Object.keys(d.aff).map(k=>{
         if(v!=null&&st){
           if(k===xf.k&&st.mode==='up')return `<li class="cx-line cx-line--del">${xfV(d,k,d.aff[k])}</li><li class="cx-line cx-line--add">${xfV(d,k,nv)}</li>`;
+          if(k===xf.k&&st.mode==='fuse')return `<li class="cx-line cx-line--del">${xfV(d,k,d.aff[k])}</li><li class="cx-line cx-line--add">${xfV(d,k,nv)} <span style="font-weight:500;opacity:.8">· fusion ${st.n+1} / ${FZ_MAX}</span></li>`;
           if(k===xf.k&&!st.ok)return `<li class="cx-line cx-line--no">${xfV(d,k,d.aff[k])} · déjà plus fort</li>`;
           if(full){const sel=xf.rep===k;return sel?`<li><button class="cx-line cx-line--del" data-cact="xfrep" data-arg="${k}" aria-pressed="true">${xfV(d,k,d.aff[k])}</button></li><li class="cx-line cx-line--add">${xfV(d,xf.k,nv)}</li>`:`<li><button class="cx-line" data-cact="xfrep" data-arg="${k}" aria-pressed="false">${xfV(d,k,d.aff[k])}</button></li>`}
         }
@@ -251,16 +258,17 @@ function campAffix(){
 function affixFoot(){const st=xfState(),s=xfGet(xf.src);
   if(!st)return xf.src&&xf.dst&&!xf.k?'<p class="cx-hint">Touche l\'affixe à prendre sur la source.</p>':'';
   if(!st.ok)return `<p class="cx-hint">${st.full?'Touche l\'affixe à remplacer sur la cible.':st.msg}</p>`;
-  const cost=xfCost(s),poor=meta.essence<cost;
-  return `<div class="row"><button class="cx-btn cx-btn--ghost" data-cact="xfcancel">Annuler</button><button class="cx-btn cx-btn--primary cx-btn--cost" data-cact="xfok" ${poor?'disabled':''}>Transférer <span class="cx-price"><i class="cx-ess"></i>${cost}</span></button></div>
+  const cost=st.cost||xfCost(s),poor=meta.essence<cost,both=st.fuseOk&&st.canUp;
+  return `${both?`<div class="cx-chips" role="radiogroup" aria-label="Mode" style="justify-content:center"><button class="cx-chip cx-chip--sm" role="radio" data-cact="xfop" data-arg="fuse" aria-checked="${st.mode==='fuse'}">Fusionner (additionner)</button><button class="cx-chip cx-chip--sm" role="radio" data-cact="xfop" data-arg="up" aria-checked="${st.mode==='up'}">Remplacer</button></div>`:''}<div class="row"><button class="cx-btn cx-btn--ghost" data-cact="xfcancel">Annuler</button><button class="cx-btn cx-btn--primary cx-btn--cost" data-cact="xfok" ${poor?'disabled':''}>${st.mode==='fuse'?'Fusionner':'Transférer'} <span class="cx-price"><i class="cx-ess"></i>${cost}</span></button></div>
     <p class="cx-hint">${poor?`Il te manque ${cost-meta.essence} essence.`:`${esc(itemName(s))} sera détruit.`}</p>`;
 }
-function xfDo(){const s=xfGet(xf.src),st=xfState();if(!s||s.lock||!st||!st.ok)return;const cost=xfCost(s);if(meta.essence<cost)return;
+function xfDo(){const s=xfGet(xf.src),st=xfState();if(!s||s.lock||!st||!st.ok)return;const cost=st.cost||xfCost(s);if(meta.essence<cost)return;
   const k=xf.k,v=st.nv;
-  if(xf.dst[0]==='w'){const wid=xf.dst.slice(2),o=meta.waff[wid]||(meta.waff[wid]={});if(st.mode==='rep')o[xf.rep]=null;o[k]=v}
-  else{const d=xfGet(xf.dst);if(st.mode==='rep')delete d.aff[xf.rep];d.aff[k]=v}
+  if(xf.dst[0]==='w'){const wid=xf.dst.slice(2),o=meta.waff[wid]||(meta.waff[wid]={});if(st.mode==='rep')o[xf.rep]=null;o[k]=v;
+    if(st.mode==='fuse'){meta.wfz=meta.wfz||{};const f=meta.wfz[wid]||(meta.wfz[wid]={});f[k]=(f[k]||0)+1}}
+  else{const d=xfGet(xf.dst);if(st.mode==='rep')delete d.aff[xf.rep];d.aff[k]=v;if(st.mode==='fuse'){d.fz=d.fz||{};d.fz[k]=(d.fz[k]||0)+1}else if(d.fz)delete d.fz[k]}
   if(xf.src[0]==='s'){const i=meta.stash.findIndex(x=>String(x.id)===xf.src.slice(2));if(i>=0)meta.stash.splice(i,1)}else meta.gear[xf.src.slice(2)]=null;
-  meta.essence-=cost;const dn=itemName(xfGet(xf.dst)||{name:'la cible'});toast(`Affixe transférée : <b>${xfV(xfGet(xf.dst)||{},k,v)}</b> sur ${esc(dn)}. ${esc(itemName(s))} est détruit.`);
+  meta.essence-=cost;const dn=itemName(xfGet(xf.dst)||{name:'la cible'});toast(`${st.mode==='fuse'?'Affixe fusionnée':'Affixe transférée'} : <b>${xfV(xfGet(xf.dst)||{},k,v)}</b> sur ${esc(dn)}. ${esc(itemName(s))} est détruit.`);
   xf={src:'',k:'',dst:'',rep:'',pick:'src'};campSel=null}
 function prestSection(){
   const c=heroCls,o=prOf(c),free=prFree(c),op=prOpen(),cost=prCost(o.lv),nmax=UPG.filter(u=>lv(u.k)>=u.max).length;
@@ -364,8 +372,9 @@ $('campSheet').addEventListener('click',e=>{
     else if(a==='rqup'||a==='rqdn'){const i=+arg,j=a==='rqup'?i-1:i+1,Q=meta.relicQ;if(j>=0&&j<Q.length)[Q[i],Q[j]]=[Q[j],Q[i]]}
     else if(a==='rqnone'){meta.relicQ=[]}
     else if(a==='rqall'){for(const id in RELICS){const r=meta.relics[id];if(!r)continue;for(const rad of [true,false])while(relicQN(id,rad)<r[rad?1:0])meta.relicQ.push({id,rad})}}
-    else if(a==='xfk'){xf.k=arg;xf.rep=''}
+    else if(a==='xfk'){xf.k=arg;xf.rep='';xf.op=''}
     else if(a==='xfpick'){xf.pick=arg}
+    else if(a==='xfop'){xf.op=arg}
     else if(a==='afcat'){afCat=arg;afOpen=''}
     else if(a==='wish'){const W=meta.wish||(meta.wish={leg:true,aff:{}});W.aff=W.aff||{};if(W.aff[arg])delete W.aff[arg];else W.aff[arg]=true}
     else if(a==='wishleg'){const W=meta.wish||(meta.wish={leg:true,aff:{}});W.leg=!W.leg}
