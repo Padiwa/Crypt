@@ -4,7 +4,7 @@
 const NET={on:false,host:false,guest:false,pc:null,dc:null,state:'idle',code:'',err:'',hits:[],ebUsed:new Set(),snap:null,tick:null,
   peers:[],slot:0,roster:[],hostCls:null,ready:false};
 const NET_MAX=4; // joueurs, hôte compris
-const NET_V=4;
+const NET_V=5;
 const NET_TIMEOUT=20000; // silence toléré en mission (une notification ou un écran qui s'éteint ne doit pas couper la partie)   // version du protocole : deux appareils de versions différentes refusent de jouer ensemble
 const ICE=[{urls:'stun:stun.l.google.com:19302'}];
 const SLOT_C=['#e8853b','#8fd3e0','#b9a6f0','#f0cf4a'];
@@ -95,15 +95,16 @@ function netLost(){if(NET.state==='idle')return;const was=NET.on,wasGuest=NET.gu
 /* ---------- Démarrage de la mission ---------- */
 const SPAWN_OFF=[[0,0],[80,0],[-80,0],[0,80]];
 const mateNew=(slot,cls,x,y)=>({slot,cls:cls||'guerrier',x,y,face:0,hp:1,max:1,down:false,r:17,flash:0,dashT:0,spin:0,shield:0});
-const startMsg=()=>({t:'start',level:G.level,biome:G.biome,n:coopN(),map:{pil:G.pillars.filter(p=>p!==G.pod).map(p=>[p.x|0,p.y|0,+p.r.toFixed(1)]),bra:G.braziers.map(b=>[b.x|0,b.y|0]),run:G.runes.map(r=>[r.x|0,r.y|0,r.r|0])},x:G.P.x|0,y:G.P.y|0});
+const startMsg=()=>({t:'start',br:G.breche?1:0,level:G.level,biome:G.biome,n:coopN(),map:{pil:G.pillars.filter(p=>p!==G.pod).map(p=>[p.x|0,p.y|0,+p.r.toFixed(1)]),bra:G.braziers.map(b=>[b.x|0,b.y|0]),run:G.runes.map(r=>[r.x|0,r.y|0,r.r|0])},x:G.P.x|0,y:G.P.y|0});
 function netStartHost(){ // appelé par l'hôte au lancement (main.js)
   const open=NET.peers.filter(p=>p.state==='open'),now=performance.now();for(const p of open)p.lastRx=now;
+  G.breche=!!NET.breche&&open.length>0;
   G.mates=open.map(p=>{const o=SPAWN_OFF[p.slot]||[40,0],q=mateNew(p.slot,p.cls,G.P.x+o[0],G.P.y+o[1]);p.Q=q;p.sh=[];return q});
   netSend(startMsg());clearInterval(NET.tick);NET.tick=setInterval(netTick,50);clearInterval(NET.htick);NET.htick=setInterval(netHeroTick,33)}
 // Un joueur arrive alors que la mission tourne déjà : on ne lance que lui, près de l'hôte.
 function netStartFor(peer){peer.lastRx=performance.now();const o=SPAWN_OFF[peer.slot]||[40,0],q=mateNew(peer.slot,peer.cls,G.P.x+o[0],G.P.y+o[1]);peer.Q=q;peer.sh=[];
   G.mates=(G.mates||[]).filter(x=>x.slot!==peer.slot);G.mates.push(q);netSendTo(peer,startMsg())}
-function netStartGuest(m){meta.mode='survie';newGame();G.level=m.level;G.biome=m.biome;if(floorPat)floorPat=null;
+function netStartGuest(m){meta.mode='survie';newGame();G.breche=!!m.br;G.level=m.level;G.biome=m.biome;if(floorPat)floorPat=null;
   G.pillars=m.map.pil.map(a=>({x:a[0],y:a[1],r:a[2]}));G.braziers=m.map.bra.map(a=>({x:a[0],y:a[1],ph:rand(0,6)}));G.runes=m.map.run.map(a=>({x:a[0],y:a[1],r:a[2]}));
   {const o=SPAWN_OFF[NET.slot]||[40,0];G.P.x=m.x+o[0];G.P.y=m.y+o[1];resolve(G.P)}G.cam.x=G.P.x;G.cam.y=G.P.y;G.en=[];G.mates=[];
   if(PX)try{buildStatic()}catch(err){dropPixi(err)}
@@ -112,20 +113,20 @@ function netStartGuest(m){meta.mode='survie';newGame();G.level=m.level;G.biome=m
 
 /* ---------- Échanges en partie ---------- */
 const r1=v=>Math.round(v*10)/10;
-const heroPack=P=>[P.x|0,P.y|0,r1(P.face),Math.ceil(P.hp),Math.round(S.hp),heroCls,(P.down?1:0)|(P.dashT>0?2:0)|(P.spin>0?4:0)|(P.flash>0?8:0)|(P.inv>0?16:0),Math.round(P.shield||0)];
+const heroPack=P=>[P.x|0,P.y|0,r1(P.face),Math.ceil(P.hp),Math.round(S.hp),heroCls,(P.down?1:0)|(P.dashT>0?2:0)|(P.spin>0?4:0)|(P.flash>0?8:0)|(P.inv>0?16:0),Math.round(P.shield||0),sealMask()];
 const shotPack=(L,n=70)=>L.slice(0,n).map(s=>[s.kind,s.x|0,s.y|0,r1(s.a),s.vx|0,s.vy|0,r1(s.life),s.crit?1:0]);
 const shotObj=a=>({kind:a[0],x:a[1],y:a[2],a:a[3],vx:a[4],vy:a[5],life:a[6],crit:!!a[7]});
 function heroUnpack(a,Q){Q=Q||{r:17};const now=performance.now();
   if(Q.tx==null||Math.hypot(a[0]-Q.tx,a[1]-Q.ty)>260){Q.x=a[0];Q.y=a[1];Q.vx=0;Q.vy=0}
   else{const dt=Math.min(.25,Math.max(.016,(now-(Q.rt||now))/1000));const k=.5;Q.vx=Q.vx*(1-k)+(a[0]-Q.tx)/dt*k;Q.vy=Q.vy*(1-k)+(a[1]-Q.ty)/dt*k}
-  Q.tx=a[0];Q.ty=a[1];Q.rt=now;Object.assign(Q,{face:a[2],hp:a[3],max:a[4],cls:a[5],down:!!(a[6]&1),dashT:a[6]&2?.1:0,spin:a[6]&4?1:0,flash:a[6]&8?1:0,inv:a[6]&16?.1:0,shield:a[7]||0,r:17});return Q}
+  Q.tx=a[0];Q.ty=a[1];Q.rt=now;Object.assign(Q,{face:a[2],hp:a[3],max:a[4],cls:a[5],down:!!(a[6]&1),dashT:a[6]&2?.1:0,spin:a[6]&4?1:0,flash:a[6]&8?1:0,inv:a[6]&16?.1:0,shield:a[7]||0,aur:a[8]|0,r:17});return Q}
 // Lissage des partenaires à chaque image : on prolonge leur dernier mouvement connu et on rattrape en douceur.
 function matesSmooth(dt){const now=performance.now();for(const q of G.mates||[]){if(q.tx==null)continue;const age=Math.min(.2,(now-q.rt)/1000),px=q.tx+(q.vx||0)*age,py=q.ty+(q.vy||0)*age;
   const k=Math.min(1,dt*20);q.x+=(px-q.x)*k;q.y+=(py-q.y)*k}}
 // Flux rapide des héros, 30 fois par seconde.
 let hSeq=0;
 function netHeroTick(){if(!NET.on||!started||!G||G.over)return;hSeq++;
-  if(NET.host){const ps=[[0,...heroPack(G.P)]];for(const p of NET.peers)if(p.state==='open'&&p.Q){const q=p.Q;ps.push([p.slot,Math.round(q.tx!=null?q.tx:q.x),Math.round(q.ty!=null?q.ty:q.y),q.face,Math.ceil(q.hp),q.max,q.cls,(q.down?1:0)|(q.dashT>0?2:0)|(q.spin>0?4:0)|(q.flash>0?8:0)|(q.inv>0?16:0),q.shield|0])}
+  if(NET.host){const ps=[[0,...heroPack(G.P)]];for(const p of NET.peers)if(p.state==='open'&&p.Q){const q=p.Q;ps.push([p.slot,Math.round(q.tx!=null?q.tx:q.x),Math.round(q.ty!=null?q.ty:q.y),q.face,Math.ceil(q.hp),q.max,q.cls,(q.down?1:0)|(q.dashT>0?2:0)|(q.spin>0?4:0)|(q.flash>0?8:0)|(q.inv>0?16:0),q.shield|0,q.aur|0])}
     sendFast({t:'h',q:hSeq,ps})}
   else sendFast({t:'h',q:hSeq,p:heroPack(G.P)})}
 function netTick(){if(!NET.on||!started||!G)return;const now=performance.now();
@@ -134,7 +135,7 @@ function netTick(){if(!NET.on||!started||!G)return;const now=performance.now();
     if(!NET.on)return;
     const en=G.en.filter(e=>!e.dead).map(e=>[e.id,e.type,e.x|0,e.y|0,Math.ceil(e.hp),Math.ceil(e.max),r1(e.r),(e.corr?1:0)|(e.frz>0?2:0)|(e.slow>0?4:0)|(e.flash>0?8:0)|(e.burnT>0?16:0),e.elite||0,e.gen||0,Math.round(e.dmg),e.state==='walk'?0:e.state==='wind'?1:2,r1(e.ang||0)]);
     const ps=[[0,...heroPack(G.P)]],osh=[[0,shotPack(G.shots,60)]];
-    for(const p of NET.peers)if(p.state==='open'&&p.Q){ps.push([p.slot,p.Q.x|0,p.Q.y|0,p.Q.face,Math.ceil(p.Q.hp),p.Q.max,p.Q.cls,(p.Q.down?1:0)|(p.Q.dashT>0?2:0)|(p.Q.spin>0?4:0)|(p.Q.flash>0?8:0)|(p.Q.inv>0?16:0),p.Q.shield|0]);if(p.shRaw)osh.push([p.slot,p.shRaw.slice(0,40)])}
+    for(const p of NET.peers)if(p.state==='open'&&p.Q){ps.push([p.slot,p.Q.x|0,p.Q.y|0,p.Q.face,Math.ceil(p.Q.hp),p.Q.max,p.Q.cls,(p.Q.down?1:0)|(p.Q.dashT>0?2:0)|(p.Q.spin>0?4:0)|(p.Q.flash>0?8:0)|(p.Q.inv>0?16:0),p.Q.shield|0,p.Q.aur|0]);if(p.shRaw)osh.push([p.slot,p.shRaw.slice(0,40)])}
     NET.sSeq=(NET.sSeq||0)+1;sendFast({t:'s',sq:NET.sSeq,lv:G.level,tl:r1(G.tl),bt:r1(G.bossT),en,eb:G.eb.slice(0,150).map(b=>[b.id,b.x|0,b.y|0,b.vx|0,b.vy|0,b.r,Math.round(b.d),r1(b.life)]),
       lb:G.lobs.map(l=>[l.x0|0,l.y0|0,l.tx|0,l.ty|0,+l.t.toFixed(2),l.T,l.kind,l.r|0]),z:G.zones.map(z=>[z.id,z.x|0,z.y|0,z.r|0,z.kind,+z.dps.toFixed(2),r1(z.life),z.max]),ps,osh});
   }else{
@@ -152,6 +153,7 @@ function netRecvHost(peer,m){
   if(m.t==='hello'){if(m.v!==NET_V){netSendTo(peer,{t:'oldver',v:NET_V});NET.err=`Joueur ${peer.slot+1} : version du jeu différente. Mettez le jeu à jour sur les deux appareils (Réglages › Application), puis recommencez.`;netPeerLost(peer,true);return}
     peer.cls=m.cls;peer.relic=m.relic;if(peer.Q)peer.Q.cls=m.cls;sendRoster();drawCoop();return}
   if(!G)return;
+  if(m.t==='fx'){fxApply(m);for(const p of NET.peers)if(p!==peer&&p.state==='open')netSendTo(p,m);return}
   if(m.t==='h'){if(!peer.Q||!m.p)return;if(m.q<=(peer.hq||0)&&peer.hq-m.q<1000)return;peer.hq=m.q;peer.hT=performance.now();heroUnpack(m.p,peer.Q);peer.Q.slot=peer.slot;return}
   if(m.t==='g'){if(!peer.Q){peer.Q=mateNew(peer.slot,peer.cls,G.P.x,G.P.y);if(G.mates&&!G.mates.includes(peer.Q))G.mates.push(peer.Q)}
     if(!peer.hT||performance.now()-peer.hT>400){heroUnpack(m.p,peer.Q);peer.Q.slot=peer.slot}peer.shRaw=m.sh;peer.sh=m.sh.map(shotObj);peer.relic=m.rel;
@@ -169,10 +171,11 @@ function netRecvGuest(m){
   if(m.t==='roster'){NET.roster=m.list||[];drawCoop();return}
   if(m.t==='start'){netStartGuest(m);return}
   if(!G)return;
+  if(m.t==='fx'){fxApply(m);return}
   if(m.t==='s'){if(m.sq&&NET.sq&&m.sq<=NET.sq&&NET.sq-m.sq<1000)return;NET.sq=m.sq;NET.snap=m;return}
   if(m.t==='h'){if(m.q<=(NET.hq||0)&&NET.hq-m.q<1000)return;NET.hq=m.q;NET.hT=performance.now();matesFrom(m.ps);return}
   if(m.t==='kill'){const e=G.en.find(o=>o.id===m.id),o=e||{x:m.x,y:m.y,r:ETYPE[m.type].r,col:ETYPE[m.type].col};
-    Object.assign(o,{type:m.type,elite:m.elite||undefined,corr:!!m.corr,gen:m.gen||0,x:m.x,y:m.y});if(o.dead)return;kill(o);G.en=G.en.filter(x=>x!==o);return}
+    Object.assign(o,{type:m.type,elite:m.elite||undefined,corr:!!m.corr,gen:m.gen||0,x:m.x,y:m.y,noLoot:!!m.nl});if(o.dead)return;kill(o);G.en=G.en.filter(x=>x!==o);return}
   if(m.t==='round'){roundDone();coopWait(true);return}
   if(m.t==='cont'){coopWait(false);contRun();return}
   if(m.t==='exit'){coopWait(false);G.hold=false;missionSuccess();return}
@@ -210,7 +213,7 @@ function netNear(e,P){if(!NET.host||!G.mates||!G.mates.length)return P;let best=
 // Héros à terre : relevé 8 s plus tard près d'un partenaire debout.
 function heroDown(){const P=G.P;if(P.down)return;P.down=true;P.hp=0;P.downT=8;P.psnT=0;P.brnT=0;SND.play('lose');toast('<b style="color:#e0474b">Tu es à terre.</b> Tu te relèves dans 8 s si un partenaire tient bon.');
   coopCheckFail()}
-function heroDownTick(dt){const P=G.P;P.downT-=dt;
+function heroDownTick(dt){const P=G.P;P.downT-=dt*(mateNearSeal('main')?2:1);
   if(P.downT<=0){let Q=null,bd=1e12;for(const q of G.mates||[]){if(q.down)continue;const d=(q.x-P.x)**2+(q.y-P.y)**2;if(d<bd){bd=d;Q=q}}
     if(Q){P.down=false;P.hp=S.hp*.5;P.inv=2;P.x=Q.x+rand(-30,30);P.y=Q.y+rand(-30,30);resolve(P);burst(P.x,P.y,24,'#8fd3e0',180,3);toast('<b style="color:#8fd3e0">Relevé !</b>')}}}
 // Relais des fins de manche (hôte) et attente (invité).
@@ -235,7 +238,8 @@ function drawCoop(){const body=$('coopBody');if(!body||$('coop').hidden)return;c
   if(NET.host){const open=NET.peers.filter(p=>p.state==='open'),pend=NET.peers.find(p=>p.state!=='open'),full=1+NET.peers.length>=NET_MAX;
     h=`<section class="cx-section"><h3 class="cx-section__label">Ta partie · ${1+open.length} / ${NET_MAX} joueurs</h3>${rosterHtml(rosterList())}
       ${!pend&&!full?`<div class="actions" style="margin:0"><button class="cx-btn${open.length?'':' cx-btn--primary'}" data-coop="add">Inviter un joueur</button></div>`:''}
-      ${open.length?`<p style="margin:0">Ferme cette fenêtre et touche « Lancer » : vous partez ensemble en Survie.</p>`:''}${RULES}</section>`;
+      <div class="setrow"><div><b>Mode</b><span>${NET.breche?'Brèche : Gardiens jumeaux à abattre ensemble, monstres +25 % de vie, sceaux légendaires très rares et éclats':'Survie classique à plusieurs'}</span></div><div class="cx-chips" role="radiogroup" aria-label="Mode de coopération"><button class="cx-chip cx-chip--sm" role="radio" aria-checked="${!NET.breche}" data-coop="msurv">Survie</button><button class="cx-chip cx-chip--sm" role="radio" aria-checked="${!!NET.breche}" data-coop="mbre" style="${NET.breche?'':'color:'+SEAL_C}">Brèche</button></div></div>
+      ${open.length?`<p style="margin:0">Ferme cette fenêtre et touche « Lancer » : vous partez ensemble en ${NET.breche?'Brèche':'Survie'}.</p>`:''}${RULES}</section>`;
     if(pend){const n=pend.slot+1;
       if(pend.state==='offer')h+='<p class="cx-hint">Préparation du code…</p>';
       else h+=`<section class="cx-section"><h3 class="cx-section__label">Inviter le joueur ${n}</h3>${codeBox('1. Fais scanner ou envoie ce code au joueur '+n,pend.code,true)}${pasteBox('2. Colle ou scanne son code de réponse','Valider','answer')}${pend.state==='connecting'?'<p class="cx-hint" style="margin:0">Connexion en cours…</p>':''}<div class="actions"><button class="cx-btn cx-btn--sm" data-coop="cancel">Annuler cette invitation</button></div></section>`}
@@ -276,6 +280,8 @@ addEventListener('pagehide',()=>{if(NET.on)netSend({t:'bye'})});
   $('closeCoopX').onclick=close;$('closeCoop').onclick=close;
   $('coopBody').addEventListener('click',async e=>{const b=e.target.closest('[data-coop]');if(!b)return;const a=b.dataset.coop;NET.err='';
     if(!('RTCPeerConnection' in window)){NET.err='Ce navigateur ne permet pas la coopération.';drawCoop();return}
+    if(a==='msurv'){NET.breche=false;drawCoop();return}
+    if(a==='mbre'){NET.breche=true;drawCoop();return}
     if(a==='host')netHost();else if(a==='add')netAddPeer();else if(a==='cancel')netCancelPending();
     else if(a==='join'){NET.state='joinIn';drawCoop()}
     else if(a==='joingo'){const c=$('coopIn').value;if(c.trim())netJoin(c)}

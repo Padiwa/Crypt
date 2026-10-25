@@ -357,6 +357,25 @@ Connexion entre deux missions : elle reste ouverte après une sortie, un échec,
 
 Fluidité des partenaires (protocole NET\_V = 4) : chaque connexion a deux canaux. Le canal fiable et ordonné porte les événements (hello, start, kill, coups dans g, fins de manche). Le canal rapide (non ordonné, sans renvoi) porte le flux des héros h à 30 / s et l'instantané du monde s à 20 / s, numérotés (un paquet plus ancien est ignoré). Chaque appareil lisse les partenaires à chaque image : vitesse estimée sur les derniers paquets, prolongation du mouvement jusqu'à 0,2 s, rattrapage progressif, téléportation au-delà de 260 px. Mesure (hôte à 220 px/s, vu par l'invité) : avant, 2 images sur 3 figées et des sauts de 15 px ; après, aucune image figée, écart type de 0,5 px par image, environ 60 ms de retard.
 
+**Brèche** (mode coopératif, 2 joueurs minimum, choisi par l'hôte sous « Mode » dans le salon ; protocole NET\_V = 5) : Survie dont les Gardiens arrivent par paires de jumeaux (nombre arrondi au pair, au moins 2). Quand un jumeau meurt, l'autre doit mourir dans les 8 s, sinon le premier réapparaît à 50 % de vie, sans butin (noLoot transmis dans kill). Monstres +25 % de vie en plus du bonus de coopération.
+
+**Sceaux légendaires** (js/seal.js) : chaque Gardien ou élite abattu en Brèche donne à chaque joueur 1 éclat et 0,3 % de chances d'un sceau au hasard (butin instancié). Fin de mission : sortie = sceaux et éclats gardés ; échec = sceaux perdus, moitié des éclats. 100 éclats s'échangent contre 1 sceau au hasard (Camp › Affixes). Un sceau par objet (armure, amulette, bottes, anneau), en plus des affixes, utilisable en solo. Le même sceau ne compte qu'une fois sur l'équipement porté. Poser un sceau sur un objet déjà scellé rend l'ancien à la réserve ; retirer coûte 300 essence. Les sceaux ne sont pas fusionnables.
+
+| Sceau | Effet | Portée |
+| --- | --- | --- |
+| Sablier brisé | −20 % de recharge de la compétence, hors plafond | soi |
+| Esprit vif | −15 % de recharge de la compétence | groupe |
+| Gourde sans fond | +2 potions au départ, maximum 6 | soi |
+| Alchimie partagée | potion bue : +25 % de vie aux alliés proches | groupe |
+| Seconde esquive | 2 esquives d'affilée avant recharge | soi |
+| Cri de ralliement | ultime +20 % de charge par ennemi | groupe |
+| Main tendue | alliés à terre proches relevés 2 fois plus vite | groupe |
+| Aura de soin | compétence : +5 % de vie aux alliés dans la zone | groupe |
+| Pas de l'ombre | après une esquive, prochain coup critique | soi |
+| Fortune d'équipe | +10 % de chances d'objet | groupe |
+
+Effets de groupe : actifs si toi ou un partenaire debout à moins de 300 px le porte. Chaque héros transmet un masque de ses sceaux de groupe dans son paquet de position. Les soins passent par un message fx relayé par l'hôte.
+
 ## Technique
 
 Une seule page HTML avec JavaScript, sans serveur.

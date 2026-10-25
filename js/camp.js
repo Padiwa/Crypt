@@ -50,6 +50,19 @@ function relicBtns(bid){
     if(a[1])out.push(eqb(true,relicName(id)+' éclatante'));
     return out.length?out.join(''):`<span class="part" title="Tu n'as pas cette relique">${relicName(id)}</span>`}).join('');
 }
+// Où trouver les fragments d'un schéma : chaque relique qui en donne, sa tranche de niveaux, ce que tu possèdes, et les autres sources.
+const REL_LV=['missions 1 à 10','missions 11 à 25','missions 26 à 40','missions 41 et plus'];
+function bpSources(b){const pcs=meta.parts[b.id]||[0,0,0],miss=b.frag.filter((n,i)=>!pcs[i]);
+  const rel=Object.keys(RELICS).filter(id=>!RELICS[id].fz&&RELICS[id].rw.some(x=>x.split(':')[0]===b.id));
+  const rows=rel.map(id=>{const R=RELICS[id],a=meta.relics[id]||[0,0],tc=RTIER[R.t].c,n=R.rw.filter(x=>x.split(':')[0]===b.id).length;
+    const eqb=(rad,lab)=>{const q=relicQN(id,rad),own=a[rad?1:0];return own?`<button class="btn relb" data-cact="rqadd" data-arg="${id}|${rad?1:0}" style="--tc:${tc}" ${q>=own?'disabled':''}>${q>=own?`${lab} : équipée (${q})`:`Équiper ${lab} · ${q} / ${own}`}</button>`:''};
+    const btns=eqb(false,'intacte')+eqb(true,'éclatante');
+    return `<li><span class="rgem sm" style="--tc:${tc}">${RELIC_SVG}</span><div><b style="color:${tc}">${R.n}</b><span class="cx-hint" style="margin:0">Relique ${RTIER[R.t].n} · ${R.bio?'Abîmes gelés, ':''}${REL_LV[R.t]}${n>1?` · ${n} récompenses sur 6`:''}${a[0]||a[1]?` · tu en as ${a[0]+a[1]}`:' · pas encore trouvée'}</span>${btns?`<div class="actions" style="margin:4px 0 0">${btns}</div>`:''}</div></li>`}).join('');
+  const other=[];
+  if(b.kind==='arme'&&b.r>=1&&b.r<=2)other.push(`Monstres et Gardiens en mission, dès le niveau 2${b.cls===heroCls?'':` (en jouant le ${CLS[b.cls].n})`}`);
+  if(b.r===3)other.push('Relique forgée : fusionne 3 reliques Abysse dans l\'onglet Reliques et choisis ce schéma, puis ouvre-la en mission');
+  if(b.relicOnly)other.push('Uniquement dans ces reliques : ni en mission, ni par la fusion');
+  return `<div class="bpsrc"><div class="meta">${miss.length?`Il te manque : <b>${miss.join(', ')}</b>. `:'Tu as les 3 fragments. '}Où les trouver :</div><ul class="srcl">${rows}${other.map(t=>`<li><span class="srcdot" aria-hidden="true"></span><div><span class="cx-hint" style="margin:0">${t}</span></div></li>`).join('')}</ul></div>`}
 let wRecy=null,fuseTgt=null;
 const primeBp=it=>it&&it.type==='Prime'?(it.bp||(GEAR_BP.find(g=>g.n===it.name)||{}).id||null):null;
 function giveFrag(id){const pc=meta.parts[id]||(meta.parts[id]=[0,0,0]),miss=[0,1,2].filter(i=>!pc[i]),i=miss.length?pick(miss):ri(0,2);pc[i]++;return i}
@@ -67,7 +80,7 @@ function bpCard(b){
       :`<button class="btn danger" data-cact="wrecy" data-arg="${b.id}">Recycler · <span class="essi"></span>${wRecyEss(b)} · 1 fragment</button>`):'');
   else foot=`<div class="parts">${b.frag.map((n,i)=>`<span class="part${pc[i]?' have':''}">${n}${pc[i]>1?' ×'+pc[i]:''}</span>`).join('')}</div>
     <button class="btn main buy" data-cact="craft" data-arg="${b.id}" ${ready&&meta.gold>=cost&&true?'':'disabled'}>Fabriquer · <span class="coin"></span>${cost}</button>`;
-  const src=own||b.bp===0?'':`<div class="meta">Fragments dans les reliques :</div><div class="parts">${relicBtns(b.id)}</div>`;
+  const src=own||b.bp===0?'':bpSources(b);
   return `<div class="wpn${eq&&mine?' on':''}"><div class="nm" style="color:${r.c}">${b.n}</div><div class="meta">${r.n} · ${isW?'Arme · '+CLS[b.cls].n:SLOT[b.slot]+' Prime · toutes classes'+(b.bio?' · ❄ Abîmes gelés':'')} · ${baseTxt}</div>
     <ul>${Object.keys(b.aff).map(k=>`<li>${AFF[k].t(b.aff[k])}</li>`).join('')||'<li>Aucun bonus</li>'}</ul>
     ${src}<div class="wfoot">${foot}</div></div>`;
@@ -166,15 +179,23 @@ function campRelics(){
 }
 let saveMode=null,saveDraft='',saveMsg='',savePending=null;
 const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+// Fichier de sauvegarde prêt à réimporter (bouton « Depuis un fichier » de l'import).
+const saveName=()=>`crypte-sauvegarde-${new Date().toISOString().slice(0,10)}.json`;
+function saveBlob(){return new Blob([exportCode()],{type:'application/json'})}
+function downloadSave(){try{const url=URL.createObjectURL(saveBlob()),a=document.createElement('a');a.href=url;a.download=saveName();a.rel='noopener';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);saveMsgOk=`Fichier « ${saveName()} » enregistré dans tes téléchargements.`;return true}catch(e){saveMsgOk='';saveMsg='Le téléchargement a échoué : utilise Partager ou Copier le JSON.';return false}}
+const canShareFile=()=>{try{return !!(navigator.canShare&&navigator.canShare({files:[new File(['{}'],'t.json',{type:'application/json'})]}))}catch(e){return false}};
+async function shareSave(){try{await navigator.share({files:[new File([saveBlob()],saveName(),{type:'application/json'})],title:'Sauvegarde Crypte des Cendres'});saveMsgOk='Fichier partagé.'}catch(e){if(e&&e.name!=='AbortError'){saveMsg='Le partage a échoué : utilise Télécharger ou Copier le JSON.'}}drawCamp()}
+let saveMsgOk='';
 function exportCode(){const data={v:1,meta,cls:heroCls,best,at:new Date().toISOString().slice(0,10)};return JSON.stringify({jeu:'Crypte des Cendres',...data},null,2)}
 function parseCode(t){t=(t||'').trim();if(t.startsWith('CRYPTE1:'))t=t.slice(8);let d=null;
   try{d=JSON.parse(decodeURIComponent(escape(atob(t.replace(/\s+/g,'')))))}catch(e){try{d=JSON.parse(t)}catch(e2){return null}}
   if(!d||typeof d!=='object'||!d.meta||typeof d.meta.gold!=='number')return null;return d}
 const sumOf=m=>`${m.gold} or, ${m.essence||0} essence, ${Object.keys(m.mods||{}).length} mods, ${Object.values(m.relics||{}).reduce((a,r)=>a+(r[0]||0)+(r[1]||0),0)} reliques`;
 function saveSection(){
-  let h=`<h3>Sauvegarde</h3><p class="empty" style="font-size:13px">Exporte ta progression au format JSON, puis copie-la dans un fichier .json ou une note. Pour la restaurer, colle ce JSON ici ou choisis le fichier, sur cet appareil ou sur un autre.</p>
+  let h=`<h3>Sauvegarde</h3><p class="empty" style="font-size:13px"><b>Exporter</b> enregistre un fichier .json de ta progression, prêt à réimporter. Pour la restaurer, ici ou sur un autre appareil : <b>Importer</b>, puis <b>Depuis un fichier</b> (ou colle le JSON).</p>
     <div class="actions"><button class="btn${saveMode==='exp'?' main':''}" data-cact="exp">Exporter</button><button class="btn${saveMode==='imp'?' main':''}" data-cact="impopen">Importer</button></div>`;
-  if(saveMode==='exp')h+=`<textarea id="saveOut" class="savebox" readonly rows="10">${esc(exportCode())}</textarea><button class="btn main" data-cact="copy" style="align-self:flex-start">Copier le JSON</button>`;
+  if(saveMode==='exp')h+=`${saveMsgOk?`<p class="empty" style="font-size:13px;color:var(--heal)">${esc(saveMsgOk)}</p>`:''}<div class="actions"><button class="btn main" data-cact="savedl">Télécharger le fichier</button>${canShareFile()?'<button class="btn" data-cact="saveshare">Partager le fichier</button>':''}<button class="btn" data-cact="copy">Copier le JSON</button></div>
+    <details class="savemore"><summary>Voir le JSON</summary><textarea id="saveOut" class="savebox" readonly rows="8">${esc(exportCode())}</textarea></details>`;
   if(saveMode==='imp'){
     if(savePending)h+=`<div class="card"><p style="margin:0;font-size:14px">Remplacer ta progression actuelle (${sumOf(meta)}) par celle du JSON (${sumOf(savePending.meta)}${savePending.at?`, exportée le ${esc(savePending.at)}`:''}) ?</p><div class="actions"><button class="btn main" data-cact="impok">Remplacer et recharger</button><button class="btn" data-cact="impcancel">Annuler</button></div></div>`;
     else h+=`<textarea id="saveIn" class="savebox" rows="5" placeholder="Colle ici le JSON de ta sauvegarde">${esc(saveDraft)}</textarea>
@@ -345,7 +366,7 @@ function drawCamp(){{const h=document.getElementById('campHelp');if(h)h.href='ai
   $('campGold').innerHTML=`<span class="coin"></span>${meta.gold}<span class="e"><span class="essi"></span>${meta.essence}</span>`;
   document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.tab===campTab)));
   const body=$('campBody');
-  body.innerHTML=campTab==='affix'?campAffix():campTab==='equip'?campEquip():campTab==='arsenal'?campArsenal2():campTab==='relics'?campRelics():campTab==='mods'?'<div id="modsCamp" class="col"></div>':campForge();
+  body.innerHTML=campTab==='affix'?campSeals()+campAffix():campTab==='equip'?campEquip():campTab==='arsenal'?campArsenal2():campTab==='relics'?campRelics():campTab==='mods'?'<div id="modsCamp" class="col"></div>':campForge();
   if(campTab==='mods')renderMods('modsCamp');
   tabBadges();
   const ft=campTab==='affix'?affixFoot():'';$('campFoot').innerHTML=ft;$('campFoot').hidden=!ft;$('campFoot').className='cx-sheet__foot'+(ft.includes('cx-hint')?' stack':'');
@@ -360,7 +381,9 @@ $('campSheet').addEventListener('click',e=>{
     const a=d.cact,arg=d.arg;
     if(!a.startsWith('recy'))recyConfirm=false;if(a!=='ropen')campMsg='';
     if(a==='ropen'){const [id,rd]=arg.split('|'),g=grantRelic(id,rd==='1');if(g){campMsg=`<div class="card" style="border-color:${MOD_RAR[g.rar].c}"><div class="meta">Relique ${relicName(id)}${rd==='1'?' éclatante':''} ouverte</div><p style="margin:0;font-size:15px">${g.html}</p></div>`;$('campBody').parentElement.scrollTop=0}}
-    else if(a==='exp'){saveMode=saveMode==='exp'?null:'exp';saveMsg='';savePending=null}
+    else if(a==='exp'){saveMsg='';savePending=null;saveMsgOk='';if(saveMode!=='exp'){saveMode='exp';downloadSave()}else saveMode=null}
+    else if(a==='savedl'){saveMsg='';downloadSave()}
+    else if(a==='saveshare'){saveMsg='';shareSave();return}
     else if(a==='impopen'){saveMode=saveMode==='imp'?null:'imp';saveMsg='';savePending=null}
     else if(a==='copy'){const code=exportCode(),ta=$('saveOut'),sel=()=>{if(ta){ta.focus();ta.select()}};
       try{navigator.clipboard.writeText(code).then(()=>toast('JSON copié'),()=>{sel();toast('Copie refusée : le JSON est sélectionné, copie-le à la main.')})}catch(err){sel();toast('Le JSON est sélectionné, copie-le à la main.')}return}

@@ -42,7 +42,7 @@ function card(it,mode){
     extra+=upBlock(it);
   }
   return `<div class="card"><div class="nm" style="color:${r.c}">${itemName(it)}${it.lock?`<span class="lockchip">${LOCK_SVG}Verrouillé</span>`:''}</div><div class="meta">${r.n} · ${SLOT[it.slot]}${it.wid?' · fabriquée':` · ${it.type==='Sanguin'?'exclusif des reliques Sanguine':it.type==='Abyssal'?'exclusif des reliques Abysse':it.type} · niveau ${it.lvl}`}${mode==='worn'?' · équipé':''}</div>
-    <ul><li>${baseTxtOf(it.slot,fmtN(it.base.v*upMul(it.up)))}</li>${Object.keys(it.aff).map(k=>`<li${AFF[k].aby?' class="abyp"':''}>${AFF[k].t(NOSCALE[k]?it.aff[k]:fmtN(it.aff[k]*upMul(it.up)))}</li>`).join('')}</ul>${extra}</div>`;
+    <ul><li>${baseTxtOf(it.slot,fmtN(it.base.v*upMul(it.up)))}</li>${Object.keys(it.aff).map(k=>`<li${AFF[k].aby?' class="abyp"':''}>${AFF[k].t(NOSCALE[k]?it.aff[k]:fmtN(it.aff[k]*upMul(it.up)))}</li>`).join('')}${it.seal&&SEALS[it.seal]?`<li class="sealp">${sealTxt(it.seal)}</li>`:''}</ul>${extra}</div>`;
 }
 
 /* ---------- Pause ---------- */
@@ -82,7 +82,7 @@ let luShown=0;
 function showLevelUp(){SND.play('lvl');
   paused=true;resetJoy();$('bag').hidden=true;
   const capped={crit:S.crit>=75,cdr:S.cdr>=50,refl:S.dashCd>=60,endu:S.antidote>=60};
-  const av=RUP.filter(u=>(!u.cls||u.cls.includes(G.cls))&&(G.run[u.k]||0)<u.max&&!capped[u.k]&&(u.k!=='fiole'||G.potions<5)),pool=[...av],out=[];
+  const av=RUP.filter(u=>(!u.cls||u.cls.includes(G.cls))&&(G.run[u.k]||0)<u.max&&!capped[u.k]&&(u.k!=='fiole'||G.potions<potMax())),pool=[...av],out=[];
   while(out.length<3&&pool.length)out.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
   for(const f of RUP_FILL)if(out.length<3)out.push(f);
   $('luSub').textContent=`Héros niveau ${G.hl-G.pend+1}`;
@@ -96,7 +96,7 @@ function showLevelUp(){SND.play('lvl');
 function pickUp(k){
   if(k==='heal')heal(S.hp*.4);
   else if(k==='purse')G.gold+=20*G.level;
-  else if(k==='fiole'){G.run.fiole=(G.run.fiole||0)+1;G.potions=Math.min(5,G.potions+1)}
+  else if(k==='fiole'){G.run.fiole=(G.run.fiole||0)+1;G.potions=Math.min(potMax(),G.potions+1)}
   else{G.run[k]=(G.run[k]||0)+1;refreshStats();if(k==='hp')heal(S.hp*.15)}
   G.pend--;$('lvlup').hidden=true;
   burst(G.P.x,G.P.y,20,'#9fe3f0',160);
@@ -260,7 +260,7 @@ function bank(full){
     for(const p of G.loot.parts){if(meta.built[p.w])meta.essence+=6;else{const a=meta.parts[p.w]||(meta.parts[p.w]=[0,0,0]);a[p.p]++}}
     for(const id of G.loot.relics){const a=meta.relics[id]||(meta.relics[id]=[0,0]);a[0]++}
   }
-  saveMeta();return g;
+  sealBank(full);saveMeta();return g;
 }
 function recordBest(){if(G.t>best){best=G.t;try{localStorage.setItem('crypte-best2',String(best))}catch(e){}}}
 function showOver(title,txt,earn,rel){$('overTitle').textContent=title;$('overTxt').textContent=txt;$('earnTxt').innerHTML=earn;$('relicTxt').innerHTML=[rel,G&&G.mastMsg].filter(Boolean).join('<br>');refreshMenus();$('over').hidden=false}
@@ -296,6 +296,6 @@ function contRun(){$('extract').hidden=true;G.level++;G.hold=false;
   if(G.mode==='survie')G.tl=0;else{G.waveState='break';G.waveT=5;G.pod.hp=Math.min(G.pod.max,G.pod.hp+G.pod.max*.3)}
   paused=false;last=performance.now();toast(`<b style="color:var(--ember)">Niveau ${G.level}.</b> Les monstres se renforcent.`)}
 $('contBtn').onclick=()=>{if(NET.guest)return;if(NET.host)netSend({t:'cont'});contRun()};
-function missionToast(){toast(G.mode==='defense'?'<b>Défense.</b> Protège le cryopode.':G.mode==='capture'?'<b>Capture.</b> Suis la flèche dorée jusqu\'à la cible.':'<b>Survie.</b> Le portail s\'ouvre dans 3 minutes.');
+function missionToast(){if(G.breche){toast(`<b style="color:${SEAL_C}">Brèche.</b> Les Gardiens viennent par paires : abattez les deux jumeaux en moins de 8 s. Sceaux légendaires et éclats sur les Gardiens et les élites.`);return}toast(G.mode==='defense'?'<b>Défense.</b> Protège le cryopode.':G.mode==='capture'?'<b>Capture.</b> Suis la flèche dorée jusqu\'à la cible.':'<b>Survie.</b> Le portail s\'ouvre dans 3 minutes.');
   if(G.relic)setTimeout(()=>toast(`Fissure : ${G.relQ.length} relique${G.relQ.length>1?'s':''} équipée${G.relQ.length>1?'s':''}. Abats les ennemis au halo doré : ${REACT_N} réactifs ouvrent ${relicName(G.relic.id)}${G.relic.rad?' éclatante':''}, puis la suivante.`),900)}
 

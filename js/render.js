@@ -86,6 +86,7 @@ function beam(x,y,h,col,a=.32){const gr=ctx.createLinearGradient(0,y-h,0,y);gr.a
 function drawDrop(d){
   const bob=Math.sin(d.t*3)*3;
   if(d.kind==='react'){const k=Math.sin(d.t*6)*.5+.5;ctx.fillStyle=`rgba(255,207,90,${.25+.2*k})`;circle(d.x,d.y,10);ctx.fill();ctx.fillStyle='#ffd77a';circle(d.x,d.y,4.5);ctx.fill();return}
+  if(d.kind==='seal'){const c=SEAL_C;beam(d.x,d.y,170,c,.55);ctx.save();ctx.translate(d.x,d.y+bob);ctx.rotate(G.t*1.5);ctx.fillStyle='#2a1026';ctx.strokeStyle=c;ctx.lineWidth=3;ctx.beginPath();for(let i=0;i<8;i++){const a=i/8*Math.PI*2,rr=i%2?6:13;ctx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr)}ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();return}
   if(d.kind==='relic'){const c=RTIER[RELICS[d.id].t].c;beam(d.x,d.y,130,c,.4);ctx.save();ctx.translate(d.x,d.y+bob);ctx.fillStyle='#1d1822';ctx.strokeStyle=c;ctx.lineWidth=2.5;
     ctx.beginPath();ctx.ellipse(0,0,8,12,0,0,7);ctx.fill();ctx.stroke();ctx.fillStyle=c;ctx.beginPath();ctx.ellipse(0,0,3.5,6,0,0,7);ctx.fill();ctx.restore();return}
   if(d.kind==='xp'){const c=d.v>=20?'#ff7a6b':d.v>=5?'#7fe08a':'#7fd0e6',s=d.v>=20?8:d.v>=5?6.5:5;
@@ -286,6 +287,7 @@ function initPixi(){
   T.react=mkTex(24,24,()=>{ctx.fillStyle='rgba(255,207,90,.35)';circle(0,0,10);ctx.fill();ctx.fillStyle='#ffd77a';circle(0,0,4.5);ctx.fill()});
   T.mod=MOD_RAR.map(m=>mkTex(22,28,()=>{ctx.fillStyle='#1d1822';ctx.fillRect(-8,-11,16,22);ctx.strokeStyle=m.c;ctx.lineWidth=2;ctx.strokeRect(-8,-11,16,22);ctx.fillStyle=m.c;ctx.fillRect(-4,-6,8,2);ctx.fillRect(-4,-1,8,2);ctx.fillRect(-2,4,4,2)}));
   T.relic=RTIER.map(t=>mkTex(22,30,()=>{ctx.fillStyle='#1d1822';ctx.strokeStyle=t.c;ctx.lineWidth=2.5;ctx.beginPath();ctx.ellipse(0,0,8,12,0,0,7);ctx.fill();ctx.stroke();ctx.fillStyle=t.c;ctx.beginPath();ctx.ellipse(0,0,3.5,6,0,0,7);ctx.fill()}));
+  T.seal=mkTex(30,30,()=>{ctx.fillStyle='#2a1026';ctx.strokeStyle='#ff5fd2';ctx.lineWidth=3;ctx.beginPath();for(let i=0;i<8;i++){const a=i/8*Math.PI*2,rr=i%2?6:13;ctx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr)}ctx.closePath();ctx.fill();ctx.stroke()});
   T.part=RAR.map(r=>mkTex(26,26,()=>{ctx.fillStyle='#1d1822';ctx.strokeStyle=r.c;ctx.lineWidth=2.5;ctx.beginPath();for(let i=0;i<6;i++){const a=i/6*Math.PI*2;ctx.lineTo(Math.cos(a)*10,Math.sin(a)*10)}ctx.closePath();ctx.fill();ctx.stroke();ctx.fillStyle=r.c;circle(0,0,3.5);ctx.fill()}));
   const itemT=c=>mkTex(20,30,()=>{ctx.fillStyle='rgba(0,0,0,.4)';ctx.beginPath();ctx.ellipse(0,8,8,3,0,0,7);ctx.fill();ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(0,-10);ctx.lineTo(7,0);ctx.lineTo(0,10);ctx.lineTo(-7,0);ctx.closePath();ctx.fill();ctx.strokeStyle='rgba(0,0,0,.6)';ctx.lineWidth=1.5;ctx.stroke()});
   T.item=RAR.map(r=>itemT(r.c));T.potion=itemT('#5fbf7a');
@@ -371,6 +373,7 @@ function renderPixi(){
     else if(d.kind==='xp'){s.texture=T.xp[d.v>=20?2:d.v>=5?1:0];s.position.set(d.x,d.y)}
     else if(d.kind==='react'){s.texture=T.react;s.position.set(d.x,d.y);s.alpha=.75+.25*Math.sin(d.t*6)}
     else if(d.kind==='mod'){const r=MODS[d.id].r;s.texture=T.mod[r];s.position.set(d.x,d.y+bob);s.rotation=Math.sin(d.t*2)*.25;beamC=MOD_RAR[r].c;beamH=90}
+    else if(d.kind==='seal'){s.texture=T.seal;s.position.set(d.x,d.y+bob);s.rotation=G.t*1.5;beamC=SEAL_C;beamH=170;beamA=.55}
     else if(d.kind==='relic'){const r=RELICS[d.id].t;s.texture=T.relic[r];s.position.set(d.x,d.y+bob);beamC=RTIER[r].c;beamH=130;beamA=.4}
     else if(d.kind==='part'){const r=bpdef(d.part.w).r;s.texture=T.part[r];s.position.set(d.x,d.y+bob);s.rotation=d.t*.8;beamC=RAR[r].c;beamH=90}
     else if(d.kind==='potion'){s.texture=T.potion;s.position.set(d.x,d.y+bob)}

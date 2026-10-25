@@ -807,3 +807,30 @@ li.abyp{color:#cdb2ff;font-weight:600;border-left:2px solid #b07cff;padding-left
 .coopros .dotc{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
 
 .coopcode .actions{flex-wrap:wrap}
+
+/* ---------- Armurerie : sources des fragments ---------- */
+.bpsrc{display:grid;gap:6px;margin-top:6px}
+.srcl{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.srcl li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;align-items:start;padding:6px 8px;background:var(--panel);border:1px solid var(--line);border-radius:8px}
+.srcl li>div{display:grid;gap:2px;min-width:0}
+.rgem.sm{width:20px;height:20px}
+.rgem.sm svg{width:20px;height:20px}
+.srcdot{width:10px;height:10px;margin:5px;border-radius:50%;background:var(--muted)}
+.wpn ul.srcl{display:grid;margin:0}
+.wpn .srcl li::before{content:none}
+.wpn .srcl li{font-size:14px}
+
+.savemore{font-size:13px;color:var(--muted)}
+.savemore summary{cursor:pointer;margin:4px 0}
+
+/* ---------- Sceaux légendaires ---------- */
+.sealsec{border:1px solid color-mix(in srgb,#ff5fd2 40%,var(--line));border-radius:12px;padding:12px;background:color-mix(in srgb,#ff5fd2 6%,var(--panel))}
+.shardbar{height:8px;border-radius:999px;background:var(--panel2);overflow:hidden}
+.shardbar span{display:block;height:100%;background:linear-gradient(90deg,#b0359a,#ff5fd2)}
+.seall{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.sealb{width:100%;text-align:left;display:grid;gap:2px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);cursor:pointer}
+.sealb b{color:#ff5fd2}.sealb span{font-size:13px;color:var(--muted)}.sealb em{font-size:12px;color:var(--ember);font-style:normal}
+.sealb.sel{border-color:#ff5fd2;box-shadow:0 0 0 1px #ff5fd2 inset}
+.sealtg{display:flex;flex-wrap:wrap;gap:6px}
+.sealrow{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-size:14px}
+li.sealp{color:#ffb3ea}
