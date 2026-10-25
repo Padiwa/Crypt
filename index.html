@@ -56,8 +56,8 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 .hint{position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 22px);font-size:13px;color:var(--muted);max-width:45vw;pointer-events:none;line-height:1.35}
 .hint kbd{font-family:inherit;font-size:11px;border:1px solid var(--line);border-radius:3px;padding:0 4px}
 
-.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 176px);transform:translateX(-50%);pointer-events:none;display:flex;flex-direction:column;gap:6px;align-items:center;width:min(92vw,420px);z-index:30}
-.toast div{background:rgba(15,12,18,.92);border:1px solid var(--line);border-radius:6px;padding:6px 12px;font-size:14px;text-align:center;animation:tin 2.4s forwards}
+.toast{position:fixed;left:max(16px,env(safe-area-inset-left,0px));top:calc(env(safe-area-inset-top,0px) + 52px);pointer-events:none;display:flex;flex-direction:column;gap:4px;align-items:flex-start;width:min(62vw,300px);z-index:30}
+.toast div{background:rgba(15,12,18,.82);border:1px solid var(--line);border-radius:6px;padding:4px 9px;font-size:12.5px;line-height:1.3;text-align:left;max-width:100%;box-sizing:border-box;animation:tin 2.4s forwards}
 @keyframes tin{0%{opacity:0;transform:translateY(-6px)}8%,80%{opacity:1;transform:none}100%{opacity:0}}
 
 .overlay{position:fixed;inset:0;background:rgba(8,6,10,.72);display:flex;align-items:flex-end;justify-content:center;z-index:20;
@@ -695,7 +695,7 @@ function buildTile(){
 /* ---------- Effets ---------- */
 function burst(x,y,n,col,sp=160,size=3){if(G.parts.length>450)return;for(let i=0;i<n;i++){const a=rand(0,6.28),v=rand(.3,1)*sp;G.parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:rand(.3,.7),max:.7,col,size:rand(1,size)})}}
 function ftext(x,y,txt,col,size=16){if(G.texts.length<70)G.texts.push({x,y,txt,col,size,t:0})}
-function toast(html){const d=document.createElement('div');d.innerHTML=html;$('toast').appendChild(d);setTimeout(()=>d.remove(),2400);while($('toast').children.length>4)$('toast').firstChild.remove()}
+function toast(html){const d=document.createElement('div');d.innerHTML=html;$('toast').appendChild(d);setTimeout(()=>d.remove(),2400);while($('toast').children.length>3)$('toast').firstChild.remove()}
 
 /* ---------- Combat ---------- */
 function dmgEnemy(e,d,crit,dot){
