@@ -419,8 +419,21 @@ dialog button{position:absolute;top:8px;right:8px;width:40px;height:40px;border-
     <p>Chaque build a une <b>capacité</b> : un mod coûte sa valeur plus son rang. La capacité monte avec le Catalyseur et le Réacteur de la Forge, et avec la <b>maîtrise</b> (1 point par ennemi tué, 10 rangs).</p>
     <h3>Polarités</h3>
     <p>Chaque mod a une polarité : <b style="color:#e8853b">▲ Braise</b> (attaque), <b style="color:#5fbf7a">■ Rempart</b> (défense) ou <b style="color:#b9a6f0">◆ Spirale</b> (pouvoir). Aligner une case sur une polarité divise par deux le coût des mods de cette polarité, et augmente de 25 % celui des autres.</p>
+    <h3>Surcharge</h3>
+    <p>Un mod au rang maximum peut être <b>surchargé</b> jusqu'à 5 étoiles ★. Chaque étoile ajoute 12 % à sa valeur, soit +60 % à 5 étoiles. Elle consomme des copies du même mod et de l'essence :</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Étoile</th><th>Copies</th><th>Essence (Bronze / Argent / Or)</th><th>Valeur</th></tr></thead>
+      <tbody>
+        <tr><td class="n">★</td><td class="n">1</td><td class="n">50 / 100 / 150</td><td class="n">+12 %</td></tr>
+        <tr><td class="n">★★</td><td class="n">2</td><td class="n">100 / 200 / 300</td><td class="n">+24 %, capacité +1</td></tr>
+        <tr><td class="n">★★★</td><td class="n">3</td><td class="n">150 / 300 / 450</td><td class="n">+36 %</td></tr>
+        <tr><td class="n">★★★★</td><td class="n">4</td><td class="n">200 / 400 / 600</td><td class="n">+48 %, capacité +2</td></tr>
+        <tr><td class="n">★★★★★</td><td class="n">5</td><td class="n">250 / 500 / 750</td><td class="n">+60 %</td></tr>
+      </tbody>
+    </table></div>
+    <p>Les copies s'affichent en bleu (×n) sur la carte du mod. Tu peux les <b>dissoudre</b> en essence à tout moment. Une fois les 5 étoiles atteintes, les doublons rapportent de nouveau de l'essence. La Pointe de diamant ne se surcharge pas.</p>
     <h3>Fusion et filtres</h3>
-    <p>Fusionner un mod avec de l'essence monte son rang. Un doublon trouvé se change en essence. Les puces au-dessus de la collection filtrent par polarité, et toucher le nom de polarité d'une case montre les mods qui lui vont, du moins cher au plus cher.</p>
+    <p>Fusionner un mod avec de l'essence monte son rang. Un doublon trouvé devient une <b>copie</b> du mod. Les puces au-dessus de la collection filtrent par polarité, et toucher le nom de polarité d'une case montre les mods qui lui vont, du moins cher au plus cher.</p>
   </div>
   <div class="shots one">
     <figure><button class="shot" type="button"><img src="img/camp_mods.jpg" alt="Onglet Mods : build du héros, capacité et polarités" width="780" height="1688" loading="lazy"></button><figcaption>Le build du héros et son Aura.</figcaption></figure>
@@ -514,7 +527,7 @@ dialog button{position:absolute;top:8px;right:8px;width:40px;height:40px;border-
 
 </main>
 
-<footer class="wrap">Crypte des Cendres · guide à jour de la version 58 du jeu. <a href="../index.html">Retour au jeu</a></footer>
+<footer class="wrap">Crypte des Cendres · guide à jour de la version 59 du jeu. <a href="../index.html">Retour au jeu</a></footer>
 
 <dialog id="zoom" aria-label="Capture agrandie"><button type="button" id="zoomX" aria-label="Fermer">×</button><img id="zoomImg" alt=""></dialog>
 

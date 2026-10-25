@@ -169,6 +169,7 @@ let meta={gold:0,up:{},tal:{},cp:1,start:1,essence:0,mods:{ferocite:0},
   gear:{armure:null,amulette:null,bottes:null,anneau:null},stash:[],wpn:{guerrier:'g0',archer:'a0',magicien:'m0'},bp:{},built:{},parts:{},relics:{},mode:'survie',relicSel:null,relicQ:[],diff:0,waff:{},prest:{},wish:{leg:true,aff:{}},pol:{},mast:{},align:{},wlv:{},wload:{},wpol:{},wmast:{},walign:{},hload:{},hslots:{},aura:{}};
 try{const m=JSON.parse(localStorage.getItem('crypte-meta')||'null');if(m)meta=Object.assign(meta,m)}catch(e){}
 if(!meta.v2){meta.cp=1;meta.start=1;meta.v2=1}
+meta.modSt=meta.modSt||{};meta.modCp=meta.modCp||{};
 if(!meta.v3){for(const id in meta.bp||{}){const w=wdef(id);if(w&&!meta.built[id])meta.gold+=w.bp}meta.bp={};meta.v3=1;meta.relics={lA1:[1,0],...(meta.relics||{})}}
 if(!MODES[meta.mode])meta.mode='survie';
 if(!Array.isArray(meta.relicQ))meta.relicQ=[];if(meta.relicSel){if(!meta.relicQ.length)meta.relicQ=[meta.relicSel];meta.relicSel=null}
@@ -298,8 +299,13 @@ const MODS={
   cupidite:{type:'a',n:'Cupidité',r:1,max:3,drain:0,cap:4,k:'goldPct',v:10,t:v=>`+${v} % d'or ramassé`},
   ferveur:{type:'a',n:'Ferveur',r:2,max:3,drain:0,cap:4,k:'apsPct',v:5,t:v=>`+${v} % de vitesse d'attaque`},
 };
-const modVal=(id,rk)=>+(MODS[id].v*(rk+1)).toFixed(2);
-const modDrain=(id,rk)=>MODS[id].drain+rk;
+/* Surcharge des mods : au rang max, des copies du même mod + de l'essence ajoutent des étoiles (5 max), +12 % de la valeur chacune. */
+const MOD_ST_MAX=5,MOD_ST_K=.12;
+const modSt=id=>(meta.modSt&&meta.modSt[id])|0;
+const modCanStar=id=>MODS[id].k!=='pierce';
+const starCost=(id,st)=>({cp:st+1,ess:50*(MODS[id].r+1)*(st+1)});
+const modVal=(id,rk,st=modSt(id))=>{const x=MODS[id].v*(rk+1)*(1+MOD_ST_K*st);return x>=10?Math.round(x):x>=1?+x.toFixed(1):+x.toFixed(2)};
+const modDrain=(id,rk,st=modSt(id))=>MODS[id].drain+rk+Math.floor(st/2);
 const fuseCost=(id,rk)=>10*Math.pow(2,rk)*(MODS[id].r+1);
 const POL={b:{n:'Braise',c:'#e8853b',s:'▲'},r:{n:'Rempart',c:'#5fbf7a',s:'■'},s:{n:'Spirale',c:'#b9a6f0',s:'◆'}};
 const MOD_POL={ferocite:'b',cadence:'b',oeil:'b',boucherie:'b',dedoublement:'b',diamant:'b',allonge:'b',deflagration:'b',vitalite:'r',egide:'r',sangsue:'r',pas:'r',intensite:'s',flux:'s',braise:'s',givre:'s',orage:'s',souffle:'r',etendue:'s',persist:'s',fantome:'r',alchimiste:'r',rapace:'s',dernier:'r',survivant:'b',antidote:'r'};

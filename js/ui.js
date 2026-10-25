@@ -115,7 +115,7 @@ let modSel=null,alSel=null,modTab='h',modPF='all',modSF=null;
 const AURA_C='#f0cf4a';
 function modCard(id,cls='',i,b){const m=MODS[id],rk=meta.mods[id],isA=modKind(id)==='a',p=isA?{c:AURA_C,s:'✦',n:'Aura'}:POL[MOD_POL[id]];
   const d=isA?`+${MODS[id].cap+rk}`:(b&&i!==undefined?bDrain(b,id,rk,i):modDrain(id,rk));
-  return `<button class="mod${cls}" data-mod="${id}" style="--mc:${MOD_RAR[m.r].c}" aria-label="${m.n}, rang ${rk}, ${isA?'aura':'polarité '+p.n}"><span class="pl" style="color:${p.c}">${p.s}</span><span class="dr">${d}</span><b>${m.n}</b><span class="pp">${'<i class="on"></i>'.repeat(rk)}${'<i></i>'.repeat(m.max-rk)}</span></button>`}
+  return `<button class="mod${cls}" data-mod="${id}" style="--mc:${MOD_RAR[m.r].c}" aria-label="${m.n}, rang ${rk}, ${isA?'aura':'polarité '+p.n}"><span class="pl" style="color:${p.c}">${p.s}</span><span class="dr">${d}</span><b>${m.n}</b>${modSt(id)?`<span class="mst" aria-label="${modSt(id)} étoile${modSt(id)>1?'s':''}">${'★'.repeat(modSt(id))}</span>`:''}${meta.modCp[id]?`<span class="mcp" title="Copies">×${meta.modCp[id]}</span>`:''}<span class="pp">${'<i class="on"></i>'.repeat(rk)}${'<i></i>'.repeat(m.max-rk)}</span></button>`}
 function modDetail(id){
   const m=MODS[id],rk=meta.mods[id],c=MOD_RAR[m.r].c,k=modKind(id),isA=k==='a',b=build(k==='w'?'w':'h'),ok=modOk(id,heroCls);
   const slot=isA?(b.aura===id?0:-1):b.load.indexOf(id),eq=slot>=0,u=bUsed(b),cap=bCap(b),fc=fuseCost(id,rk),maxed=rk>=m.max;
@@ -138,8 +138,21 @@ function modDetail(id){
   if(!why&&fuseBlocked&&!maxed)why='Monter ce mod de rang dépasserait la capacité.';
   return `<div class="card"><div class="nm" style="color:${c}">${m.n}</div><div class="meta">${MOD_RAR[m.r].n} · ${costLine} · rang ${rk} / ${m.max}</div>
     <ul><li>${m.t(modVal(id,rk))}</li>${maxed?'':`<li style="color:var(--muted)">Rang ${rk+1} : ${m.t(modVal(id,rk+1))}</li>`}</ul>
-    <div class="actions">${act}${fuse}</div>${why?`<p class="empty" style="font-size:13px">${why}</p>`:''}</div>`;
+    <div class="actions">${act}${fuse}</div>${why?`<p class="empty" style="font-size:13px">${why}</p>`:''}${starBlock(id,b,k,slot)}</div>`;
 }
+const polD=(b,id,i,d0)=>{const p=b.pol[i];return !p?d0:p===MOD_POL[id]?Math.ceil(d0/2):Math.ceil(d0*1.25)};
+function starBlock(id,b,k,slot){const m=MODS[id],rk=meta.mods[id],st=modSt(id),cp=meta.modCp[id]|0,maxed=rk>=m.max;
+  if(!modCanStar(id))return '';
+  const stars=`<span class="stars">${'<i class="on">★</i>'.repeat(st)}${'<i>★</i>'.repeat(MOD_ST_MAX-st)}</span>`;
+  const dis=cp?`<button class="btn" data-act="dissolve">Dissoudre ${cp} copie${cp>1?'s':''} · +${cp*8*(m.r+1)} essence</button>`:'';
+  if(st>=MOD_ST_MAX)return `<div class="surch"><div class="sh"><b>Surcharge</b>${stars}</div><p class="cx-hint" style="margin:0">Surcharge maximale : +${Math.round(MOD_ST_K*st*100)} % de valeur. Les prochains doublons rapportent de l'essence.</p>${dis?`<div class="actions">${dis}</div>`:''}</div>`;
+  const c=starCost(id,st),nd=modDrain(id,rk,st+1)-modDrain(id,rk,st);
+  const capOk=k==='a'||slot<0||bUsed(b)-bDrain(b,id,rk,slot)+polD(b,id,slot,modDrain(id,rk,st+1))<=bCap(b);
+  const ok=maxed&&cp>=c.cp&&meta.essence>=c.ess&&capOk;
+  const why=!maxed?`Monte d'abord ce mod au rang ${m.max}.`:cp<c.cp?`Il faut ${c.cp} copie${c.cp>1?'s':''} de ce mod (tu en as ${cp}). Les doublons trouvés en mission deviennent des copies.`:meta.essence<c.ess?`Il manque ${c.ess-meta.essence} essence.`:!capOk?'La surcharge dépasserait la capacité de ce build.':'';
+  return `<div class="surch"><div class="sh"><b>Surcharge</b>${stars}<span class="cx-hint" style="margin:0">${cp} copie${cp>1?'s':''}</span></div>
+    <p style="margin:0;font-size:14px">Étoile ${st+1} : <b>${m.t(modVal(id,rk,st+1))}</b>${!maxed?` (au rang ${m.max} : ${m.t(modVal(id,m.max,st+1))})`:''}${nd?` · coût en capacité +${nd}`:''}</p>
+    <div class="actions"><button class="btn buy" data-act="star" ${ok?'':'disabled'}>Surcharger · ${c.cp} copie${c.cp>1?'s':''} + ${c.ess} essence</button>${dis}</div>${why?`<p class="empty" style="font-size:13px;margin:0">${why}</p>`:''}</div>`}
 function alignPanel(b){
   const cost=bAlignCost(b),mt=b.mast;
   let h=`<h3>Alignement · ${b.kind==='w'?'arme':'héros'}</h3><p class="empty" style="font-size:13px">Aligne une case sur une polarité : un mod de la même polarité y coûte moitié moins, un autre 25 % de plus. Chaque alignement coûte de l'essence (200, 400, 800 puis 1 600) et remet la maîtrise ${b.de} à 0.</p>
@@ -200,6 +213,11 @@ function modAct(a,ds){
     else if(a==='unequip'){if(k==='a'){if(meta.aura[heroCls]===id)meta.aura[heroCls]=null}else{const i=b.load.indexOf(id);if(i>=0)b.load[i]=null}}
     else{const c=fuseCost(id,rk);if(meta.essence<c||rk>=MODS[id].max)return;if(k!=='a'){const i=b.load.indexOf(id);if(i>=0&&bUsed(b)-bDrain(b,id,rk,i)+bDrain(b,id,rk+1,i)>bCap(b))return}meta.essence-=c;meta.mods[id]=rk+1}
   }
+  else if(a==='star'){const k=modKind(id),b=build(k==='w'?'w':'h'),m=MODS[id],st=modSt(id),c=starCost(id,st);
+    if(!modCanStar(id)||rk<m.max||st>=MOD_ST_MAX||(meta.modCp[id]|0)<c.cp||meta.essence<c.ess)return;
+    if(k!=='a'){const i=b.load.indexOf(id);if(i>=0&&bUsed(b)-bDrain(b,id,rk,i)+polD(b,id,i,modDrain(id,rk,st+1))>bCap(b))return}
+    meta.modCp[id]-=c.cp;meta.essence-=c.ess;meta.modSt[id]=st+1;SND.play('relic');toast(`<b style="color:${MOD_RAR[m.r].c}">${m.n}</b> surchargé : ${'★'.repeat(st+1)}`)}
+  else if(a==='dissolve'){const cp=meta.modCp[id]|0;if(!cp)return;meta.essence+=cp*8*(MODS[id].r+1);meta.modCp[id]=0}
   else if(a==='slotbuy'){const b=build('h');if(b.slots>=HSLOT_MAX)return;const c=HSLOT_COST[b.slots-3];if(fragTotal()<c)return;takeFrags(c);meta.hslots[heroCls]=b.slots+1;toast(`Case ${b.slots+1} du héros débloquée`)}
   else if(a==='alslot'){const i=+ds.i;alSel=alSel&&alSel.i===i?null:{i,p:null}}
   else if(a==='alpol'){if(alSel)alSel.p=ds.p}

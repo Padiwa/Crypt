@@ -230,7 +230,8 @@ function gainMod(id){
     const kd=modKind(id);
     if(kd==='a'){if(!meta.aura[heroCls]){meta.aura[heroCls]=id;refreshStats();msg+=' · aura équipée'}}
     else if(modOk(id,heroCls)){const b=build(kd),bs=bBest(b,id,0);if(bs.i>=0&&bUsed(b)+bs.d<=bCap(b)){b.load[bs.i]=id;refreshStats();msg+=kd==='w'?' · équipé sur l\'arme':' · équipé sur le héros'}}
-  }else{const e=8*(m.r+1);meta.essence+=e}
+  }else if(modCanStar(id)&&modSt(id)<MOD_ST_MAX){meta.modCp[id]=(meta.modCp[id]|0)+1}
+  else{const e=8*(m.r+1);meta.essence+=e}
   saveMeta();
 }
 function chain(src,d){

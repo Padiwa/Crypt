@@ -775,3 +775,12 @@ li.abyp{color:#cdb2ff;font-weight:600;border-left:2px solid #b07cff;padding-left
 #updBar span{flex:1 1 0;min-width:0;line-height:1.3}
 #updBar button{flex:0 0 auto}
 #updBar b{color:var(--ember)}
+
+/* ---------- Surcharge des mods ---------- */
+.mod .mst{font-size:10px;line-height:1;color:var(--ember);letter-spacing:1px}
+.mod .mcp{position:absolute;top:2px;left:6px;font-size:10px;color:var(--ess);font-variant-numeric:tabular-nums}
+.surch{display:grid;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.surch .sh{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.stars{display:inline-flex;gap:2px;font-size:16px;line-height:1}
+.stars i{font-style:normal;color:#3a3240}
+.stars i.on{color:var(--ember);text-shadow:0 0 6px rgba(232,133,59,.6)}
