@@ -106,12 +106,18 @@ function relAvail(t){const out=[];for(const id in RELICS){if(RELICS[id].t!==t)co
   for(const rad of [false,true]){const own=Math.max(0,a[rad?1:0]|0),q=Math.min(own,relicQN(id,rad));for(let k=0;k<own;k++)out.push({id,rad,q:k>=own-q})}}
   return out.sort((x,y)=>(x.q-y.q)||(x.rad-y.rad)||((meta.relics[y.id][0]+meta.relics[y.id][1])-(meta.relics[x.id][0]+meta.relics[x.id][1])))}
 const legBps=()=>[...WPN[heroCls].filter(w=>w.r===3&&!ownedW(w.id)),...Object.keys(WPN).filter(c=>c!==heroCls).flatMap(c=>WPN[c].filter(w=>w.r===3&&!ownedW(w.id))),...GEAR_BP.filter(g=>g.r===3)].map(x=>x.id);
+function chainPlan(t){const have=[0,1,2,3].map(i=>relAvail(i).length);let cost=0,fus=0;
+  const ensure=(k,n)=>{const use=Math.min(n,have[k]);have[k]-=use;let r=n-use;if(!r)return true;if(k===0)return false;if(!ensure(k-1,3*r))return false;cost+=r*FUSE_COST[k-1];fus+=r;return true};
+  if(!ensure(t,3))return null;return {cost:cost+FUSE_COST[t],fus}}
+function fuseOnce(t){const av=relAvail(t);if(av.length<3)return null;meta.essence-=FUSE_COST[t];for(const q of av.slice(0,3))meta.relics[q.id][q.rad?1:0]--;relicQFix();
+  if(t<3){const nid=pick(Object.keys(RELICS).filter(id=>RELICS[id].t===t+1&&!RELICS[id].bio));const a=meta.relics[nid]||(meta.relics[nid]=[0,0]);a[0]++;return nid}return true}
+function ensureRel(t){while(relAvail(t).length<3){if(t===0)return false;if(!ensureRel(t-1))return false;fuseOnce(t-1)}return true}
 function fusionSection(){
   let h=`<section class="cx-section"><h3 class="cx-section__label">Fusion de reliques</h3><p class="cx-hint" style="margin:0">Fusionne 3 reliques d'un même niveau. Celles hors de la file d'ouverture partent en premier, les intactes avant les éclatantes ; si besoin, des reliques de la file sont utilisées et en sont retirées. Trois reliques Abysse donnent un fragment de schéma légendaire de ton choix.</p><div class="fuse">`;
-  for(let t=0;t<4;t++){const AV=relAvail(t),av=AV.length,qn=AV.slice(0,3).filter(q=>q.q).length,inQ=AV.filter(q=>q.q).length,cost=FUSE_COST[t],ok=av>=3&&meta.essence>=cost;
+  for(let t=0;t<4;t++){const AV=relAvail(t),av=AV.length,qn=AV.slice(0,3).filter(q=>q.q).length,inQ=AV.filter(q=>q.q).length,cp=av<3&&t>0?chainPlan(t):null,cost=cp?cp.cost:FUSE_COST[t],ok=(av>=3||cp)&&meta.essence>=cost;
     const res=t<3?`1 relique <b style="color:${RTIER[t+1].c}">${RTIER[t+1].n}</b>`:'<b style="color:var(--rar-legend)">1 fragment légendaire</b>';
-    h+=`<div class="frow"><span class="rgem" style="--tc:${RTIER[t].c}">${RELIC_SVG}</span><div class="fl"><b>3 × <span style="color:${RTIER[t].c}">${RTIER[t].n}</span> → ${res}</b><span>${av} possédée${av>1?'s':''}${inQ?` dont ${inQ} dans la file d'ouverture`:''}${av<3?` · il en faut ${3-av} de plus`:''}${av>=3&&meta.essence<cost?` · il manque ${cost-meta.essence} essence`:''}${ok&&qn?` · ${qn} ${qn>1?'seront retirées':'sera retirée'} de la file`:''}</span></div>
-      <button class="btn buy" data-cact="rfuse" data-arg="${t}" ${ok&&(t<3||fuseTgt)?'':'disabled'}>Fusionner · <span class="essi"></span>${cost}</button></div>`;
+    h+=`<div class="frow"><span class="rgem" style="--tc:${RTIER[t].c}">${RELIC_SVG}</span><div class="fl"><b>3 × <span style="color:${RTIER[t].c}">${RTIER[t].n}</span> → ${res}</b><span>${av} possédée${av>1?'s':''}${inQ?` dont ${inQ} dans la file d'ouverture`:''}${av<3?(cp?` · les ${3-av} manquante${3-av>1?'s':''} seront créée${3-av>1?'s':''} avec tes reliques de niveau inférieur (${cp.fus} fusion${cp.fus>1?'s':''} en plus)`:` · il en faut ${3-av} de plus${t>0?`, ou ${3*(3-av)} ${RTIER[t-1].n} pour les créer`:''}`):''}${(av>=3||cp)&&meta.essence<cost?` · il manque ${cost-meta.essence} essence`:''}${ok&&qn?` · ${qn} ${qn>1?'seront retirées':'sera retirée'} de la file`:''}</span></div>
+      <button class="btn buy" data-cact="rfuse" data-arg="${t}" ${ok&&(t<3||fuseTgt)?'':'disabled'}>${cp?'Fusionner en chaîne':'Fusionner'} · <span class="essi"></span>${cost}</button></div>`;
     if(t===3){const L=legBps();if(!fuseTgt||!L.includes(fuseTgt))fuseTgt=L[0]||null;
       h+=`<div class="ftgt"><span class="cx-hint" style="margin:0">Schéma visé :</span><div class="cx-chips">${L.map(id=>{const b=bpdef(id);return `<button class="cx-chip cx-chip--sm" data-cact="rftgt" data-arg="${id}" aria-pressed="${fuseTgt===id}">${b.n} <span class="n">${fragStatus(id)} / 3</span></button>`}).join('')||'<span class="cx-hint">Toutes les armes légendaires sont déjà fabriquées.</span>'}</div></div>`}}
   return h+'</div></section>'}
@@ -387,7 +393,7 @@ $('campSheet').addEventListener('click',e=>{
         if(b.kind==='arme'){meta.parts[arg]=pc.map(x=>x-1);meta.gold-=cost;meta.built[arg]=true;if(b.cls===heroCls)meta.wpn[heroCls]=arg;toast(`<b style="color:${RAR[b.r].c}">${b.n}</b> fabriquée et équipée`)}
         else{meta.parts[arg]=pc.map(x=>x-1);meta.gold-=cost;meta.stash.push({id:uid++,slot:b.slot,r:b.r,lvl:20,base:{k:BASE_STAT[b.slot],v:b.base},aff:{...b.aff},name:b.n,type:'Prime',bp:b.id});toast(`<b style="color:${RAR[b.r].c}">${b.n}</b> fabriqué, il t'attend au coffre`)}}}
     else if(a==='rftgt'){fuseTgt=arg}
-    else if(a==='rfuse'){const t=+arg,cost=FUSE_COST[t],av=relAvail(t);if(av.length>=3&&meta.essence>=cost&&(t<3||fuseTgt)){meta.essence-=cost;
+    else if(a==='rfuse'){const t=+arg,cp=relAvail(t).length<3&&t>0?chainPlan(t):null,cost=cp?cp.cost:FUSE_COST[t];if((relAvail(t).length>=3||cp)&&meta.essence>=cost&&(t<3||fuseTgt)&&ensureRel(t)){const av=relAvail(t);meta.essence-=FUSE_COST[t];
         for(const q of av.slice(0,3))meta.relics[q.id][q.rad?1:0]--;relicQFix();SND.play('relic');
         if(t<3){const ids=Object.keys(RELICS).filter(id=>RELICS[id].t===t+1),nid=pick(ids);const a=meta.relics[nid]||(meta.relics[nid]=[0,0]);a[0]++;relSel=nid;
           campMsg=`<div class="card" style="border-color:${RTIER[t+1].c}"><div class="meta">Fusion réussie</div><p style="margin:0;font-size:15px">Tu obtiens la relique <b style="color:${RTIER[t+1].c}">${relicName(nid)}</b>.</p></div>`}
