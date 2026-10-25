@@ -1,6 +1,6 @@
 # Crypte des Cendres — specs
 
-Oct 24, 2026 · @cms
+Oct 25, 2026 · @cms
 
 ## Vue d'ensemble
 
@@ -340,6 +340,10 @@ Ne circulent jamais : sauvegarde, inventaire, équipement, mods, or, essence, bu
 Arrivée en cours de mission : si la connexion d'un invité s'ouvre alors que la mission de l'hôte tourne déjà (hôte qui a touché Lancer pendant « Connexion en cours »), l'hôte envoie à cet invité seul un message start et l'ajoute comme partenaire à côté de lui. Avant ce correctif, l'invité restait sur « En attente de l'hôte ». Version du protocole (NET\_V = 3) dans hello : deux appareils de versions différentes se déconnectent avec un message demandant de mettre le jeu à jour.
 
 Lecture des QR codes par caméra (bouton « Scanner avec la caméra », proposé dès que l'appareil a une caméra) : détecteur intégré du navigateur (BarcodeDetector) quand il existe, sinon jsQR 1.4.0 chargé à la demande depuis jsDelivr (webcam de PC, tous navigateurs) ; image réduite à 960 px, une lecture toutes les 120 ms, cadre de visée. Un code reconnu (commençant par Z ou P) est validé aussitôt : l'invité rejoint, l'hôte accepte la réponse, sans copier-coller. La caméra s'arrête dès la lecture, au bouton Arrêter ou à la fermeture. QR code affiché jusqu'à 320 px de large.
+
+Connexion entre deux missions : elle reste ouverte après une sortie, un échec, le Camp ou un changement de héros (battement toutes les 2 s), et l'hôte relance sans refaire les codes. Tant que la coopération est active : verrou d'écran allumé (Screen Wake Lock, redemandé au retour au premier plan), pas de bandeau « Mettre à jour » (un rechargement couperait la partie ; Réglages › Application prévient), et silence toléré de 20 s en mission avant de considérer un joueur parti (au lieu de 8 s).
+
+Fluidité des partenaires (protocole NET\_V = 4) : chaque connexion a deux canaux. Le canal fiable et ordonné porte les événements (hello, start, kill, coups dans g, fins de manche). Le canal rapide (non ordonné, sans renvoi) porte le flux des héros h à 30 / s et l'instantané du monde s à 20 / s, numérotés (un paquet plus ancien est ignoré). Chaque appareil lisse les partenaires à chaque image : vitesse estimée sur les derniers paquets, prolongation du mouvement jusqu'à 0,2 s, rattrapage progressif, téléportation au-delà de 260 px. Mesure (hôte à 220 px/s, vu par l'invité) : avant, 2 images sur 3 figées et des sauts de 15 px ; après, aucune image figée, écart type de 0,5 px par image, environ 60 ms de retard.
 
 ## Technique
 

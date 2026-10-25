@@ -352,6 +352,7 @@ function update(dt){
   for(const s of G.spawns.filter(s=>s.t<=0))spawnEnemy({...s,fx:!s.split});
   G.spawns=G.spawns.filter(s=>s.t>0);
   spawner(dt)}
+  if(NET.on&&G.mates&&G.mates.length)matesSmooth(dt);
   if(G.oshots){for(const s of G.oshots){s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt}G.oshots=G.oshots.filter(s=>s.life>0)}
   // joueur
   const iv=inputVec(), moving=iv.m>.15;

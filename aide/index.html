@@ -167,7 +167,7 @@ details.more .tbl{margin:0 14px 14px}
       <li><b>Difficulté</b> : Normal, Difficile, Cauchemar ou Tourment I à X.</li>
       <li><b>Reliques équipées</b> : celles que tu veux ouvrir pendant la mission.</li>
     </ul>
-    <p>En bas : <b>Entrer dans la crypte</b> lance la partie, <b>Le Camp</b> ouvre la progression permanente, l'engrenage ouvre les réglages et <b>Guide</b> ouvre cette page.</p>
+    <p>En bas : <b>Entrer dans la crypte</b> lance la partie, <b>Le Camp</b> ouvre la progression permanente, <b>Coop</b> permet de jouer à plusieurs, <b>Guide</b> ouvre cette page et l'engrenage ouvre les réglages.</p>
     <h3>Commandes</h3>
     <div class="tbl"><table>
       <thead><tr><th>Action</th><th>Téléphone</th><th>Clavier</th></tr></thead>
@@ -517,8 +517,8 @@ details.more .tbl{margin:0 14px 14px}
   </div>
 </div></section>
 
-<section id="coop"><div class="sec wide">
-  <div class="txt" style="max-width:none">
+<section id="coop"><div class="sec">
+  <div class="txt">
     <h2><small>De 2 à 4 joueurs</small>Coopération</h2>
     <p style="max-width:66ch">Jusqu'à 4 joueurs sur le même wifi peuvent partir ensemble en mission, chacun sur son téléphone, sans compte ni serveur : chaque appareil se connecte directement à celui de l'hôte.</p>
     <h3>Héberger une partie</h3>
@@ -541,7 +541,7 @@ details.more .tbl{margin:0 14px 14px}
     <h3>Héberger depuis un ordinateur</h3>
     <p style="max-width:66ch">Un PC ou un Mac est le meilleur hôte à 3 ou 4 joueurs, car l'hôte fait tourner tous les monstres. Ouvre le jeu dans un navigateur récent (Chrome, Edge, Firefox ou Safari), à la même adresse que les téléphones, sur la même box (wifi ou câble). Les téléphones scannent le QR code affiché à l'écran, puis chacun montre son QR code de réponse à la <b>webcam</b> du PC (bouton <b>Scanner avec la caméra</b>) : rien à copier ni à coller. La première fois, le navigateur demande l'autorisation d'utiliser la caméra. Sans webcam, le code de réponse arrive par le bouton <b>Partager</b> du téléphone, puis <b>Coller</b> sur le PC. On joue au clavier : <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd>, <kbd>Espace</kbd>, <kbd>E</kbd>, <kbd>R</kbd>, <kbd>F</kbd>.</p>
     <h3>Ce qui passe entre les appareils</h3>
-    <p style="max-width:66ch">Seulement la partie en cours : positions, vie et tirs des héros, monstres, projectiles et coups portés, une vingtaine de fois par seconde, sur une liaison chiffrée. La sauvegarde, l'inventaire, l'or et le butin ne quittent jamais ton appareil.</p>
+    <p style="max-width:66ch">Seulement la partie en cours, sur une liaison chiffrée : les héros 30 fois par seconde (leur mouvement est lissé pour paraître fluide), les monstres, projectiles et coups portés 20 fois par seconde. La sauvegarde, l'inventaire, l'or et le butin ne quittent jamais ton appareil.</p>
     <h3>Règles de la partie</h3>
     <div class="tbl"><table>
       <thead><tr><th>Sujet</th><th>En coopération</th></tr></thead>
@@ -557,8 +557,13 @@ details.more .tbl{margin:0 14px 14px}
         <tr><td>Déconnexion</td><td>Si un invité part, les autres continuent ; si l'hôte part, chaque invité termine la mission en gardant son butin</td></tr>
       </tbody>
     </table></div>
+    <p style="max-width:66ch">La connexion <b>reste ouverte entre deux missions</b> : après une sortie, un échec ou un passage au Camp, l'hôte relance et tout le monde repart ensemble, sans refaire les codes. Pendant la coopération, l'écran reste allumé et le jeu ne propose pas de se mettre à jour, car recharger couperait la partie. Évite de verrouiller ton téléphone ou de changer d'application trop longtemps : au-delà de 20 s de silence en mission, le joueur est considéré comme parti.</p>
     <p style="max-width:66ch">Un joueur dont la connexion s'établit après le lancement rejoint la mission en cours, à côté de l'hôte. Tous les appareils doivent avoir la <b>même version du jeu</b> : sinon un message le signale, et il suffit de mettre à jour (Réglages › Application) puis de recommencer.</p>
     <p style="max-width:66ch">Si la connexion échoue, vérifie que tous les appareils sont bien sur le même réseau wifi (pas en données mobiles) et recommence l'invitation. Certains wifi publics ou d'entreprise bloquent les connexions entre appareils. À 4, le téléphone de l'hôte fait tourner tous les monstres : prends le plus récent comme hôte.</p>
+  </div>
+  <div class="shots">
+    <figure><button class="shot" type="button"><img src="img/coop_lobby.jpg" alt="Fenêtre Coopération de l'hôte avec trois joueurs connectés" width="780" height="1688" loading="lazy"></button><figcaption>La partie de l'hôte, avec trois joueurs connectés.</figcaption></figure>
+    <figure><button class="shot" type="button"><img src="img/coop_game.jpg" alt="Mission en coopération : trois héros avec leurs étiquettes J1, J2 et J3" width="780" height="1688" loading="lazy"></button><figcaption>En mission : chaque partenaire porte son numéro et sa classe.</figcaption></figure>
   </div>
 </div></section>
 
@@ -571,12 +576,13 @@ details.more .tbl{margin:0 14px 14px}
       <li><b>Tremblement</b> de l'écran : Normal, Réduit ou Désactivé.</li>
       <li><b>Flash de butin</b>, <b>chiffres de dégâts</b> et <b>vibrations</b> (Android).</li>
       <li><b>Rendu</b> : WebGL, plus fluide, ou standard si ton appareil a du mal.</li>
-      <li><b>Application</b> : la version installée, un bouton <b>Rechercher</b> une mise à jour, et la ligne « Dernier incident » à me transmettre en cas de souci d'affichage. Quand une nouvelle version est prête, un bandeau <b>Mettre à jour</b> apparaît en haut de l'écran, jamais pendant un combat.</li>
+      <li><b>Application</b> : la version installée, un bouton <b>Rechercher</b> une mise à jour, et la ligne « Dernier incident » à me transmettre en cas de souci d'affichage. Quand une nouvelle version est prête, un bandeau <b>Mettre à jour</b> apparaît en haut de l'écran, jamais pendant un combat ni pendant une coopération.</li>
     </ul>
     <p>Ces réglages sont propres à chaque appareil.</p>
   </div>
-  <div class="shots one">
+  <div class="shots">
     <figure><button class="shot" type="button"><img src="img/settings.jpg" alt="Réglages : son, tremblement, flash et rendu" width="780" height="1688" loading="lazy"></button><figcaption>Les réglages.</figcaption></figure>
+    <figure><button class="shot" type="button"><img src="img/settings_app.jpg" alt="Réglages, partie Rendu et Application avec la version installée" width="780" height="1688" loading="lazy"></button><figcaption>Rendu et Application, en bas des réglages.</figcaption></figure>
   </div>
 </div></section>
 
@@ -597,7 +603,7 @@ details.more .tbl{margin:0 14px 14px}
 
 </main>
 
-<footer class="wrap">Crypte des Cendres · guide à jour de la version 67 du jeu. <a href="../index.html">Retour au jeu</a></footer>
+<footer class="wrap">Crypte des Cendres · guide à jour de la version 69 du jeu. <a href="../index.html">Retour au jeu</a></footer>
 
 <dialog id="zoom" aria-label="Capture agrandie"><button type="button" id="zoomX" aria-label="Fermer">×</button><img id="zoomImg" alt=""></dialog>
 

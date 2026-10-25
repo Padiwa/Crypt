@@ -11,7 +11,8 @@ const UPD={ok:false,ready:false,reg:null,ver:'',state:'',msg:''};
   document.getElementById('updGo').onclick=()=>location.reload();
   document.getElementById('updX').onclick=()=>{later=true;bar.hidden=true};
   // Hors mission seulement : on ne coupe jamais une partie en cours.
-  const calm=()=>!started||!G||G.over||!$('bag').hidden||!$('camp').hidden||!$('intro').hidden;
+  // Hors mission seulement, et jamais pendant une coopération : recharger couperait la connexion des autres joueurs.
+  const calm=()=>!(typeof NET!=='undefined'&&NET.on)&&(!started||!G||G.over||!$('bag').hidden||!$('camp').hidden||!$('intro').hidden);
   setInterval(()=>{bar.hidden=!(UPD.ready&&!later&&calm())},1000);
   const askVer=()=>{const c=navigator.serviceWorker&&navigator.serviceWorker.controller;if(!c)return;const ch=new MessageChannel();ch.port1.onmessage=e=>{UPD.ver=e.data||'';refreshSet()};c.postMessage({type:'version'},[ch.port2])};
   const refreshSet=()=>{if(typeof drawSettings==='function'&&$('settings')&&!$('settings').hidden)drawSettings()};
@@ -36,4 +37,5 @@ function updSection(){
   const st={checking:'Recherche…',uptodate:'Le jeu est à jour.',ready:'Une nouvelle version est prête.',error:'Impossible de vérifier (hors connexion ?).',off:'Mises à jour gérées par la page (pas d\'application installée ici).'}[UPD.state]||'';
   return `<section class="cx-section"><h3 class="cx-section__label">Application</h3>
     <div class="setrow"><div><b>Version ${UPD.ver?UPD.ver.replace('crypte-v',''):'—'}</b><span id="updSt">${st}</span></div>${UPD.ready?'<button class="cx-btn cx-btn--sm cx-btn--primary" id="setUpdGo">Mettre à jour</button>':UPD.ok?'<button class="cx-btn cx-btn--sm" id="setUpd">Rechercher</button>':''}</div>
+    ${UPD.ready&&typeof NET!=='undefined'&&NET.on?'<p class="cx-hint" style="margin:0">La mise à jour recharge le jeu et coupe la coopération en cours : fais-la après la partie, sur tous les appareils.</p>':''}
     ${(()=>{let e='';try{e=localStorage.getItem('crypte-err')||''}catch(x){}return e?`<p class="cx-hint" style="margin:0;user-select:text">Dernier incident : ${e.replace(/[<>&]/g,'')}</p>`:''})()}</section>`}
