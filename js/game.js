@@ -54,7 +54,7 @@ function spawnTarget(){
     state:'walk',slow:0,timer:0,blink:4,shown:0,wob:rand(0,6),downed:false};
   G.en.push(G.target);
 }
-function relicDrop(){const t=clamp(G.level-1+(Math.random()<.25?-1:Math.random()<.1?1:0),0,3),frost=G.biome===1&&Math.random()<.5;return pick(Object.keys(RELICS).filter(id=>RELICS[id].t===t&&(frost?RELICS[id].bio===1:!RELICS[id].bio)))}
+function relicDrop(){const t=relicTierRoll(G.level),frost=G.biome===1&&Math.random()<.5;return pick(Object.keys(RELICS).filter(id=>RELICS[id].t===t&&(frost?RELICS[id].bio===1:!RELICS[id].bio)))}
 const LV_MAX=50;
 const lootMul=L=>1+.06*(L-1);
 const goldMul=L=>1+.15*(L-1);

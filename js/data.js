@@ -107,6 +107,11 @@ const RELICS={
 };
 const RW_RAR=[0,0,0,1,1,2], CH=[[25.33,11,2],[16.67,20,10]], REACT_N=10;
 Object.assign(RELICS,RELICS_GIVRE);
+/* Niveau de relique selon le niveau de mission : 1–10 Cendre, 11–25 Ossuaire, 26–40 Sanguine, 41+ Abysse ; 70 % ce niveau, 20 % celui du dessous, 10 % celui du dessus. */
+const REL_BAND=[10,25,40];
+const relicBase=L=>REL_BAND.filter(x=>L>x).length;
+function relicTierOdds(L){const b=relicBase(L),o=[0,0,0,0];o[b]+=70;if(b>0)o[b-1]+=20;else o[b]+=20;if(b<3)o[b+1]+=10;else o[b]+=10;return o}
+function relicTierRoll(L){const o=relicTierOdds(L);let x=Math.random()*100;for(let i=0;i<4;i++){x-=o[i];if(x<0)return i}return 3}
 const relicName=id=>`${RELICS[id].n} (${RTIER[RELICS[id].t].n}${RELICS[id].bio?' · givre':''})`;
 function rollRelic(id,rad){const ch=CH[rad?1:0];let x=Math.random()*100;for(let i=0;i<6;i++){x-=ch[RW_RAR[i]];if(x<0)return RELICS[id].rw[i]}return RELICS[id].rw[0]}
 const SANG={
