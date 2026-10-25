@@ -101,6 +101,11 @@ function campArsenal2(){
     +`<h3>Équipement Prime · toutes classes</h3>`+GEAR_BP.map(g=>bpCard(bpdef(g.id))).join('');
 }
 let relSel=null,relTier='all';
+// Filtre de type : 'all', un niveau (0–3), 'g' (givre) ou 'f' (forgées)
+const relMatch=(id,f=relTier)=>{const R=RELICS[id];return f==='all'||(f==='g'?!!R.bio:f==='f'?!!R.fz:String(R.t)===f)};
+const relTypeName=f=>f==='g'?'reliques de givre':f==='f'?'reliques forgées':f==='all'?'reliques':'reliques '+RTIER[+f].n;
+const relToEquip=f=>Object.keys(RELICS).filter(id=>meta.relics[id]&&relMatch(id,f)).reduce((n,id)=>n+[true,false].reduce((m,rad)=>m+Math.max(0,(meta.relics[id][rad?1:0]|0)-relicQN(id,rad)),0),0);
+const relInQ=f=>meta.relicQ.filter(q=>RELICS[q.id]&&relMatch(q.id,f)).length;
 const FUSE_COST=[20,40,80,150];
 function relAvail(t){const out=[];for(const id in RELICS){if(RELICS[id].t!==t||RELICS[id].fz)continue;const a=meta.relics[id];if(!a)continue;
   for(const rad of [false,true]){const own=Math.max(0,a[rad?1:0]|0),q=Math.min(own,relicQN(id,rad));for(let k=0;k<own;k++)out.push({id,rad,q:k>=own-q})}}
@@ -139,9 +144,10 @@ function campRelics(){
   // collection
   const tiers=[...new Set(own.map(id=>RELICS[id].t))].sort();
   const tchip=(k,lab,c)=>`<button class="cx-chip cx-chip--sm" data-cact="rtier" data-arg="${k}" aria-pressed="${relTier===String(k)}"${c&&relTier!==String(k)?` style="color:${c}"`:''}>${lab}</button>`;
-  const list=own.filter(id=>relTier==='all'||String(RELICS[id].t)===relTier);
+  const list=own.filter(id=>relMatch(id)).sort((x,y)=>RELICS[x].t-RELICS[y].t);
   if(relSel&&!own.includes(relSel))relSel=null;
-  h+=`<section class="cx-section"><h3 class="cx-section__label">Tes reliques · ${tot}</h3><div class="cx-chips">${tchip('all','Toutes')}${tiers.map(t=>tchip(t,RTIER[t].n,RTIER[t].c)).join('')}</div>
+  h+=`<section class="cx-section"><h3 class="cx-section__label">Tes reliques · ${tot}</h3><div class="cx-chips">${tchip('all','Toutes')}${tiers.map(t=>tchip(t,RTIER[t].n,RTIER[t].c)).join('')}${own.some(id=>RELICS[id].bio)?tchip('g','Givre','#9fd0ff'):''}${own.some(id=>RELICS[id].fz)?tchip('f','Forgées',RTIER[3].c):''}</div>
+    ${(()=>{const ne=relToEquip(relTier),nq=relInQ(relTier),sh=relTier==='g'?'Givre':relTier==='f'?'Forgées':relTier==='all'?'':RTIER[+relTier].n;return `<div class="actions" style="margin:0"><button class="btn${ne?' main':''}" data-cact="rqtype" ${ne?'':'disabled'}>${ne?`Tout équiper${relTier==='all'?'':' · '+sh} (${ne})`:`${relTier==='all'?'Tout':sh} : déjà équipé`}</button>${relTier!=='all'&&nq?`<button class="btn danger" data-cact="rqtypeoff">Retirer · ${sh} (${nq})</button>`:''}</div>`})()}
     <div class="rtiles">${list.map(id=>{const R=RELICS[id],a=meta.relics[id],c=RTIER[R.t].c,nq=relicQN(id,false)+relicQN(id,true),comp=R.rw.some(r=>rwInfo(r).completes);
       return `<button class="rtile${relSel===id?' sel':''}" data-cact="rsel" data-arg="${id}" style="--tc:${c}" aria-pressed="${relSel===id}" aria-label="${relicName(id)}, ${a[0]} intacte${a[0]>1?'s':''}, ${a[1]} éclatante${a[1]>1?'s':''}${nq?`, ${nq} équipée${nq>1?'s':''}`:''}">
         <span class="rgem${a[1]?' rad':''}">${RELIC_SVG}</span><b>${R.n}</b><span class="rt">${RTIER[R.t].n}</span>
@@ -408,6 +414,8 @@ $('campSheet').addEventListener('click',e=>{
     else if(a==='rqrm'){meta.relicQ.splice(+arg,1)}
     else if(a==='rqup'||a==='rqdn'){const i=+arg,j=a==='rqup'?i-1:i+1,Q=meta.relicQ;if(j>=0&&j<Q.length)[Q[i],Q[j]]=[Q[j],Q[i]]}
     else if(a==='rqnone'){meta.relicQ=[]}
+    else if(a==='rqtype'){const ids=Object.keys(RELICS).filter(id=>meta.relics[id]&&relMatch(id)).sort((x,y)=>RELICS[x].t-RELICS[y].t);for(const id of ids){const r=meta.relics[id];for(const rad of [true,false])while(relicQN(id,rad)<(r[rad?1:0]|0))meta.relicQ.push({id,rad})}}
+    else if(a==='rqtypeoff'){meta.relicQ=meta.relicQ.filter(q=>!RELICS[q.id]||!relMatch(q.id))}
     else if(a==='rqall'){for(const id in RELICS){const r=meta.relics[id];if(!r)continue;for(const rad of [true,false])while(relicQN(id,rad)<r[rad?1:0])meta.relicQ.push({id,rad})}}
     else if(a==='xfk'){xf.k=arg;xf.rep='';xf.op=''}
     else if(a==='xfpick'){xf.pick=arg}
