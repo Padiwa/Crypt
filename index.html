@@ -116,8 +116,8 @@ header .btn{margin-left:auto}
 .essi{width:9px;height:9px;transform:rotate(45deg);background:var(--ess);display:inline-block;flex:none;margin:0 2px}
 .purse{display:flex;align-items:center;gap:6px;font-weight:700;color:var(--r2);font-size:17px;font-variant-numeric:tabular-nums}
 .purse .e{color:var(--ess);display:flex;align-items:center;gap:5px;margin-left:8px}
-.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;background:#141117;border:1px solid var(--line);border-radius:10px;padding:4px}
-.tab{border:0;background:none;border-radius:7px;padding:8px 1px;font-size:12px;font-weight:700;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis}
+.tabs{display:flex;gap:3px;background:#141117;border:1px solid var(--line);border-radius:10px;padding:4px}
+.tab{flex:1 1 auto;border:0;background:none;border-radius:7px;padding:8px 3px;font-size:11px;letter-spacing:-.1px;font-weight:700;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis}
 .boss.obj{top:calc(env(safe-area-inset-top,0px) + 136px)}
 .boss.obj b{color:#9fe3f0}
 .boss.obj .hp-bar{background:#10202a;border-color:#2d5560}
@@ -191,8 +191,47 @@ body:has(#camp:not([hidden])) .toast{top:auto;bottom:calc(env(safe-area-inset-bo
 .rq li .btn{padding:4px 10px;min-width:34px}
 .rq ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .rqn{color:var(--muted);font-variant-numeric:tabular-nums;width:1.6em;text-align:right}
+.xpick{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.xpick button{all:unset;box-sizing:border-box;cursor:pointer;border:2px dashed var(--line);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;min-width:0;background:var(--panel2)}
+.xpick button span{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.xpick button b{font-size:13px;line-height:1.25;overflow:hidden;text-overflow:ellipsis}
+.xpick button[aria-pressed="true"]{border-style:solid}
+.xpick .ps[aria-pressed="true"]{border-color:#ff7a7a;box-shadow:0 0 12px rgba(255,90,90,.25)}
+.xpick .pd[aria-pressed="true"]{border-color:#6fd08a;box-shadow:0 0 12px rgba(95,191,122,.25)}
+.xpick button:focus-visible{outline:2px solid var(--ember)}
+.xeq{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+.xeq .slot{position:relative;cursor:pointer;border-color:#4f7a5a;background:linear-gradient(160deg,rgba(95,191,122,.12),var(--panel2) 55%)}
+.xeq .slot em{order:3;align-self:flex-start;margin-top:3px;font-style:normal;font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#0f1a12;background:#6fd08a;border-radius:4px;padding:1px 4px}
+.xeq .slot.oth{border-color:var(--line);background:var(--panel2)}
+.xeq .slot.oth em{display:none}
+.xeq .slot.empty-s{cursor:default;opacity:.5}
+.xs-src{box-shadow:0 0 0 3px #ff7a7a!important}
+.xs-dst{box-shadow:0 0 0 3px #6fd08a!important}
+.xoff{opacity:.32;filter:grayscale(.6);cursor:not-allowed}
+.xtag{position:absolute;bottom:-7px;right:-6px;font-size:10px;font-weight:800;border-radius:6px;padding:1px 5px;color:#120d0d;z-index:2}
+.xtag.s{background:#ff7a7a}.xtag.d{background:#6fd08a}
+.xfgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:360px){.xfgrid{grid-template-columns:1fr}}
+.xfc{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.xfc .lab{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.xfc .nm{font-size:15px;font-weight:700;line-height:1.2}
+.xfc .sub{font-size:12px;color:var(--muted)}
+.xfc ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.xfc li{font-size:13px;line-height:1.3;border-radius:7px;padding:5px 7px;border:1px solid transparent}
+.xfc li.base{color:var(--muted);padding-left:7px}
+.xfc button.ln{all:unset;box-sizing:border-box;display:block;width:100%;font-size:13px;line-height:1.3;border-radius:7px;padding:5px 7px;border:1px dashed var(--line);cursor:pointer}
+.xfc button.ln[aria-pressed="true"]{border:1px solid var(--ember);background:color-mix(in srgb,var(--ember) 16%,transparent);color:var(--ink)}
+.xfc button.ln:focus-visible{outline:2px solid var(--ember)}
+.xfc .xdel{color:#ff8a8a;text-decoration:line-through;background:rgba(255,90,90,.1);border-color:rgba(255,90,90,.35)}
+.xfc .xdel::before{content:"− ";text-decoration:none;display:inline-block;margin-right:2px}
+.xfc .xadd{color:#7fe09a;background:rgba(95,191,122,.12);border-color:rgba(95,191,122,.45)}
+.xfc .xadd::before{content:"+ ";display:inline-block;margin-right:2px}
+.xfc .xno{color:#f0cf4a;background:rgba(240,207,74,.1);border-color:rgba(240,207,74,.4)}
+.xfc.gone{border-color:rgba(255,90,90,.45)}
+.xfc .warn{font-size:12px;color:#ff8a8a}
 .xfl{display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--muted)}
-.xfl select{font:inherit;color:var(--ink,#eee);background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px;max-width:100%}
+.xfl{min-width:0}
+.xfl select{width:100%;min-width:0;font:inherit;color:var(--ink,#eee);background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px;max-width:100%}
 .chip{border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:7px 14px;font-size:14px}
 .chip[aria-pressed="true"]{border-color:var(--ember);color:var(--ember);font-weight:700}
 .btnrow{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
@@ -356,6 +395,7 @@ body:has(#camp:not([hidden])) .toast{top:auto;bottom:calc(env(safe-area-inset-bo
       <button class="tab" role="tab" data-tab="arsenal">Armurerie</button>
       <button class="tab" role="tab" data-tab="relics">Reliques</button>
       <button class="tab" role="tab" data-tab="mods">Mods</button>
+      <button class="tab" role="tab" data-tab="affix">Affixes</button>
       <button class="tab" role="tab" data-tab="forge">Forge</button>
     </div>
     <div class="col" id="campBody" style="gap:14px"></div>
@@ -1956,7 +1996,7 @@ function saveSection(){
   if(saveMsg)h+=`<p class="empty" style="font-size:13px;color:var(--blood)">${saveMsg}</p>`;
   return h;
 }
-function campForge(){return campForge0()+xfSection()+saveSection()}
+function campForge(){return campForge0()+saveSection()}
 let xf={src:'',k:'',dst:'',rep:''};
 const wclsOf=id=>Object.keys(WPN).find(c=>WPN[c].some(w=>w.id===id));
 function xfGet(key){if(!key)return null;const t=key[0],v=key.slice(2);
@@ -1966,40 +2006,74 @@ const xfCap=it=>Math.max(RAR[it.r].aff,Object.keys(it.aff).length);
 const xfCost=it=>50*(it.r+1);
 const xfLbl=(k,i,w)=>`${esc(itemName(i))} · ${RAR[i.r].n.toLowerCase()} · ${w}`;
 function xfState(){const s=xfGet(xf.src),d=xfGet(xf.dst);if(!s||!d||!xf.k||s.aff[xf.k]==null)return null;
-  const v=s.aff[xf.k],cur=d.aff[xf.k],cap=xfCap(d),n=Object.keys(d.aff).length,T=x=>AFF[xf.k].t(x);
-  if(cur!=null)return cur>=v?{ok:false,msg:`${esc(itemName(d))} a déjà ${T(cur)}, une valeur égale ou plus forte. Transfert impossible.`}:{ok:true,mode:'up',msg:`Remplace ${T(cur)} par ${T(v)} sur ${esc(itemName(d))}.`};
-  if(n<cap)return {ok:true,mode:'add',msg:`Ajoute ${T(v)} sur ${esc(itemName(d))} (${n+1} / ${cap} affixes).`};
-  if(xf.rep&&d.aff[xf.rep]!=null)return {ok:true,mode:'rep',msg:`Remplace ${AFF[xf.rep].t(d.aff[xf.rep])} par ${T(v)} sur ${esc(itemName(d))}.`};
-  return {ok:false,full:true,msg:`${esc(itemName(d))} a déjà ${cap} affixe${cap>1?'s':''} : choisis celle à remplacer.`}}
-function xfSection(){
-  const srcs=[...Object.entries(meta.gear).filter(([k,i])=>i&&!i.lock&&Object.keys(i.aff).length).map(([k,i])=>['g:'+k,i,'équipé']),
-    ...meta.stash.filter(i=>!i.lock&&Object.keys(i.aff).length).sort((a,b)=>b.r-a.r||b.lvl-a.lvl).map(i=>['s:'+i.id,i,'coffre'])];
-  let s=xfGet(xf.src);if(xf.src&&(!s||s.lock)){xf={src:'',k:'',dst:'',rep:''};s=null}
-  let h=`<h3>Transfert d'affixe</h3><p class="empty" style="font-size:13px">Prends une affixe d'un équipement et pose-la sur une arme ou un autre équipement. L'équipement source est détruit et le transfert coûte de l'essence selon sa rareté. Si la cible a déjà cette affixe, elle n'est remplacée que par une valeur plus forte. Les valeurs sont celles de base : le niveau d'amélioration de la cible s'y applique ensuite. Un équipement verrouillé ne peut pas servir de source.</p>`;
-  if(!srcs.length)return h+'<p class="empty" style="font-size:13px">Aucun équipement non verrouillé avec des affixes à prendre.</p>';
-  h+=`<label class="xfl">1. Équipement source (détruit)<select id="xfSrc"><option value="">Choisir…</option>${srcs.map(([k,i,w])=>`<option value="${k}" ${k===xf.src?'selected':''}>${xfLbl(k,i,w)}</option>`).join('')}</select></label>`;
-  if(!s)return h;
-  h+=`<div class="xfl">2. Affixe à prendre<div class="alrow">${Object.keys(s.aff).map(k=>`<button class="chip" data-cact="xfk" data-arg="${k}" aria-pressed="${xf.k===k}">${AFF[k].t(s.aff[k])}</button>`).join('')}</div></div>`;
-  if(!xf.k||s.aff[xf.k]==null)return h;
-  const ws=Object.keys(WPN).flatMap(c=>WPN[c].filter(w=>ownedW(w.id)).map(w=>['w:'+w.id,weaponItem(c,w.id),`arme ${deCls(c).replace(/^de l'|^du /,'')}`]));
-  const dsts=[...ws,...Object.entries(meta.gear).filter(([k,i])=>i&&'g:'+k!==xf.src).map(([k,i])=>['g:'+k,i,'équipé']),
-    ...meta.stash.filter(i=>'s:'+i.id!==xf.src).sort((a,b)=>b.r-a.r||b.lvl-a.lvl).map(i=>['s:'+i.id,i,'coffre'])];
-  h+=`<label class="xfl">3. Cible<select id="xfDst"><option value="">Choisir…</option>${dsts.map(([k,i,w])=>{const c=i.aff[xf.k];return `<option value="${k}" ${k===xf.dst?'selected':''}>${xfLbl(k,i,w)}${c!=null?` · a déjà ${c}`:''}</option>`}).join('')}</select></label>`;
-  const d=xfGet(xf.dst);if(!d)return h;
+  const k=xf.k,ns=!!NOSCALE[k],ve=ns?s.aff[k]:s.aff[k]*upMul(s.up),v=ns?ve:Math.round(ve/upMul(d.up)*10)/10,cur=d.aff[k],ce=cur==null?null:ns?cur:cur*upMul(d.up),cap=xfCap(d),n=Object.keys(d.aff).length,T=x=>xfV(d,k,x),r=o=>Object.assign(o,{nv:v});
+  if(cur!=null)return r(ce>=ve-1e-9?{ok:false,msg:`${esc(itemName(d))} a déjà ${T(cur)}, une valeur égale ou plus forte. Transfert impossible.`}:{ok:true,mode:'up',msg:`Remplace ${T(cur)} par ${T(v)} sur ${esc(itemName(d))}.`});
+  if(n<cap)return r({ok:true,mode:'add',msg:`Ajoute ${T(v)} sur ${esc(itemName(d))} (${n+1} / ${cap} affixes).`});
+  if(xf.rep&&d.aff[xf.rep]!=null)return r({ok:true,mode:'rep',msg:`Remplace ${xfV(d,xf.rep,d.aff[xf.rep])} par ${T(v)} sur ${esc(itemName(d))}.`});
+  return r({ok:false,full:true,msg:`${esc(itemName(d))} a déjà ${cap} affixe${cap>1?'s':''} : choisis celle à remplacer.`})}
+const xfV=(it,k,v)=>AFF[k].t(NOSCALE[k]?v:fmtN(v*upMul(it.up)));
+function xfCard(lab,it,where,lines,extra=''){
+  return `<div class="xfc${extra}"><span class="lab">${lab}</span>${it?`<span class="nm" style="color:${RAR[it.r].c}">${esc(itemName(it))}</span><span class="sub">${RAR[it.r].n} · ${where}</span>
+    <ul><li class="base">${baseTxtOf(it.slot,fmtN(it.base.v*upMul(it.up)))}</li>${lines}</ul>`:`<span class="sub">${lines}</span>`}</div>`}
+let afF='all',afP=0;
+function xfOk(key,it){if(!it)return false;if(xf.pick==='src')return key[0]!=='w'&&!it.lock&&Object.keys(it.aff).length>0;return key!==xf.src}
+const xfTag=key=>key===xf.src?'<span class="xtag s">Source</span>':key===xf.dst?'<span class="xtag d">Cible</span>':'';
+const xfCls=key=>key===xf.src?' xs-src':key===xf.dst?' xs-dst':'';
+function xfSlot(key,it,label,oth){if(!it)return `<div class="slot empty-s"><span>${label}</span><strong style="color:var(--muted)">Vide</strong></div>`;
+  const ok=xfOk(key,it);
+  return `<button class="slot${oth?' oth':''}${xfCls(key)}${ok?'':' xoff'}" data-cact="xfsel" data-arg="${key}" ${ok?'':'aria-disabled="true"'} aria-label="${esc(itemName(it))}, ${label}${oth?'':', équipé'}"><em>Équipé</em><span>${label}</span><strong style="color:${RAR[it.r].c}">${esc(itemName(it))}${it.lock?`<span class="li" aria-label="verrouillé">${LOCK_SVG}</span>`:''}</strong>${xfTag(key)}</button>`}
+function xfCell(key,it){const ok=xfOk(key,it);
+  return `<button class="cell${it.lock?' locked':''}${xfCls(key)}${ok?'':' xoff'}" data-cact="xfsel" data-arg="${key}" ${ok?'':'aria-disabled="true"'} style="border-color:${RAR[it.r].c};color:${RAR[it.r].c}" aria-label="${esc(itemName(it))}${it.lock?', verrouillé':''}">${it.lock?`<span class="lk">${LOCK_SVG}</span>`:''}${it.up?`<span class="cup">+${it.up}</span>`:''}${GLYPH[it.slot]}${xfTag(key)}</button>`}
+function campAffix(){
+  if(!xf.pick)xf.pick=xf.src?'dst':'src';
+  let s=xfGet(xf.src);if(xf.src&&(!s||s.lock)){xf={src:'',k:'',dst:'',rep:'',pick:'src'};s=null}
+  if(s&&xf.k&&s.aff[xf.k]==null)xf.k='';
+  const d=xfGet(xf.dst),wlab=k=>k[0]==='w'?'arme':k[0]==='g'?'équipé':'coffre';
+  let h=`<p class="empty" style="font-size:13px">Touche <b style="color:#ff9a9a">Source</b> ou <b style="color:#8fe0a6">Cible</b>, puis un objet ci-dessous. Touche ensuite l'affixe à prendre sur la source : l'aperçu montre la ligne retirée et la ligne ajoutée. La source est détruite ; les objets verrouillés ou sans affixe ne peuvent pas servir de source.</p>`;
+  h+=`<div class="xpick"><button class="ps" data-cact="xfpick" data-arg="src" aria-pressed="${xf.pick==='src'}"><span>Source · détruite</span><b style="color:${s?RAR[s.r].c:'var(--muted)'}">${s?esc(itemName(s)):'Choisir un objet'}</b></button>
+    <button class="pd" data-cact="xfpick" data-arg="dst" aria-pressed="${xf.pick==='dst'}"><span>Cible</span><b style="color:${d?RAR[d.r].c:'var(--muted)'}">${d?esc(itemName(d)):'Choisir un objet'}</b></button></div>`;
+  // aperçu
   const st=xfState();
-  if(st&&(st.full||st.mode==='rep'))h+=`<div class="xfl">4. Affixe à remplacer<div class="alrow">${Object.keys(d.aff).map(k=>`<button class="chip" data-cact="xfrep" data-arg="${k}" aria-pressed="${xf.rep===k}">${AFF[k].t(d.aff[k])}</button>`).join('')}</div></div>`;
-  const cost=xfCost(s);
-  h+=`<div class="card"><p style="margin:0;font-size:14px">${st.msg}${st.ok?` <b>${esc(itemName(s))}</b> sera détruit.`:''}</p>
-    ${st.ok?`<div class="actions"><button class="btn main" data-cact="xfok" ${meta.essence<cost?'disabled':''}>Transférer · <span class="essi"></span>${cost}</button><button class="btn" data-cact="xfcancel">Annuler</button></div>${meta.essence<cost?`<p class="empty" style="font-size:13px">Il te manque ${cost-meta.essence} essence.</p>`:''}`:''}</div>`;
+  if(s||d){
+    const sLines=s?Object.keys(s.aff).map(k=>`<li style="padding:0;border:0"><button class="ln${xf.k===k?' xdel':''}" data-cact="xfk" data-arg="${k}" aria-pressed="${xf.k===k}">${xfV(s,k,s.aff[k])}</button></li>`).join(''):'Choisis l\'objet source.';
+    let tLines='Choisis la cible.';
+    if(d){const v=s&&xf.k?s.aff[xf.k]:null,full=st&&(st.full||st.mode==='rep'),nv=st?st.nv:null;
+      tLines=Object.keys(d.aff).map(k=>{
+        if(v!=null&&st){
+          if(k===xf.k&&st.mode==='up')return `<li class="xdel">${xfV(d,k,d.aff[k])}</li><li class="xadd">${xfV(d,k,nv)}</li>`;
+          if(k===xf.k&&!st.ok)return `<li class="xno">${xfV(d,k,d.aff[k])} · déjà plus fort ou égal</li>`;
+          if(full){const sel=xf.rep===k;return `<li style="padding:0;border:0"><button class="ln${sel?' xdel':''}" data-cact="xfrep" data-arg="${k}" aria-pressed="${sel}">${xfV(d,k,d.aff[k])}</button></li>${sel?`<li class="xadd">${xfV(d,xf.k,nv)}</li>`:''}`}
+        }
+        return `<li>${xfV(d,k,d.aff[k])}</li>`}).join('');
+      if(v!=null&&st&&st.mode==='add')tLines+=`<li class="xadd">${xfV(d,xf.k,nv)}</li>`;
+      if(!Object.keys(d.aff).length&&!(st&&st.mode==='add'))tLines+='<li class="base">Aucune affixe</li>';}
+    h+=`<div class="xfgrid">${xfCard('Source',s,s?wlab(xf.src):'',sLines,st&&st.ok?' gone':'')}${xfCard(st&&st.ok?'Cible · aperçu':'Cible',d,d?wlab(xf.dst):'',tLines)}</div>`;
+    if(s&&d&&!xf.k)h+='<p class="empty" style="font-size:13px">Touche l\'affixe à prendre sur la source.</p>';
+    if(st){const cost=xfCost(s);
+      h+=`<div class="card"><p style="margin:0;font-size:14px">${st.full&&!st.ok?'La cible est pleine : touche l\'affixe à remplacer sur la cible.':st.msg}${st.ok?` <b>${esc(itemName(s))}</b> sera détruit.`:''}</p>
+      ${st.ok?`<div class="actions"><button class="btn main" data-cact="xfok" ${meta.essence<cost?'disabled':''}>Transférer · <span class="essi"></span>${cost}</button><button class="btn" data-cact="xfcancel">Annuler</button></div>${meta.essence<cost?`<p class="empty" style="font-size:13px">Il te manque ${cost-meta.essence} essence.</p>`:''}`:''}</div>`}
+  }
+  // inventaire
+  const eqW=meta.wpn[heroCls]&&ownedW(meta.wpn[heroCls])?meta.wpn[heroCls]:WPN[heroCls][0].id;
+  h+=`<h3>Équipé · ${CLS[heroCls].n}</h3><div class="xeq">${xfSlot('w:'+eqW,weaponItem(heroCls,eqW),'Arme')}${['armure','amulette','bottes','anneau'].map(k=>xfSlot('g:'+k,meta.gear[k],SLOT[k])).join('')}</div>`;
+  const ow=Object.keys(WPN).flatMap(c=>WPN[c].filter(w=>ownedW(w.id)&&w.id!==eqW).map(w=>[c,w]));
+  if(ow.length)h+=`<h3>Autres armes</h3><div class="xeq">${ow.map(([c,w])=>xfSlot('w:'+w.id,weaponItem(c,w.id),`Arme · ${CLS[c].n}`,true)).join('')}</div>`;
+  const counts={all:meta.stash.length};for(const it of meta.stash)counts[it.slot]=(counts[it.slot]||0)+1;
+  const list=meta.stash.filter(i=>afF==='all'||i.slot===afF).sort((a,b)=>b.r-a.r||(b.up||0)-(a.up||0)||b.lvl-a.lvl);
+  const pages=Math.max(1,Math.ceil(list.length/ST_PAGE));afP=clamp(afP,0,pages-1);
+  const fChip=(k,lab)=>`<button class="chip" data-cact="afilter" data-arg="${k}" aria-pressed="${afF===k}">${lab} <span style="color:var(--muted)">${counts[k]||0}</span></button>`;
+  h+=`<h3>Coffre · ${meta.stash.length} objet${meta.stash.length>1?'s':''}</h3><div class="alrow">${fChip('all','Tout')}${['armure','amulette','bottes','anneau'].map(k=>fChip(k,SLOT[k])).join('')}</div>
+    ${list.length?`<div class="grid">${list.slice(afP*ST_PAGE,afP*ST_PAGE+ST_PAGE).map(it=>xfCell('s:'+it.id,it)).join('')}</div>`:`<p class="empty">${meta.stash.length?'Aucun objet de ce type.':'Ton coffre est vide.'}</p>`}
+    ${pages>1?`<div class="pager"><button class="btn" data-cact="apage" data-arg="-1" ${afP===0?'disabled':''} aria-label="Page précédente">‹</button><span>Page ${afP+1} / ${pages}</span><button class="btn" data-cact="apage" data-arg="1" ${afP>=pages-1?'disabled':''} aria-label="Page suivante">›</button></div>`:''}`;
   return h;
 }
 function xfDo(){const s=xfGet(xf.src),st=xfState();if(!s||s.lock||!st||!st.ok)return;const cost=xfCost(s);if(meta.essence<cost)return;
-  const k=xf.k,v=s.aff[k];
+  const k=xf.k,v=st.nv;
   if(xf.dst[0]==='w'){const wid=xf.dst.slice(2),o=meta.waff[wid]||(meta.waff[wid]={});if(st.mode==='rep')o[xf.rep]=null;o[k]=v}
   else{const d=xfGet(xf.dst);if(st.mode==='rep')delete d.aff[xf.rep];d.aff[k]=v}
   if(xf.src[0]==='s'){const i=meta.stash.findIndex(x=>String(x.id)===xf.src.slice(2));if(i>=0)meta.stash.splice(i,1)}else meta.gear[xf.src.slice(2)]=null;
-  meta.essence-=cost;const dn=itemName(xfGet(xf.dst)||{name:'la cible'});toast(`Affixe transférée : <b>${AFF[k].t(v)}</b> sur ${esc(dn)}. ${esc(itemName(s))} est détruit.`);
-  xf={src:'',k:'',dst:'',rep:''};campSel=null}
+  meta.essence-=cost;const dn=itemName(xfGet(xf.dst)||{name:'la cible'});toast(`Affixe transférée : <b>${xfV(xfGet(xf.dst)||{},k,v)}</b> sur ${esc(dn)}. ${esc(itemName(s))} est détruit.`);
+  xf={src:'',k:'',dst:'',rep:'',pick:'src'};campSel=null}
 function prestSection(){
   const c=heroCls,o=prOf(c),free=prFree(c),op=prOpen(),cost=prCost(o.lv),nmax=UPG.filter(u=>lv(u.k)>=u.max).length;
   let h=`<h3>Prestige · ${CLS[c].n}${o.lv?` · niveau ${o.lv}`:''}</h3>`;
@@ -2026,7 +2100,7 @@ function drawCamp(){
   $('campGold').innerHTML=`<span class="coin"></span>${meta.gold}<span class="e"><span class="essi"></span>${meta.essence}</span>`;
   document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.tab===campTab)));
   const body=$('campBody');
-  body.innerHTML=campTab==='equip'?campEquip():campTab==='arsenal'?campArsenal2():campTab==='relics'?campRelics():campTab==='mods'?'<div id="modsCamp" class="col"></div>':campForge();
+  body.innerHTML=campTab==='affix'?campAffix():campTab==='equip'?campEquip():campTab==='arsenal'?campArsenal2():campTab==='relics'?campRelics():campTab==='mods'?'<div id="modsCamp" class="col"></div>':campForge();
   if(campTab==='mods')renderMods('modsCamp');
 }
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{campTab=t.dataset.tab;campSel=null;campMsg='';recyConfirm=false;drawCamp();$('campBody').parentElement.scrollTop=0});
@@ -2073,9 +2147,15 @@ $('campBody').addEventListener('click',e=>{
     else if(a==='rqup'||a==='rqdn'){const i=+arg,j=a==='rqup'?i-1:i+1,Q=meta.relicQ;if(j>=0&&j<Q.length)[Q[i],Q[j]]=[Q[j],Q[i]]}
     else if(a==='rqnone'){meta.relicQ=[]}
     else if(a==='rqall'){for(const id in RELICS){const r=meta.relics[id];if(!r)continue;for(const rad of [true,false])while(relicQN(id,rad)<r[rad?1:0])meta.relicQ.push({id,rad})}}
-    else if(a==='xfk'){xf.k=arg;xf.dst='';xf.rep=''}
+    else if(a==='xfk'){xf.k=arg;xf.rep=''}
+    else if(a==='xfpick'){xf.pick=arg}
+    else if(a==='afilter'){afF=arg;afP=0}
+    else if(a==='apage'){afP+=+arg}
+    else if(a==='xfsel'){const it=xfGet(arg);if(!xfOk(arg,it))return;
+      if(xf.pick==='src'){if(arg===xf.src){xf.src='';xf.k=''}else{xf.src=arg;xf.k='';if(xf.dst===arg)xf.dst=''}xf.rep='';if(xf.src&&!xf.dst)xf.pick='dst'}
+      else{if(arg===xf.dst)xf.dst='';else xf.dst=arg;xf.rep='';if(xf.dst&&!xf.src)xf.pick='src'}}
     else if(a==='xfrep'){xf.rep=arg}
-    else if(a==='xfcancel'){xf={src:'',k:'',dst:'',rep:''}}
+    else if(a==='xfcancel'){xf={src:'',k:'',dst:'',rep:'',pick:'src'}}
     else if(a==='xfok'){xfDo()}
     else if(a==='refine'){const r=meta.relics[arg];if(r&&r[0]>relicQN(arg,false)&&meta.essence>=50){r[0]--;r[1]++;meta.essence-=50}}
     else if(a==='prbuy'){const o=prOf(),c=prCost(o.lv);if((prOpen()||o.lv)&&meta.gold>=c.gold&&meta.essence>=c.ess){meta.gold-=c.gold;meta.essence-=c.ess;o.lv++;toast(`Prestige du ${CLS[heroCls].n} : niveau ${o.lv}. Place ton point.`)}}
@@ -2089,7 +2169,7 @@ $('campBody').addEventListener('click',e=>{
   drawCamp();
 });
 $('campBody').addEventListener('input',e=>{if(e.target.id==='saveIn')saveDraft=e.target.value});
-$('campBody').addEventListener('change',e=>{if(e.target.id==='xfSrc'){xf={src:e.target.value,k:'',dst:'',rep:''};drawCamp()}else if(e.target.id==='xfDst'){xf.dst=e.target.value;xf.rep='';drawCamp()}});
+$('campBody').addEventListener('change',e=>{if(e.target.id==='xfSrc'){xf={src:e.target.value,k:'',dst:xf.dst===e.target.value?'':xf.dst,rep:''};drawCamp()}else if(e.target.id==='xfDst'){xf.dst=e.target.value;xf.rep='';drawCamp()}});
 $('campBody').addEventListener('change',e=>{if(e.target.id!=='saveFile'||!e.target.files[0])return;const r=new FileReader();
   r.onload=()=>{saveDraft=String(r.result);const dd=parseCode(saveDraft);if(dd){savePending=dd;saveMsg=''}else saveMsg='Ce fichier ne contient pas de sauvegarde JSON valide.';drawCamp()};r.readAsText(e.target.files[0])});
 function openCamp(){$('camp').hidden=false;campSel=null;campMsg='';recyConfirm=false;drawCamp()}
