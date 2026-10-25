@@ -150,7 +150,11 @@ function dmgEnemy(e,d,crit,dot){
   if(S.bossDmg&&e.type==='boss')d*=1+S.bossDmg/100;
   if(e.elite==='bouclier'&&e.hp>e.max*.5)d*=.5;
   if(S.cold&&(e.slow>0||e.frz>0))d*=1+S.cold/100;
+  if(S.abHunt&&(e.type==='boss'||e.elite))d*=1+S.abHunt/100;
+  if(S.abSoul&&G.P.soulN)d*=1+G.P.soulN*S.abSoul/100;
   e.hp-=d;e.shown=2;
+  if(S.abExec&&e.hp>0&&e.type!=='boss'&&e.type!=='cible'&&e.hp<e.max*S.abExec/100){e.hp=0;ftext(e.x,e.y-e.r-6,'jugé','#b07cff',14);burst(e.x,e.y,10,'#b07cff',140,3)}
+  if(!dot&&crit&&S.abRift&&!G._rift&&Math.random()*100<S.abRift){G._rift=1;chain(e,d*.7);G._rift=0}
   if(!dot&&crit)critTick();
   if(!dot){SND.play(crit?'crit':'hit');e.flash=1;if(SET.dmgNum&&(crit||G.en.length<60))ftext(e.x+rand(-8,8),e.y-e.r,Math.round(d)+(crit?'!':''),crit?'#ffd34d':'#f1e8d6',crit?20:15)}
   else if(SET.dmgNum&&Math.random()<.25)ftext(e.x,e.y-e.r,Math.round(d),'#ff9a4a',12);
@@ -170,6 +174,8 @@ function shatter(e){G.rings.push({x:e.x,y:e.y,t:0,max:95,col:'170,225,255'});bur
   if(G._sh<4)for(const o of G.en){if(!o.dead&&o!==e&&Math.abs(o.x-e.x)<120&&Math.hypot(o.x-e.x,o.y-e.y)<85+o.r){o.slow=Math.max(o.slow,1.5);dmgEnemy(o,S.dmg*1.5,false)}}G._sh--}
 function kill(e){
   e.dead=true;G.kills++;
+  if(S.abSoul){G.P.soulN=Math.min(10,(G.P.soulN||0)+1);G.P.soulT=5}
+  if(S.abWard)G.P.shield=Math.max(G.P.shield||0,Math.min(S.hp*.3,(G.P.shield||0)+S.abWard));
   if(S.shard&&Math.random()*100<S.shard)shatter(e);
   if(e.type==='slime'&&e.gen<2){burst(e.x,e.y,14,'#7fe0c8',150,3);
     for(const sd of[-1,1]){const a=rand(0,Math.PI*2)*0+Math.atan2(e.y-G.P.y,e.x-G.P.x)+sd*Math.PI/2+rand(-.4,.4);
@@ -342,6 +348,9 @@ function update(dt){
   const iv=inputVec(), moving=iv.m>.15;
   P.inv-=dt;P.flash=Math.max(0,P.flash-dt*5);P.dashCd-=dt;P.novaCd-=dt;P.fire-=dt;ultTick(dt);
   if(S.regen)P.hp=Math.min(S.hp,P.hp+S.regen*dt*(P.psnT>0?.5:1));
+  if(P.soulT>0){P.soulT-=dt;if(P.soulT<=0)P.soulN=0}
+  if(S.abPulse){P.abT=(P.abT==null?5:P.abT)-dt;if(P.abT<=0){P.abT=5;const R=200*(1+S.skillRad/200);G.rings.push({x:P.x,y:P.y,t:0,max:R,col:'176,124,255'});burst(P.x,P.y,20,'#b07cff',220,3);SND.play('boom');
+    for(const o of G.en.slice())if(!o.dead&&Math.abs(o.x-P.x)<R+o.r&&Math.hypot(o.x-P.x,o.y-P.y)<R+o.r)dmgEnemy(o,S.dmg*S.abPulse/100,false)}}
   const antiM=1-Math.min(60,S.antidote||0)/100;
   for(const z of G.zones){z.life-=dt;
     if(Math.hypot(P.x-z.x,P.y-z.y)<z.r+P.r*.4){

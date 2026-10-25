@@ -91,7 +91,7 @@ Les ennemis apparaissent hors écran autour du héros ; ceux qui s'éloignent tr
 
 **Équilibrage (passe 1, simulée)** : 300 parties de 3 min jouées par un bot, 3 classes × profils T0 (rien) à T4 (ancestral +100, prestige 60) × niveaux 1 à 50 × difficultés. Changements : vie des monstres × 1,025^(L−1) et dégâts × 1,012^(L−1) en plus de la croissance linéaire ; Tourment vie × (1 + 0,5 t), dégâts × (1 + 0,22 t) ; butin × (1 + 0,06 (L−1)) au lieu de 0,25 ; or × (1 + 0,15 (L−1)) au lieu de 0,6 ; bonus de difficulté : ×0,15 sur la quantité d'objets, ×0,5 sur l'or ; chances d'objet par monstre divisées par 2 ; Gardien : 1 objet de plus tous les 10 niveaux (au lieu de 3), 1 relique tous les 12 (au lieu de 4) ; légendaire plafonné à 9 % (+0,6 % par palier de Tourment), rare à 30 % ; affixes Dégâts +0,6 × niveau d'objet (au lieu de 1,2), Vie +2,5 × niveau (au lieu de 4) ; prestige n : 600 + 300 n + 15 n² or, 30 + 15 n + n²/2 essence ; Archer 115 PV et 5 % d'armure, Magicien 100 PV et 5 %. Résultat visé et obtenu : T2 (rare niveau 25 +25) tient jusqu'au niveau 20–30, T3 (légendaire 60 +60) jusqu'au niveau 50 et Tourment I–V, Tourment X demande T4 ; 20 à 90 objets par manche (au lieu de 400 à 2 600) et 1 000 à 55 000 or en Normal (au lieu de 150 000). Outil : `tools/sim/` dans le dépôt.
 
-**Anneau de vie** : un cercle autour du héros se vide dans le sens horaire avec la vie (vert au-dessus de 50 %, jaune, puis rouge pulsant sous 25 %), le bouclier du Magicien en arc bleu juste autour ; la barre en haut à gauche reste. Les objets trouvés (affixe recherchée, légendaire) ne passent plus par la bannière centrale : seulement par les messages sous la barre de vie (et le flash, s'il est activé).
+**Barre et anneau de vie** : la barre en haut à gauche fait 22 px de haut, avec une bordure rouge vif et les PV écrits en gras blanc dans la barre (« 29 / 115 »). Le bouclier s'y superpose en bleu. Sous 30 % de PV, la bordure pulse en rouge (fixe si le système réduit les animations). La ligne dessous n'affiche que le bouclier et le niveau du héros. Autour du héros, un anneau de 6 px avec un contour noir de 9 px et une légère lueur se vide dans le sens horaire avec la vie : vert au-dessus de 50 %, jaune, puis rouge pulsant sous 25 %. Le bouclier forme un arc bleu de 3 px juste à l'extérieur. Aucun message ne s'affiche quand on ramasse un objet : seuls le flash (s'il est activé), le faisceau au sol et le son signalent les bons objets.
 
 **Montée en difficulté** (niveau L, progression f de 0 à 1 dans la manche) :
 
@@ -234,6 +234,32 @@ Au niveau L, les chances d'équipement, de relique et de fragment sont multipli�
 **Armurerie, actions groupées** (en tête d'onglet, avec confirmation qui liste les objets) : **Tout fabriquer** fabrique tout ce qui a ses 3 fragments tant que l'or suffit (armes du héros d'abord, puis des autres classes, puis objets Prime, plusieurs exemplaires d'un Prime si les fragments le permettent) ; l'arme du héros fabriquée est équipée. **Tout recycler** recycle les armes fabriquées non équipées (toutes classes) et les objets Prime non verrouillés du coffre, aux mêmes conditions que le recyclage individuel (essence + 1 fragment par objet).
 
 **Objets exclusifs Sanguine** : les reliques Sanguine (Cœur noirci, Calice rouge, Veine de la Veuve, Fiole d'ichor, Cœur d'hiver) contiennent, à la place de leurs récompenses peu communes et rares, des **objets exclusifs** de rareté **Sanguin** (rouge sang, au-dessus d'Ancestral) : impossibles à fabriquer et absents du butin en jeu. Chance par ouverture : 24 % (intacte), 50 % (éclatante). L'objet arrive directement au coffre, au niveau de la mission + 20 (1 + 4 × (L−1) + 20) ; 4 affixes fixes par modèle à ×1,8 de la valeur normale (×1,3 pour un légendaire), statistique de base ×1,4. 10 modèles : Cœur du Martyr, Cuirasse de la Veuve rouge, Pas de l'Hémorragie, Anneau du Sang versé, Linceul écarlate, Œil du Calice, Grèves du Bourreau rouge, Sceau de l'Ichor, et deux de givre (Cœur gelé du Martyr, Anneau de l'Hiver sanglant). Ils sont épargnés par « Tout recycler ». Les fragments légendaires que ces reliques donnaient restent disponibles dans les reliques Abysse et par la fusion de reliques Abysse.
+
+**Objets Abyssaux** : exclusifs aux reliques Abysse, jamais trouvés en mission ni fabriqués à l'Armurerie. Rareté **Abyssal** (violet, au-dessus du Sanguin), niveau = celui d'un objet Sanguin + 10. Trois affixes ×2,1, statistique de base ×1,5, et un **pouvoir abyssal** que rien d'autre ne donne. Chaque relique Abysse en propose 2, à la place de ses deux récompenses les plus rares : environ 13 % de chances par relique intacte, 30 % par éclatante.
+
+| Objet | Emplacement | Relique | Pouvoir |
+| --- | --- | --- | --- |
+| Œil du Néant | Amulette | Prunelle du Néant | Faille |
+| Linceul des Mille Âmes | Armure | Prunelle du Néant | Moisson |
+| Couronne de l'Éclipse | Amulette | Couronne brisée | Onde du Vide |
+| Sceau du Premier Roi | Anneau | Couronne brisée | Chasse royale |
+| Pas du Vide | Bottes | Os du Premier Roi | Jugement |
+| Égide sans fond | Armure | Os du Premier Roi | Égide du Néant |
+| Anneau du Sablier noir | Anneau | Sablier noir | Moisson |
+| Grèves de l'Abîme | Bottes | Sablier noir | Égide du Néant |
+| Cœur du Blizzard éternel | Amulette | Couronne du Blizzard (givre) | Onde du Vide |
+| Anneau du Néant gelé | Anneau | Couronne du Blizzard (givre) | Jugement |
+
+| Pouvoir | Effet | Plafond |
+| --- | --- | --- |
+| Moisson | Chaque ennemi tué : +3 à 4 % de dégâts pendant 5 s, cumul ×10 | 6 % par cumul |
+| Égide du Néant | Chaque ennemi tué : 8 + 0,6 × niveau de l'objet en bouclier | 30 % des PV |
+| Onde du Vide | Toutes les 5 s : 250 à 350 % des dégâts à tous les ennemis dans 200 px (agrandi par la portée des compétences) | — |
+| Jugement | Les ennemis sous 8 à 12 % de vie meurent sur le coup, hors gardiens et cible | 20 % |
+| Faille | 20 à 30 % de chances qu'un critique rebondisse sur 3 ennemis à 70 % des dégâts | 60 % |
+| Chasse royale | +35 à 55 % de dégâts contre gardiens et élites | — |
+
+Un pouvoir abyssal est lié à son objet : il ne peut être ni transféré, ni fusionné, ni remplacé dans l'onglet Affixes. Il n'apparaît pas dans la recherche par affixe ni dans les alertes de butin, et il ne monte pas avec l'amélioration. « Tout recycler » garde les objets Abyssaux (30 éclats de rareté). « Équiper le meilleur » compte une valeur estimée pour chaque pouvoir.
 
 **Fusion de reliques** (onglet Reliques) : 3 reliques d'un même niveau (d'abord celles hors de la file d'ouverture, intactes avant éclatantes ; au besoin des reliques de la file, qui en sont retirées) → 1 relique aléatoire du niveau suivant, pour 20 / 40 / 80 essence (Cendre → Ossuaire → Sanguine → Abysse). \*\*Fusion en chaîne\*\* : s'il manque des reliques au niveau visé, le bouton les crée d'abord avec les niveaux inférieurs (par exemple 1 Sanguine = 3 Ossuaire = jusqu'à 9 Cendre), coût total affiché. Les Sanguine tombent aussi en mission à partir du niveau 3. 3 reliques Abysse + 150 essence → 1 fragment d'un schéma légendaire choisi (armes légendaires non fabriquées, celle du héros en premier, et les 6 équipements Prime), en priorité un fragment manquant.
 

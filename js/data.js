@@ -8,7 +8,7 @@ const fmt=s=>{s=Math.max(0,Math.ceil(s));return `${Math.floor(s/60)}:${String(s%
 let dpr=1;
 
 /* ---------- Données ---------- */
-const RAR=[{n:'Commun',c:'#bdb6a8',aff:1,shard:1},{n:'Magique',c:'#7b95ff',aff:2,shard:2},{n:'Rare',c:'#f0cf4a',aff:3,shard:4},{n:'Légendaire',c:'#ff8a24',aff:4,shard:8},{n:'Ancestral',c:'#ff5a7a',aff:4,shard:16},{n:'Sanguin',c:'#e8383f',aff:4,shard:20}];
+const RAR=[{n:'Commun',c:'#bdb6a8',aff:1,shard:1},{n:'Magique',c:'#7b95ff',aff:2,shard:2},{n:'Rare',c:'#f0cf4a',aff:3,shard:4},{n:'Légendaire',c:'#ff8a24',aff:4,shard:8},{n:'Ancestral',c:'#ff5a7a',aff:4,shard:16},{n:'Sanguin',c:'#e8383f',aff:4,shard:20},{n:'Abyssal',c:'#b07cff',aff:4,shard:30}];
 const SLOT={arme:'Arme',armure:'Armure',amulette:'Amulette',bottes:'Bottes',anneau:'Anneau'};
 const BIOMES=[
   {id:'crypte',n:'Crypte des Cendres',d:'La crypte d\'origine : braseros, sang séché, monstres connus.',hp:1,dm:1,loot:1,
@@ -87,7 +87,7 @@ const RELICS_GIVRE={
   fA1:{t:0,n:"Éclat de givre",bio:1,rw:['y1:0','y2:0','ess:30','y3:0','y4:0','y1:1']},
   fB1:{t:1,n:"Larme gelée",bio:1,rw:['y2:1','y3:1','gold:200','y4:1','y1:2','y2:2']},
   fC1:{t:2,n:"Cœur d'hiver",bio:1,rw:['y3:2','y4:2','ess:80','y1:1','sang:s9','sang:s10']},
-  fD1:{t:3,n:"Couronne du Blizzard",bio:1,rw:['y4:0','y1:0','ess:150','y2:2','y3:2','y4:2']},
+  fD1:{t:3,n:"Couronne du Blizzard",bio:1,rw:['y4:0','y1:0','ess:150','y2:2','aby:a9','aby:a10']},
 };
 const RELICS={
   lA1:{t:0,n:"Dent du Pèlerin",rw:['a1:0','g1:0','ess:20','m1:1','a2:0','g2:2']},
@@ -99,11 +99,11 @@ const RELICS={
   nA1:{t:2,n:"Cœur noirci",rw:['a3:0','g3:0','m3:0','sang:s1','sang:s2','sang:s3']},
   nB1:{t:2,n:"Calice rouge",rw:['a3:1','g3:1','m3:1','sang:s4','sang:s5','sang:s6']},
   nC1:{t:2,n:"Veine de la Veuve",rw:['a3:2','g3:2','m3:2','sang:s7','sang:s8','sang:s1']},
-  xA1:{t:3,n:"Prunelle du Néant",rw:['x1:1','x2:1','ess:100','a4:2','x3:1','x1:2']},
-  xB1:{t:3,n:"Couronne brisée",rw:['x4:0','x2:2','gold:400','g4:2','x4:1','x3:2']},
-  xC1:{t:3,n:"Os du Premier Roi",rw:['x1:0','x3:0','ess:100','m4:2','a4:0','x4:2']},
+  xA1:{t:3,n:"Prunelle du Néant",rw:['x1:1','x2:1','ess:100','a4:2','aby:a1','aby:a2']},
+  xB1:{t:3,n:"Couronne brisée",rw:['x4:0','x2:2','gold:400','g4:2','aby:a3','aby:a4']},
+  xC1:{t:3,n:"Os du Premier Roi",rw:['x1:0','x3:0','ess:100','m4:2','aby:a5','aby:a6']},
   nD1:{t:2,n:"Fiole d'ichor",rw:['x5:0','x6:0','ess:60','sang:s2','sang:s6','sang:s7']},
-  xD1:{t:3,n:"Sablier noir",rw:['x6:1','x5:0','gold:300','x6:2','x5:2','x6:0']},
+  xD1:{t:3,n:"Sablier noir",rw:['x6:1','x5:0','gold:300','x6:2','aby:a7','aby:a8']},
 };
 const RW_RAR=[0,0,0,1,1,2], CH=[[25.33,11,2],[16.67,20,10]], REACT_N=10;
 Object.assign(RELICS,RELICS_GIVRE);
@@ -128,7 +128,26 @@ function sangItem(sid,l){const T=SANG[sid],slot=T.slot,bk=BASE_STAT[slot];
   for(const k of T.aff){const A=AFF[k];let v=A.r?A.r(l):({leech:2,reach:10,splash:15,multi:1,pierce:1,burn:5})[k]||5;it.aff[k]=Math.max(1,Math.round(v*SANG_K))}
   return it}
 const sangLvl=()=>{const L=(typeof G!=='undefined'&&G&&G.level)||clamp(meta.start|0||1,1,50);return 1+(L-1)*4+20};
-function rwLabel(r){const [k,v]=r.split(':');if(k==='sang')return `${SANG[v].n} · objet exclusif`;if(k==='ess')return `Essence ×${v}`;if(k==='gold')return `${v} or`;const b=bpdef(k);return `${b.n} · ${b.frag[+v]}`}
+const ABY={
+  a1:{n:'Œil du Néant',slot:'amulette',aff:['dmgPct','critDmg','crit'],pw:'abRift'},
+  a2:{n:'Linceul des Mille Âmes',slot:'armure',aff:['hp','armor','dmgPct'],pw:'abSoul'},
+  a3:{n:'Couronne de l\'Éclipse',slot:'amulette',aff:['novaPct','skillRad','cdr'],pw:'abPulse'},
+  a4:{n:'Sceau du Premier Roi',slot:'anneau',aff:['dmgPct','apsPct','critDmg'],pw:'abHunt'},
+  a5:{n:'Pas du Vide',slot:'bottes',aff:['speed','apsPct','crit'],pw:'abExec'},
+  a6:{n:'Égide sans fond',slot:'armure',aff:['hp','regen','armor'],pw:'abWard'},
+  a7:{n:'Anneau du Sablier noir',slot:'anneau',aff:['cdr','novaPct','crit'],pw:'abSoul'},
+  a8:{n:'Grèves de l\'Abîme',slot:'bottes',aff:['speed','hp','dmgPct'],pw:'abWard'},
+  a9:{n:'Cœur du Blizzard éternel',slot:'amulette',aff:['cold','frz','critDmg'],pw:'abPulse'},
+  a10:{n:'Anneau du Néant gelé',slot:'anneau',aff:['shard','cold','apsPct'],pw:'abExec'},
+};
+const ABY_K=2.1;
+function abyItem(aid,l){const T=ABY[aid],slot=T.slot,bk=BASE_STAT[slot];
+  const bv=slot==='armure'?Math.round(20+l*7):slot==='bottes'?8+Math.floor(l/4):slot==='anneau'?10+Math.floor(l*.8):5;
+  const it={id:uid++,slot,r:6,lvl:l,base:{k:bk,v:Math.round(bv*1.5)},aff:{},name:T.n,type:'Abyssal',aby:aid};
+  for(const k of T.aff){const A=AFF[k];it.aff[k]=Math.max(1,Math.round(A.r(l)*ABY_K))}
+  it.aff[T.pw]=AFF[T.pw].r(l);return it}
+const abyLvl=()=>sangLvl()+10;
+function rwLabel(r){const [k,v]=r.split(':');if(k==='aby')return `${ABY[v].n} · objet abyssal exclusif`;if(k==='sang')return `${SANG[v].n} · objet exclusif`;if(k==='ess')return `Essence ×${v}`;if(k==='gold')return `${v} or`;const b=bpdef(k);return `${b.n} · ${b.frag[+v]}`}
 const MODES={
   survie:{n:'Survie',d:'Tiens face aux hordes. Toutes les 3 minutes, sors ou continue. Chaque manche terminée rapporte une relique.'},
   defense:{n:'Défense',d:'Protège le cryopode contre des vagues d\'ennemis. Toutes les 5 vagues : une relique et un équipement, puis sors ou continue.'},
@@ -332,6 +351,12 @@ const AFF={
   reach:{t:v=>`+${v} % de portée de frappe`,w:1},
   splash:{t:v=>`+${v} % de rayon d'explosion`,w:1},
   pierce:{t:v=>`Les carreaux transpercent ${v} ennemi${v>1?'s':''}`,w:1},
+  abSoul:{t:v=>`Pouvoir abyssal · Moisson : chaque ennemi tué donne +${v} % de dégâts pendant 5 s (cumul ×10)`,r:l=>ri(3,4)+(l>120?1:0),w:1,aby:1},
+  abWard:{t:v=>`Pouvoir abyssal · Égide du Néant : chaque ennemi tué donne ${v} points de bouclier (jusqu'à 30 % de tes PV)`,r:l=>Math.round(8+l*.6),w:1,aby:1},
+  abPulse:{t:v=>`Pouvoir abyssal · Onde du Vide : toutes les 5 s, ${v} % de tes dégâts à tous les ennemis proches`,r:l=>ri(250,350),w:1,aby:1},
+  abExec:{t:v=>`Pouvoir abyssal · Jugement : les ennemis (hors gardiens) sous ${v} % de vie meurent sur le coup`,r:l=>ri(8,12),w:1,aby:1},
+  abRift:{t:v=>`Pouvoir abyssal · Faille : ${v} % de chances qu'un critique déchire le vide et frappe 3 ennemis de plus`,r:l=>ri(20,30),w:1,aby:1},
+  abHunt:{t:v=>`Pouvoir abyssal · Chasse royale : +${v} % de dégâts contre gardiens et élites`,r:l=>ri(35,55),w:1,aby:1},
 };
 const BASE_STAT={arme:'dmg',armure:'hp',amulette:'crit',bottes:'speed',anneau:'dmgPct'};
 const baseTxtOf=(slot,v)=>slot==='arme'?`${v} dégâts de base`:slot==='armure'?`+${v} points de vie`:slot==='bottes'?`+${v} % de vitesse de déplacement`:slot==='anneau'?`+${v} % de dégâts`:`+${v} % de chances de critique`;
@@ -353,7 +378,7 @@ function genItem(l,minR=0){
   it.type=base;
   return it;
 }
-const UP_MAX=100,upCostLv=n=>5+3*n+Math.floor(n*n/10),upMul=n=>1+.02*(n||0),NOSCALE={multi:1,pierce:1};
+const UP_MAX=100,upCostLv=n=>5+3*n+Math.floor(n*n/10),upMul=n=>1+.02*(n||0),NOSCALE={multi:1,pierce:1,abSoul:1,abWard:1,abPulse:1,abExec:1,abRift:1,abHunt:1};
 const upCostRange=(from,k)=>{let c=0;for(let i=from;i<Math.min(UP_MAX,from+k);i++)c+=upCostLv(i);return c};
 const upInvested=n=>upCostRange(0,n||0);
 const fmtN=x=>(Math.round(x*10)/10).toLocaleString('fr-FR');
@@ -369,7 +394,7 @@ function rollPart(){
 const partLabel=p=>{const w=bpdef(p.w);return `<span style="color:${RAR[w.r].c}">${w.n}</span> · ${w.frag[p.p]}`};
 
 function stats(eq){
-  const b=CLS[heroCls].base,s={dmg:b.dmg,aps:b.aps,hp:b.hp,crit:b.crit,critDmg:150,multi:0,pierce:0,burn:0,armor:b.armor,speed:b.speed,regen:0,cdr:b.cdr,novaPct:0,dmgPct:0,apsPct:0,leech:0,reach:0,splash:0,burnPct:0,chill:0,shock:0,skillRad:0,skillDur:0,dashCd:0,potHeal:0,magnetPct:0,lowArmor:0,lowDmg:0,auraSlow:0,goldPct:0,antidote:0,frz:0,cold:0,shard:0};
+  const b=CLS[heroCls].base,s={dmg:b.dmg,aps:b.aps,hp:b.hp,crit:b.crit,critDmg:150,multi:0,pierce:0,burn:0,armor:b.armor,speed:b.speed,regen:0,cdr:b.cdr,novaPct:0,dmgPct:0,apsPct:0,leech:0,reach:0,splash:0,burnPct:0,chill:0,shock:0,skillRad:0,skillDur:0,dashCd:0,potHeal:0,magnetPct:0,lowArmor:0,lowDmg:0,auraSlow:0,goldPct:0,antidote:0,frz:0,cold:0,shard:0,abSoul:0,abWard:0,abPulse:0,abExec:0,abRift:0,abHunt:0};
   for(const it of Object.values(eq))if(it){const m=upMul(it.up);s[it.base.k]+=it.base.v*m;for(const k in it.aff)s[k]+=NOSCALE[k]?it.aff[k]:it.aff[k]*m}
   for(const id of allMods(heroCls))s[MODS[id].k]+=modVal(id,meta.mods[id]);
   const R=(G&&G.run)||{},rr=k=>R[k]||0;
@@ -384,7 +409,7 @@ function stats(eq){
   if(cb){if(heroCls==='archer')s.pierce+=1;else if(heroCls==='magicien')s.splash+=50;else{s.reach+=30;s.apsPct+=25}}
   const dmg=s.dmg*(1+s.dmgPct/100);
   return {shotSpd:cb&&heroCls==='archer'?1.5:1,dmg,aps:s.aps*(1+s.apsPct/100),hp:s.hp,crit:Math.min(s.crit,75),critDmg:s.critDmg,multi:s.multi,pierce:s.pierce,burn:s.burn+dmg*s.burnPct/100,chill:s.chill,shock:s.shock,
-    armor:Math.min(s.armor,60),speed:220*(1+s.speed/100),regen:s.regen,cdr:Math.min(s.cdr,50),nova:dmg*4*(1+s.novaPct/100),leech:s.leech,reach:s.reach,splash:Math.min(s.splash,300),magnet:s.magnet,skillRad:Math.min(s.skillRad,300),skillDur:s.skillDur,dashCd:Math.min(s.dashCd,60),potHeal:s.potHeal,lowArmor:Math.min(s.lowArmor,60),lowDmg:s.lowDmg,auraSlow:Math.min(s.auraSlow,50),goldPct:s.goldPct,antidote:s.antidote,execute:s.execute||0,bossDmg:s.bossDmg||0,xpPct:s.xpPct||0,lootPct:s.lootPct||0,echo:s.echo||0,waves:s.waves||0,frz:Math.min(s.frz,40),cold:s.cold,shard:Math.min(s.shard,60)};
+    armor:Math.min(s.armor,60),speed:220*(1+s.speed/100),regen:s.regen,cdr:Math.min(s.cdr,50),nova:dmg*4*(1+s.novaPct/100),leech:s.leech,reach:s.reach,splash:Math.min(s.splash,300),magnet:s.magnet,skillRad:Math.min(s.skillRad,300),skillDur:s.skillDur,dashCd:Math.min(s.dashCd,60),potHeal:s.potHeal,lowArmor:Math.min(s.lowArmor,60),lowDmg:s.lowDmg,auraSlow:Math.min(s.auraSlow,50),goldPct:s.goldPct,antidote:s.antidote,execute:s.execute||0,bossDmg:s.bossDmg||0,xpPct:s.xpPct||0,lootPct:s.lootPct||0,echo:s.echo||0,waves:s.waves||0,frz:Math.min(s.frz,40),cold:s.cold,shard:Math.min(s.shard,60),abSoul:Math.min(s.abSoul,6),abWard:s.abWard,abPulse:s.abPulse,abExec:Math.min(s.abExec,20),abRift:Math.min(s.abRift,60),abHunt:s.abHunt};
 }
 const dps=S=>S.dmg*S.aps*(1+S.crit/100*(S.critDmg/100-1))*(1+S.multi*.8)*(1+S.echo/100)*(1+S.waves*.5)*(heroCls==='archer'?1:1.2)+S.burn;
 
