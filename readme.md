@@ -335,7 +335,11 @@ Fichier `js/net.js` ; QR code par `qrcode-generator` chargé à la demande depui
 | Invité → hôte | g (état) | 20 / s | héros, tirs, coups portés (monstre, dégâts, critique), effets posés (ralenti, gel, brûlure, recul) |
 | Les deux sens | ping, bye | 2 s hors mission, fermeture | présence, départ propre |
 
-Ne circulent jamais : sauvegarde, inventaire, équipement, mods, or, essence, butin, expérience. Liaison WebRTC chiffrée ; débit total de l'hôte à 4 joueurs de l'ordre de 0,5 à 1 Mo/s en wifi local. Les dégâts des invités ne sont pas vérifiés par l'hôte. Un PC ou un Mac est l'hôte conseillé à 3 ou 4 joueurs ; le code de réponse du téléphone lui parvient par Partager puis Coller (pas de lecture de QR code par webcam pour l'instant, sauf Chrome sur Mac).
+Ne circulent jamais : sauvegarde, inventaire, équipement, mods, or, essence, butin, expérience. Liaison WebRTC chiffrée ; débit total de l'hôte à 4 joueurs de l'ordre de 0,5 à 1 Mo/s en wifi local. Les dégâts des invités ne sont pas vérifiés par l'hôte. Un PC ou un Mac est l'hôte conseillé à 3 ou 4 joueurs ; le code de réponse du téléphone lui parvient par Partager puis Coller ou, mieux, par la webcam du PC.
+
+Arrivée en cours de mission : si la connexion d'un invité s'ouvre alors que la mission de l'hôte tourne déjà (hôte qui a touché Lancer pendant « Connexion en cours »), l'hôte envoie à cet invité seul un message start et l'ajoute comme partenaire à côté de lui. Avant ce correctif, l'invité restait sur « En attente de l'hôte ». Version du protocole (NET\_V = 3) dans hello : deux appareils de versions différentes se déconnectent avec un message demandant de mettre le jeu à jour.
+
+Lecture des QR codes par caméra (bouton « Scanner avec la caméra », proposé dès que l'appareil a une caméra) : détecteur intégré du navigateur (BarcodeDetector) quand il existe, sinon jsQR 1.4.0 chargé à la demande depuis jsDelivr (webcam de PC, tous navigateurs) ; image réduite à 960 px, une lecture toutes les 120 ms, cadre de visée. Un code reconnu (commençant par Z ou P) est validé aussitôt : l'invité rejoint, l'hôte accepte la réponse, sans copier-coller. La caméra s'arrête dès la lecture, au bouton Arrêter ou à la fermeture. QR code affiché jusqu'à 320 px de large.
 
 ## Technique
 

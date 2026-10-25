@@ -4,6 +4,7 @@
 const NET={on:false,host:false,guest:false,pc:null,dc:null,state:'idle',code:'',err:'',hits:[],ebUsed:new Set(),snap:null,tick:null,
   peers:[],slot:0,roster:[],hostCls:null,ready:false};
 const NET_MAX=4; // joueurs, hôte compris
+const NET_V=3;   // version du protocole : deux appareils de versions différentes refusent de jouer ensemble
 const ICE=[{urls:'stun:stun.l.google.com:19302'}];
 const SLOT_C=['#e8853b','#8fd3e0','#b9a6f0','#f0cf4a'];
 // Nombre de joueurs dans la partie (hôte compris) : sert à la difficulté.
@@ -36,8 +37,10 @@ function sendRoster(){if(NET.host)netSend({t:'roster',list:rosterList()})}
 function wireDc(dc,peer){
   if(peer)peer.dc=dc;else NET.dc=dc;
   dc.onopen=()=>{
-    if(peer){peer.state='open';peer.lastRx=performance.now();NET.on=true;NET.state='lobby';netSendTo(peer,{t:'hello',cls:heroCls,slot:peer.slot,relic:myRelic()});sendRoster()}
-    else{NET.on=true;NET.lastRx=performance.now();NET.state='connected';netSend({t:'hello',cls:heroCls,relic:myRelic()})}
+    if(peer){peer.state='open';peer.lastRx=performance.now();NET.on=true;NET.state='lobby';netSendTo(peer,{t:'hello',v:NET_V,cls:heroCls,slot:peer.slot,relic:myRelic()});sendRoster();
+      // Mission déjà lancée (l'hôte a touché Lancer pendant la connexion) : le joueur rejoint en cours de route.
+      if(started&&G&&!G.over){netStartFor(peer);if(!NET.tick){clearInterval(NET.tick);NET.tick=setInterval(netTick,50)}toast(`<b style="color:${SLOT_C[peer.slot]}">Joueur ${peer.slot+1}</b> rejoint la mission.`)}}
+    else{NET.on=true;NET.lastRx=performance.now();NET.state='connected';netSend({t:'hello',v:NET_V,cls:heroCls,relic:myRelic()})}
     pingOn();SND.play('relic');toast('<b style="color:#8fd3e0">Coopération connectée.</b>');refreshCoopUi();drawCoop()};
   dc.onclose=()=>peer?netPeerLost(peer):netLost();dc.onerror=()=>{};
   dc.onmessage=e=>{if(peer)peer.lastRx=performance.now();else NET.lastRx=performance.now();let m;try{m=JSON.parse(e.data)}catch(x){return}
@@ -79,11 +82,14 @@ function netLost(){if(NET.state==='idle')return;const was=NET.on,wasGuest=NET.gu
 /* ---------- Démarrage de la mission ---------- */
 const SPAWN_OFF=[[0,0],[80,0],[-80,0],[0,80]];
 const mateNew=(slot,cls,x,y)=>({slot,cls:cls||'guerrier',x,y,face:0,hp:1,max:1,down:false,r:17,flash:0,dashT:0,spin:0,shield:0});
+const startMsg=()=>({t:'start',level:G.level,biome:G.biome,n:coopN(),map:{pil:G.pillars.filter(p=>p!==G.pod).map(p=>[p.x|0,p.y|0,+p.r.toFixed(1)]),bra:G.braziers.map(b=>[b.x|0,b.y|0]),run:G.runes.map(r=>[r.x|0,r.y|0,r.r|0])},x:G.P.x|0,y:G.P.y|0});
 function netStartHost(){ // appelé par l'hôte au lancement (main.js)
   const open=NET.peers.filter(p=>p.state==='open'),now=performance.now();for(const p of open)p.lastRx=now;
   G.mates=open.map(p=>{const o=SPAWN_OFF[p.slot]||[40,0],q=mateNew(p.slot,p.cls,G.P.x+o[0],G.P.y+o[1]);p.Q=q;p.sh=[];return q});
-  netSend({t:'start',level:G.level,biome:G.biome,n:1+open.length,map:{pil:G.pillars.map(p=>[p.x|0,p.y|0,+p.r.toFixed(1)]),bra:G.braziers.map(b=>[b.x|0,b.y|0]),run:G.runes.map(r=>[r.x|0,r.y|0,r.r|0])},x:G.P.x,y:G.P.y});
-  clearInterval(NET.tick);NET.tick=setInterval(netTick,50)}
+  netSend(startMsg());clearInterval(NET.tick);NET.tick=setInterval(netTick,50)}
+// Un joueur arrive alors que la mission tourne déjà : on ne lance que lui, près de l'hôte.
+function netStartFor(peer){peer.lastRx=performance.now();const o=SPAWN_OFF[peer.slot]||[40,0],q=mateNew(peer.slot,peer.cls,G.P.x+o[0],G.P.y+o[1]);peer.Q=q;peer.sh=[];
+  G.mates=(G.mates||[]).filter(x=>x.slot!==peer.slot);G.mates.push(q);netSendTo(peer,startMsg())}
 function netStartGuest(m){meta.mode='survie';newGame();G.level=m.level;G.biome=m.biome;if(floorPat)floorPat=null;
   G.pillars=m.map.pil.map(a=>({x:a[0],y:a[1],r:a[2]}));G.braziers=m.map.bra.map(a=>({x:a[0],y:a[1],ph:rand(0,6)}));G.runes=m.map.run.map(a=>({x:a[0],y:a[1],r:a[2]}));
   {const o=SPAWN_OFF[NET.slot]||[40,0];G.P.x=m.x+o[0];G.P.y=m.y+o[1];resolve(G.P)}G.cam.x=G.P.x;G.cam.y=G.P.y;G.en=[];G.mates=[];
@@ -118,7 +124,8 @@ function coopCheckFail(){if(!NET.host||!G||G.over)return;if(G.P.down&&!matesUp()
 function netRecvHost(peer,m){
   if(m.t==='ping')return;
   if(m.t==='bye'){netPeerLost(peer);return}
-  if(m.t==='hello'){peer.cls=m.cls;peer.relic=m.relic;if(peer.Q)peer.Q.cls=m.cls;sendRoster();drawCoop();return}
+  if(m.t==='hello'){if(m.v!==NET_V){netSendTo(peer,{t:'oldver',v:NET_V});NET.err=`Joueur ${peer.slot+1} : version du jeu différente. Mettez le jeu à jour sur les deux appareils (Réglages › Application), puis recommencez.`;netPeerLost(peer,true);return}
+    peer.cls=m.cls;peer.relic=m.relic;if(peer.Q)peer.Q.cls=m.cls;sendRoster();drawCoop();return}
   if(!G)return;
   if(m.t==='g'){if(!peer.Q){peer.Q=mateNew(peer.slot,peer.cls,G.P.x,G.P.y);if(G.mates&&!G.mates.includes(peer.Q))G.mates.push(peer.Q)}
     heroUnpack(m.p,peer.Q);peer.Q.slot=peer.slot;peer.shRaw=m.sh;peer.sh=m.sh.map(shotObj);peer.relic=m.rel;
@@ -131,6 +138,7 @@ function netRecvHost(peer,m){
 function netRecvGuest(m){
   if(m.t==='ping')return;
   if(m.t==='bye'){netLost();return}
+  if(m.t==='oldver'||(m.t==='hello'&&m.v!==NET_V)){const err='Version du jeu différente de celle de l\'hôte. Mettez le jeu à jour sur les deux appareils (Réglages › Application), puis recommencez.';netReset();NET.err=err;openCoop();NET.err=err;drawCoop();return}
   if(m.t==='hello'){if(m.slot)NET.slot=m.slot;NET.hostCls=m.cls;drawCoop();refreshCoopUi();return}
   if(m.t==='roster'){NET.roster=m.list||[];drawCoop();return}
   if(m.t==='start'){netStartGuest(m);return}
@@ -190,11 +198,12 @@ function codeBox(lab,code,share){return `<div class="coopcode"><span class="cx-h
   <textarea readonly id="coopOut" rows="3" aria-label="${lab}">${code}</textarea>
   <div class="actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-coop="copy">Copier</button>${share&&navigator.share?'<button class="cx-btn cx-btn--sm" data-coop="share">Partager</button>':''}</div></div>`}
 function pasteBox(lab,btn,act){return `<div class="coopcode"><span class="cx-hint" style="margin:0">${lab}</span><textarea id="coopIn" rows="3" placeholder="Colle le code ici" aria-label="${lab}"></textarea>
-  <div class="actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-coop="paste">Coller</button>${'BarcodeDetector' in window?'<button class="cx-btn cx-btn--sm" data-coop="scan">Scanner le QR code</button>':''}<button class="cx-btn cx-btn--sm cx-btn--primary" data-coop="${act}">${btn}</button></div><video id="coopCam" playsinline muted hidden></video></div>`}
+  <div class="actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-coop="paste">Coller</button>${camOk()?`<button class="cx-btn cx-btn--sm" data-coop="scan" data-then="${act}">Scanner avec la caméra</button>`:''}<button class="cx-btn cx-btn--sm cx-btn--primary" data-coop="${act}">${btn}</button></div>
+  <div class="camwrap" id="coopCamWrap" hidden><div class="camv"><video id="coopCam" playsinline muted></video><span class="camframe" aria-hidden="true"></span></div><p class="cx-hint" id="coopCamTxt" style="margin:0">Montre le QR code à la caméra, bien à plat et sans reflet.</p><div class="actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-coop="scanstop">Arrêter la caméra</button></div></div></div>`}
 const rosterHtml=list=>`<ul class="coopros">${list.map(r=>`<li><span class="dotc" style="background:${SLOT_C[r.slot]||'#888'}"></span><b>Joueur ${r.slot+1}</b>${r.slot===0?' · hôte':''}${NET.guest&&r.slot===NET.slot?' · toi':''}<span class="cx-hint" style="margin:0">${r.cls?CLS[r.cls].n:'…'}</span></li>`).join('')}</ul>`;
 const RULES=`<p class="cx-hint" style="margin:0">Jusqu'à ${NET_MAX} joueurs. Chacun garde son équipement et son butin, qui tombe séparément pour chaque joueur. Par joueur en plus, les monstres ont 50 % de vie en plus et sont 40 % plus nombreux. Un héros à terre se relève 8 s plus tard près d'un partenaire debout ; si tout le monde tombe, la mission échoue.</p>`;
-function drawCoop(){const body=$('coopBody');if(!body||$('coop').hidden)return;let h='';
-  const steps=`<ol class="coopsteps"><li>Tous les téléphones sont sur le <b>même wifi</b>.</li><li>Un joueur <b>héberge</b> et montre un code d'invitation ; un autre le <b>scanne ou le colle</b>.</li><li>Celui qui rejoint montre son code de réponse à l'hôte, qui le valide.</li><li>L'hôte ajoute ainsi jusqu'à ${NET_MAX-1} joueurs, un par un, puis lance la mission (mode Survie).</li></ol>`;
+function drawCoop(){const body=$('coopBody');if(!body||$('coop').hidden)return;camStop();let h='';
+  const steps=`<ol class="coopsteps"><li>Tous les appareils sont sur le <b>même wifi</b> (ou la même box).</li><li>Un joueur <b>héberge</b> et affiche un QR code d'invitation ; un autre le <b>scanne avec sa caméra</b> (ou colle le code).</li><li>Celui qui rejoint affiche son QR code de réponse : l'hôte le <b>scanne avec sa caméra ou sa webcam</b>, la connexion se valide toute seule.</li><li>L'hôte ajoute ainsi jusqu'à ${NET_MAX-1} joueurs, un par un, puis lance la mission (mode Survie).</li></ol>`;
   if(NET.host){const open=NET.peers.filter(p=>p.state==='open'),pend=NET.peers.find(p=>p.state!=='open'),full=1+NET.peers.length>=NET_MAX;
     h=`<section class="cx-section"><h3 class="cx-section__label">Ta partie · ${1+open.length} / ${NET_MAX} joueurs</h3>${rosterHtml(rosterList())}
       ${!pend&&!full?`<div class="actions" style="margin:0"><button class="cx-btn${open.length?'':' cx-btn--primary'}" data-coop="add">Inviter un joueur</button></div>`:''}
@@ -211,17 +220,31 @@ function drawCoop(){const body=$('coopBody');if(!body||$('coop').hidden)return;l
   body.innerHTML=h;
   const code=NET.host?(NET.peers.find(p=>p.state==='waitAnswer'||p.state==='connecting')||{}).code:NET.code;
   const qr=$('coopQr');if(qr&&code)loadQr().then(ok=>{if(ok&&$('coopQr'))$('coopQr').innerHTML=qrSvg(code)})}
-async function coopScan(){const v=$('coopCam');if(!v)return;try{const st=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});v.srcObject=st;v.hidden=false;await v.play();
-  const det=new BarcodeDetector({formats:['qr_code']});const stop=()=>{st.getTracks().forEach(t=>t.stop());v.hidden=true};
-  const loop=async()=>{if(v.hidden)return;try{const r=await det.detect(v);if(r.length){stop();$('coopIn').value=r[0].rawValue;return}}catch(e){}requestAnimationFrame(loop)};loop()}
-  catch(err){NET.err='Caméra indisponible : colle le code à la place.';drawCoop()}}
+/* Lecture du QR code par la caméra : détecteur du navigateur s'il existe (Android, Mac), sinon jsQR (webcam de PC, tous navigateurs). */
+const camOk=()=>!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);
+function loadJsQr(){return new Promise(res=>{if(window.jsQR)return res(true);const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';s.onload=()=>res(!!window.jsQR);s.onerror=()=>res(false);document.head.appendChild(s)})}
+let camStream=null;
+function camStop(){if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null}const w=$('coopCamWrap');if(w)w.hidden=true;const v=$('coopCam');if(v)v.srcObject=null}
+async function qrReader(){
+  if('BarcodeDetector' in window){try{const f=await BarcodeDetector.getSupportedFormats();if(f.includes('qr_code')){const det=new BarcodeDetector({formats:['qr_code']});return async v=>{const r=await det.detect(v);return r.length?r[0].rawValue:null}}}catch(e){}}
+  if(!await loadJsQr())return null;
+  const c=document.createElement('canvas'),g=c.getContext('2d',{willReadFrequently:true});
+  return async v=>{const w=v.videoWidth,h=v.videoHeight;if(!w||!h)return null;const k=Math.min(1,960/Math.max(w,h));c.width=Math.round(w*k);c.height=Math.round(h*k);
+    g.drawImage(v,0,0,c.width,c.height);const d=g.getImageData(0,0,c.width,c.height),r=jsQR(d.data,c.width,c.height,{inversionAttempts:'attemptBoth'});return r&&r.data?r.data:null}}
+async function coopScan(then){const v=$('coopCam'),w=$('coopCamWrap');if(!v||!w)return;camStop();
+  try{camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false})}
+  catch(err){NET.err='Caméra indisponible ou refusée : autorise la caméra pour ce site, ou colle le code à la place.';drawCoop();return}
+  v.srcObject=camStream;w.hidden=false;try{await v.play()}catch(e){}
+  const read=await qrReader();if(!read){camStop();NET.err='Lecteur de QR code indisponible (hors connexion ?) : colle le code à la place.';drawCoop();return}
+  let busy=false;const tick=async()=>{if(!camStream||w.hidden)return;if(!busy){busy=true;try{const code=await read(v);if(code&&/^[ZP][A-Za-z0-9_-]{40,}$/.test(code.trim())){camStop();SND.play('pick2');const box=$('coopIn');if(box)box.value=code.trim();
+        if(then==='answer')netAnswerIn(code.trim());else if(then==='joingo')netJoin(code.trim());return}}catch(e){}busy=false}setTimeout(tick,120)};tick()}
 function openCoop(){$('coop').hidden=false;NET.err='';drawCoop()}
 addEventListener('pagehide',()=>{if(NET.on)netSend({t:'bye'})});
 (function wireCoop(){
   const ov=document.createElement('div');ov.className='overlay';ov.id='coop';ov.hidden=true;ov.style.zIndex='40';
   ov.innerHTML=`<section class="cx-sheet" role="dialog" aria-label="Coopération"><div class="cx-sheet__grip"></div><header class="cx-sheet__head"><h2 class="cx-sheet__title">Coopération</h2><div class="cx-sheet__aside"><button class="cx-icon-btn cx-icon-btn--ghost" id="closeCoopX" aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></header><div class="cx-sheet__body" id="coopBody"></div><footer class="cx-sheet__foot"><button class="cx-btn cx-btn--primary" id="closeCoop">Fermer</button></footer></section>`;
   document.body.appendChild(ov);
-  const close=()=>{ov.hidden=true;const v=$('coopCam');if(v&&v.srcObject)v.srcObject.getTracks().forEach(t=>t.stop())};
+  const close=()=>{ov.hidden=true;camStop()};
   $('closeCoopX').onclick=close;$('closeCoop').onclick=close;
   $('coopBody').addEventListener('click',async e=>{const b=e.target.closest('[data-coop]');if(!b)return;const a=b.dataset.coop;NET.err='';
     if(!('RTCPeerConnection' in window)){NET.err='Ce navigateur ne permet pas la coopération.';drawCoop();return}
@@ -232,7 +255,8 @@ addEventListener('pagehide',()=>{if(NET.on)netSend({t:'bye'})});
     else if(a==='copy'){const t=$('coopOut');try{await navigator.clipboard.writeText(t.value);b.textContent='Copié'}catch(x){t.select()}}
     else if(a==='share'){try{await navigator.share({text:$('coopOut').value})}catch(x){}}
     else if(a==='paste'){try{$('coopIn').value=await navigator.clipboard.readText()}catch(x){$('coopIn').focus()}}
-    else if(a==='scan')coopScan();
+    else if(a==='scan')coopScan(b.dataset.then);
+    else if(a==='scanstop')camStop();
     else if(a==='quit'){if(NET.on)netSend({t:'bye'});netReset();drawCoop()}});
   const btn=document.createElement('button');btn.className='btn';btn.id='coopBtn';btn.textContent='Coop';btn.onclick=openCoop;
   const g=$('guideBtn');if(g)g.before(btn);
