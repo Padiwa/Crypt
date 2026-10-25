@@ -27,6 +27,8 @@ Les scripts sont classiques (pas de modules) et partagent la portée globale : *
 ## Mettre à jour
 Modifie les fichiers, puis incrémente `VERSION` en haut de `sw.js` (ex. `crypte-v41`) pour que les joueurs reçoivent la nouvelle version.
 
+L'appli détecte toute seule le changement de `VERSION` (au lancement, au retour au premier plan et toutes les 30 min, voir `js/update.js`) : un bandeau « Nouvelle version du jeu · Mettre à jour » s'affiche hors mission (accueil, pause, Camp, fin de partie). Réglages › Application montre la version installée et un bouton Rechercher.
+
 ## Tester en local
 `python3 -m http.server 8000` dans ce dossier, puis http://localhost:8000. Adresses de test : `#test` (invincible, rapide), `#test2d` (idem en rendu Canvas), `#rapide` (manches courtes).
 

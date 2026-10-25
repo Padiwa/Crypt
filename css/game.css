@@ -767,3 +767,11 @@ li.abyp{color:#cdb2ff;font-weight:600;border-left:2px solid #b07cff;padding-left
 .guidebtn{display:inline-flex;align-items:center;gap:6px;color:var(--ink);text-decoration:none}
 #guideBtnBag{text-decoration:none}
 #campHelp{text-decoration:none;color:var(--muted)}
+
+/* ---------- Mise à jour disponible ---------- */
+#updBar{position:fixed;left:0;right:0;top:0;z-index:60;display:flex;align-items:center;gap:8px;
+  padding:calc(8px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 8px max(16px,env(safe-area-inset-left,0px));
+  background:var(--panel2);border-bottom:2px solid var(--ember);box-shadow:0 10px 30px rgba(0,0,0,.5);font-size:14px}
+#updBar span{flex:1 1 0;min-width:0;line-height:1.3}
+#updBar button{flex:0 0 auto}
+#updBar b{color:var(--ember)}

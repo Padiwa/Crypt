@@ -1,6 +1,6 @@
 // Crypte des Cendres — cache hors ligne. Change VERSION à chaque mise à jour du jeu.
-const VERSION = 'crypte-v53';
-const CORE = ['./', './index.html', './manifest.webmanifest', './css/game.css', './js/data.js', './js/game.js', './js/render.js', './js/ui.js', './js/camp.js', './js/settings.js', './js/audio.js', './js/main.js', './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png'];
+const VERSION = 'crypte-v54';
+const CORE = ['./', './index.html', './manifest.webmanifest', './css/game.css', './js/data.js', './js/game.js', './js/render.js', './js/ui.js', './js/camp.js', './js/settings.js', './js/audio.js', './js/main.js', './js/update.js', './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png'];
 const EXTERNAL = ['https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.js'];
 
 self.addEventListener('install', e => {
@@ -22,8 +22,9 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   // Page et scripts du jeu : réseau d'abord (pour recevoir les mises à jour), cache si hors ligne.
   if (req.mode === 'navigate' || (url.origin === location.origin && /\.(js|css|html)$/.test(url.pathname))) {
-    e.respondWith(fetch(req).then(r => { const cp = r.clone(); caches.open(VERSION).then(c => c.put(req.mode === 'navigate' ? './index.html' : req, cp)); return r; })
-      .catch(() => caches.match(req.mode === 'navigate' ? './index.html' : req)));
+    // Chaque page garde sa propre copie (le guide ne remplace plus le jeu dans le cache).
+    e.respondWith(fetch(req).then(r => { if (r && r.ok) { const cp = r.clone(); caches.open(VERSION).then(c => c.put(req, cp)); } return r; })
+      .catch(() => caches.match(req, { ignoreSearch: true }).then(h => h || (req.mode === 'navigate' && !/\/aide\//.test(url.pathname) ? caches.match('./index.html') : h))));
     return;
   }
   // Le reste (icônes, PixiJS, polices) : cache d'abord, puis réseau, et on garde une copie.
@@ -34,3 +35,6 @@ self.addEventListener('fetch', e => {
     return r;
   }).catch(() => hit)));
 });
+
+// L'appli demande le numéro de version pour l'afficher dans les réglages.
+self.addEventListener('message', e => { if (e.data && e.data.type === 'version' && e.ports && e.ports[0]) e.ports[0].postMessage(VERSION); });

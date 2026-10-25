@@ -314,6 +314,8 @@ Une seule page HTML avec JavaScript, sans serveur.
 
 **Réglages** (bouton sur l'écran de départ et dans la pause, propres à l'appareil, clé `crypte-set`) : volume des effets et de la musique, tremblement Normal / Réduit / Désactivé, flash de butin, chiffres de dégâts, vibrations (coup reçu, légendaire ou affixe recherchée), rendu WebGL ou standard.
 
+**Mises à jour** (`js/update.js`) : l'appli installée vérifie `sw.js` au lancement, quand elle revient au premier plan et toutes les 30 min. Dès qu'une nouvelle `VERSION` est installée, un bandeau en haut « Nouvelle version du jeu · Mettre à jour » s'affiche, seulement hors mission (accueil, pause, Camp, fin de partie) ; « Mettre à jour » recharge la page, la croix le masque jusqu'au prochain lancement. Réglages › Application affiche la version installée et un bouton Rechercher. Le cache garde désormais une copie par page, pour que l'ouverture du guide n'écrase plus le jeu hors connexion.
+
 **Guide du joueur** (`aide/index.html`, 16 captures dans `aide/img/`) : une page illustrée qui explique chaque écran et chaque système, avec un sommaire en onglets. Trois accès, qui ouvrent un nouvel onglet : bouton Guide de l'écran d'accueil, bouton Guide du sac (section En mission) et bouton ? du Camp, qui ouvre la section de l'onglet affiché (`#camp-equip`, `#camp-arsenal`, `#camp-relics`, `#camp-mods`, `#camp-affix`, `#camp-forge`).
 
 **Bannière d'événements** : au centre en haut, un message à la fois pendant \~2 s, file de 3 classée par priorité (affixe recherchée ou légendaire > Gardien, relique ouverte, Gardien vaincu > élite, Frénésie). Les ramassages restent dans les messages sous la barre de vie, qui ne peuvent donc plus chasser un événement important.
