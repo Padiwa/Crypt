@@ -162,6 +162,11 @@ body:has(#camp:not([hidden])) .toast,body:has(#bag:not([hidden])) .toast{top:aut
 .sts span{font-size:11px;font-weight:700;border-radius:4px;padding:1px 6px;white-space:nowrap}
 .stp{background:rgba(110,200,80,.2);color:#9be36f;border:1px solid rgba(110,200,80,.5)}
 .stb{background:rgba(255,120,40,.2);color:#ffb04a;border:1px solid rgba(255,120,40,.5)}
+#lootFlash{position:fixed;inset:0;pointer-events:none;opacity:0;z-index:6;background:radial-gradient(circle at 50% 55%,rgba(255,236,170,.0) 25%,rgba(255,214,120,.38) 100%)}
+#lootFlash.on{animation:lflash .7s ease-out}
+#lootFlash.leg{background:radial-gradient(circle at 50% 55%,rgba(255,170,80,0) 25%,rgba(255,138,36,.42) 100%)}
+@keyframes lflash{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){#lootFlash.on{animation-duration:.4s}}
 #stVig{position:fixed;inset:0;pointer-events:none;opacity:0;transition:opacity .3s}
 #stVig.psn{opacity:1;box-shadow:inset 0 0 90px rgba(110,200,80,.45)}
 #stVig.brn{opacity:1;box-shadow:inset 0 0 90px rgba(255,110,40,.5)}
@@ -690,6 +695,7 @@ button.cx-line[aria-pressed="true"]::before{content:"→"; display:inline-block;
 <div class="xpbar" aria-hidden="true"><div id="xpFill"></div></div>
 
 <div id="stVig" aria-hidden="true"></div>
+<div id="lootFlash" aria-hidden="true"></div>
 <div class="hud">
   <div class="hp"><div class="hp-bar"><div class="hp-fill" id="hpFill"></div></div><div class="hp-txt" id="hpTxt">100 / 100</div><div class="sts"><span id="stP" class="stp" hidden></span><span id="stB" class="stb" hidden></span></div></div>
   <div class="room"><b id="lvlTxt">Niveau 1</b><small id="timeTxt">Sortie 3:00</small><small id="bossTxt">Gardien 1:00</small><small id="relTxt" hidden></small></div>
@@ -914,7 +920,7 @@ const MODES={
 /* ---------- Progression permanente ---------- */
 let meta={gold:0,up:{},tal:{},cp:1,start:1,essence:0,mods:{ferocite:0},
   load:{guerrier:['ferocite',null,null,null],archer:['ferocite',null,null,null],magicien:['ferocite',null,null,null]},
-  gear:{armure:null,amulette:null,bottes:null,anneau:null},stash:[],wpn:{guerrier:'g0',archer:'a0',magicien:'m0'},bp:{},built:{},parts:{},relics:{},mode:'survie',relicSel:null,relicQ:[],diff:0,waff:{},prest:{},pol:{},mast:{},align:{},wlv:{},wload:{},wpol:{},wmast:{},walign:{},hload:{},hslots:{},aura:{}};
+  gear:{armure:null,amulette:null,bottes:null,anneau:null},stash:[],wpn:{guerrier:'g0',archer:'a0',magicien:'m0'},bp:{},built:{},parts:{},relics:{},mode:'survie',relicSel:null,relicQ:[],diff:0,waff:{},prest:{},wish:{leg:true,aff:{}},pol:{},mast:{},align:{},wlv:{},wload:{},wpol:{},wmast:{},walign:{},hload:{},hslots:{},aura:{}};
 try{const m=JSON.parse(localStorage.getItem('crypte-meta')||'null');if(m)meta=Object.assign(meta,m)}catch(e){}
 if(!meta.v2){meta.cp=1;meta.start=1;meta.v2=1}
 if(!meta.v3){for(const id in meta.bp||{}){const w=wdef(id);if(w&&!meta.built[id])meta.gold+=w.bp}meta.bp={};meta.v3=1;meta.relics={lA1:[1,0],...(meta.relics||{})}}
@@ -1295,6 +1301,12 @@ function dmgEnemy(e,d,crit,dot){
 }
 function podHurt(d){const p=G.pod;if(!p||G.over||GOD)return;d*=.6;p.hp-=d;p.flash=1;if(p.hp<=0){p.hp=0;gameOver('pod')}}
 const itemLvl=()=>1+(G.level-1)*4+Math.floor(G.tl/45);
+function wishMatch(it){const W=meta.wish||{},hit=Object.keys(it.aff).filter(k=>W.aff&&W.aff[k]);
+  if(hit.length)return {aff:hit};if(it.r===3&&W.leg)return {leg:1};return null}
+let lfT=0;
+function lootFlash(w,it){const now=performance.now(),el=$('lootFlash');
+  if(now-lfT>350){lfT=now;el.className='';void el.offsetWidth;el.className='on'+(w.leg?' leg':'')}
+  toast(w.aff?`<b style="color:#ffe08a">✦ Affixe recherchée</b> · <span style="color:${RAR[it.r].c}">${esc(it.name)}</span> : ${w.aff.map(k=>AFF[k].t(it.aff[k])).join(', ')}`:`<b style="color:#ff8a24">✦ Légendaire</b> · ${esc(it.name)}`)}
 function kill(e){
   e.dead=true;G.kills++;
   if(e.type==='slime'&&e.gen<2){burst(e.x,e.y,14,'#7fe0c8',150,3);
@@ -1303,7 +1315,7 @@ function kill(e){
   const boss=e.type==='boss',L=G.level,dl=1+dif().loot,lm=lootMul(L)*(1+(S.lootPct||0)/100)*dl;
   G.ult=Math.min(ultNeed(),(G.ult||0)+(boss?10:1));
   burst(e.x,e.y,boss?60:10,e.col,boss?320:150,4);burst(e.x,e.y,boss?20:4,'#e8853b',120);
-  const push=(o,s=20)=>G.drops.push(Object.assign({x:e.x+rand(-s,s),y:e.y+rand(-s,s),t:rand(0,6),age:0,mt:0},o));
+  const push=(o,s=20)=>{const d=Object.assign({x:e.x+rand(-s,s),y:e.y+rand(-s,s),t:rand(0,6),age:0,mt:0},o);G.drops.push(d);if(o.kind==='item'){const w=wishMatch(o.item);if(w){d.wish=1;lootFlash(w,o.item)}}};
   if(boss){
     push({kind:'item',item:genItem(itemLvl(),2)},40);push({kind:'item',item:genItem(itemLvl(),1)},40);push({kind:'relic',id:relicDrop()},40);push({kind:'potion'},40);
     for(let i=0;i<Math.floor((L-1)/3);i++)push({kind:'item',item:genItem(itemLvl(),1)},50);
@@ -1738,7 +1750,8 @@ function drawDrop(d){
     ctx.save();ctx.translate(d.x,d.y+bob);ctx.rotate(d.t*.8);ctx.fillStyle='#1d1822';ctx.strokeStyle=c;ctx.lineWidth=2.5;ctx.beginPath();
     for(let i=0;i<6;i++){const a=i/6*Math.PI*2;ctx.lineTo(Math.cos(a)*10,Math.sin(a)*10)}ctx.closePath();ctx.fill();ctx.stroke();ctx.fillStyle=c;circle(0,0,3.5);ctx.fill();ctx.restore();return}
   const col=d.kind==='potion'?'#5fbf7a':RAR[d.item.r].c;
-  if(d.kind==='item')beam(d.x,d.y,d.item.r===3?150:d.item.r===2?100:60,col,.35);
+  if(d.kind==='item'){beam(d.x,d.y,d.wish?220:d.item.r===3?150:d.item.r===2?100:60,d.wish?'#ffe08a':col,d.wish?.6:.35);
+    if(d.wish){const k=(G.t*1.6)%1;ctx.strokeStyle=`rgba(255,224,138,${.8*(1-k)})`;ctx.lineWidth=2.5;circle(d.x,d.y,10+k*26);ctx.stroke()}}
   ctx.fillStyle='rgba(0,0,0,.4)';ctx.beginPath();ctx.ellipse(d.x,d.y+8,8,3,0,0,7);ctx.fill();
   ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(d.x,d.y-10+bob);ctx.lineTo(d.x+7,d.y+bob);ctx.lineTo(d.x,d.y+10+bob);ctx.lineTo(d.x-7,d.y+bob);ctx.fill();
   ctx.strokeStyle='rgba(0,0,0,.6)';ctx.lineWidth=1.5;ctx.stroke();
@@ -2002,7 +2015,7 @@ function renderPixi(){
     else if(d.kind==='relic'){const r=RELICS[d.id].t;s.texture=T.relic[r];s.position.set(d.x,d.y+bob);beamC=RTIER[r].c;beamH=130;beamA=.4}
     else if(d.kind==='part'){const r=bpdef(d.part.w).r;s.texture=T.part[r];s.position.set(d.x,d.y+bob);s.rotation=d.t*.8;beamC=RAR[r].c;beamH=90}
     else if(d.kind==='potion'){s.texture=T.potion;s.position.set(d.x,d.y+bob)}
-    else{s.texture=T.item[d.item.r];s.position.set(d.x,d.y+bob);beamC=RAR[d.item.r].c;beamH=d.item.r===3?150:d.item.r===2?100:60;beamA=.35}
+    else{s.texture=T.item[d.item.r];s.position.set(d.x,d.y+bob);beamC=d.wish?'#ffe08a':RAR[d.item.r].c;beamH=d.wish?220:d.item.r===3?150:d.item.r===2?100:60;beamA=d.wish?.6:.35;if(d.wish){const k=(G.t*1.6)%1;s.scale.set(1+.25*Math.sin(G.t*8))}}
     if(beamH){const b=take(PP.beam);b.texture=T.beam;b.tint=hexc(beamC);b.alpha=beamA;b.position.set(d.x,d.y);b.width=8;b.height=beamH}}
   // ennemis
   const shadow=(x,y,r)=>{const s=take(PP.sh);s.texture=T.shadow;s.position.set(x,y+r*.75);s.width=r*2.1;s.height=r*.9;s.alpha=.4;s.rotation=0;s.tint=0};
@@ -2467,6 +2480,14 @@ const AFF_NAME={dmgPct:'Dégâts',apsPct:'Vitesse d\'attaque',crit:'Chances de c
 const AFF_CATN={off:'Offensives',def:'Défensives',uti:'Utilitaires'};
 const affShort=(k,v)=>{const pct=!['hp','regen','burn','multi','pierce'].includes(k),neg=k==='armor'||k==='cdr';return `${neg?'−':'+'}${fmtN(v)}${pct?' %':k==='regen'?' PV/s':k==='burn'?' /s':''}`};
 const affEff=(it,k)=>NOSCALE[k]?it.aff[k]:it.aff[k]*upMul(it.up);
+function wishSection(){const W=meta.wish||(meta.wish={leg:true,aff:{}});W.aff=W.aff||{};
+  const keys=Object.keys(AFF).filter(k=>!AFF[k].w),n=keys.filter(k=>W.aff[k]).length;
+  const chip=k=>`<button class="cx-chip cx-chip--sm" data-cact="wish" data-arg="${k}" aria-pressed="${!!W.aff[k]}">${AFF_NAME[k]||k}</button>`;
+  const grp=c=>{const ks=keys.filter(k=>(AFF_CAT[k]||'uti')===c);return ks.length?`<span class="cx-hint" style="margin:0">${AFF_CATN[c]}</span><div class="cx-chips">${ks.map(chip).join('')}</div>`:''};
+  return `<section class="cx-section"><h3 class="cx-section__label">Alertes de butin</h3>
+    <p class="cx-hint" style="margin:0">En mission, l'écran s'illumine et l'objet porte un grand faisceau doré quand un objet tombe avec une de ces affixes${W.leg?', ou quand un légendaire tombe':''}.</p>
+    <div class="cx-chips"><button class="cx-chip cx-chip--sm" data-cact="wishleg" aria-pressed="${!!W.leg}" style="${W.leg?'':'color:var(--rar-legend)'}">Légendaires</button>${n?`<button class="cx-btn cx-btn--ghost cx-btn--sm" data-cact="wishnone" style="margin:0">Tout retirer (${n})</button>`:''}</div>
+    ${grp('off')}${grp('def')}${grp('uti')}</section>`}
 function affFinder(){
   const srcs=[...Object.entries(meta.gear).filter(([k,i])=>i&&!i.lock).map(([k,i])=>['g:'+k,i,'équipé']),...meta.stash.filter(i=>!i.lock).map(i=>['s:'+i.id,i,'coffre'])];
   const by={};for(const [key,it,w] of srcs)for(const k in it.aff){if(!AFF[k])continue;(by[k]||(by[k]=[])).push({key,it,w,v:affEff(it,k)})}
@@ -2520,7 +2541,7 @@ function campAffix(){
       if(!Object.keys(d.aff).length&&!(st&&st.mode==='add'))tLines+='<li class="cx-line cx-line--base">Aucune affixe</li>';}
     h+=`<div class="cx-diff">${xfDiffCard('src',s,s?wlab(xf.src):'',sLines,st&&st.ok)}${xfDiffCard('dst',d,d?wlab(xf.dst):'',tLines,st&&st.ok?true:null)}</div>`;
   }
-  h+=affFinder();
+  h+=affFinder();h+=wishSection();
   const eqW=meta.wpn[heroCls]&&ownedW(meta.wpn[heroCls])?meta.wpn[heroCls]:WPN[heroCls][0].id;
   h+=`<section class="cx-section"><h3 class="cx-section__label">Équipé · ${CLS[heroCls].n}</h3><div class="cx-slots">${xfSlot('w:'+eqW,weaponItem(heroCls,eqW),'Arme')}${['armure','amulette','bottes','anneau'].map(k=>xfSlot('g:'+k,meta.gear[k],SLOT[k])).join('')}</div></section>`;
   const ow=Object.keys(WPN).flatMap(c=>WPN[c].filter(w=>ownedW(w.id)&&w.id!==eqW).map(w=>[c,w]));
@@ -2625,6 +2646,9 @@ $('campSheet').addEventListener('click',e=>{
     else if(a==='xfk'){xf.k=arg;xf.rep=''}
     else if(a==='xfpick'){xf.pick=arg}
     else if(a==='afcat'){afCat=arg;afOpen=''}
+    else if(a==='wish'){const W=meta.wish||(meta.wish={leg:true,aff:{}});W.aff=W.aff||{};if(W.aff[arg])delete W.aff[arg];else W.aff[arg]=true}
+    else if(a==='wishleg'){const W=meta.wish||(meta.wish={leg:true,aff:{}});W.leg=!W.leg}
+    else if(a==='wishnone'){if(meta.wish)meta.wish.aff={}}
     else if(a==='afopen'){afOpen=afOpen===arg?'':arg}
     else if(a==='afuse'){const [k,key]=arg.split('|'),it=xfGet(key);if(!it||it.lock||it.aff[k]==null||key===xf.dst)return;xf.src=key;xf.k=k;xf.rep='';xf.pick='dst'}
     else if(a==='afilter'){afF=arg;afP=0}
