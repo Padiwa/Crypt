@@ -138,6 +138,8 @@ body:has(#camp:not([hidden])) .toast{top:auto;bottom:calc(env(safe-area-inset-bo
 .mod.off{opacity:.4;filter:grayscale(1)}
 .alrow{display:flex;flex-wrap:wrap;gap:6px}
 .over{color:var(--blood)!important}
+.upg{display:flex;flex-direction:column;gap:6px;border-top:1px solid #2a242e;padding-top:8px;margin-top:4px;font-size:13px;color:var(--muted)}
+.upg b{color:var(--ess)}
 .relb{border-color:var(--tc);color:var(--tc);padding:6px 10px;font-size:13px;font-weight:700}
 .tab[aria-selected="true"]{background:var(--panel2);color:var(--ink);box-shadow:inset 0 -2px 0 var(--ember)}
 .ups{display:flex;flex-direction:column;gap:6px}
@@ -423,7 +425,7 @@ const MODES={
 /* ---------- Progression permanente ---------- */
 let meta={gold:0,up:{},tal:{},cp:1,start:1,essence:0,mods:{ferocite:0},
   load:{guerrier:['ferocite',null,null,null],archer:['ferocite',null,null,null],magicien:['ferocite',null,null,null]},
-  gear:{armure:null,amulette:null,bottes:null,anneau:null},stash:[],wpn:{guerrier:'g0',archer:'a0',magicien:'m0'},bp:{},built:{},parts:{},relics:{},mode:'survie',relicSel:null,pol:{},mast:{},align:{}};
+  gear:{armure:null,amulette:null,bottes:null,anneau:null},stash:[],wpn:{guerrier:'g0',archer:'a0',magicien:'m0'},bp:{},built:{},parts:{},relics:{},mode:'survie',relicSel:null,pol:{},mast:{},align:{},wlv:{}};
 try{const m=JSON.parse(localStorage.getItem('crypte-meta')||'null');if(m)meta=Object.assign(meta,m)}catch(e){}
 if(!meta.v2){meta.cp=1;meta.start=1;meta.v2=1}
 if(!meta.v3){for(const id in meta.bp||{}){const w=wdef(id);if(w&&!meta.built[id])meta.gold+=w.bp}meta.bp={};meta.v3=1;meta.relics={lA1:[1,0],...(meta.relics||{})}}
@@ -556,8 +558,13 @@ function genItem(l,minR=0){
   it.type=base;
   return it;
 }
+const UP_MAX=100,upCostLv=n=>5+3*n+Math.floor(n*n/10),upMul=n=>1+.02*(n||0),NOSCALE={multi:1,pierce:1};
+const upCostRange=(from,k)=>{let c=0;for(let i=from;i<Math.min(UP_MAX,from+k);i++)c+=upCostLv(i);return c};
+const upInvested=n=>upCostRange(0,n||0);
+const fmtN=x=>(Math.round(x*10)/10).toLocaleString('fr-FR');
+const itemName=it=>it.name+(it.up?` +${it.up}`:'');
 function weaponItem(c,id){const w=(id&&wdef(id)&&ownedW(id))?wdef(id):wdef(WPN[c][0].id);
-  return {id:'w_'+w.id,wid:w.id,slot:'arme',r:w.r,lvl:1,base:{k:'dmg',v:w.dmg},aff:{...w.aff},name:w.n,type:'Arme'}}
+  return {id:'w_'+w.id,wid:w.id,slot:'arme',r:w.r,lvl:1,base:{k:'dmg',v:w.dmg},aff:{...w.aff},name:w.n,type:'Arme',up:meta.wlv[w.id]||0}}
 const curEq=()=>({arme:weaponItem(heroCls,meta.wpn[heroCls]),armure:meta.gear.armure||null,amulette:meta.gear.amulette||null,bottes:meta.gear.bottes||null,anneau:meta.gear.anneau||null});
 function rollPart(){
   const L=G?G.level:1,ws=[...WPN[heroCls].slice(1),...GEAR_BP],wt=ws.map((w,i)=>i<4?Math.max(.5,4-i+(L-1)*i*.7):Math.max(.3,.2*L));
@@ -568,7 +575,7 @@ const partLabel=p=>{const w=bpdef(p.w);return `<span style="color:${RAR[w.r].c}"
 
 function stats(eq){
   const b=CLS[heroCls].base,s={dmg:b.dmg,aps:b.aps,hp:b.hp,crit:b.crit,critDmg:150,multi:0,pierce:0,burn:0,armor:b.armor,speed:b.speed,regen:0,cdr:b.cdr,novaPct:0,dmgPct:0,apsPct:0,leech:0,reach:0,splash:0,burnPct:0,chill:0,shock:0};
-  for(const it of Object.values(eq))if(it){s[it.base.k]+=it.base.v;for(const k in it.aff)s[k]+=it.aff[k]}
+  for(const it of Object.values(eq))if(it){const m=upMul(it.up);s[it.base.k]+=it.base.v*m;for(const k in it.aff)s[k]+=NOSCALE[k]?it.aff[k]:it.aff[k]*m}
   for(const id of activeMods(heroCls))s[MODS[id].k]+=modVal(id,meta.mods[id]);
   const R=(G&&G.run)||{},rr=k=>R[k]||0;
   s.dmgPct+=rr('dmg')*12;s.apsPct+=rr('aps')*10;s.crit+=rr('crit')*5;s.critDmg+=rr('cdmg')*30;s.speed+=rr('spd')*8;s.regen+=rr('regen')*1.5;
@@ -1404,10 +1411,17 @@ function statRows(St){
 }
 function slotsHtml(eq,click,selSlot){
   return Object.keys(SLOT).map(k=>{const it=eq[k],tag=click?'button':'div';
-    return `<${tag} class="slot${selSlot===k?' sel':''}"${click?` data-slot="${k}"`:''}><span>${SLOT[k]}</span><strong style="color:${it?RAR[it.r].c:'var(--muted)'}">${it?it.name:'Vide'}</strong></${tag}>`}).join('');
+    return `<${tag} class="slot${selSlot===k?' sel':''}"${click?` data-slot="${k}"`:''}><span>${SLOT[k]}</span><strong style="color:${it?RAR[it.r].c:'var(--muted)'}">${it?itemName(it):'Vide'}</strong></${tag}>`}).join('');
 }
 function better(it){const e=curEq(),a=stats(e),b=stats({...e,[it.slot]:it});return dps(b)+b.hp*.3>dps(a)+a.hp*.3}
 const cellHtml=(it,attr,sel,up)=>`<button class="cell${sel?' sel':''}${up?' up':''}" data-${attr}="${it.id}" style="border-color:${RAR[it.r].c};color:${RAR[it.r].c}" aria-label="${it.name}">${GLYPH[it.slot]}</button>`;
+function upBlock(it){
+  const n=it.up||0;
+  if(n>=UP_MAX)return `<div class="upg"><span>Amélioration <b>+100 / 100</b> · statistiques ×3</span></div>`;
+  const c1=upCostRange(n,1),k=Math.min(10,UP_MAX-n),ck=upCostRange(n,k);
+  return `<div class="upg"><span>Amélioration <b>+${n} / ${UP_MAX}</b> · statistiques ×${fmtN(upMul(n))} · chaque niveau ajoute 2 % des valeurs de base</span>
+    <div class="actions"><button class="btn buy" data-cact="upg" data-arg="1" ${meta.essence<c1?'disabled':''}>+1 · <span class="essi"></span>${c1}</button>${k>1?`<button class="btn buy" data-cact="upg" data-arg="${k}" ${meta.essence<ck?'disabled':''}>+${k} · <span class="essi"></span>${ck}</button>`:''}</div></div>`;
+}
 function card(it,mode){
   const r=RAR[it.r];let extra='';
   if(mode==='stash'||mode==='run'){
@@ -1415,13 +1429,14 @@ function card(it,mode){
     const line=(lab,x,y)=>{const d=Math.round(y)-Math.round(x);return `<span>${lab} ${Math.round(x)} → <b class="${d>0?'g':d<0?'b':''}">${Math.round(y)}</b></span>`};
     extra=`<div class="cmp">${line('DPS',dps(a),dps(b))}${line('Vie',a.hp,b.hp)}${line('Compétence',a.nova,b.nova)}</div>`+(mode==='run'
       ?`<div class="actions"><button class="btn main" data-ract="${it.id}">Équiper maintenant</button></div><p class="empty" style="font-size:13px">Un objet équipé est gardé même si tu meurs. L'ancien part au coffre du Camp.</p>`
-      :`<div class="actions"><button class="btn main" data-cact="equip">Équiper</button><button class="btn" data-cact="recycle">Recycler · +${r.shard*2} essence</button></div>`);
+      :`<div class="actions"><button class="btn main" data-cact="equip">Équiper</button><button class="btn" data-cact="recycle">Recycler · +${r.shard*2+Math.floor(upInvested(it.up)/2)} essence</button></div>`+upBlock(it));
   }else if(mode==='worn'){
     extra=it.slot==='arme'?'<div class="actions"><button class="btn" data-cact="toarsenal">Changer d\'arme à l\'Armurerie</button></div>'
       :`<div class="actions"><button class="btn" data-cact="unequip" ${meta.stash.length>=40?'disabled':''}>Retirer au coffre</button></div>`;
+    extra+=upBlock(it);
   }
-  return `<div class="card"><div class="nm" style="color:${r.c}">${it.name}</div><div class="meta">${r.n} · ${SLOT[it.slot]}${it.wid?' · fabriquée':` · ${it.type} · niveau ${it.lvl}`}${mode==='worn'?' · équipé':''}</div>
-    <ul><li>${baseLine(it)}</li>${Object.keys(it.aff).map(k=>`<li>${AFF[k].t(it.aff[k])}</li>`).join('')}</ul>${extra}</div>`;
+  return `<div class="card"><div class="nm" style="color:${r.c}">${itemName(it)}</div><div class="meta">${r.n} · ${SLOT[it.slot]}${it.wid?' · fabriquée':` · ${it.type} · niveau ${it.lvl}`}${mode==='worn'?' · équipé':''}</div>
+    <ul><li>${baseTxtOf(it.slot,fmtN(it.base.v*upMul(it.up)))}</li>${Object.keys(it.aff).map(k=>`<li>${AFF[k].t(NOSCALE[k]?it.aff[k]:fmtN(it.aff[k]*upMul(it.up)))}</li>`).join('')}</ul>${extra}</div>`;
 }
 
 /* ---------- Pause ---------- */
@@ -1621,12 +1636,12 @@ function syncEq(){if(G&&(!started||G.over)){G.eq=curEq();S=stats(G.eq);G.P.hp=S.
 let campMsg='',recyConfirm=false;
 function fragStatus(id){const pc=meta.parts[id]||[0,0,0];return pc.filter(n=>n>0).length}
 function campEquip(){
-  const eq=curEq(),St=stats(eq),rec=meta.stash.filter(i=>i.type!=='Prime'),ess=rec.reduce((a,i)=>a+RAR[i.r].shard*2,0);
+  const eq=curEq(),St=stats(eq),rec=meta.stash.filter(i=>i.type!=='Prime'&&!i.up),ess=rec.reduce((a,i)=>a+RAR[i.r].shard*2,0);
   let det='<p class="empty" style="font-size:13px">Touche un emplacement ou un objet du coffre. ▲ signale une amélioration.</p>';
   if(campSel&&campSel.slot){const it=eq[campSel.slot];det=it?card(it,'worn'):'<p class="empty">Emplacement vide. Équipe un objet depuis le coffre.</p>'}
   else if(campSel&&campSel.stash){const it=meta.stash.find(i=>i.id===campSel.stash);if(it)det=card(it,'stash')}
   const recBtn=!rec.length?'':recyConfirm
-    ?`<div class="card"><p class="empty" style="font-size:13px">Recycler ${rec.length} objet${rec.length>1?'s':''} du coffre contre ${ess} essence ? Les objets Prime fabriqués sont gardés.</p><div class="actions"><button class="btn main" data-cact="recyall">Tout recycler</button><button class="btn" data-cact="recycancel">Annuler</button></div></div>`
+    ?`<div class="card"><p class="empty" style="font-size:13px">Recycler ${rec.length} objet${rec.length>1?'s':''} du coffre contre ${ess} essence ? Les objets Prime et les objets améliorés sont gardés.</p><div class="actions"><button class="btn main" data-cact="recyall">Tout recycler</button><button class="btn" data-cact="recycancel">Annuler</button></div></div>`
     :`<button class="btn" data-cact="recyask" style="align-self:flex-start">Tout recycler · +${ess} essence</button>`;
   return `${campMsg}<h3>${CLS[heroCls].n} · équipement</h3><div class="slots">${slotsHtml(eq,true,campSel&&campSel.slot)}</div><div class="statgrid">${statRows(St)}</div>
     <h3>Coffre · ${meta.stash.length} / 40</h3>${recBtn}
@@ -1737,9 +1752,14 @@ $('campBody').addEventListener('click',e=>{
     else if(a==='impok'){const dd=savePending;try{localStorage.setItem('crypte-meta',JSON.stringify(dd.meta));if(dd.cls)localStorage.setItem('crypte-cls',dd.cls);if(dd.best)localStorage.setItem('crypte-best2',String(dd.best));location.reload();return}catch(err){saveMsg='Impossible d\'écrire la sauvegarde : le stockage de ce navigateur est bloqué.'}}
     else if(a==='recyask')recyConfirm=true;
     else if(a==='recycancel')recyConfirm=false;
-    else if(a==='recyall'){const rec=meta.stash.filter(i=>i.type!=='Prime');let e=0;for(const it of rec)e+=RAR[it.r].shard*2;meta.stash=meta.stash.filter(i=>i.type==='Prime');meta.essence+=e;recyConfirm=false;campSel=null;toast(`${rec.length} objet${rec.length>1?'s':''} recyclé${rec.length>1?'s':''} · +${e} essence`)}
+    else if(a==='recyall'){const rec=meta.stash.filter(i=>i.type!=='Prime'&&!i.up);let e=0;for(const it of rec)e+=RAR[it.r].shard*2;meta.stash=meta.stash.filter(i=>i.type==='Prime'||i.up);meta.essence+=e;recyConfirm=false;campSel=null;toast(`${rec.length} objet${rec.length>1?'s':''} recyclé${rec.length>1?'s':''} · +${e} essence`)}
     if(a==='equip'){const it=meta.stash.find(i=>i.id===campSel.stash);if(it){meta.stash=meta.stash.filter(i=>i!==it);const old=meta.gear[it.slot];if(old)meta.stash.push(old);meta.gear[it.slot]=it;campSel={slot:it.slot}}}
-    else if(a==='recycle'){const it=meta.stash.find(i=>i.id===campSel.stash);if(it){meta.stash=meta.stash.filter(i=>i!==it);meta.essence+=RAR[it.r].shard*2;campSel=null}}
+    else if(a==='recycle'){const it=meta.stash.find(i=>i.id===campSel.stash);if(it){meta.stash=meta.stash.filter(i=>i!==it);meta.essence+=RAR[it.r].shard*2+Math.floor(upInvested(it.up)/2);campSel=null}}
+    else if(a==='upg'){const k=+arg;let it=null,isW=false,wid=null;
+      if(campSel&&campSel.slot==='arme'){isW=true;wid=meta.wpn[heroCls]&&ownedW(meta.wpn[heroCls])?meta.wpn[heroCls]:WPN[heroCls][0].id}
+      else if(campSel&&campSel.slot)it=meta.gear[campSel.slot];else if(campSel&&campSel.stash)it=meta.stash.find(i=>i.id===campSel.stash);
+      const n=isW?(meta.wlv[wid]||0):it?(it.up||0):null;
+      if(n!==null&&n<UP_MAX){const kk=Math.min(k,UP_MAX-n),c=upCostRange(n,kk);if(meta.essence>=c){meta.essence-=c;if(isW)meta.wlv[wid]=n+kk;else it.up=n+kk;toast(`Amélioré à +${n+kk}`)}}}
     else if(a==='unequip'){const s=campSel.slot,it=meta.gear[s];if(it&&meta.stash.length<40){meta.stash.push(it);meta.gear[s]=null;campSel={stash:it.id}}}
     else if(a==='toarsenal'){campTab='arsenal';campSel=null}
     else if(a==='wequip'){if(ownedW(arg))meta.wpn[heroCls]=arg}
