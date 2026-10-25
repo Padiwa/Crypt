@@ -273,6 +273,9 @@ body:has(#camp:not([hidden])) .toast{top:auto;bottom:calc(env(safe-area-inset-bo
 .choice b{font-family:var(--display);font-weight:500;font-size:21px;line-height:1.05;color:var(--cc)}
 .choice p{margin:0;font-size:14px;color:var(--ink)}
 .choice .pips i.on{background:var(--cc)}
+.choice .pips i.nx{background:transparent;box-shadow:inset 0 0 0 1.5px var(--cc);animation:nxp 1s ease-in-out infinite alternate}
+@keyframes nxp{from{opacity:.45}to{opacity:1}}
+.choice b small.last{color:var(--cc);font-weight:800}
 .choice small{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-left:6px;font-family:var(--body)}
 .runups{display:flex;flex-wrap:wrap;gap:6px}
 .runups span{font-size:13px;border:1px solid var(--line);border-radius:999px;padding:3px 10px;background:var(--panel2)}
@@ -1683,7 +1686,7 @@ function drawBag(){
   $('statgrid').innerHTML=statRows(S);
   $('runUpsTitle').textContent=`Bonus de la partie · héros niveau ${G.hl}`;
   const ru=RUP.filter(u=>G.run[u.k]);
-  $('runUps').innerHTML=ru.length?ru.map(u=>`<span style="border-color:${u.c}">${u.n} <b>×${G.run[u.k]}</b></span>`).join(''):'<p class="empty" style="font-size:13px">Ramasse les cristaux d\'expérience pour monter de niveau et choisir des bonus.</p>';
+  $('runUps').innerHTML=ru.length?ru.map(u=>`<span style="border-color:${u.c}">${u.n} <b>${G.run[u.k]>=u.max?'max':`${G.run[u.k]} / ${u.max}`}</b></span>`).join(''):'<p class="empty" style="font-size:13px">Ramasse les cristaux d\'expérience pour monter de niveau et choisir des bonus.</p>';
   const L=G.loot;
   $('runLoot').innerHTML=(L.items.length||L.parts.length||L.relics.length)
     ?(L.items.length?`<div class="grid">${L.items.map(it=>cellHtml(it,'run',runSel===it.id,better(it))).join('')}</div>`:'')
@@ -1704,13 +1707,14 @@ function gainXp(v){
 let luShown=0;
 function showLevelUp(){
   paused=true;resetJoy();$('bag').hidden=true;
-  const av=RUP.filter(u=>(!u.cls||u.cls.includes(G.cls))&&(G.run[u.k]||0)<u.max&&(u.k!=='fiole'||G.potions<5)),pool=[...av],out=[];
+  const capped={crit:S.crit>=75,cdr:S.cdr>=50,refl:S.dashCd>=60,endu:S.antidote>=60};
+  const av=RUP.filter(u=>(!u.cls||u.cls.includes(G.cls))&&(G.run[u.k]||0)<u.max&&!capped[u.k]&&(u.k!=='fiole'||G.potions<5)),pool=[...av],out=[];
   while(out.length<3&&pool.length)out.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
   for(const f of RUP_FILL)if(out.length<3)out.push(f);
   $('luSub').textContent=`Héros niveau ${G.hl-G.pend+1}`;
   $('choices').innerHTML=out.map((u,i)=>{const rk=G.run[u.k]||0;
     const d=u.k==='purse'?`+${20*G.level} or`:u.d;
-    return `<button class="choice" data-k="${u.k}" style="--cc:${u.c}"><span class="k">${i+1}</span><b>${u.n}${u.max?(rk?`<small>rang ${rk+1}</small>`:'<small>nouveau</small>'):''}</b><p>${d}</p>${u.max?`<span class="pips">${Array.from({length:u.max},(_,j)=>`<i class="${j<=rk?'on':''}"></i>`).join('')}</span>`:''}</button>`}).join('');
+    return `<button class="choice" data-k="${u.k}" style="--cc:${u.c}"><span class="k">${i+1}</span><b>${u.n}${u.max?(rk+1>=u.max?`<small class="last">rang ${rk+1} / ${u.max} · dernier</small>`:rk?`<small>rang ${rk} → ${rk+1} / ${u.max}</small>`:`<small>nouveau · rang 1 / ${u.max}</small>`):''}</b><p>${d}</p>${u.max?`<span class="pips" aria-hidden="true">${Array.from({length:u.max},(_,j)=>`<i class="${j<rk?'on':j===rk?'nx':''}"></i>`).join('')}</span>`:''}</button>`}).join('');
   $('choices').querySelectorAll('.choice').forEach(b=>b.onclick=()=>{if(performance.now()-luShown<350)return;pickUp(b.dataset.k)});
   luShown=performance.now();
   $('lvlup').hidden=false;

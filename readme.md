@@ -126,7 +126,7 @@ Chaque ennemi lâche un cristal d'expérience (goule et chauve-souris 1, archer 
 | Bonne étoile | +15 % de chances de butin pendant la mission | 3 | toutes |
 | Fiole de réserve | +1 potion tout de suite (si moins de 5) | 3 | toutes |
 
-Quand tout est au maximum, le choix devient Soin (40 % de vie) ou Bourse (20 or × niveau).
+Un bonus arrivé à son rang maximum n'est plus proposé, ni un bonus dont la statistique est déjà au plafond : Précision à 75 % de critique, Concentration à 50 % de recharge, Réflexes à 60 %, Endurci à 60 %. Chaque carte affiche le rang actuel et le suivant (« rang 1 → 2 / 3 », « rang 5 / 5 · dernier ») ; dans la jauge, les cases pleines sont les rangs acquis et la case qui clignote le rang gagné. Le sac affiche « 2 / 3 » ou « max ». Quand il ne reste plus assez de bonus, le choix est complété par Soin (40 % de vie) ou Bourse (20 or × niveau).
 
 **Portée des compétences** : statistique affichée dans la fiche du héros (100 % de base). Elle vient du bonus Ampleur, du mod Étendue et d'une nouvelle propriété d'équipement (+8 à 16 %). Elle agrandit le Tourbillon, l'Onde de choc, la Nova de givre et le Sillage de givre, et allonge la portée des carreaux de la Volée.
 
