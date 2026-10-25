@@ -1,0 +1,248 @@
+# Crypte des Cendres — specs
+
+Oct 24, 2026 · @cms
+
+## Vue d'ensemble
+
+Crypte des Cendres est un prototype jouable de survivor-like mobile en vue de dessus, qui mélange les missions et reliques de Warframe avec le loot et les builds de Diablo. Il tourne dans le navigateur, sur téléphone (joystick tactile) comme sur ordinateur (clavier).
+
+**Boucle de jeu**
+
+1. Au Camp : choisir son héros, son équipement, ses mods et une relique à ouvrir.
+2. Choisir une mission (Survie, Défense ou Capture) et un niveau de départ.
+3. En mission : attaques automatiques, cristaux d'expérience, choix de bonus à chaque niveau, butin au sol.
+4. Fin de manche : sortir avec le butin ou continuer plus fort.
+5. Retour au Camp : fabriquer, améliorer, recycler, ouvrir des reliques.
+
+| Élément | Valeur |
+| --- | --- |
+| Carte | 2 800 × 2 800 unités, caméra qui suit le héros |
+| Manche de Survie | 3 min |
+| Gardien (boss) | toutes les 60 s en Survie, 90 s en Capture, toutes les 5 vagues en Défense |
+| Ennemis simultanés | jusqu'à 150 |
+| Niveaux de mission | 1 à 50, au choix |
+
+## Héros
+
+Trois classes, chacune avec ses stats, sa compétence, ses armes et 3 talents permanents. Toutes ont une esquive (recharge 3 s, 0,2 s d'invulnérabilité) et des potions (rendent 45 % de la vie, 5 au maximum).
+
+| Classe | Dégâts | Attaques / s | Vie | Critique | Armure | Vitesse | Attaque |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Archer | 8 | 1,80 | 100 | 5 % | 0 % | 220 | carreaux à distance, ×1,43 de délai en mouvement |
+| Guerrier | 14 | 1,50 | 160 | 5 % | 15 % | −6 % | coup en arc de 155° au corps à corps (portée 95), même en marchant |
+| Magicien | 12 | 1,25 | 85 | 8 % | 0 % | −2 % | orbes qui explosent (rayon 55), −10 % de recharge |
+
+Les dégâts de base s'ajoutent à ceux de l'arme équipée. Dégâts critiques de base : 150 %.
+
+| Classe | Compétence | Recharge | Effet |
+| --- | --- | --- | --- |
+| Archer | Volée | 7 s | 24 carreaux perforants dans toutes les directions |
+| Guerrier | Tourbillon | 9 s | 1,6 s de rotation, coups dans un rayon de 130 toutes les 0,2 s, dégâts subis ÷ 2 |
+| Magicien | Nova de givre | 7 s | dégâts dans un rayon de 175, ralentit 2,5 s, efface les projectiles ennemis |
+
+| Classe | Talent (150 or) | Talent (300 or) | Talent (500 or) |
+| --- | --- | --- | --- |
+| Archer | Tir en course : pleine cadence en mouvement | Pas de l'ombre : 3 tirs critiques après une esquive | Ricochet : chaque carreau rebondit une fois |
+| Guerrier | Charge brutale : l'esquive blesse et repousse | Soif de sang : +2 % de vie par ennemi tué | Onde de choc : un coup sur 4 frappe dans un rayon de 160 |
+| Magicien | Sillage de givre : l'esquive laisse une explosion glacée | Barrière : bouclier de 25 % de la vie, recharge après 4 s | Chaîne d'éclairs : une orbe sur 4 foudroie 3 ennemis |
+
+## Missions
+
+Trois modes, tous avec un niveau de mission libre de 1 à 50, choisi sur l'écran d'accueil et une relique optionnelle à ouvrir.
+
+| Mode | Objectif | Fin de manche | Récompense de manche | Échec |
+| --- | --- | --- | --- | --- |
+| Survie | tenir face aux hordes | toutes les 3 min : sortir ou continuer (niveau +1) | 1 relique | mort du héros |
+| Défense | protéger le cryopode au centre (1 200 PV, dégâts reçus ×0,6) | toutes les 5 vagues : sortir ou continuer | 1 relique + 1 équipement magique ou mieux | cryopode détruit ou mort |
+| Capture | mettre la cible à terre, rester 2,5 s à moins de 80 unités, rester 3 s dans la zone d'extraction (la jauge redescend si on en sort) | après 3 s passées dans la zone d'extraction | 1 relique + 60 or × niveau | mort du héros |
+
+**Défense** : chaque vague compte 10 + 4 × vague (+8 par niveau au-delà du 1er) ennemis, 80 au maximum. 60 % des ennemis visent le cryopode. Pause de 4 s entre les vagues, le cryopode récupère 8 % ; 30 % quand on continue.
+
+**Capture** : la cible (260 PV × difficulté) fuit quand le héros est à moins de 480 unités et se téléporte à 330 unités toutes les 4 à 6 s s'il est à moins de 260. Une flèche dorée indique sa direction et sa distance.
+
+**Fissure (ouverture de reliques)** : les reliques ne s'ouvrent plus depuis l'inventaire. On équipe au Camp (onglet Reliques, ou bouton « Reliques équipées » de l'écran de départ) autant de reliques qu'on veut, dans l'ordre choisi (flèches ↑ ↓, Tout équiper, Tout retirer). Tant qu'il reste une relique à ouvrir, 18 % des ennemis sont corrompus (halo doré, +30 % de vie) et lâchent un réactif. 10 réactifs ouvrent la relique en cours, puis le compteur repart à 0 pour la suivante (« Relique 2/5 · 4/10 » en haut). À la réussite, chaque relique ouverte donne sa récompense et 25 essence. Les reliques non ouvertes, ou toutes en cas d'échec, ne sont pas consommées et restent équipées.
+
+**Sortie et mort** : sortir garde tout le butin. Mourir garde la moitié de l'or ramassé, les mods et l'équipement déjà équipé ; les objets et reliques trouvés sont perdus.
+
+**Difficulté** (écran de départ, en plus du niveau de mission) : Normal 1 Gardien toutes les 60 s ; Difficile 2 toutes les 45 s, butin et or +50 % ; Cauchemar 3 toutes les 35 s, +100 % ; Tourment 4 toutes les 25 s, +200 %. En Capture l'intervalle est multiplié par 1,5 ; en Défense, le nombre de Gardiens s'applique aux vagues 5, 10, 15… La barre de boss cumule la vie de tous les Gardiens vivants.
+
+## Ennemis et difficulté
+
+Les ennemis apparaissent hors écran autour du héros ; ceux qui s'éloignent trop sont replacés près de lui.
+
+| Ennemi | Vie | Vitesse | Dégâts | Comportement | Arrive |
+| --- | --- | --- | --- | --- | --- |
+| Goule | 16 | 95 | 9 | fonce au contact, par groupes de 2 à 4 | dès le début |
+| Chauve-souris | 6 | 165 | 5 | essaim de 5 à 8, trajectoire ondulante | après 20 s |
+| Squelette archer | 13 | 85 | 8 | garde 220–330 de distance, tire toutes les 1,6–2,4 s, se rapproche sans ligne de tir | après 25 s |
+| Brute | 70 | 66 | 18 | signal rouge puis charge (×1,4 dégâts) | après 50 s ou niveau 2 |
+| Empoisonneur | 22 | 80 | 6 | garde 240–380 de distance, lance toutes les 3–4 s une fiole (cercle d'alerte 1 s) qui laisse une zone toxique de rayon 80 pendant 5 s | après 40 s ou niveau 2 |
+| Pyromancien | 24 | 80 | 6 | même comportement, bombe qui laisse des flammes de rayon 70 pendant 3 s | après 60 s ou niveau 3 |
+| Gardien | 650 | 60 | 22 | anneaux de projectiles, charge 1 fois sur 3, invoque 3 goules toutes les 7 s sous 50 % de vie | sur minuterie |
+
+**Montée en difficulté** (niveau L, progression f de 0 à 1 dans la manche) :
+
+- Vie des ennemis × (1 + 0,75 × (L − 1)) × (1 + 0,35 × f)
+- Dégâts × (1 + 0,35 × (L − 1)) × (1 + 0,15 × f)
+- Nombre max d'ennemis : 22 + 14 × (L − 1) + 34 × f, plafond 220 (Défense : 10 + 4 × vague + 10 × (L − 1), plafond 140)
+- Chaque nouveau Gardien a +25 % de vie
+
+**Altérations et sources sacrées** : rester dans une zone toxique ajoute un cumul de **Poison** toutes les 0,6 s (5 au maximum, 8 s, environ 1 dégât par seconde et par cumul au niveau 1, régénération et potions moitié moins efficaces). Les flammes appliquent la **Brûlure** (5 s, environ 4 dégâts par seconde au niveau 1). Les effets continuent après la sortie de la zone ; les potions ne les retirent pas. Six **sources sacrées** sont réparties sur la carte, signalées par une flèche bleue vers la plus proche : y passer avec une altération la retire, puis la source se tarit et réapparaît 30 s plus tard ailleurs. En Défense, les zones blessent aussi le cryopode. Le mod de héros **Antidote** réduit la durée des altérations de 15 % par rang.
+
+## Progression en partie
+
+Chaque ennemi lâche un cristal d'expérience (goule et chauve-souris 1, archer 2, brute 5, Gardien 30). Passer du niveau n au suivant demande 5 + 7 × n points. À chaque niveau, le jeu se met en pause et propose 3 bonus au hasard ; ils durent jusqu'à la fin de la mission.
+
+| Bonus | Effet par rang | Rangs | Classes |
+| --- | --- | --- | --- |
+| Rage | +12 % de dégâts | 5 | toutes |
+| Frénésie | +10 % de vitesse d'attaque | 5 | toutes |
+| Précision | +5 % de critique | 4 | toutes |
+| Cruauté | +30 % de dégâts critiques | 3 | toutes |
+| Double tir | +20 % de chances d'attaquer deux fois | 3 | toutes |
+| Puissance | +25 % de dégâts de compétence | 3 | toutes |
+| Salve | +1 projectile | 4 | Archer, Magicien |
+| Éventail | +2 projectiles, −10 % de dégâts | 2 | Archer, Magicien |
+| Perforation | +1 ennemi traversé | 2 | Archer |
+| Onde arcanique | +20 % de rayon d'explosion | 3 | Magicien |
+| Grande allonge | +15 % de portée | 3 | Guerrier |
+| Lames spectrales | +1 onde tranchante par coup | 4 | Guerrier |
+| Robustesse | +15 % de vie max, soigne 15 % | 5 | toutes |
+| Régénération | +1,5 PV / s | 3 | toutes |
+| Vampirisme | +1,5 % de vol de vie | 3 | Guerrier |
+| Célérité | +8 % de vitesse | 3 | toutes |
+| Aimant | +40 % de portée de ramassage (base 140) | 3 | toutes |
+| Concentration | −8 % de recharge | 4 | toutes |
+| Braises | brûlure de 10 % des dégâts / s | 3 | toutes |
+| Givre | +10 % de chances de ralentir | 3 | toutes |
+| Orage | +6 % de chances d'éclair en chaîne | 3 | toutes |
+| Ampleur | +12 % de portée des compétences | 4 | toutes |
+| Prolongation | +15 % de durée des compétences et ralentissements | 3 | toutes |
+| Exécution | +40 % de dégâts contre les ennemis sous 30 % de vie | 3 | toutes |
+| Tueur de Gardiens | +20 % de dégâts contre les Gardiens | 3 | toutes |
+| Réflexes | −15 % de recharge de l'esquive | 3 | toutes |
+| Endurci | −20 % de durée du poison et de la brûlure | 2 | toutes |
+| Savoir | +20 % d'expérience | 3 | toutes |
+| Bonne étoile | +15 % de chances de butin pendant la mission | 3 | toutes |
+| Fiole de réserve | +1 potion tout de suite (si moins de 5) | 3 | toutes |
+
+Quand tout est au maximum, le choix devient Soin (40 % de vie) ou Bourse (20 or × niveau).
+
+**Portée des compétences** : statistique affichée dans la fiche du héros (100 % de base). Elle vient du bonus Ampleur, du mod Étendue et d'une nouvelle propriété d'équipement (+8 à 16 %). Elle agrandit le Tourbillon, l'Onde de choc, la Nova de givre et le Sillage de givre, et allonge la portée des carreaux de la Volée.
+
+**Ultime** (4e bouton au-dessus de la compétence, touche F) : se charge en abattant 60 ennemis, un Gardien compte pour 10 ; la réduction de recharge ne s'applique pas. Guerrier, **Colère du Titan** : onde de choc de 320 de rayon (dégâts de compétence ×3, recul) et 3 s d'invulnérabilité. Archer, **Pluie d'acier** : pendant 3 s, 4 flèches toutes les 0,12 s sur les ennemis à moins de 450 (×0,7). Magicien, **Pluie de météores** : 3 météores de 150 de rayon (×3), en priorité sur les Gardiens. La portée des compétences agrandit ces zones. Bonus de niveau : **Fureur** (−15 % d'ennemis à abattre, 3 fois) et **Apothéose** (+30 % de dégâts de l'ultime, 3 fois).
+
+## Butin, équipement, mods, reliques et schémas
+
+**Chances de butin par ennemi tué**
+
+| Butin | Goule | Chauve-souris | Archer | Brute | Gardien |
+| --- | --- | --- | --- | --- | --- |
+| Or | 65 % × 1 | 35 % × 0,6 | 65 % × 1,5 | 65 % × 5 | 8 pièces, 50 au total |
+| Équipement | 1,2 % | 0,4 % | 1,6 % | 7 % | 2 (rare + magique) |
+| Relique | 0,3 % | 0,1 % | 0,4 % | 2,5 % | 1 |
+| Mod | 0,6 % | 0,2 % | 0,8 % | 6 % | 2 |
+| Potion | 0,5 % | 0,5 % | 0,5 % | 5 % | 1 |
+
+Au niveau L, les chances d'équipement, de relique et de fragment sont multipliées par 1 + 0,25 × (L − 1). La valeur de l'or est multipliée par 1 + 0,6 × (L − 1) et sa chance de tomber par 1 + 0,05 × (L − 1). Dès le niveau 2, des fragments tombent aussi directement des ennemis. Chaque Gardien donne +1 équipement tous les 3 niveaux, +1 relique tous les 4 niveaux et un fragment avec une chance de 15 % × ce multiplicateur. Chaque Gardien donne aussi 25 essence.
+
+**Équipement** : armures (vie), amulettes (critique), bottes (vitesse) et anneaux (dégâts), en plus de l'arme, soit 5 emplacements, de rareté commune, magique, rare ou légendaire, avec 1 à 4 propriétés aléatoires (dégâts, vitesse, critique, vie, armure, régénération, recharge, compétence, portée des compétences…). Un objet trouvé s'équipe tout de suite depuis la pause (il est alors gardé même en cas de mort) ou part au coffre (taille illimitée, filtre par type, tri par rareté, amélioration, niveau ou date, pages de 24 objets) à la sortie. Recycler rapporte 2, 4, 8 ou 16 essence selon la rareté ; Un objet peut être verrouillé (cadenas) : il ne peut plus être recyclé. « Tout recycler » garde les objets verrouillés, améliorés et Prime.
+
+**Amélioration** : chaque arme et chaque pièce d'équipement s'améliore de +0 à +100 avec de l'essence (Camp › Héros, sélectionner l'objet, boutons +1 ou +10). Chaque niveau ajoute 2 % des valeurs de l'objet, soit ×3 à +100 ; le nombre de projectiles et la perforation ne changent pas. Passer du niveau n à n + 1 coûte 5 + 3n + n²/10 essence (5 au début, environ 1 280 pour le dernier, environ 48 000 au total). Recycler un objet amélioré rend la moitié de l'essence investie ; « Tout recycler » ignore les objets améliorés.
+
+**Transfert d'affixe** (Forge) : on choisit un équipement source non verrouillé, une de ses affixes, puis une cible (arme possédée, équipement porté ou du coffre). Si la cible a déjà l'affixe, elle n'est remplacée que par une valeur strictement plus forte ; sinon elle est ajoutée s'il reste de la place (1 à 4 affixes selon la rareté), ou remplace une affixe choisie. La source est détruite et le transfert coûte 50 essence × (rareté de la source + 1). Les valeurs transférées sont les valeurs de base ; l'amélioration de la cible s'y applique.
+
+**Mods** : deux builds séparés. Le **build d'arme** est attaché à chaque arme (4 cases, capacité 10 + Catalyseur jusqu'à +12 + maîtrise de l'arme jusqu'à +10) : changer d'arme change ses mods. Le **build de héros** est attaché à la classe (3 cases au départ, jusqu'à 6 en payant 15, 30 puis 50 fragments de schéma, + 1 case d'Aura ; capacité 10 + Réacteur jusqu'à +12 + maîtrise du héros jusqu'à +10 + bonus d'Aura). Un mod coûte sa valeur de base + son rang en capacité ; la fusion coûte 10 × 2^rang × (rareté + 1) essence. Un doublon rapporte 8, 16 ou 24 essence. Le tableau ci-dessous liste les mods d'arme.
+
+| Mod | Effet par rang | Rang max |
+| --- | --- | --- |
+| Férocité | +15 % de dégâts | 5 |
+| Cadence | +8 % de vitesse d'attaque | 5 |
+| Vitalité | +15 PV | 5 |
+| Égide, Pas léger, Intensité, Morsure du givre | armure, vitesse, compétence, ralentissement | 3 |
+| Allonge, Déflagration | portée (Guerrier), rayon d'explosion (Magicien) | 3 |
+| Œil du chasseur, Boucherie, Braise vive, Flux | critique, dégâts critiques, brûlure, recharge | 3 |
+| Sangsue (Guerrier), Pointe de diamant (Archer) | vol de vie, perforation | 3 / 1 |
+| Arc électrique, Écho (Archer, Magicien) | 6 % d'éclair, 25 % de projectile en plus | 3 |
+
+| Mod de héros ou Aura | Effet par rang | Polarité |
+| --- | --- | --- |
+| Vitalité, Égide, Pas léger | +15 PV, −3 % de dégâts subis, +5 % de vitesse | Rempart |
+| Intensité, Flux | +20 % de compétence, −6 % de recharge | Spirale |
+| Second souffle | +1,5 PV / s | Rempart |
+| Alchimiste | +15 % de soin des potions | Rempart |
+| Rapace | +20 % de portée de ramassage | Spirale |
+| Étendue | +10 % de rayon de compétence | Spirale |
+| Persistance | +12 % de durée de compétence et de ralentissement | Spirale |
+| Pas fantôme | −10 % de recharge de l'esquive | Rempart |
+| Dernier rempart | −10 % de dégâts subis sous 30 % de vie | Rempart |
+| Rage du survivant | +15 % de dégâts sous 50 % de vie | Braise |
+| Aura Présence glaciale | ennemis à moins de 180 ralentis de 8 % | Aura (+4 + rang de capacité) |
+| Aura Cupidité | +10 % d'or | Aura (+4 + rang de capacité) |
+| Aura Ferveur | +5 % de vitesse d'attaque | Aura (+4 + rang de capacité) |
+
+**Polarités et alignement** : chaque mod a une polarité, Braise ▲ (attaque), Rempart ■ (défense) ou Spirale ◆ (pouvoir). Au Camp (onglet Mods), une case peut être alignée sur une polarité : un mod de même polarité y coûte la moitié (arrondi au supérieur), un autre +25 %. Chaque alignement d'une classe coûte 200, 400, 800 puis 1 600 essence, et remet à 0 la maîtrise du build concerné (héros ou arme) ; chaque build a ses propres alignements. Si la capacité est dépassée, les derniers mods deviennent inactifs.
+
+**Maîtrise** : le héros (par classe) et chaque arme ont chacun un rang de 0 à 10, gagné à la fin de chaque mission (1 point par ennemi tué, que la mission réussisse ou non). Passer du rang r au suivant demande 100 × (r + 1) points. Chaque rang donne +1 de capacité de mods.
+
+**Reliques** : 14 reliques sur 4 niveaux : Cendre (Dent du Pèlerin, Larme de suie, Clou du Bûcher), Ossuaire (Phalange du Veilleur, Crâne fêlé, Côte du Roi-mendiant), Sanguine (Cœur noirci, Calice rouge, Veine de la Veuve, Fiole d'ichor), Abysse (Prunelle du Néant, Couronne brisée, Os du Premier Roi, Sablier noir). Leur niveau dépend du niveau de mission. Chacune contient 6 récompenses : 3 communes, 2 peu communes, 1 rare. Elles s'ouvrent uniquement en mission, par la Fissure, une par une dans l'ordre d'équipement. Le raffinage (intacte → éclatante, 50 essence) ne touche pas les exemplaires équipés.
+
+| État | Commune (chacune) | Peu commune (chacune) | Rare |
+| --- | --- | --- | --- |
+| Intacte | 25,33 % | 11 % | 2 % |
+| Éclatante (raffinage : 50 essence) | 16,67 % | 20 % | 10 % |
+
+**Schémas** : chaque arme ou équipement Prime se fabrique avec 3 fragments, obtenus uniquement dans les reliques, plus de l'or.
+
+| Objet | Classe | Dégâts ou base | Bonus | Fabrication |
+| --- | --- | --- | --- | --- |
+| Arc court du Pèlerin | Archer | 10 | +15 % vitesse d'attaque | 75 or |
+| Arc long du Corbeau | Archer | 15 | +8 % critique, perce 1 | 175 or |
+| Baliste de poing | Archer | 21 | +1 projectile, +30 % dég. crit. | 350 or |
+| Ultime Soupir | Archer | 30 | +1 projectile, perce 2, +15 % vitesse | 700 or |
+| Épée longue du Veilleur | Guerrier | 11 | 2 % vol de vie | 75 or |
+| Hache de guerre | Guerrier | 17 | +40 % dég. crit., +10 % portée | 175 or |
+| Espadon de Fer-Sang | Guerrier | 24 | +25 % portée, 2 % vol de vie | 350 or |
+| Brise-Serment | Guerrier | 32 | +20 % portée, 3 % vol de vie, +10 % crit. | 700 or |
+| Sceptre des Murmures | Magicien | 10 | −10 % recharge | 75 or |
+| Grimoire de la Veuve | Magicien | 15 | +25 % rayon, +30 % compétence | 175 or |
+| Orbe de la Lune noire | Magicien | 21 | +1 projectile | 350 or |
+| Étoile Mourante | Magicien | 30 | +1 projectile, +30 % rayon, +10 % crit. | 700 or |
+| Linceul du Néant | toutes (armure) | +90 PV | +10 % armure, +2 PV/s | 500 or |
+| Cuirasse du Veilleur Prime | toutes (armure) | +70 PV | +15 % dégâts, +6 % armure | 500 or |
+| Amulette des Échos | toutes (amulette) | +6 % crit. | +15 % vitesse, −10 % recharge | 500 or |
+| Sceau du Néant | toutes (amulette) | +8 % crit. | +50 % dég. crit., +10 % dégâts | 500 or |
+| Foulée du Néant | toutes (bottes) | +12 % vitesse | −10 % recharge, +2 PV/s | 500 or |
+| Chevalière du Premier Roi | toutes (anneau) | +15 % dégâts | +6 % crit., +30 % dég. crit. | 500 or |
+
+## Progression permanente
+
+Le Camp compte 5 onglets : Héros (équipement, coffre, fragments), Armurerie (toutes les recettes, ouverture de reliques), Reliques (tables, raffinage, choix pour la mission), Mods, Forge (améliorations, talents, niveau de départ, sauvegarde JSON). Deux monnaies : l'or (améliorations, talents, fabrication) et l'essence (fusion des mods, raffinage).
+
+| Amélioration de la Forge | Effet par niveau | Niveaux | Coût du 1er niveau |
+| --- | --- | --- | --- |
+| Vigueur | +8 % de vie max | 5 | 60 or |
+| Force | +6 % de dégâts | 5 | 70 or |
+| Célérité | +5 % de vitesse d'attaque | 5 | 70 or |
+| Alchimie | +1 potion au départ (base 2) | 3 | 90 or |
+| Fortune | +15 % d'or ramassé | 4 | 80 or |
+| Flair | +3 de chance de rareté | 3 | 110 or |
+| Catalyseur | +3 de capacité de mods | 4 | 100 or |
+
+Chaque niveau suivant coûte ×1,7 du précédent. Les talents coûtent 150, 300 et 500 or par classe.
+
+## Technique
+
+Une seule page HTML avec JavaScript, sans serveur.
+
+| Sujet | Choix actuel |
+| --- | --- |
+| Rendu | PixiJS 7.4.2 (WebGL), repli automatique sur Canvas 2D ; bouton dans la pause pour changer |
+| Boucle | logique à pas fixe de 60 calculs / s, au plus 6 rattrapages par image |
+| Collisions | grille spatiale de cases de 64 unités pour les projectiles et l'écartement des ennemis |
+| Mémoire | tableaux compactés sur place, sprites réutilisés, interface mise à jour seulement si elle change |
+| Sauvegarde | stockage local du navigateur (clé crypte-meta) ; export et import en JSON depuis Camp › Forge › Sauvegarde, avec comparaison et confirmation avant remplacement |
+| Contrôles mobile | joystick flottant, boutons esquive, compétence, potion (allumés quand disponibles), sac |
+| Contrôles clavier | ZQSD ou flèches, Espace esquive, E compétence, R potion, I pause, 1 à 3 pour les bonus |
+
+- [ ] Vérifier que le rendu WebGL s'affiche sur ton téléphone (indiqué dans la pause)

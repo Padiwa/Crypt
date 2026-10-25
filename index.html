@@ -38,16 +38,18 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 .boss .hp-bar{height:8px;background:#1d1224;border-color:#4b2d5c;margin-top:2px}
 .boss .hp-fill{background:linear-gradient(#b06ae0,#6b2f93)}
 
-.skills{position:fixed;right:0;bottom:0;display:grid;grid-template-columns:auto auto;grid-template-rows:auto auto;gap:12px;align-items:end;
+.skills{position:fixed;right:0;bottom:0;display:grid;grid-template-columns:auto auto;grid-template-rows:auto auto auto;gap:12px;align-items:end;justify-items:center;
   padding:0 max(18px,calc(env(safe-area-inset-right,0px) + 12px)) calc(env(safe-area-inset-bottom,0px) + 22px) 0}
 .sk{position:relative;border-radius:50%;border:2px solid var(--line);background:rgba(26,22,30,.88);display:grid;place-items:center;touch-action:none;overflow:hidden}
 .sk svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;position:relative;z-index:1}
 .sk::after{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(rgba(0,0,0,.68) calc(var(--cd,0)*360deg),transparent 0)}
 .sk small{position:absolute;bottom:5px;font-size:11px;font-weight:700;z-index:2;font-variant-numeric:tabular-nums}
-.sk.nova{width:78px;height:78px;grid-row:1/3;grid-column:2;color:var(--ember);border-color:#7a4423}
+.sk.nova{width:78px;height:78px;grid-row:2/4;grid-column:2;color:var(--ember);border-color:#7a4423}
 .sk.nova svg{width:34px;height:34px}
-.sk.dash{width:58px;height:58px;color:#9fc2b8}
-.sk.potion{width:52px;height:52px;color:var(--heal)}
+.sk.dash{width:58px;height:58px;color:#9fc2b8;grid-row:2;grid-column:1}
+.sk.ult{width:62px;height:62px;grid-row:1;grid-column:2;justify-self:center;color:#ffd45a;border-color:#6e5a22}
+.sk.ult svg{width:28px;height:28px}
+.sk.potion{width:52px;height:52px;color:var(--heal);grid-row:3;grid-column:1}
 .sk{transition:background .15s,border-color .15s,box-shadow .15s}
 .sk svg{opacity:.45;transition:opacity .15s}
 .sk.ready svg{opacity:1}
@@ -81,6 +83,7 @@ header .btn{margin-left:auto}
 .statgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px 16px;font-size:13px}
 .statgrid div{display:flex;justify-content:space-between;border-bottom:1px solid #2a242e;padding:3px 0;font-variant-numeric:tabular-nums}
 .statgrid span{color:var(--muted)}
+.statgrid b{white-space:nowrap;padding-left:8px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:8px}
 .cell{aspect-ratio:1;max-width:100%;border-radius:8px;border:2px solid;background:var(--panel2);display:grid;place-items:center;position:relative}
 .cell svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -143,8 +146,14 @@ body:has(#camp:not([hidden])) .toast{top:auto;bottom:calc(env(safe-area-inset-bo
 .over{color:var(--blood)!important}
 .upg{display:flex;flex-direction:column;gap:6px;border-top:1px solid #2a242e;padding-top:8px;margin-top:4px;font-size:13px;color:var(--muted)}
 .upg b{color:var(--ess)}
-.cell .lk{position:absolute;bottom:2px;right:3px;color:var(--ink);line-height:0}
-.cell .lk svg{width:12px;height:12px;stroke-width:2.2}
+.cell.locked{box-shadow:inset 0 0 0 2px rgba(240,207,74,.55);background:linear-gradient(135deg,rgba(240,207,74,.12),var(--panel2) 60%)}
+.cell.locked.sel{box-shadow:0 0 0 2px var(--ink),inset 0 0 0 2px rgba(240,207,74,.55)}
+.cell .lk{position:absolute;top:-7px;left:-7px;width:20px;height:20px;border-radius:50%;background:#f0cf4a;color:#1b0f06;display:grid;place-items:center;box-shadow:0 0 0 2px var(--panel)}
+.cell .lk svg{width:12px;height:12px;stroke-width:2.4}
+.lockchip{display:inline-flex;align-items:center;gap:4px;font-family:var(--body);font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#1b0f06;background:#f0cf4a;border-radius:999px;padding:2px 8px;vertical-align:middle;margin-left:6px}
+.lockchip svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2.4}
+.slot .li{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:#f0cf4a;color:#1b0f06;vertical-align:-3px;margin-left:4px}
+.slot .li svg{width:10px;height:10px;fill:none;stroke:currentColor;stroke-width:2.6}
 .cell .cup{position:absolute;bottom:1px;left:4px;font-size:10px;font-weight:700;color:var(--ess);font-variant-numeric:tabular-nums}
 .chip.sm{padding:4px 10px;font-size:12px}
 .pager{display:flex;align-items:center;justify-content:center;gap:14px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
@@ -174,6 +183,16 @@ body:has(#camp:not([hidden])) .toast{top:auto;bottom:calc(env(safe-area-inset-bo
 .tal p{margin:0;font-size:13px;color:var(--muted);line-height:1.35;flex:1}
 .owned{font-size:12px;color:var(--heal);font-weight:700;letter-spacing:.08em;text-transform:uppercase}
 .starts{display:flex;flex-wrap:wrap;gap:8px}
+.diffrow{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.diffrow .chip{padding:6px 9px;font-size:13px}
+.rq{display:flex;flex-direction:column;gap:6px}
+.rq li{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:6px 8px;font-size:14px}
+.rq li b{flex:1;min-width:0}
+.rq li .btn{padding:4px 10px;min-width:34px}
+.rq ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.rqn{color:var(--muted);font-variant-numeric:tabular-nums;width:1.6em;text-align:right}
+.xfl{display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--muted)}
+.xfl select{font:inherit;color:var(--ink,#eee);background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px;max-width:100%}
 .chip{border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:7px 14px;font-size:14px}
 .chip[aria-pressed="true"]{border-color:var(--ember);color:var(--ember);font-weight:700}
 .btnrow{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
@@ -239,11 +258,12 @@ body:has(#camp:not([hidden])) .toast{top:auto;bottom:calc(env(safe-area-inset-bo
 <div class="boss obj" id="objBar" hidden><b>Cryopode</b><div class="hp-bar"><div class="hp-fill" id="objFill"></div></div></div>
 <div class="toast" id="toast"></div>
 
-<div class="hint" id="hint"><span id="hintTxt"></span><br><span id="keys">Clavier : <kbd>ZQSD</kbd> <kbd>Espace</kbd> esquive, <kbd>E</kbd> compétence, <kbd>R</kbd> potion, <kbd>I</kbd> pause</span></div>
+<div class="hint" id="hint"><span id="hintTxt"></span><br><span id="keys">Clavier : <kbd>ZQSD</kbd> <kbd>Espace</kbd> esquive, <kbd>E</kbd> compétence, <kbd>R</kbd> potion, <kbd>F</kbd> ultime, <kbd>I</kbd> pause</span></div>
 
 <div class="skills">
   <button class="sk dash" id="bDash" aria-label="Esquive"><svg viewBox="0 0 24 24"><path d="M4 12h11M11 6l6 6-6 6M19 5v14"/></svg></button>
   <button class="sk nova" id="bNova" aria-label="Compétence"><svg viewBox="0 0 24 24"></svg></button>
+  <button class="sk ult" id="bUlt" aria-label="Ultime"><svg viewBox="0 0 24 24"></svg><small id="ultN"></small></button>
   <button class="sk potion" id="bPot" aria-label="Boire une potion"><svg viewBox="0 0 24 24"><path d="M10 3h4M10.5 3v5L6 15a5 5 0 0 0 4.3 7h3.4A5 5 0 0 0 18 15l-4.5-7V3"/><path d="M7.5 15h9"/></svg><small id="potN">2</small></button>
 </div>
 
@@ -282,7 +302,10 @@ body:has(#camp:not([hidden])) .toast{top:auto;bottom:calc(env(safe-area-inset-bo
     <p class="desc" id="modeDesc" style="min-height:3em"></p>
     <div class="relicpick"><span>Niveau de mission</span><span class="lvsel"><button class="btn" id="lvMinus" aria-label="Baisser le niveau">−</button><input id="lvIn" type="number" min="1" max="50" inputmode="numeric" aria-label="Niveau de mission"><button class="btn" id="lvPlus" aria-label="Monter le niveau">+</button></span></div>
     <p class="desc" id="lvDesc" style="min-height:0;font-size:13px;color:var(--muted)"></p>
-    <label class="relicpick" for="relicSel">Relique à ouvrir <select id="relicSel"></select></label>
+    <h3 class="ilab">Difficulté</h3>
+    <div class="diffrow" id="diffSel" role="radiogroup" aria-label="Difficulté"></div>
+    <p class="desc" id="diffDesc" style="min-height:0;font-size:13px;color:var(--muted)"></p>
+    <div class="relicpick"><span>Reliques équipées</span><button class="btn" id="relicBtn">Aucune · Équiper</button></div>
     <div class="btnrow">
       <button class="btn main" id="startBtn" style="padding:12px 22px;font-size:17px">Entrer dans la crypte</button>
       <button class="btn" id="campBtn">Le Camp · <span class="coin"></span><span id="introGold">0</span></button>
@@ -363,20 +386,20 @@ const GLYPH={
   bottes:'<svg viewBox="0 0 24 24"><path d="M8 3h6v10l6 3v4H5v-6l3-1z"/><path d="M5 18h15"/></svg>',
   anneau:'<svg viewBox="0 0 24 24"><circle cx="12" cy="14" r="6"/><path d="m9 7 3-4 3 4z"/></svg>'};
 const CLS={
-  archer:{n:'Archer',skill:'Volée',cd:7,base:{dmg:8,aps:1.8,hp:100,crit:5,speed:0,armor:0,cdr:0},
+  archer:{n:'Archer',skill:'Volée',cd:7,ult:'Pluie d\'acier',uicon:'<path d="M6 3v12M12 3v15M18 3v12M3.5 12.5 6 15l2.5-2.5M9.5 15.5 12 18l2.5-2.5M15.5 12.5 18 15l2.5-2.5M5 21h14"/>',base:{dmg:8,aps:1.8,hp:100,crit:5,speed:0,armor:0,cdr:0},
     cloak:'#2d4c50',rim:'#a9cbc0',inner:'#14232a',col:'#e8853b',
     hint:'Glisse pour bouger.<br>Tir automatique, plus rapide à l\'arrêt.',
-    desc:'Tire des carreaux automatiquement, plus vite à l\'arrêt. Rapide et précis. <b>Volée</b> : 24 carreaux perforants dans toutes les directions.',
+    desc:'Tire des carreaux automatiquement, plus vite à l\'arrêt. Rapide et précis. <b>Volée</b> : 24 carreaux perforants dans toutes les directions. <b>Ultime, Pluie d\'acier</b> : 3 s de flèches qui s\'abattent sur les ennemis proches.',
     icon:'<path d="M12 12 5 5M12 12l7-7M12 12v9M5 5h4M5 5v4M19 5h-4M19 5v4M9 18l3 3 3-3"/>'},
-  guerrier:{n:'Guerrier',skill:'Tourbillon',cd:9,base:{dmg:14,aps:1.5,hp:160,crit:5,speed:-6,armor:15,cdr:0},
+  guerrier:{n:'Guerrier',skill:'Tourbillon',cd:9,ult:'Colère du Titan',uicon:'<path d="M12 2v5M12 17v5M2 12h5M17 12h5M4.9 4.9l3.5 3.5M15.6 15.6l3.5 3.5M19.1 4.9l-3.5 3.5M8.4 15.6l-3.5 3.5"/><circle cx="12" cy="12" r="2.5"/>',base:{dmg:14,aps:1.5,hp:160,crit:5,speed:-6,armor:15,cdr:0},
     cloak:'#5b2a26',rim:'#d9a48a',inner:'#2a1210',col:'#d9a48a',
     hint:'Glisse pour bouger.<br>Il frappe tout ce qui l\'approche.',
-    desc:'Frappe au corps à corps tout ce qui l\'approche. Beaucoup de vie et d\'armure. <b>Tourbillon</b> : tournoie en frappant tout autour, dégâts subis réduits de moitié.',
+    desc:'Frappe au corps à corps tout ce qui l\'approche. Beaucoup de vie et d\'armure. <b>Tourbillon</b> : tournoie en frappant tout autour, dégâts subis réduits de moitié. <b>Ultime, Colère du Titan</b> : onde de choc géante et 3 s d\'invulnérabilité.',
     icon:'<path d="M12 4a8 8 0 1 1-8 8"/><path d="M12 8a4 4 0 1 1-4 4"/><path d="M4 12 2.5 9M4 12l3-1"/>'},
-  magicien:{n:'Magicien',skill:'Nova de givre',cd:7,base:{dmg:12,aps:1.25,hp:85,crit:8,speed:-2,armor:0,cdr:10},
+  magicien:{n:'Magicien',skill:'Nova de givre',cd:7,ult:'Pluie de météores',uicon:'<circle cx="15" cy="15" r="5"/><path d="M11.5 11.5 3 3M14 9.8 8 3.5M9.8 14 3.5 8"/>',base:{dmg:12,aps:1.25,hp:85,crit:8,speed:-2,armor:0,cdr:10},
     cloak:'#3c2c63',rim:'#b9a6f0',inner:'#17122b',col:'#9fd0ff',
     hint:'Glisse pour bouger.<br>Orbes automatiques, plus rapides à l\'arrêt.',
-    desc:'Lance des orbes qui explosent à l\'impact, plus vite à l\'arrêt. Fragile, redoutable contre les groupes. <b>Nova de givre</b> : blesse, ralentit et dissipe les projectiles.',
+    desc:'Lance des orbes qui explosent à l\'impact, plus vite à l\'arrêt. Fragile, redoutable contre les groupes. <b>Nova de givre</b> : blesse, ralentit et dissipe les projectiles. <b>Ultime, Pluie de météores</b> : 3 météores sur les ennemis proches.',
     icon:'<path d="M12 2v20M3.3 7l17.4 10M3.3 17 20.7 7M9 4l3 2 3-2M9 20l3-2 3 2"/>'},
 };
 const WPN={
@@ -436,18 +459,24 @@ function rwLabel(r){const [k,v]=r.split(':');if(k==='ess')return `Essence ×${v}
 const MODES={
   survie:{n:'Survie',d:'Tiens face aux hordes. Toutes les 3 minutes, sors ou continue. Chaque manche terminée rapporte une relique.'},
   defense:{n:'Défense',d:'Protège le cryopode contre des vagues d\'ennemis. Toutes les 5 vagues : une relique et un équipement, puis sors ou continue.'},
-  capture:{n:'Capture',d:'Traque la cible, mets-la à terre, capture-la puis rejoins le point d\'extraction. Une relique et de l\'or à la clé.'},
+  capture:{n:'Capture',d:'Traque la cible, mets-la à terre, capture-la puis tiens 3 s dans la zone d\'extraction. Une relique et de l\'or à la clé.'},
 };
 
 /* ---------- Progression permanente ---------- */
 let meta={gold:0,up:{},tal:{},cp:1,start:1,essence:0,mods:{ferocite:0},
   load:{guerrier:['ferocite',null,null,null],archer:['ferocite',null,null,null],magicien:['ferocite',null,null,null]},
-  gear:{armure:null,amulette:null,bottes:null,anneau:null},stash:[],wpn:{guerrier:'g0',archer:'a0',magicien:'m0'},bp:{},built:{},parts:{},relics:{},mode:'survie',relicSel:null,pol:{},mast:{},align:{},wlv:{},wload:{},wpol:{},wmast:{},walign:{},hload:{},hslots:{},aura:{}};
+  gear:{armure:null,amulette:null,bottes:null,anneau:null},stash:[],wpn:{guerrier:'g0',archer:'a0',magicien:'m0'},bp:{},built:{},parts:{},relics:{},mode:'survie',relicSel:null,relicQ:[],diff:0,waff:{},pol:{},mast:{},align:{},wlv:{},wload:{},wpol:{},wmast:{},walign:{},hload:{},hslots:{},aura:{}};
 try{const m=JSON.parse(localStorage.getItem('crypte-meta')||'null');if(m)meta=Object.assign(meta,m)}catch(e){}
 if(!meta.v2){meta.cp=1;meta.start=1;meta.v2=1}
 if(!meta.v3){for(const id in meta.bp||{}){const w=wdef(id);if(w&&!meta.built[id])meta.gold+=w.bp}meta.bp={};meta.v3=1;meta.relics={lA1:[1,0],...(meta.relics||{})}}
 if(!MODES[meta.mode])meta.mode='survie';
+if(!Array.isArray(meta.relicQ))meta.relicQ=[];if(meta.relicSel){if(!meta.relicQ.length)meta.relicQ=[meta.relicSel];meta.relicSel=null}
 const saveMeta=()=>{try{localStorage.setItem('crypte-meta',JSON.stringify(meta))}catch(e){}};
+function relicQFix(){const used={};meta.relicQ=(meta.relicQ||[]).filter(q=>{const a=q&&meta.relics[q.id];if(!a||!RELICS[q.id])return false;q.rad=!!q.rad;const k=q.id+'|'+(q.rad?1:0);used[k]=(used[k]||0)+1;return used[k]<=(a[q.rad?1:0]||0)})}
+const relicQN=(id,rad)=>meta.relicQ.filter(q=>q.id===id&&!!q.rad===rad).length;
+const DIFF=[{n:'Normal',iv:60,cnt:1,loot:0,c:'#bdb6a8'},{n:'Difficile',iv:45,cnt:2,loot:.5,c:'#7b95ff'},{n:'Cauchemar',iv:35,cnt:3,loot:1,c:'#f0cf4a'},{n:'Tourment',iv:25,cnt:4,loot:2,c:'#ff6a3a'}];
+const dif=()=>DIFF[Math.max(0,Math.min(3,meta.diff|0))];
+const ULT_N=60;
 const lv=k=>meta.up[k]||0, hasTal=k=>!!meta.tal[k];
 const ownedW=id=>/0$/.test(id)||!!meta.built[id];
 const UPG=[
@@ -476,6 +505,8 @@ const RUP=[
   {k:'reach',n:'Grande allonge',d:'+15 % de portée de frappe',max:3,c:C_ATK,cls:['guerrier']},
   {k:'splash',n:'Onde arcanique',d:'+20 % de rayon d\'explosion',max:3,c:C_ATK,cls:['magicien']},
   {k:'nova',n:'Puissance',d:'+25 % de dégâts de compétence',max:3,c:C_ATK},
+  {k:'fury',n:'Fureur',d:'−15 % d\'ennemis à abattre pour charger l\'ultime',max:3,c:C_UTI},
+  {k:'ultp',n:'Apothéose',d:'+30 % de dégâts de l\'ultime',max:3,c:C_ATK},
   {k:'hp',n:'Robustesse',d:'+15 % de vie maximale, soigne 15 %',max:5,c:C_DEF},
   {k:'regen',n:'Régénération',d:'+1,5 PV par seconde',max:3,c:C_DEF},
   {k:'leech',n:'Vampirisme',d:'+1,5 % des dégâts rendus en vie',max:3,c:C_DEF,cls:['guerrier']},
@@ -485,6 +516,15 @@ const RUP=[
   {k:'burn',n:'Braises',d:'Embrase : 10 % des dégâts par seconde',max:3,c:C_ELE},
   {k:'chill',n:'Givre',d:'+10 % de chances de ralentir à l\'impact',max:3,c:C_ELE},
   {k:'shock',n:'Orage',d:'+6 % de chances d\'éclair en chaîne',max:3,c:C_ELE},
+  {k:'srad',n:'Ampleur',d:'+12 % de portée des compétences',max:4,c:C_ATK},
+  {k:'sdur',n:'Prolongation',d:'+15 % de durée des compétences et des ralentissements',max:3,c:C_UTI},
+  {k:'exec',n:'Exécution',d:'+40 % de dégâts contre les ennemis sous 30 % de vie',max:3,c:C_ATK},
+  {k:'slay',n:'Tueur de Gardiens',d:'+20 % de dégâts contre les Gardiens',max:3,c:C_ATK},
+  {k:'refl',n:'Réflexes',d:'−15 % de recharge de l\'esquive',max:3,c:C_UTI},
+  {k:'endu',n:'Endurci',d:'−20 % de durée du poison et de la brûlure',max:2,c:C_DEF},
+  {k:'know',n:'Savoir',d:'+20 % d\'expérience',max:3,c:C_UTI},
+  {k:'luck',n:'Bonne étoile',d:'+15 % de chances de butin pendant la mission',max:3,c:'#f0cf4a'},
+  {k:'fiole',n:'Fiole de réserve',d:'+1 potion tout de suite',max:3,c:C_DEF},
 ];
 const RUP_FILL=[{k:'heal',n:'Soin',d:'Rend 40 % de ta vie',max:0,c:C_DEF},{k:'purse',n:'Bourse',d:'Gagne de l\'or tout de suite',max:0,c:'#f0cf4a'}];
 const xpNeed=l=>5+l*7;
@@ -584,6 +624,7 @@ const AFF={
   speed:{t:v=>`+${v} % de vitesse de déplacement`,r:l=>ri(4,9)},
   regen:{t:v=>`+${v} PV par seconde`,r:l=>ri(1,2)+Math.floor(l/4)},
   cdr:{t:v=>`−${v} % de temps de recharge`,r:l=>ri(5,12)},
+  skillRad:{t:v=>`+${v} % de portée des compétences`,r:l=>ri(8,16)},
   novaPct:{t:v=>`+${v} % de dégâts de compétence`,r:l=>ri(20,45)},
   burn:{t:v=>`Embrase : ${v} dégâts par seconde`,w:1},
   multi:{t:v=>`+${v} projectile${v>1?'s':''} par tir`,w:1},
@@ -614,8 +655,8 @@ const upCostRange=(from,k)=>{let c=0;for(let i=from;i<Math.min(UP_MAX,from+k);i+
 const upInvested=n=>upCostRange(0,n||0);
 const fmtN=x=>(Math.round(x*10)/10).toLocaleString('fr-FR');
 const itemName=it=>it.name+(it.up?` +${it.up}`:'');
-function weaponItem(c,id){const w=(id&&wdef(id)&&ownedW(id))?wdef(id):wdef(WPN[c][0].id);
-  return {id:'w_'+w.id,wid:w.id,slot:'arme',r:w.r,lvl:1,base:{k:'dmg',v:w.dmg},aff:{...w.aff},name:w.n,type:'Arme',up:meta.wlv[w.id]||0}}
+function weaponItem(c,id){const w=(id&&wdef(id)&&ownedW(id))?wdef(id):wdef(WPN[c][0].id),af={...w.aff,...(meta.waff[w.id]||{})};for(const k in af)if(af[k]==null)delete af[k];
+  return {id:'w_'+w.id,wid:w.id,slot:'arme',r:w.r,lvl:1,base:{k:'dmg',v:w.dmg},aff:af,name:w.n,type:'Arme',up:meta.wlv[w.id]||0}}
 const curEq=()=>({arme:weaponItem(heroCls,meta.wpn[heroCls]),armure:meta.gear.armure||null,amulette:meta.gear.amulette||null,bottes:meta.gear.bottes||null,anneau:meta.gear.anneau||null});
 function rollPart(){
   const L=G?G.level:1,ws=[...WPN[heroCls].slice(1),...GEAR_BP],wt=ws.map((w,i)=>i<4?Math.max(.5,4-i+(L-1)*i*.7):Math.max(.3,.2*L));
@@ -631,11 +672,13 @@ function stats(eq){
   const R=(G&&G.run)||{},rr=k=>R[k]||0;
   s.dmgPct+=rr('dmg')*12;s.apsPct+=rr('aps')*10;s.crit+=rr('crit')*5;s.critDmg+=rr('cdmg')*30;s.speed+=rr('spd')*8;s.regen+=rr('regen')*1.5;
   s.cdr+=rr('cdr')*8;s.novaPct+=rr('nova')*25;s.multi+=rr('multi')+rr('fan')*2;s.dmgPct-=rr('fan')*10;s.echo=rr('echo')*20;s.waves=rr('wave');s.pierce+=rr('pierce');s.reach+=rr('reach')*15;s.leech+=rr('leech')*1.5;
+  s.fury=rr('fury')*15;s.ultPct=rr('ultp')*30;
   s.splash+=rr('splash')*20;s.burnPct+=rr('burn')*10;s.chill+=rr('chill')*10;s.shock+=rr('shock')*6;
+  s.skillRad+=rr('srad')*12;s.skillDur+=rr('sdur')*15;s.dashCd+=rr('refl')*15;s.antidote+=rr('endu')*20;s.execute=rr('exec')*40;s.bossDmg=rr('slay')*20;s.xpPct=rr('know')*20;s.lootPct=rr('luck')*15;
   s.dmgPct+=lv('str')*6;s.apsPct+=lv('cel')*5;s.hp=Math.round(s.hp*(1+lv('vig')*.08)*(1+rr('hp')*.15));s.magnet=140*(1+rr('mag')*.4)*(1+s.magnetPct/100);
   const dmg=s.dmg*(1+s.dmgPct/100);
   return {dmg,aps:s.aps*(1+s.apsPct/100),hp:s.hp,crit:Math.min(s.crit,75),critDmg:s.critDmg,multi:s.multi,pierce:s.pierce,burn:s.burn+dmg*s.burnPct/100,chill:s.chill,shock:s.shock,
-    armor:Math.min(s.armor,60),speed:220*(1+s.speed/100),regen:s.regen,cdr:Math.min(s.cdr,50),nova:dmg*4*(1+s.novaPct/100),leech:s.leech,reach:s.reach,splash:s.splash,magnet:s.magnet,skillRad:s.skillRad,skillDur:s.skillDur,dashCd:Math.min(s.dashCd,60),potHeal:s.potHeal,lowArmor:Math.min(s.lowArmor,60),lowDmg:s.lowDmg,auraSlow:Math.min(s.auraSlow,50),goldPct:s.goldPct,antidote:s.antidote,echo:s.echo||0,waves:s.waves||0};
+    armor:Math.min(s.armor,60),speed:220*(1+s.speed/100),regen:s.regen,cdr:Math.min(s.cdr,50),nova:dmg*4*(1+s.novaPct/100),leech:s.leech,reach:s.reach,splash:s.splash,magnet:s.magnet,skillRad:s.skillRad,skillDur:s.skillDur,dashCd:Math.min(s.dashCd,60),potHeal:s.potHeal,lowArmor:Math.min(s.lowArmor,60),lowDmg:s.lowDmg,auraSlow:Math.min(s.auraSlow,50),goldPct:s.goldPct,antidote:s.antidote,execute:s.execute||0,bossDmg:s.bossDmg||0,xpPct:s.xpPct||0,lootPct:s.lootPct||0,echo:s.echo||0,waves:s.waves||0};
 }
 const dps=S=>S.dmg*S.aps*(1+S.crit/100*(S.critDmg/100-1))*(1+S.multi*.8)*(1+S.echo/100)*(1+S.waves*.5)*(heroCls==='archer'?1:1.2)+S.burn;
 
@@ -665,13 +708,13 @@ function newGame(){
   if(heroCls==='magicien'&&hasTal('m_shield'))G.P.shield=S.hp*.25;
   G.cam={x:G.P.x,y:G.P.y};
   genMap();
-  G.mode=meta.mode;G.relic=null;G.react=0;G.cracked=false;G.pod=null;G.target=null;G.exitPt=null;G.capT=0;
-  const rs=meta.relicSel;if(rs&&meta.relics[rs.id]&&meta.relics[rs.id][rs.rad?1:0]>0)G.relic={id:rs.id,rad:!!rs.rad};
+  G.mode=meta.mode;G.relic=null;G.react=0;G.cracked=false;G.ult=0;G.bossT=bossIv();G.pod=null;G.target=null;G.exitPt=null;G.capT=0;G.extT=0;
+  relicQFix();G.relQ=meta.relicQ.map(q=>({id:q.id,rad:!!q.rad}));G.relI=0;G.opened=[];G.relic=G.relQ[0]||null;
   if(G.mode==='defense'){const m=1200*(1+.5*(L-1));G.pod={x:MAP/2,y:MAP/2,r:28,hp:m,max:m,flash:0};G.pillars.push(G.pod);G.P.y+=110;G.cam.y=G.P.y;G.wave=0;G.waveState='break';G.waveT=3;G.toSpawn=0}
-  if(G.mode==='capture'){G.bossT=90;spawnTarget()}
+  if(G.mode==='capture'){spawnTarget()}
   $('objBar').hidden=G.mode!=='defense';
   if(PX)try{buildStatic()}catch(err){dropPixi(err)}
-  const nb=$('bNova');nb.querySelector('svg').innerHTML=C.icon;nb.setAttribute('aria-label',C.skill);nb.style.color=C.col;
+  const ub=$('bUlt');ub.querySelector('svg').innerHTML=C.uicon;ub.setAttribute('aria-label',C.ult+', ultime');const nb=$('bNova');nb.querySelector('svg').innerHTML=C.icon;nb.setAttribute('aria-label',C.skill);nb.style.color=C.col;
   $('hintTxt').innerHTML=C.hint;$('bossBar').hidden=true;
 }
 function placeWell(w){const P=G.P;for(let k=0;k<200;k++){const x=rand(160,MAP-160),y=rand(160,MAP-160);if(Math.hypot(x-P.x,y-P.y)>(G.t?450:250)&&!blocked(x,y,50)&&(!G.wells||G.wells.every(o=>o===w||Math.hypot(o.x-x,o.y-y)>500))){w.x=x;w.y=y;w.on=true;return}}w.x=rand(200,MAP-200);w.y=rand(200,MAP-200);w.on=true}
@@ -721,19 +764,22 @@ function chooseType(tt,L){const x=Math.random();
 function spawnPack(type,n){const p=ringPos();let k=0;for(let i=0;i<n;i++){const q={x:clamp(p.x+rand(-40,40),EDGE+30,MAP-EDGE-30),y:clamp(p.y+rand(-40,40),EDGE+30,MAP-EDGE-30)};if(!blocked(q.x,q.y,14)){spawnEnemy({type,...q});k++}}return k}
 function defenseTick(dt){
   if(G.waveState==='break'){G.waveT-=dt;if(G.waveT<=0){G.wave++;G.waveState='fight';G.toSpawn=Math.min(140,10+G.wave*4+(G.level-1)*10);G.spawnT=.5;
-      toast(`<b style="color:var(--ember)">Vague ${G.wave}</b>`+(G.wave%5===0?' · un Gardien l\'accompagne':''));
-      if(G.wave%5===0){const p=ringPos(40);spawnEnemy({type:'boss',x:p.x,y:p.y})}}return}
+      const bn=dif().cnt;toast(`<b style="color:var(--ember)">Vague ${G.wave}</b>`+(G.wave%5===0?(bn>1?` · ${bn} Gardiens l'accompagnent`:' · un Gardien l\'accompagne'):''));
+      if(G.wave%5===0)spawnBosses(true)}return}
   if(G.toSpawn>0){G.spawnT-=dt;if(G.spawnT<=0){G.spawnT=Math.max(.3,.9-G.wave*.03);const [type,n]=chooseType(G.wave*18,G.level);const k=spawnPack(type,Math.min(n,G.toSpawn));G.toSpawn-=Math.max(1,k)}}
   else if(!G.en.length&&!G.spawns.length){
     if(G.wave%5===0)roundDone();
     else{G.waveState='break';G.waveT=4;G.pod.hp=Math.min(G.pod.max,G.pod.hp+G.pod.max*.08);toast(`Vague ${G.wave} repoussée`)}
   }
 }
+function bossIv(){return dif().iv*(BOSS_T/60)*(meta.mode==='capture'?1.5:1)}
+function spawnBosses(quiet){const n=dif().cnt;for(let i=0;i<n;i++){const p=ringPos(40);spawnEnemy({type:'boss',x:p.x,y:p.y})}
+  if(!quiet)toast(n>1?`<b style="color:#e7c6ff">${n} Gardiens surgissent des ténèbres.</b>`:'<b style="color:#e7c6ff">Un Gardien surgit des ténèbres.</b>');G.shake=6+2*(n-1)}
 function spawner(dt){
   if(G.mode==='defense'){defenseTick(dt);return}
   const L=G.level,f=Math.min(1,G.tl/LEVEL_T);
   G.bossT-=dt;
-  if(G.bossT<=0){G.bossT=G.mode==='capture'?90:BOSS_T;const p=ringPos(40);spawnEnemy({type:'boss',x:p.x,y:p.y});toast('<b style="color:#e7c6ff">Un Gardien surgit des ténèbres.</b>');G.shake=6}
+  if(G.bossT<=0){G.bossT=bossIv();spawnBosses()}
   G.spawnT-=dt;if(G.spawnT>0)return;
   G.spawnT=Math.max(.16,.85-.12*(L-1)-.4*f);
   const target=Math.min(220,22+14*(L-1)+Math.floor(34*f));
@@ -764,6 +810,8 @@ function toast(html){const d=document.createElement('div');d.innerHTML=html;$('t
 /* ---------- Combat ---------- */
 function dmgEnemy(e,d,crit,dot){
   if(!dot&&S.lowDmg&&G.P.hp<S.hp*.5)d*=1+S.lowDmg/100;
+  if(!dot&&S.execute&&e.hp<e.max*.3)d*=1+S.execute/100;
+  if(S.bossDmg&&e.type==='boss')d*=1+S.bossDmg/100;
   e.hp-=d;e.shown=2;
   if(!dot){e.flash=1;if(crit||G.en.length<60)ftext(e.x+rand(-8,8),e.y-e.r,Math.round(d)+(crit?'!':''),crit?'#ffd34d':'#f1e8d6',crit?20:15)}
   else if(Math.random()<.25)ftext(e.x,e.y-e.r,Math.round(d),'#ff9a4a',12);
@@ -774,7 +822,8 @@ function podHurt(d){const p=G.pod;if(!p||G.over||GOD)return;d*=.6;p.hp-=d;p.flas
 const itemLvl=()=>1+(G.level-1)*4+Math.floor(G.tl/45);
 function kill(e){
   e.dead=true;G.kills++;
-  const boss=e.type==='boss',L=G.level,lm=lootMul(L);
+  const boss=e.type==='boss',L=G.level,dl=1+dif().loot,lm=lootMul(L)*(1+(S.lootPct||0)/100)*dl;
+  G.ult=Math.min(ultNeed(),(G.ult||0)+(boss?10:1));
   burst(e.x,e.y,boss?60:10,e.col,boss?320:150,4);burst(e.x,e.y,boss?20:4,'#e8853b',120);
   const push=(o,s=20)=>G.drops.push(Object.assign({x:e.x+rand(-s,s),y:e.y+rand(-s,s),t:rand(0,6),age:0,mt:0},o));
   if(boss){
@@ -794,7 +843,7 @@ function kill(e){
     if(Math.random()<({ghoul:.006,bat:.002,archer:.008,poison:.008,pyro:.008,brute:.06})[t])push({kind:'mod',id:rollMod(false)});
     if(Math.random()<(t==='brute'?.05:.005))push({kind:'potion'});
   }
-  const gv=({ghoul:1,bat:.6,archer:1.5,poison:1.5,pyro:1.5,brute:5,boss:50})[e.type]*(1+.6*(L-1)),n=boss?8:(Math.random()<Math.min(1,(e.type==='bat'?.35:.65)*(1+.05*(L-1)))?1:0);
+  const gv=({ghoul:1,bat:.6,archer:1.5,poison:1.5,pyro:1.5,brute:5,boss:50})[e.type]*(1+.6*(L-1))*dl,n=boss?8:(Math.random()<Math.min(1,(e.type==='bat'?.35:.65)*(1+.05*(L-1)))?1:0);
   for(let i=0;i<n;i++)push({kind:'gold',amt:Math.max(1,Math.round(gv/(boss?8:1)*rand(.7,1.3)))},boss?45:15);
   const xv=({ghoul:1,bat:1,archer:2,poison:2,pyro:2,brute:5,boss:30})[e.type];
   if(G.nxp>220){for(let k=0;k<12;k++){const o=G.drops[Math.floor(Math.random()*G.drops.length)];if(o&&o.kind==='xp'){o.v+=xv;break}}}
@@ -828,7 +877,7 @@ function chain(src,d){
   let px=src.x,py=src.y;for(const [o] of t){G.zaps.push({x1:px,y1:py,x2:o.x,y2:o.y,t:0});px=o.x;py=o.y;dmgEnemy(o,d,false)}
 }
 function explode(s,primary,frost){
-  const R=(frost?85:55)*(1+S.splash/100);
+  const R=(frost?85*(1+S.skillRad/100):55)*(1+S.splash/100);
   G.rings.push({x:s.x,y:s.y,t:.22,max:R,col:'140,190,255'});burst(s.x,s.y,8,'#9fc8ff',140,3);
   for(const e of G.en){if(e===primary||e.dead)continue;if(Math.abs(e.x-s.x)<R+e.r&&Math.hypot(e.x-s.x,e.y-s.y)<R+e.r){if(frost)e.slow=2.5;dmgEnemy(e,s.d*(frost?1:.6),false);if(S.burn){e.burnT=2.5;e.burnDps=S.burn}}}
 }
@@ -856,7 +905,7 @@ addEventListener('keydown',e=>{
   if(!$('lvlup').hidden){if(['1','2','3'].includes(k)){const b=$('choices').children[+k-1];if(b)b.click()}return}
   if(k==='i'||k==='tab'||k==='escape'){e.preventDefault();$('bag').hidden?openBag():closeBag();return}
   if(paused)return;
-  if(k===' '){e.preventDefault();doDash()} else if(k==='e')doNova(); else if(k==='r')doPotion();
+  if(k===' '){e.preventDefault();doDash()} else if(k==='e')doNova(); else if(k==='r')doPotion(); else if(k==='f')doUlt();
 });
 addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});
 cv.addEventListener('pointerdown',e=>{if(joy.id!==null||paused)return;joy.id=e.pointerId;joy.ox=joy.x=e.clientX;joy.oy=joy.y=e.clientY;joy.vx=joy.vy=0;try{cv.setPointerCapture(e.pointerId)}catch(_){}});
@@ -868,8 +917,8 @@ cv.addEventListener('pointermove',e=>{
 const endJoy=e=>{if(e.pointerId===joy.id){joy.id=null;joy.vx=joy.vy=0}};
 cv.addEventListener('pointerup',endJoy);cv.addEventListener('pointercancel',endJoy);
 const tap=(id,fn)=>$(id).addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();if(started&&!paused&&!G.over)fn()});
-tap('bDash',doDash);tap('bNova',doNova);tap('bPot',doPotion);
-['bDash','bNova','bPot'].forEach(id=>$(id).addEventListener('click',e=>e.preventDefault()));
+tap('bDash',doDash);tap('bNova',doNova);tap('bPot',doPotion);tap('bUlt',doUlt);
+['bDash','bNova','bPot','bUlt'].forEach(id=>$(id).addEventListener('click',e=>e.preventDefault()));
 const resetJoy=()=>{joy.id=null;joy.vx=joy.vy=0;for(const k in keys)keys[k]=false};
 
 function inputVec(){
@@ -888,12 +937,30 @@ function doNova(){
   const P=G.P;if(P.novaCd>0)return;P.novaCd=CLS[G.cls].cd*(1-S.cdr/100);
   if(G.cls==='guerrier'){P.spin=1.6*(1+S.skillDur/100);P.spinTick=0;return}
   if(G.cls==='archer'){
-    for(let i=0;i<24;i++){const a=i/24*Math.PI*2;G.shots.push({kind:'bolt',x:P.x,y:P.y,vx:Math.cos(a)*640,vy:Math.sin(a)*640,a,d:S.nova*.35,crit:false,pierce:S.pierce+2,hit:new Set(),life:1.2})}
+    for(let i=0;i<24;i++){const a=i/24*Math.PI*2;G.shots.push({kind:'bolt',x:P.x,y:P.y,vx:Math.cos(a)*640,vy:Math.sin(a)*640,a,d:S.nova*.35,crit:false,pierce:S.pierce+2,hit:new Set(),life:1.2*(1+S.skillRad/100)})}
     G.rings.push({x:P.x,y:P.y,t:.15,max:80,col:'255,200,120'});return;
   }
   G.rings.push({x:P.x,y:P.y,t:0,max:175*(1+S.skillRad/100),col:'150,210,255'});G.shake=Math.max(G.shake,5);
   for(const e of G.en){const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy);if(d<175*(1+S.skillRad/100)+e.r){const crit=Math.random()*100<S.crit;e.slow=2.5*(1+S.skillDur/100);dmgEnemy(e,S.nova*(crit?S.critDmg/100:1),crit);const k=e.type==='boss'?80:420;e.kx+=dx/(d||1)*k;e.ky+=dy/(d||1)*k}}
   G.eb=G.eb.filter(b=>Math.hypot(b.x-P.x,b.y-P.y)>175*(1+S.skillRad/100));
+}
+const ultNeed=()=>Math.max(10,Math.round(ULT_N*(1-((S&&S.fury)||0)/100)));
+function doUlt(){
+  const P=G.P,need=ultNeed();if((G.ult||0)<need)return;G.ult=0;const m=1+(S.ultPct||0)/100,RR=1+S.skillRad/100;G.shake=Math.max(G.shake,12);
+  if(G.cls==='guerrier'){const r=320*RR;P.inv=3;G.rings.push({x:P.x,y:P.y,t:0,max:r,col:'255,190,110'});G.rings.push({x:P.x,y:P.y,t:.12,max:r*.6,col:'255,110,60'});burst(P.x,P.y,50,'#ffb070',320,4);
+    for(const e of G.en){if(e.dead)continue;const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy);if(d<r+e.r){const k=e.type==='boss'?120:700;e.kx+=dx/(d||1)*k;e.ky+=dy/(d||1)*k;e.slow=2;dmgEnemy(e,S.nova*3*m,false)}}
+    toast('<b style="color:#ffd45a">Colère du Titan</b> : invulnérable pendant 3 s.');return}
+  if(G.cls==='archer'){P.rain=3;P.rainT=0;toast('<b style="color:#ffd45a">Pluie d\'acier</b>');return}
+  P.meteors=3;P.meteorT=0;toast('<b style="color:#ffd45a">Pluie de météores</b>');
+}
+function ultTick(dt){const P=G.P;
+  if(P.rain>0){P.rain-=dt;P.rainT-=dt;if(P.rainT<=0){P.rainT=.12;const R=450*(1+S.skillRad/100),m=1+(S.ultPct||0)/100,c=[];
+      for(const e of G.en)if(!e.dead&&Math.hypot(e.x-P.x,e.y-P.y)<R)c.push(e);
+      for(let i=0;i<4&&c.length;i++){const e=c.splice(Math.floor(Math.random()*c.length),1)[0];G.rings.push({x:e.x,y:e.y,t:.2,max:30,col:'255,212,90'});burst(e.x,e.y,6,'#ffd45a',160,2);dmgEnemy(e,S.nova*.7*m,Math.random()*100<S.crit)}}}
+  if(P.meteors>0){P.meteorT-=dt;if(P.meteorT<=0){P.meteors--;P.meteorT=.35;const m=1+(S.ultPct||0)/100,R=150*(1+S.skillRad/100),c=G.en.filter(e=>!e.dead&&Math.hypot(e.x-P.x,e.y-P.y)<520);
+      const tg=c.find(e=>e.type==='boss')||c[Math.floor(Math.random()*c.length)],x=tg?tg.x:P.x+rand(-150,150),y=tg?tg.y:P.y+rand(-150,150);
+      G.rings.push({x,y,t:0,max:R,col:'255,140,60'});G.rings.push({x,y,t:.15,max:R*.5,col:'255,220,140'});burst(x,y,40,'#ff8a3a',300,4);G.shake=Math.max(G.shake,10);
+      for(const e of G.en){if(!e.dead&&Math.hypot(e.x-x,e.y-y)<R+e.r)dmgEnemy(e,S.nova*3*m,Math.random()*100<S.crit)}}}
 }
 function doPotion(){
   const P=G.P;if(G.potions<=0||P.hp>=S.hp)return;G.potions--;const h=S.hp*.45*(1+S.potHeal/100)*(P.psnT>0?.5:1);P.hp=Math.min(S.hp,P.hp+h);
@@ -919,7 +986,7 @@ function update(dt){
   spawner(dt);
   // joueur
   const iv=inputVec(), moving=iv.m>.15;
-  P.inv-=dt;P.flash=Math.max(0,P.flash-dt*5);P.dashCd-=dt;P.novaCd-=dt;P.fire-=dt;
+  P.inv-=dt;P.flash=Math.max(0,P.flash-dt*5);P.dashCd-=dt;P.novaCd-=dt;P.fire-=dt;ultTick(dt);
   if(S.regen)P.hp=Math.min(S.hp,P.hp+S.regen*dt*(P.psnT>0?.5:1));
   const antiM=1-Math.min(60,S.antidote||0)/100;
   for(const z of G.zones){z.life-=dt;
@@ -948,7 +1015,9 @@ function update(dt){
         G.exitPt=farPoint(1000);const r=relicDrop();G.loot.relics.push(r);G.fresh++;G.gold+=60*G.level;
         toast(`<b style="color:var(--r2)">Cible capturée.</b> Relique ${relicName(r)} et ${60*G.level} or. Rejoins l'extraction.`)}}
       else G.capT=Math.max(0,G.capT-dt)}
-    if(G.exitPt&&Math.hypot(G.exitPt.x-P.x,G.exitPt.y-P.y)<55){missionSuccess();return}
+    if(G.exitPt){const inZ=Math.hypot(G.exitPt.x-P.x,G.exitPt.y-P.y)<55;
+      if(inZ){if(G.extT===0)toast('Reste <b>3 s</b> dans la zone pour t\'extraire.');G.extT+=dt;if(G.extT>=EXT_T){missionSuccess();return}}
+      else G.extT=Math.max(0,G.extT-dt*1.5)}
   }
   if(P.dashT>0&&G.cls==='guerrier'&&hasTal('g_charge'))for(const e of G.en)if(!e.dead&&!P.dashHit.has(e)&&Math.hypot(e.x-P.x,e.y-P.y)<e.r+P.r+10){
     P.dashHit.add(e);const a=Math.atan2(e.y-P.y,e.x-P.x),k=e.type==='boss'?40:380;e.kx+=Math.cos(a)*k;e.ky+=Math.sin(a)*k;dmgEnemy(e,S.dmg*1.5,false)}
@@ -974,7 +1043,7 @@ function update(dt){
         for(let i=0;i<S.waves;i++){const wa=a+(i-(S.waves-1)/2)*.35;G.shots.push({kind:'wave',x:P.x+Math.cos(wa)*P.r,y:P.y+Math.sin(wa)*P.r,vx:Math.cos(wa)*520,vy:Math.sin(wa)*520,a:wa,d:S.dmg*.6,crit:false,pierce:99,hit:new Set(),life:.5})}
         if(Math.random()*100<S.echo)P.fire=Math.min(P.fire,.12);
         P.swings++;
-        if(hasTal('g_quake')&&P.swings%4===0){const R2=160*(1+S.reach/100);G.rings.push({x:P.x,y:P.y,t:.1,max:R2,col:'255,210,160'});G.shake=Math.max(G.shake,5);
+        if(hasTal('g_quake')&&P.swings%4===0){const R2=160*(1+S.reach/100)*(1+S.skillRad/100);G.rings.push({x:P.x,y:P.y,t:.1,max:R2,col:'255,210,160'});G.shake=Math.max(G.shake,5);
           for(const e of G.en){if(e.dead)continue;const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy)||1;if(d<R2+e.r){const k=e.type==='boss'?20:200;e.kx+=dx/d*k;e.ky+=dy/d*k;dmgEnemy(e,S.dmg*.9,false)}}}
       }
     }
@@ -1078,7 +1147,8 @@ function update(dt){
       else if(d.kind==='gold'){const a=Math.round(d.amt*(1+lv('for')*.15)*(1+S.goldPct/100));G.gold+=a;ftext(P.x+rand(-10,10),P.y-P.r-12,'+'+a,'#f0cf4a',13)}
       else if(d.kind==='mod')gainMod(d.id);
       else if(d.kind==='relic'){G.loot.relics.push(d.id);G.fresh++;toast(`Relique <b style="color:${RTIER[RELICS[d.id].t].c}">${relicName(d.id)}</b>`)}
-      else if(d.kind==='react'){G.react++;if(G.relic&&!G.cracked&&G.react>=REACT_N){G.cracked=true;G.shake=6;toast(`<b style="color:var(--r2)">Relique ${relicName(G.relic.id)} ouverte.</b> Réussis la mission pour recevoir sa récompense.`)}}
+      else if(d.kind==='react'){if(G.relic){G.react++;if(G.react>=REACT_N){const r=G.relic;G.opened.push(r);G.relI++;G.react=0;G.relic=G.relQ[G.relI]||null;G.shake=6;
+          toast(`<b style="color:var(--r2)">Relique ${relicName(r.id)}${r.rad?' éclatante':''} ouverte.</b> `+(G.relic?`Suivante : ${relicName(G.relic.id)}${G.relic.rad?' éclatante':''}.`:'Toutes tes reliques sont ouvertes.')+' Réussis la mission pour recevoir les récompenses.')}}}
       else if(d.kind==='potion'){if(G.potions<5){G.potions++;toast('<span style="color:var(--heal)">Potion de soin</span> ramassée')}else d.gone=false}
       else if(d.kind==='item'){G.loot.items.push(d.item);G.fresh++;const r=RAR[d.item.r];toast(`<span style="color:${r.c}">${d.item.name}</span> · ${r.n.toLowerCase()}`+(better(d.item)?' · <b style="color:var(--heal)">▲ meilleur, à équiper dans la pause</b>':''));if(d.item.r===3)G.shake=6}
       else if(d.kind==='part'){G.loot.parts.push(d.part);G.fresh++;toast(`Pièce d'arme : ${partLabel(d.part)}`)}
@@ -1206,7 +1276,7 @@ function render2D(){
   for(const w of G.wells){if(!w.on||!vis(w.x,w.y,60))continue;ctx.fillStyle='rgba(120,200,255,.25)';circle(w.x,w.y,w.r+6+Math.sin(G.t*3)*3);ctx.fill();ctx.fillStyle='#2b4f66';circle(w.x,w.y,w.r);ctx.fill();ctx.strokeStyle='#bfeaff';ctx.lineWidth=3;ctx.stroke();ctx.fillStyle='rgba(200,240,255,.8)';circle(w.x,w.y,w.r*.45);ctx.fill()}
   for(const s of G.spawns)if(s.t<.9){const k=1-s.t/.9;ctx.strokeStyle=`rgba(170,110,220,${.3+k*.6})`;ctx.lineWidth=2;circle(s.x,s.y,20*(.4+k*.6));ctx.stroke()}
   for(const d of G.drops)if(vis(d.x,d.y,150))drawDrop(d);
-  if(G.exitPt){const x=G.exitPt,k=Math.sin(G.t*4)*.5+.5;ctx.fillStyle=`rgba(95,191,122,${.12+.15*k})`;circle(x.x,x.y,55);ctx.fill();ctx.strokeStyle='rgba(95,191,122,.9)';ctx.lineWidth=3;ctx.stroke();beam(x.x,x.y,170,'#5fbf7a',.45)}
+  if(G.exitPt){const x=G.exitPt,k=Math.sin(G.t*4)*.5+.5;ctx.fillStyle=`rgba(95,191,122,${.12+.15*k})`;circle(x.x,x.y,55);ctx.fill();ctx.strokeStyle='rgba(95,191,122,.9)';ctx.lineWidth=3;ctx.stroke();beam(x.x,x.y,170,'#5fbf7a',.45);if(G.extT>0){ctx.strokeStyle='#bff5cc';ctx.lineWidth=6;ctx.beginPath();ctx.arc(x.x,x.y,64,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,G.extT/EXT_T));ctx.stroke()}}
   if(G.pod&&vis(G.pod.x,G.pod.y)){const p=G.pod,h=p.r*1.15;shadow(p.x,p.y,p.r);ctx.fillStyle='#1e2a30';circle(p.x,p.y,p.r);ctx.fill();ctx.strokeStyle='#5fb8c9';ctx.lineWidth=3;ctx.stroke();
     ctx.fillStyle=p.flash>0?'#fff':'#8fd3e0';ctx.beginPath();ctx.moveTo(p.x,p.y-h-4+Math.sin(G.t*2)*2);ctx.lineTo(p.x+p.r*.5,p.y-4);ctx.lineTo(p.x,p.y+p.r*.55);ctx.lineTo(p.x-p.r*.5,p.y-4);ctx.closePath();ctx.fill();
     ctx.strokeStyle='rgba(143,211,224,.35)';ctx.lineWidth=2;circle(p.x,p.y,p.r+10+Math.sin(G.t*3)*2);ctx.stroke()}
@@ -1268,10 +1338,10 @@ function hud(){
   else if(G.mode==='defense'){setTx('lvlTxt',`Vague ${Math.max(1,G.wave)}`);setTx('timeTxt',G.waveState==='break'?`Prochaine ${fmt(G.waveT)}`:`Ennemis ${G.toSpawn+G.en.length}`);
     setTx('bossTxt',`Sortie vague ${Math.ceil(Math.max(1,G.wave)/5)*5}`);setSt('objFill','transform',`scaleX(${r3(G.pod.hp/G.pod.max)})`);hot=G.pod.hp<G.pod.max*.3}
   else{setTx('lvlTxt','Capture');const t=G.target;
-    setTx('timeTxt',G.exitPt?`Extraction ${dm(G.exitPt.x,G.exitPt.y)}`:t&&t.downed?`Capture ${Math.round(G.capT/2.5*100)} %`:t?`Cible ${dm(t.x,t.y)}`:'');hot=!!G.exitPt;
+    setTx('timeTxt',G.exitPt?(G.extT>0?`Extraction ${Math.min(100,Math.round(G.extT/EXT_T*100))} %`:`Extraction ${dm(G.exitPt.x,G.exitPt.y)}`):t&&t.downed?`Capture ${Math.round(G.capT/2.5*100)} %`:t?`Cible ${dm(t.x,t.y)}`:'');hot=!!G.exitPt;
     setTx('bossTxt',`Gardien ${fmt(G.bossT)}`)}
   setCls('timeTxt','hot',hot);
-  setHid('relTxt',!G.relic);if(G.relic)setTx('relTxt',G.cracked?'Relique ouverte':`Réactifs ${G.react} / ${REACT_N}`);
+  setHid('relTxt',!G.relQ.length);if(G.relQ.length)setTx('relTxt',G.relic?`Relique ${G.relI+1}/${G.relQ.length} · ${G.react} / ${REACT_N}`:`Reliques ouvertes ${G.opened.length}/${G.relQ.length}`);
   setTx('potN',String(G.potions));
   setHid('stP',!(P.psnT>0));if(P.psnT>0)setTx('stP',`Poison ×${P.psn} · ${Math.ceil(P.psnT)} s`);
   setHid('stB',!(P.brnT>0));if(P.brnT>0)setTx('stB',`Brûlure · ${Math.ceil(P.brnT)} s`);
@@ -1281,7 +1351,9 @@ function hud(){
   setSt('bPot','--cd',G.potions?'0':'1');
   const live=started&&!G.over;
   setCls('bDash','ready',live&&P.dashCd<=0);setCls('bNova','ready',live&&P.novaCd<=0);setCls('bPot','ready',live&&G.potions>0&&P.hp<S.hp);
-  const b=G.en.find(e=>e.type==='boss');if(b)setSt('bossFill','transform',`scaleX(${r3(b.hp/b.max)})`);
+  {let bh=0,bm=0,bn=0;for(const e of G.en)if(e.type==='boss'&&!e.dead){bh+=Math.max(0,e.hp);bm+=e.max;bn++}
+   if(bn){setSt('bossFill','transform',`scaleX(${r3(bh/bm)})`);setTx('bossName',bn>1?`${bn} Gardiens des Cendres`:'Le Gardien des Cendres')}}
+  {const un=ultNeed(),ur=Math.min(1,(G.ult||0)/un);setSt('bUlt','--cd',r3(1-ur));setCls('bUlt','ready',live&&ur>=1);setTx('ultN',ur>=1?'':String(un-(G.ult|0)))}
   setHid('badge',!G.fresh);setTx('badge',String(G.fresh));
 }
 
@@ -1398,6 +1470,7 @@ function buildStatic(){
     L.glowStatic.addChild(gl,fl);PX.statics.push({s,x:b.x,y:b.y,m:40},{s:gl,x:b.x,y:b.y,m:180,b,glow:1},{s:fl,x:b.x,y:b.y,m:40,b,flame:1});
   }
 }
+const EXT_T=3;
 function arcLine(g,x,y,r,a0,a1){g.moveTo(x+Math.cos(a0)*r,y+Math.sin(a0)*r);g.arc(x,y,r,a0,a1)}
 function renderPixi(){
   const {R,world,top,dark,T,L,P:PP}=PX;
@@ -1411,7 +1484,7 @@ function renderPixi(){
     else if(o.flame){const f=1+.06*Math.sin(G.t*11+o.b.ph)+.04*Math.sin(G.t*23+o.b.ph*2);o.s.scale.set(f)}}
   // sous-couche
   const u=L.underG;u.clear();
-  if(G.exitPt){const x=G.exitPt,k=Math.sin(G.t*4)*.5+.5;u.lineStyle(3,0x5fbf7a,.9);u.beginFill(0x5fbf7a,.12+.15*k);u.drawCircle(x.x,x.y,55);u.endFill();
+  if(G.exitPt){const x=G.exitPt,k=Math.sin(G.t*4)*.5+.5;u.lineStyle(3,0x5fbf7a,.9);u.beginFill(0x5fbf7a,.12+.15*k);u.drawCircle(x.x,x.y,55);u.endFill();if(G.extT>0){u.lineStyle(6,0xbff5cc,1);arcLine(u,x.x,x.y,64,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,G.extT/EXT_T));u.lineStyle(0)}
     const b=take(PP.beam);b.texture=T.beam;b.tint=0x5fbf7a;b.alpha=.45;b.position.set(x.x,x.y);b.width=8;b.height=170;
     const gl=take(PP.glow);gl.texture=T.glow;gl.tint=0x5fbf7a;gl.alpha=.3;gl.position.set(x.x,x.y);gl.width=gl.height=280}
   for(const z of G.zones){if(!vis(z.x,z.y,z.r))continue;const al=Math.min(1,z.life/.5)*(z.kind==='poison'?.33:.4),c=z.kind==='poison'?0x6ec850:0xff7828;u.lineStyle(2,c,Math.min(1,al+.3));u.beginFill(c,al);u.drawCircle(z.x,z.y,z.r*(1+.04*Math.sin(G.t*6)));u.endFill()}
@@ -1504,16 +1577,16 @@ function render(){
 
 /* ---------- Fiches partagées ---------- */
 function statRows(St){
-  const rows=[['Dégâts',Math.round(St.dmg)],['Attaques / s',St.aps.toFixed(2)],['Critique',Math.round(St.crit)+' %'],['Dégâts critiques',Math.round(St.critDmg)+' %'],['Puissance (DPS)',Math.round(dps(St))],['Vie',Math.round(St.hp)],['Réduction',Math.round(St.armor)+' %'],['Vitesse',Math.round(St.speed/2.2)+' %'],heroCls==='guerrier'?['Ondes par coup',St.waves]:['Projectiles par tir',(1+St.multi).toFixed(St.multi%1?2:0)],['Double attaque',St.echo+' %'],[CLS[heroCls].skill,Math.round(St.nova)]];
+  const rows=[['Dégâts',Math.round(St.dmg)],['Attaques / s',St.aps.toFixed(2)],['Critique',Math.round(St.crit)+' %'],['Dégâts critiques',Math.round(St.critDmg)+' %'],['Puissance (DPS)',Math.round(dps(St))],['Vie',Math.round(St.hp)],['Réduction',Math.round(St.armor)+' %'],['Vitesse',Math.round(St.speed/2.2)+' %'],['Portée des compétences',Math.round(100+St.skillRad)+' %'],heroCls==='guerrier'?['Ondes par coup',St.waves]:['Projectiles par tir',(1+St.multi).toFixed(St.multi%1?2:0)],['Double attaque',St.echo+' %'],[CLS[heroCls].skill,Math.round(St.nova)]];
   return rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join('');
 }
 function slotsHtml(eq,click,selSlot){
   return Object.keys(SLOT).map(k=>{const it=eq[k],tag=click?'button':'div';
-    return `<${tag} class="slot${selSlot===k?' sel':''}"${click?` data-slot="${k}"`:''}><span>${SLOT[k]}</span><strong style="color:${it?RAR[it.r].c:'var(--muted)'}">${it?itemName(it):'Vide'}</strong></${tag}>`}).join('');
+    return `<${tag} class="slot${selSlot===k?' sel':''}"${click?` data-slot="${k}"`:''}><span>${SLOT[k]}</span><strong style="color:${it?RAR[it.r].c:'var(--muted)'}">${it?itemName(it):'Vide'}${it&&it.lock?`<span class="li" aria-label="verrouillé">${LOCK_SVG}</span>`:''}</strong></${tag}>`}).join('');
 }
 function better(it){const e=curEq(),a=stats(e),b=stats({...e,[it.slot]:it});return dps(b)+b.hp*.3>dps(a)+a.hp*.3}
 const LOCK_SVG='<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
-const cellHtml=(it,attr,sel,up)=>`<button class="cell${sel?' sel':''}${up?' up':''}" data-${attr}="${it.id}" style="border-color:${RAR[it.r].c};color:${RAR[it.r].c}" aria-label="${itemName(it)}${it.lock?', verrouillé':''}">${it.lock?`<span class="lk">${LOCK_SVG}</span>`:''}${it.up?`<span class="cup">+${it.up}</span>`:''}${GLYPH[it.slot]}</button>`;
+const cellHtml=(it,attr,sel,up)=>`<button class="cell${sel?' sel':''}${up?' up':''}${it.lock?' locked':''}" data-${attr}="${it.id}" style="border-color:${RAR[it.r].c};color:${RAR[it.r].c}" aria-label="${itemName(it)}${it.lock?', verrouillé':''}">${it.lock?`<span class="lk">${LOCK_SVG}</span>`:''}${it.up?`<span class="cup">+${it.up}</span>`:''}${GLYPH[it.slot]}</button>`;
 function upBlock(it){
   const n=it.up||0;
   if(n>=UP_MAX)return `<div class="upg"><span>Amélioration <b>+100 / 100</b> · statistiques ×3</span></div>`;
@@ -1534,7 +1607,7 @@ function card(it,mode){
       :`<div class="actions"><button class="btn" data-cact="unequip">Retirer au coffre</button><button class="btn" data-cact="lock">${it.lock?'Déverrouiller':'Verrouiller'}</button></div>`;
     extra+=upBlock(it);
   }
-  return `<div class="card"><div class="nm" style="color:${r.c}">${itemName(it)}</div><div class="meta">${r.n} · ${SLOT[it.slot]}${it.wid?' · fabriquée':` · ${it.type} · niveau ${it.lvl}`}${mode==='worn'?' · équipé':''}</div>
+  return `<div class="card"><div class="nm" style="color:${r.c}">${itemName(it)}${it.lock?`<span class="lockchip">${LOCK_SVG}Verrouillé</span>`:''}</div><div class="meta">${r.n} · ${SLOT[it.slot]}${it.wid?' · fabriquée':` · ${it.type} · niveau ${it.lvl}`}${mode==='worn'?' · équipé':''}</div>
     <ul><li>${baseTxtOf(it.slot,fmtN(it.base.v*upMul(it.up)))}</li>${Object.keys(it.aff).map(k=>`<li>${AFF[k].t(NOSCALE[k]?it.aff[k]:fmtN(it.aff[k]*upMul(it.up)))}</li>`).join('')}</ul>${extra}</div>`;
 }
 
@@ -1564,14 +1637,14 @@ function drawBag(){
 }
 /* ---------- Montée de niveau ---------- */
 function gainXp(v){
-  G.xp+=v;
+  G.xp+=v*(1+(S.xpPct||0)/100);
   while(G.xp>=xpNeed(G.hl)){G.xp-=xpNeed(G.hl);G.hl++;G.pend++}
   if(G.pend&&$('lvlup').hidden&&!G.over)showLevelUp();
 }
 let luShown=0;
 function showLevelUp(){
   paused=true;resetJoy();$('bag').hidden=true;
-  const av=RUP.filter(u=>(!u.cls||u.cls.includes(G.cls))&&(G.run[u.k]||0)<u.max),pool=[...av],out=[];
+  const av=RUP.filter(u=>(!u.cls||u.cls.includes(G.cls))&&(G.run[u.k]||0)<u.max&&(u.k!=='fiole'||G.potions<5)),pool=[...av],out=[];
   while(out.length<3&&pool.length)out.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
   for(const f of RUP_FILL)if(out.length<3)out.push(f);
   $('luSub').textContent=`Héros niveau ${G.hl-G.pend+1}`;
@@ -1585,6 +1658,7 @@ function showLevelUp(){
 function pickUp(k){
   if(k==='heal')heal(S.hp*.4);
   else if(k==='purse')G.gold+=20*G.level;
+  else if(k==='fiole'){G.run.fiole=(G.run.fiole||0)+1;G.potions=Math.min(5,G.potions+1)}
   else{G.run[k]=(G.run[k]||0)+1;refreshStats();if(k==='hp')heal(S.hp*.15)}
   G.pend--;$('lvlup').hidden=true;
   burst(G.P.x,G.P.y,20,'#9fe3f0',160);
@@ -1693,7 +1767,7 @@ function lootSummary(){
   const L=G.loot,its=L.items.length,pts=L.parts.length;
   return `<div><span>Or ramassé</span><b style="color:var(--r2)">${G.gold}</b></div><div><span>Équipements</span><b>${its?L.items.map(i=>`<span style="color:${RAR[i.r].c}">◆</span>`).join(''):'0'}</b></div>
     <div><span>Reliques</span><b>${L.relics.length?L.relics.map(id=>`<span style="color:${RTIER[RELICS[id].t].c}">${relicName(id)}</span>`).join(', '):'0'}</b></div>
-    ${G.relic?`<div><span>Relique à ouvrir</span><b>${G.cracked?'ouverte':`${G.react} / ${REACT_N} réactifs`}</b></div>`:''}<div><span>Ennemis abattus</span><b>${G.kills}</b></div><div><span>Temps de survie</span><b>${fmt(G.t)}</b></div>`;
+    ${G.relQ.length?`<div><span>Reliques ouvertes</span><b>${G.opened.length} / ${G.relQ.length}${G.relic?` · ${G.react} / ${REACT_N} réactifs`:''}</b></div>`:''}<div><span>Ennemis abattus</span><b>${G.kills}</b></div><div><span>Temps de survie</span><b>${fmt(G.t)}</b></div>`;
 }
 function roundDone(){
   paused=true;resetJoy();$('bag').hidden=true;$('lvlup').hidden=true;
@@ -1725,34 +1799,35 @@ function grantRelic(id,rad){
   const a=meta.relics[id];if(!a||a[rad?1:0]<=0)return null;
   a[rad?1:0]--;const r=rollRelic(id,rad),rar=RW_RAR[RELICS[id].rw.indexOf(r)];
   const [k,v]=r.split(':');if(k==='ess')meta.essence+=+v;else if(k==='gold')meta.gold+=+v;else{const p=meta.parts[k]||(meta.parts[k]=[0,0,0]);p[+v]++}
-  if(meta.relicSel&&meta.relicSel.id===id&&!!meta.relicSel.rad===rad&&a[rad?1:0]<=0)meta.relicSel=null;
+  relicQFix();
   const frag=k!=='ess'&&k!=='gold';
   return {rar,html:`<b style="color:${MOD_RAR[rar].c}">${rwLabel(r)}</b> (${['commun','peu commun','rare'][rar]})`+(frag?` · fragment ${fragStatus(k)} / 3 de ${bpdef(k).n}, à fabriquer à l'Armurerie`:'')};
 }
 function resolveRelic(){
-  if(!G.relic||!G.cracked)return '';
-  const g=grantRelic(G.relic.id,G.relic.rad);if(!g)return '';
-  meta.essence+=25;
-  return `Relique ${relicName(G.relic.id)} ouverte : ${g.html}. Bonus de Fissure : +25 essence.`;
+  const out=[];
+  for(const r of G.opened){const g=grantRelic(r.id,r.rad);if(!g)continue;meta.essence+=25;out.push(`Relique ${relicName(r.id)}${r.rad?' éclatante':''} : ${g.html}. +25 essence.`)}
+  const left=G.relQ.length-G.opened.length;
+  if(left>0)out.push(`${left} relique${left>1?'s':''} non ouverte${left>1?'s':''} faute de réactifs : ${left>1?'elles restent':'elle reste'} équipée${left>1?'s':''}, sans être consommée${left>1?'s':''}.`);
+  return out.join('<br>');
 }
 function missionSuccess(){
   $('extract').hidden=true;$('lvlup').hidden=true;G.over=true;const rel=resolveRelic();const g=bank(true);recordBest();
   const txt=G.mode==='capture'?`Cible capturée en ${fmt(G.t)}, ${G.kills} ennemis abattus.`:G.mode==='defense'?`Tu as tenu ${G.wave} vagues, ${G.kills} ennemis abattus.`:`Tu es sorti au niveau ${G.level} après ${fmt(G.t)}, avec ${G.kills} ennemis abattus.`;
   showOver(G.mode==='capture'?'Capture réussie':'Extraction réussie',txt+' Ton butin t\'attend au Camp.',`<span class="coin"></span>+${g} or · ${meta.gold} au total`,
-    rel||(G.relic?'Ta relique n\'a pas été ouverte : il manquait des réactifs. Elle n\'est pas consommée.':''));
+    rel);
 }
 function gameOver(reason){
   if(G.over)return;G.over=true;const g=bank(false);recordBest();
   const lost=G.loot.items.length+G.loot.parts.length+G.loot.relics.length;
   setTimeout(()=>showOver(reason==='pod'?'Le cryopode est détruit':'Tu es tombé',`Mission échouée après ${fmt(G.t)}, ${G.kills} ennemis abattus.`+(lost?(lost>1?` Les ${lost} objets et reliques trouvés sont perdus.`:' L\'objet trouvé est perdu.'):''),
-    `<span class="coin"></span>+${g} or gardé (la moitié) · ${meta.gold} au total`,G.relic?'Ta relique n\'est pas consommée.':''),700);
+    `<span class="coin"></span>+${g} or gardé (la moitié) · ${meta.gold} au total`,G.relQ.length?'Tes reliques ne sont pas consommées.':''),700);
 }
 $('exitBtn').onclick=missionSuccess;
 $('contBtn').onclick=()=>{$('extract').hidden=true;G.level++;
   if(G.mode==='survie')G.tl=0;else{G.waveState='break';G.waveT=5;G.pod.hp=Math.min(G.pod.max,G.pod.hp+G.pod.max*.3)}
   paused=false;last=performance.now();toast(`<b style="color:var(--ember)">Niveau ${G.level}.</b> Les monstres se renforcent.`)};
 function missionToast(){toast(G.mode==='defense'?'<b>Défense.</b> Protège le cryopode.':G.mode==='capture'?'<b>Capture.</b> Suis la flèche dorée jusqu\'à la cible.':'<b>Survie.</b> Le portail s\'ouvre dans 3 minutes.');
-  if(G.relic)setTimeout(()=>toast(`Fissure : abats les ennemis au halo doré pour ouvrir la relique ${relicName(G.relic.id)}.`),900)}
+  if(G.relic)setTimeout(()=>toast(`Fissure : ${G.relQ.length} relique${G.relQ.length>1?'s':''} équipée${G.relQ.length>1?'s':''}. Abats les ennemis au halo doré : ${REACT_N} réactifs ouvrent ${relicName(G.relic.id)}${G.relic.rad?' éclatante':''}, puis la suivante.`),900)}
 
 /* ---------- Camp ---------- */
 let campTab='equip',campSel=null;
@@ -1798,8 +1873,9 @@ function fragInv(){
 function relicBtns(bid){
   return Object.keys(RELICS).filter(id=>RELICS[id].rw.some(x=>x.split(':')[0]===bid)).map(id=>{
     const a=meta.relics[id]||[0,0],tc=RTIER[RELICS[id].t].c,out=[];
-    if(a[0])out.push(`<button class="btn relb" data-cact="ropen" data-arg="${id}|0" style="--tc:${tc}">Ouvrir ${relicName(id)} ×${a[0]}</button>`);
-    if(a[1])out.push(`<button class="btn relb" data-cact="ropen" data-arg="${id}|1" style="--tc:${tc}">Ouvrir ${relicName(id)} éclatante ×${a[1]}</button>`);
+    const eqb=(rad,lab)=>{const n=relicQN(id,rad),own=a[rad?1:0];return `<button class="btn relb" data-cact="rqadd" data-arg="${id}|${rad?1:0}" style="--tc:${tc}" ${n>=own?'disabled':''}>${n>=own?`${lab} : tout équipé (${n})`:`Équiper ${lab} · ${n} / ${own}`}</button>`};
+    if(a[0])out.push(eqb(false,relicName(id)));
+    if(a[1])out.push(eqb(true,relicName(id)+' éclatante'));
     return out.length?out.join(''):`<span class="part" title="Tu n'as pas cette relique">${relicName(id)}</span>`}).join('');
 }
 function bpCard(b){
@@ -1818,22 +1894,27 @@ function bpCard(b){
 }
 function campArsenal2(){
   const order=[heroCls,...Object.keys(CLS).filter(c=>c!==heroCls)];
-  return `${campMsg}<p class="empty" style="font-size:13px">Toutes les recettes. Chaque équipement se fabrique avec ses 3 fragments de schéma, trouvés dans les reliques. Ouvre une relique ici, ou pendant une mission (Fissure) pour gagner en plus 25 essence.</p>`
+  return `${campMsg}<p class="empty" style="font-size:13px">Toutes les recettes. Chaque équipement se fabrique avec ses 3 fragments de schéma, trouvés dans les reliques. Équipe tes reliques ici ou à l'onglet Reliques : elles s'ouvrent en mission, une par une, tous les 10 réactifs (+25 essence chacune).</p>`
     +order.map(c=>`<h3>Armes · ${CLS[c].n}${c===heroCls?' · ton héros':''}</h3>`+WPN[c].filter((w,i)=>i>0||c===heroCls).map(w=>bpCard(bpdef(w.id))).join('')).join('')
     +`<h3>Équipement Prime · toutes classes</h3>`+GEAR_BP.map(g=>bpCard(bpdef(g.id))).join('');
 }
 function campRelics(){
-  const ids=Object.keys(RELICS).filter(id=>{const a=meta.relics[id];return a&&(a[0]||a[1])}),sel=meta.relicSel;
-  let h=`${campMsg}<p class="empty" style="font-size:13px">Ouvre une relique ici pour recevoir tout de suite une de ses récompenses. Tu peux aussi l'emporter en mission : les ennemis au halo doré lâchent des réactifs, à ${REACT_N} elle s'ouvre, et une mission réussie ajoute 25 essence. Une relique éclatante donne plus souvent les récompenses rares.</p>`;
+  relicQFix();const ids=Object.keys(RELICS).filter(id=>{const a=meta.relics[id];return a&&(a[0]||a[1])}),Q=meta.relicQ;
+  let h=`${campMsg}<p class="empty" style="font-size:13px">Équipe les reliques à emporter en mission, autant que tu veux. En mission, les ennemis au halo doré lâchent des réactifs : ${REACT_N} réactifs ouvrent la première relique de la liste, puis le compteur repart à 0 pour la suivante. Une mission réussie te donne la récompense de chaque relique ouverte, plus 25 essence par relique. Les reliques non ouvertes ne sont pas consommées.</p>`;
   if(!ids.length)return h+'<p class="empty">Aucune relique pour l\'instant. Les monstres en lâchent parfois, et chaque manche réussie en rapporte une.</p>';
-  for(const id of ids){const R=RELICS[id],a=meta.relics[id],tc=RTIER[R.t].c,isSel=rad=>!!sel&&sel.id===id&&!!sel.rad===rad;
+  const tot=ids.reduce((n,id)=>n+meta.relics[id][0]+meta.relics[id][1],0);
+  h+=`<h3>Ordre d'ouverture · ${Q.length} / ${tot} équipée${Q.length>1?'s':''}</h3><div class="actions" style="margin:0"><button class="btn" data-cact="rqall" ${Q.length>=tot?'disabled':''}>Tout équiper</button><button class="btn" data-cact="rqnone" ${Q.length?'':'disabled'}>Tout retirer</button></div>`;
+  h+=Q.length?`<div class="rq"><ol>${Q.map((q,i)=>`<li><span class="rqn">${i+1}.</span><b style="color:${RTIER[RELICS[q.id].t].c}">${relicName(q.id)}${q.rad?' éclatante':''}</b>
+      <button class="btn" data-cact="rqup" data-arg="${i}" ${i?'':'disabled'} aria-label="Monter">↑</button><button class="btn" data-cact="rqdn" data-arg="${i}" ${i<Q.length-1?'':'disabled'} aria-label="Descendre">↓</button><button class="btn" data-cact="rqrm" data-arg="${i}" aria-label="Retirer">✕</button></li>`).join('')}</ol></div>`
+    :'<p class="empty" style="font-size:13px">Aucune relique équipée : la prochaine mission n\'en ouvrira aucune.</p>';
+  h+='<h3>Tes reliques</h3>';
+  for(const id of ids){const R=RELICS[id],a=meta.relics[id],tc=RTIER[R.t].c;
     const rows=R.rw.map((r,i)=>{const rr=RW_RAR[i];return `<span class="dot" style="background:${MOD_RAR[rr].c}"></span><span>${rwLabel(r)}</span><b>${CH[0][rr]} %</b><b style="color:var(--r2)">${CH[1][rr]} %</b>`}).join('');
-    const pickBtn=(rad,lab)=>`<button class="btn" data-cact="relsel" data-arg="${id}|${rad?1:0}" ${isSel(rad)?'disabled':''}>${isSel(rad)?'Choisie pour la mission':lab}</button>`;
+    const ctl=(rad,lab)=>{const n=relicQN(id,rad),own=a[rad?1:0];return `<span class="lvsel" style="gap:6px;align-items:center"><span style="font-size:13px;color:var(--muted)">${lab} ${n} / ${own}</span><button class="btn" data-cact="rqdel" data-arg="${id}|${rad?1:0}" ${n?'':'disabled'} aria-label="Retirer une ${lab.toLowerCase()}">−</button><button class="btn" data-cact="rqadd" data-arg="${id}|${rad?1:0}" ${n<own?'':'disabled'} aria-label="Équiper une ${lab.toLowerCase()}">+</button></span>`};
     h+=`<div class="wpn"><div class="nm" style="color:${tc}">Relique ${relicName(id)}</div><div class="meta">Intacte ×${a[0]} · Éclatante ×${a[1]}</div>
       <div class="rw"><span></span><span class="h">Récompense</span><span class="h">Intacte</span><span class="h">Éclat.</span>${rows}</div>
-      <div class="wfoot">${a[0]?`<button class="btn main" data-cact="ropen" data-arg="${id}|0">Ouvrir</button>`:''}${a[1]?`<button class="btn main" data-cact="ropen" data-arg="${id}|1">Ouvrir éclatante</button>`:''}
-      ${a[0]?pickBtn(false,'Emporter en mission'):''}${a[1]?pickBtn(true,'Emporter éclatante'):''}
-      ${a[0]?`<button class="btn buy" data-cact="refine" data-arg="${id}" ${meta.essence<50?'disabled':''}>Raffiner · <span class="essi"></span>50</button>`:''}</div></div>`}
+      <div class="wfoot">${a[0]?ctl(false,'Intactes'):''}${a[1]?ctl(true,'Éclatantes'):''}
+      ${a[0]?`<button class="btn buy" data-cact="refine" data-arg="${id}" ${meta.essence<50||relicQN(id,false)>=a[0]?'disabled':''}>Raffiner · <span class="essi"></span>50</button>`:''}</div></div>`}
   return h;
 }
 let saveMode=null,saveDraft='',saveMsg='',savePending=null;
@@ -1855,7 +1936,50 @@ function saveSection(){
   if(saveMsg)h+=`<p class="empty" style="font-size:13px;color:var(--blood)">${saveMsg}</p>`;
   return h;
 }
-function campForge(){return campForge0()+saveSection()}
+function campForge(){return campForge0()+xfSection()+saveSection()}
+let xf={src:'',k:'',dst:'',rep:''};
+const wclsOf=id=>Object.keys(WPN).find(c=>WPN[c].some(w=>w.id===id));
+function xfGet(key){if(!key)return null;const t=key[0],v=key.slice(2);
+  if(t==='s')return meta.stash.find(i=>String(i.id)===v)||null;if(t==='g')return meta.gear[v]||null;
+  if(t==='w'){const c=wclsOf(v);return c&&ownedW(v)?weaponItem(c,v):null}return null}
+const xfCap=it=>Math.max(RAR[it.r].aff,Object.keys(it.aff).length);
+const xfCost=it=>50*(it.r+1);
+const xfLbl=(k,i,w)=>`${esc(itemName(i))} · ${RAR[i.r].n.toLowerCase()} · ${w}`;
+function xfState(){const s=xfGet(xf.src),d=xfGet(xf.dst);if(!s||!d||!xf.k||s.aff[xf.k]==null)return null;
+  const v=s.aff[xf.k],cur=d.aff[xf.k],cap=xfCap(d),n=Object.keys(d.aff).length,T=x=>AFF[xf.k].t(x);
+  if(cur!=null)return cur>=v?{ok:false,msg:`${esc(itemName(d))} a déjà ${T(cur)}, une valeur égale ou plus forte. Transfert impossible.`}:{ok:true,mode:'up',msg:`Remplace ${T(cur)} par ${T(v)} sur ${esc(itemName(d))}.`};
+  if(n<cap)return {ok:true,mode:'add',msg:`Ajoute ${T(v)} sur ${esc(itemName(d))} (${n+1} / ${cap} affixes).`};
+  if(xf.rep&&d.aff[xf.rep]!=null)return {ok:true,mode:'rep',msg:`Remplace ${AFF[xf.rep].t(d.aff[xf.rep])} par ${T(v)} sur ${esc(itemName(d))}.`};
+  return {ok:false,full:true,msg:`${esc(itemName(d))} a déjà ${cap} affixe${cap>1?'s':''} : choisis celle à remplacer.`}}
+function xfSection(){
+  const srcs=[...Object.entries(meta.gear).filter(([k,i])=>i&&!i.lock&&Object.keys(i.aff).length).map(([k,i])=>['g:'+k,i,'équipé']),
+    ...meta.stash.filter(i=>!i.lock&&Object.keys(i.aff).length).sort((a,b)=>b.r-a.r||b.lvl-a.lvl).map(i=>['s:'+i.id,i,'coffre'])];
+  let s=xfGet(xf.src);if(xf.src&&(!s||s.lock)){xf={src:'',k:'',dst:'',rep:''};s=null}
+  let h=`<h3>Transfert d'affixe</h3><p class="empty" style="font-size:13px">Prends une affixe d'un équipement et pose-la sur une arme ou un autre équipement. L'équipement source est détruit et le transfert coûte de l'essence selon sa rareté. Si la cible a déjà cette affixe, elle n'est remplacée que par une valeur plus forte. Les valeurs sont celles de base : le niveau d'amélioration de la cible s'y applique ensuite. Un équipement verrouillé ne peut pas servir de source.</p>`;
+  if(!srcs.length)return h+'<p class="empty" style="font-size:13px">Aucun équipement non verrouillé avec des affixes à prendre.</p>';
+  h+=`<label class="xfl">1. Équipement source (détruit)<select id="xfSrc"><option value="">Choisir…</option>${srcs.map(([k,i,w])=>`<option value="${k}" ${k===xf.src?'selected':''}>${xfLbl(k,i,w)}</option>`).join('')}</select></label>`;
+  if(!s)return h;
+  h+=`<div class="xfl">2. Affixe à prendre<div class="alrow">${Object.keys(s.aff).map(k=>`<button class="chip" data-cact="xfk" data-arg="${k}" aria-pressed="${xf.k===k}">${AFF[k].t(s.aff[k])}</button>`).join('')}</div></div>`;
+  if(!xf.k||s.aff[xf.k]==null)return h;
+  const ws=Object.keys(WPN).flatMap(c=>WPN[c].filter(w=>ownedW(w.id)).map(w=>['w:'+w.id,weaponItem(c,w.id),`arme ${deCls(c).replace(/^de l'|^du /,'')}`]));
+  const dsts=[...ws,...Object.entries(meta.gear).filter(([k,i])=>i&&'g:'+k!==xf.src).map(([k,i])=>['g:'+k,i,'équipé']),
+    ...meta.stash.filter(i=>'s:'+i.id!==xf.src).sort((a,b)=>b.r-a.r||b.lvl-a.lvl).map(i=>['s:'+i.id,i,'coffre'])];
+  h+=`<label class="xfl">3. Cible<select id="xfDst"><option value="">Choisir…</option>${dsts.map(([k,i,w])=>{const c=i.aff[xf.k];return `<option value="${k}" ${k===xf.dst?'selected':''}>${xfLbl(k,i,w)}${c!=null?` · a déjà ${c}`:''}</option>`}).join('')}</select></label>`;
+  const d=xfGet(xf.dst);if(!d)return h;
+  const st=xfState();
+  if(st&&(st.full||st.mode==='rep'))h+=`<div class="xfl">4. Affixe à remplacer<div class="alrow">${Object.keys(d.aff).map(k=>`<button class="chip" data-cact="xfrep" data-arg="${k}" aria-pressed="${xf.rep===k}">${AFF[k].t(d.aff[k])}</button>`).join('')}</div></div>`;
+  const cost=xfCost(s);
+  h+=`<div class="card"><p style="margin:0;font-size:14px">${st.msg}${st.ok?` <b>${esc(itemName(s))}</b> sera détruit.`:''}</p>
+    ${st.ok?`<div class="actions"><button class="btn main" data-cact="xfok" ${meta.essence<cost?'disabled':''}>Transférer · <span class="essi"></span>${cost}</button><button class="btn" data-cact="xfcancel">Annuler</button></div>${meta.essence<cost?`<p class="empty" style="font-size:13px">Il te manque ${cost-meta.essence} essence.</p>`:''}`:''}</div>`;
+  return h;
+}
+function xfDo(){const s=xfGet(xf.src),st=xfState();if(!s||s.lock||!st||!st.ok)return;const cost=xfCost(s);if(meta.essence<cost)return;
+  const k=xf.k,v=s.aff[k];
+  if(xf.dst[0]==='w'){const wid=xf.dst.slice(2),o=meta.waff[wid]||(meta.waff[wid]={});if(st.mode==='rep')o[xf.rep]=null;o[k]=v}
+  else{const d=xfGet(xf.dst);if(st.mode==='rep')delete d.aff[xf.rep];d.aff[k]=v}
+  if(xf.src[0]==='s'){const i=meta.stash.findIndex(x=>String(x.id)===xf.src.slice(2));if(i>=0)meta.stash.splice(i,1)}else meta.gear[xf.src.slice(2)]=null;
+  meta.essence-=cost;const dn=itemName(xfGet(xf.dst)||{name:'la cible'});toast(`Affixe transférée : <b>${AFF[k].t(v)}</b> sur ${esc(dn)}. ${esc(itemName(s))} est détruit.`);
+  xf={src:'',k:'',dst:'',rep:''};campSel=null}
 function campForge0(){
   const ups=UPG.map(u=>{const l=lv(u.k),mx=l>=u.max,c=upCost(u);
     return `<div class="up"><b>${u.n}</b><p>${mx?u.d(l):(l?u.d(l)+' → ':'')+u.d(l+1)}</p><div class="pips">${Array.from({length:u.max},(_,i)=>`<i class="${i<l?'on':''}"></i>`).join('')}</div>
@@ -1910,8 +2034,17 @@ $('campBody').addEventListener('click',e=>{
       if(pc&&pc.every(x=>x>0)&&meta.gold>=cost){
         if(b.kind==='arme'){meta.parts[arg]=pc.map(x=>x-1);meta.gold-=cost;meta.built[arg]=true;if(b.cls===heroCls)meta.wpn[heroCls]=arg;toast(`<b style="color:${RAR[b.r].c}">${b.n}</b> fabriquée et équipée`)}
         else{meta.parts[arg]=pc.map(x=>x-1);meta.gold-=cost;meta.stash.push({id:uid++,slot:b.slot,r:b.r,lvl:20,base:{k:BASE_STAT[b.slot],v:b.base},aff:{...b.aff},name:b.n,type:'Prime'});toast(`<b style="color:${RAR[b.r].c}">${b.n}</b> fabriqué, il t'attend au coffre`)}}}
-    else if(a==='relsel'){const [id,rd]=arg.split('|');meta.relicSel={id,rad:rd==='1'}}
-    else if(a==='refine'){const r=meta.relics[arg];if(r&&r[0]>0&&meta.essence>=50){r[0]--;r[1]++;meta.essence-=50}}
+    else if(a==='rqadd'){const [id,rd]=arg.split('|'),rad=rd==='1',ow=(meta.relics[id]||[0,0])[rad?1:0];if(relicQN(id,rad)<ow)meta.relicQ.push({id,rad})}
+    else if(a==='rqdel'){const [id,rd]=arg.split('|'),rad=rd==='1';for(let i=meta.relicQ.length-1;i>=0;i--)if(meta.relicQ[i].id===id&&!!meta.relicQ[i].rad===rad){meta.relicQ.splice(i,1);break}}
+    else if(a==='rqrm'){meta.relicQ.splice(+arg,1)}
+    else if(a==='rqup'||a==='rqdn'){const i=+arg,j=a==='rqup'?i-1:i+1,Q=meta.relicQ;if(j>=0&&j<Q.length)[Q[i],Q[j]]=[Q[j],Q[i]]}
+    else if(a==='rqnone'){meta.relicQ=[]}
+    else if(a==='rqall'){for(const id in RELICS){const r=meta.relics[id];if(!r)continue;for(const rad of [true,false])while(relicQN(id,rad)<r[rad?1:0])meta.relicQ.push({id,rad})}}
+    else if(a==='xfk'){xf.k=arg;xf.dst='';xf.rep=''}
+    else if(a==='xfrep'){xf.rep=arg}
+    else if(a==='xfcancel'){xf={src:'',k:'',dst:'',rep:''}}
+    else if(a==='xfok'){xfDo()}
+    else if(a==='refine'){const r=meta.relics[arg];if(r&&r[0]>relicQN(arg,false)&&meta.essence>=50){r[0]--;r[1]++;meta.essence-=50}}
     else if(a==='up'){const u=UPG.find(x=>x.k===arg),c=upCost(u);if(meta.gold>=c&&lv(u.k)<u.max){meta.gold-=c;meta.up[u.k]=lv(u.k)+1}}
     else if(a==='tal'){const t=TAL[heroCls].find(x=>x.k===arg);if(meta.gold>=t.cost){meta.gold-=t.cost;meta.tal[t.k]=true}}
     else if(a==='start'){meta.start=+arg}
@@ -1920,28 +2053,32 @@ $('campBody').addEventListener('click',e=>{
   drawCamp();
 });
 $('campBody').addEventListener('input',e=>{if(e.target.id==='saveIn')saveDraft=e.target.value});
+$('campBody').addEventListener('change',e=>{if(e.target.id==='xfSrc'){xf={src:e.target.value,k:'',dst:'',rep:''};drawCamp()}else if(e.target.id==='xfDst'){xf.dst=e.target.value;xf.rep='';drawCamp()}});
 $('campBody').addEventListener('change',e=>{if(e.target.id!=='saveFile'||!e.target.files[0])return;const r=new FileReader();
   r.onload=()=>{saveDraft=String(r.result);const dd=parseCode(saveDraft);if(dd){savePending=dd;saveMsg=''}else saveMsg='Ce fichier ne contient pas de sauvegarde JSON valide.';drawCamp()};r.readAsText(e.target.files[0])});
 function openCamp(){$('camp').hidden=false;campSel=null;campMsg='';recyConfirm=false;drawCamp()}
 function closeCamp(){$('camp').hidden=true;if(!started)newGame();refreshMenus()}
 function refreshMenus(){
   $('introGold').textContent=meta.gold;
-  const st=clamp(meta.start|0||1,1,LV_MAX);$('startBtn').textContent=`Lancer · ${MODES[meta.mode].n} · niveau ${st}`;
+  const st=clamp(meta.start|0||1,1,LV_MAX);$('startBtn').textContent=`Lancer · ${MODES[meta.mode].n} · niveau ${st}${meta.diff?` · ${dif().n}`:''}`;
   if(document.activeElement!==$('lvIn'))$('lvIn').value=st;
   const lm=lootMul(st);$('lvDesc').innerHTML=st===1?'Niveau de base. Monte le niveau pour plus de butin, mais des monstres plus nombreux et plus forts.'
     :`Butin ×${lm.toFixed(2).replace(/\.?0+$/,'').replace('.',',')} (équipements, reliques, fragments) · or ×${(1+.6*(st-1)).toFixed(1).replace('.',',')} · monstres : vie ×${(1+.75*(st-1)).toFixed(1).replace('.',',')}, dégâts ×${(1+.35*(st-1)).toFixed(1).replace('.',',')}, plus nombreux`;
   $('bestTxt').textContent=best?`Ton record : ${fmt(best)} en mission`:'';
   document.querySelectorAll('.cls[data-m]').forEach(b=>b.setAttribute('aria-checked',String(b.dataset.m===meta.mode)));
   $('modeDesc').textContent=MODES[meta.mode].d;
-  const sel=$('relicSel'),opts=['<option value="">Aucune relique</option>'];
-  for(const id in RELICS){const a=meta.relics[id]||[0,0];if(a[0])opts.push(`<option value="${id}|0">${relicName(id)} · intacte ×${a[0]}</option>`);if(a[1])opts.push(`<option value="${id}|1">${relicName(id)} · éclatante ×${a[1]}</option>`)}
-  sel.innerHTML=opts.join('');const cur=meta.relicSel?`${meta.relicSel.id}|${meta.relicSel.rad?1:0}`:'';
-  sel.value=[...sel.options].some(o=>o.value===cur)?cur:'';sel.disabled=opts.length===1;
+  relicQFix();const rn=meta.relicQ.length,rt=Object.values(meta.relics).reduce((n,a)=>n+(a[0]||0)+(a[1]||0),0);
+  $('relicBtn').textContent=rn?`${rn} · Gérer`:rt?'Aucune · Équiper':'Aucune relique';$('relicBtn').disabled=!rt;
+  const D=dif(),di=DIFF.indexOf(D);
+  $('diffSel').innerHTML=DIFF.map((d,i)=>`<button class="chip" role="radio" data-d="${i}" aria-checked="${i===di}" aria-pressed="${i===di}" style="${i===di?`border-color:${d.c};color:${d.c}`:''}">${d.n}</button>`).join('');
+  const iv=Math.round(D.iv*(meta.mode==='capture'?1.5:1));
+  $('diffDesc').innerHTML=`${D.cnt>1?`${D.cnt} Gardiens`:'1 Gardien'} toutes les ${iv} s${meta.mode==='defense'?` (Défense : ${D.cnt>1?`${D.cnt} Gardiens`:'1 Gardien'} toutes les 5 vagues)`:''} · ${D.loot?`butin et or +${Math.round(D.loot*100)} %`:'butin normal'}`;
 }
 const setLv=v=>{meta.start=clamp(Math.round(+v)||1,1,LV_MAX);saveMeta();newGame();refreshMenus()};
 $('lvMinus').onclick=()=>setLv((meta.start|0||1)-1);$('lvPlus').onclick=()=>setLv((meta.start|0||1)+1);
 $('lvIn').addEventListener('change',e=>{setLv(e.target.value);e.target.value=meta.start});
-$('relicSel').addEventListener('change',e=>{const v=e.target.value;meta.relicSel=v?{id:v.split('|')[0],rad:v.split('|')[1]==='1'}:null;saveMeta();newGame()});
+$('relicBtn').onclick=()=>{campTab='relics';openCamp()};
+$('diffSel').addEventListener('click',e=>{const b=e.target.closest('[data-d]');if(!b)return;meta.diff=+b.dataset.d;saveMeta();newGame();refreshMenus()});
 document.querySelectorAll('.cls[data-m]').forEach(b=>b.onclick=()=>{meta.mode=b.dataset.m;saveMeta();newGame();refreshMenus()});
 
 /* ---------- Boucle ---------- */
