@@ -11,7 +11,8 @@ function frame(now){
 }
 function step(now){
   const dt=Math.min(.1,(now-last)/1000);last=now;
-  if(started&&!paused&&!G.over){acc+=dt;let n=0;while(acc>=STEP&&n<6&&started&&!paused&&!G.over){update(STEP);acc-=STEP;n++}if(n>=6)acc=0}
+  const run=()=>started&&!G.over&&!G.hold&&(!paused||NET.on);
+  if(run()){acc+=dt;let n=0;while(acc>=STEP&&n<6&&run()){update(STEP);acc-=STEP;n++}if(n>=6)acc=0}
   else{acc=0;if(G.over){for(const p of G.parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt}compact(G.parts,p=>p.life>0)}}
   render();hud();
 }
@@ -20,14 +21,16 @@ function start(){
   try{if(!NOGL&&!noGl&&initPixi())resize()}catch(err){console.error(err);PX=null}
   if(!matchMedia('(hover:hover) and (pointer:fine)').matches)$('keys').hidden=true;
   const pickCls=c=>{heroCls=c;try{localStorage.setItem('crypte-cls',c)}catch(e){}
+    if(typeof NET!=='undefined'&&NET.on){if(NET.host)sendRoster();else netSend({t:'hello',cls:c,relic:!!(meta.relicQ&&meta.relicQ.length)})}
     document.querySelectorAll('.cls[data-c]').forEach(b=>b.setAttribute('aria-checked',String(b.dataset.c===c)));
     $('clsDesc').innerHTML=CLS[c].desc;newGame();refreshMenus()};
   $('campBtn').onclick=openCamp;$('campBtn2').onclick=openCamp;$('closeCamp').onclick=closeCamp;
   document.querySelectorAll('.cls[data-c]').forEach(b=>b.onclick=()=>pickCls(b.dataset.c));
   pickCls(heroCls);
-  const go=()=>{started=true;paused=false;last=performance.now();missionToast()};
-  $('startBtn').onclick=()=>{$('intro').hidden=true;newGame();go()};
-  $('againBtn').onclick=()=>{$('over').hidden=true;newGame();go()};
+  const go=()=>{started=true;paused=false;last=performance.now();missionToast()};window.goRun=go;
+  const coopNew=()=>{if(NET.host&&NET.on)meta.mode='survie';newGame();if(NET.host&&NET.on)netStartHost()};
+  $('startBtn').onclick=()=>{if(NET.guest&&NET.on)return;$('intro').hidden=true;coopNew();go()};
+  $('againBtn').onclick=()=>{if(NET.guest&&NET.on){toast('Coopération : l\'hôte relance la partie.');return}$('over').hidden=true;coopNew();go()};
   $('changeBtn').onclick=()=>{$('over').hidden=true;started=false;paused=false;pickCls(heroCls);$('intro').hidden=false};
   requestAnimationFrame(frame);
 }

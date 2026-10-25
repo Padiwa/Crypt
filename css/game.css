@@ -784,3 +784,20 @@ li.abyp{color:#cdb2ff;font-weight:600;border-left:2px solid #b07cff;padding-left
 .stars{display:inline-flex;gap:2px;font-size:16px;line-height:1}
 .stars i{font-style:normal;color:#3a3240}
 .stars i.on{color:var(--ember);text-shadow:0 0 6px rgba(232,133,59,.6)}
+
+/* ---------- Coopération ---------- */
+.coopsteps{margin:0;padding-left:1.2em;display:grid;gap:4px;font-size:14px}
+.coopcode{display:grid;gap:8px}
+.coopcode textarea{width:100%;min-height:64px;resize:vertical;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px;font:500 12px/1.35 ui-monospace,Menlo,Consolas,monospace;word-break:break-all}
+.coopcode .qr{display:grid;place-items:center}
+.coopcode .qr svg{width:min(240px,70vw);height:auto;background:#fff;border-radius:8px;padding:6px}
+.coopcode .qr:empty{display:none}
+.coopcode video{width:100%;max-height:260px;border-radius:8px;background:#000}
+#coopBtn{display:inline-flex;align-items:center;gap:6px}
+#coopBtn .dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+#coopBtn .dot.on{background:var(--heal);box-shadow:0 0 8px var(--heal)}
+
+.coopros{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.coopros li{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--panel2);border:1px solid var(--line);border-radius:8px}
+.coopros li .cx-hint{margin-left:auto}
+.coopros .dotc{width:10px;height:10px;border-radius:50%;flex:0 0 auto}

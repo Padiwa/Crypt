@@ -237,6 +237,7 @@ function lootSummary(){
     ${G.relQ.length?`<div><span>Reliques ouvertes</span><b>${G.opened.length} / ${G.relQ.length}${G.relic?` · ${G.react} / ${REACT_N} réactifs`:''}</b></div>`:''}<div><span>Ennemis abattus</span><b>${G.kills}</b></div><div><span>Temps de survie</span><b>${fmt(G.t)}</b></div>`;
 }
 function roundDone(){
+  if(NET.on){G.hold=true;if(NET.host)netSend({t:'round'})}
   paused=true;resetJoy();$('bag').hidden=true;$('lvlup').hidden=true;
   const nl=G.level+1,unlock=false;
   if(unlock){meta.cp=nl;saveMeta()}
@@ -277,22 +278,23 @@ function resolveRelic(){
   if(left>0)out.push(`${left} relique${left>1?'s':''} non ouverte${left>1?'s':''} faute de réactifs : ${left>1?'elles restent':'elle reste'} équipée${left>1?'s':''}, sans être consommée${left>1?'s':''}.`);
   return out.join('<br>');
 }
-function missionSuccess(){SND.play('win');
+function missionSuccess(){SND.play('win');if(NET.host)netSend({t:'exit'});G.hold=false;
   $('extract').hidden=true;$('lvlup').hidden=true;G.over=true;const rel=resolveRelic();const g=bank(true);recordBest();
   const txt=G.mode==='capture'?`Cible capturée en ${fmt(G.t)}, ${G.kills} ennemis abattus.`:G.mode==='defense'?`Tu as tenu ${G.wave} vagues, ${G.kills} ennemis abattus.`:`Tu es sorti au niveau ${G.level} après ${fmt(G.t)}, avec ${G.kills} ennemis abattus.`;
   showOver(G.mode==='capture'?'Capture réussie':'Extraction réussie',txt+' Ton butin t\'attend au Camp.',`<span class="coin"></span>+${g} or · ${meta.gold} au total`,
     rel);
 }
 function gameOver(reason){
-  if(G.over)return;SND.play('lose');G.over=true;const g=bank(false);recordBest();
+  if(G.over)return;if(NET.host)netSend({t:'fail'});G.hold=false;SND.play('lose');G.over=true;const g=bank(false);recordBest();
   const lost=G.loot.items.length+G.loot.parts.length+G.loot.relics.length;
   setTimeout(()=>showOver(reason==='pod'?'Le cryopode est détruit':'Tu es tombé',`Mission échouée après ${fmt(G.t)}, ${G.kills} ennemis abattus.`+(lost?(lost>1?` Les ${lost} objets et reliques trouvés sont perdus.`:' L\'objet trouvé est perdu.'):''),
     `<span class="coin"></span>+${g} or gardé (la moitié) · ${meta.gold} au total`,G.relQ.length?'Tes reliques ne sont pas consommées.':''),700);
 }
-$('exitBtn').onclick=missionSuccess;
-$('contBtn').onclick=()=>{$('extract').hidden=true;G.level++;
+$('exitBtn').onclick=()=>{if(NET.guest)return;missionSuccess()};
+function contRun(){$('extract').hidden=true;G.level++;G.hold=false;
   if(G.mode==='survie')G.tl=0;else{G.waveState='break';G.waveT=5;G.pod.hp=Math.min(G.pod.max,G.pod.hp+G.pod.max*.3)}
-  paused=false;last=performance.now();toast(`<b style="color:var(--ember)">Niveau ${G.level}.</b> Les monstres se renforcent.`)};
+  paused=false;last=performance.now();toast(`<b style="color:var(--ember)">Niveau ${G.level}.</b> Les monstres se renforcent.`)}
+$('contBtn').onclick=()=>{if(NET.guest)return;if(NET.host)netSend({t:'cont'});contRun()};
 function missionToast(){toast(G.mode==='defense'?'<b>Défense.</b> Protège le cryopode.':G.mode==='capture'?'<b>Capture.</b> Suis la flèche dorée jusqu\'à la cible.':'<b>Survie.</b> Le portail s\'ouvre dans 3 minutes.');
   if(G.relic)setTimeout(()=>toast(`Fissure : ${G.relQ.length} relique${G.relQ.length>1?'s':''} équipée${G.relQ.length>1?'s':''}. Abats les ennemis au halo doré : ${REACT_N} réactifs ouvrent ${relicName(G.relic.id)}${G.relic.rad?' éclatante':''}, puis la suivante.`),900)}
 

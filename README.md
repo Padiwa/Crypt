@@ -45,3 +45,8 @@ npm i playwright && npx playwright install chromium
 node tools/sim/run.mjs tools/sim/exemple.json resultats.json
 ```
 Chaque entrée du JSON : `{"cls":"archer","tier":3,"level":30,"diff":3,"torm":1,"rounds":1}`. Sortie : survie, durée, ennemis tués, dégâts subis par seconde, or, objets par rareté, niveau de héros.
+
+
+## Coopération
+
+`js/net.js` relie deux appareils en pair à pair (WebRTC, canal de données) sans serveur : les codes d'offre et de réponse (SDP compressé) s'échangent par QR code ou copier-coller. L'hôte simule les monstres et envoie un instantané 20 fois par seconde ; chaque joueur simule son héros, ses tirs (coups envoyés à l'hôte) et son propre butin. Le QR code utilise `qrcode-generator` (jsDelivr), chargé seulement à l'ouverture de l'écran Coopération. Fonctionne sur GitHub Pages (https) ; même réseau conseillé (un serveur STUN public est aussi indiqué).

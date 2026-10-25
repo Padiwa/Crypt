@@ -104,7 +104,7 @@ Les ennemis apparaissent hors écran autour du héros ; ceux qui s'éloignent tr
 
 ## Progression en partie
 
-Chaque ennemi lâche un cristal d'expérience (goule et chauve-souris 1, archer 2, brute 5, Gardien 30). Passer du niveau n au suivant demande 5 + 7 × n points. À chaque niveau, le jeu se met en pause et propose 3 bonus au hasard ; ils durent jusqu'à la fin de la mission.
+Chaque ennemi lâche un cristal d'expérience (goule et chauve-souris 1, archer 2, brute 5, Gardien 30). Passer du niveau n au suivant demande 10 + 14 × n + 2 × n² points (au lieu de 5 + 7 × n), soit environ 9 niveaux sur une première manche au niveau 1 (18 avant) et 14 au niveau 40 (30 avant), mesuré par le bot. À chaque niveau, le jeu se met en pause et propose 3 bonus au hasard ; ils durent jusqu'à la fin de la mission.
 
 | Bonus | Effet par rang | Rangs | Classes |
 | --- | --- | --- | --- |
@@ -305,6 +305,37 @@ Le Camp compte 5 onglets : Héros (équipement, coffre, fragments), Armurerie (t
 Chaque niveau suivant coûte ×1,7 du précédent. Les talents coûtent 150, 300 et 500 or par classe.
 
 **Prestige du héros** (Forge) : se débloque quand les 8 améliorations permanentes sont au maximum. Il est propre à chaque héros et n'a pas de limite de niveau. Le niveau n+1 coûte 500 + 250 n or et 30 + 15 n essence et donne 1 point à placer, redistribuable gratuitement. Par point : Vitalité +2 % de vie, Puissance +2 % de dégâts, Vivacité +1 % de vitesse d'attaque, Acuité +0,5 % de critique (max 40 points), Brutalité +3 % de dégâts critiques, Arcanes +3 % de dégâts de compétence, Ténacité −0,5 % de dégâts subis (max 40), Sang-froid −0,5 % de recharge (max 30), Foulée +0,5 % de vitesse (max 30), Opulence +2 % d'or, Envergure +3 % de portée des compétences (max 50 points), Déflagration +3 % de rayon d'explosion (max 50). Les plafonds généraux (critique 75 %, armure 60 %, recharge 50 %) s'appliquent toujours.
+
+## Coopération
+
+De 2 à 4 joueurs jouent ensemble en Survie, chacun sur son appareil, reliés en étoile à l'hôte en pair à pair (WebRTC), sans serveur ni compte. L'hôte ouvre une invitation à la fois (« Inviter un joueur »), avec une connexion et un échange de codes par invité, jusqu'à 3 invités. Il relaie dans son instantané les héros et tirs de tous (numéro de place 0 à 3, couleur et étiquette « J2 · Guerrier »). Un battement toutes les 2 s hors mission évite que le silence du salon soit pris pour une déconnexion. La connexion se fait par échange de deux codes (offre de l'hôte, réponse de l'invité), en QR code (scan avec BarcodeDetector quand le navigateur l'a, Android Chrome) ou en copier-coller / Partager.
+
+| Sujet | Règle |
+| --- | --- |
+| Autorité | L'hôte simule les monstres, leurs tirs, zones et apparitions et envoie un instantané toutes les 50 ms ; l'invité interpole les positions |
+| Héros | Chacun simule son héros, ses compétences et ses tirs avec ses propres statistiques ; les tirs du partenaire sont affichés |
+| Dégâts de l'invité | Calculés chez lui (modificateurs compris) et envoyés à l'hôte, avec ralentissements, gel, brûlure et recul |
+| Coups reçus | Chacun gère ses contacts, projectiles et zones ; les monstres visent le héros debout le plus proche |
+| Monstres | Par joueur en plus : vie +50 %, nombre +40 %, plafond +50 (à 4 : vie ×2,5, nombre ×2,2, plafond 400) ; corrompus si l'un des joueurs a une relique équipée |
+| Butin | Instancié : chaque mort de monstre génère un butin propre à chaque joueur (objets, or, expérience, réactifs, reliques) |
+| Pauses | Le monde ne s'arrête pas pour le sac ou un bonus de niveau (héros protégé pendant le choix) ; il s'arrête en fin de manche |
+| À terre | Relève après 8 s près du partenaire debout le plus proche, avec 50 % de vie ; tout le monde à terre = échec pour tous |
+| Fin de manche | L'hôte décide sortir ou continuer ; chacun reçoit sa relique de manche |
+| Déconnexion | Message « bye » à la fermeture et silence de plus de 8 s : si l'hôte part, chaque invité termine en extraction ; si un invité part, les autres continuent |
+
+Fichier `js/net.js` ; QR code par `qrcode-generator` chargé à la demande depuis jsDelivr. Les puits sacrés restent propres à chaque joueur ; Défense et Capture ne sont pas proposées en coopération.
+
+| Sens | Message | Fréquence | Contenu |
+| --- | --- | --- | --- |
+| Hôte → invités | hello, roster | connexion, changement | classe de l'hôte, place attribuée (J2–J4), liste place + classe |
+| Hôte → invités | start | lancement | niveau, biome, carte (piliers, braseros, runes), point d'apparition |
+| Hôte → invités | s (instantané) | 20 / s | monstres (id, type, position, vie, taille, états, dégâts, phase), projectiles ennemis, fioles, zones, tous les héros, tirs de chaque joueur, minuteurs |
+| Hôte → invités | kill, round, cont, exit, fail | événement | mort d'un monstre (butin calculé par chacun), fin de manche et décision |
+| Invité → hôte | hello | connexion, changement de héros | classe, relique équipée |
+| Invité → hôte | g (état) | 20 / s | héros, tirs, coups portés (monstre, dégâts, critique), effets posés (ralenti, gel, brûlure, recul) |
+| Les deux sens | ping, bye | 2 s hors mission, fermeture | présence, départ propre |
+
+Ne circulent jamais : sauvegarde, inventaire, équipement, mods, or, essence, butin, expérience. Liaison WebRTC chiffrée ; débit total de l'hôte à 4 joueurs de l'ordre de 0,5 à 1 Mo/s en wifi local. Les dégâts des invités ne sont pas vérifiés par l'hôte. Un PC ou un Mac est l'hôte conseillé à 3 ou 4 joueurs ; le code de réponse du téléphone lui parvient par Partager puis Coller (pas de lecture de QR code par webcam pour l'instant, sauf Chrome sur Mac).
 
 ## Technique
 

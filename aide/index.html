@@ -120,6 +120,16 @@ dialog button{position:absolute;top:8px;right:8px;width:40px;height:40px;border-
   .shots.one{max-width:260px}
   .rar li{grid-template-columns:minmax(0,1fr)}
 }
+
+/* listes repliables */
+details.more{margin:12px 0;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+details.more>summary{cursor:pointer;list-style:none;padding:10px 14px;font-weight:700;display:flex;align-items:center;gap:8px}
+details.more>summary::-webkit-details-marker{display:none}
+details.more>summary::before{content:"";width:8px;height:8px;border-right:2px solid var(--ember);border-bottom:2px solid var(--ember);transform:rotate(-45deg);transition:transform .15s}
+details.more[open]>summary::before{transform:rotate(45deg)}
+details.more>:not(summary){margin:0 14px 12px}
+details.more .tbl{margin:0 14px 14px}
+@media (prefers-reduced-motion:reduce){details.more>summary::before{transition:none}}
 </style>
 </head>
 <body>
@@ -130,7 +140,7 @@ dialog button{position:absolute;top:8px;right:8px;width:40px;height:40px;border-
     <a href="#demarrer">Premiers pas</a><a href="#heros">Héros</a><a href="#partie">En mission</a><a href="#missions">Missions</a>
     <a href="#ennemis">Ennemis</a><a href="#difficulte">Difficulté</a><a href="#butin">Butin</a><a href="#camp-equip">Camp · Héros</a>
     <a href="#camp-arsenal">Armurerie</a><a href="#camp-relics">Reliques</a><a href="#camp-mods">Mods</a><a href="#camp-affix">Affixes</a>
-    <a href="#camp-forge">Forge</a><a href="#reglages">Réglages</a><a href="#conseils">Conseils</a>
+    <a href="#camp-forge">Forge</a><a href="#coop">Coop</a><a href="#reglages">Réglages</a><a href="#conseils">Conseils</a>
   </nav>
 </div></div>
 
@@ -191,6 +201,7 @@ dialog button{position:absolute;top:8px;right:8px;width:40px;height:40px;border-
         <tr><td><b>Magicien</b></td><td>Orbes qui explosent à l'impact, idéal contre les groupes. Fragile (100 PV).</td><td><b>Nova de givre</b> (7 s) : blesse, ralentit et efface les projectiles ennemis.</td><td><b>Pluie de météores</b> : 3 météores, en priorité sur les Gardiens.</td></tr>
       </tbody>
     </table></div>
+    <details class="more"><summary>Les 9 talents</summary><p>Chaque héros a trois talents permanents, achetés une fois pour toutes dans la Forge.</p><div class="tbl"><table><thead><tr><th>Héros</th><th>Talent</th><th>Effet</th><th>Prix</th></tr></thead><tbody><tr><td><b>Guerrier</b></td><td><b>Charge brutale</b></td><td>L&#x27;esquive blesse et repousse les ennemis traversés.</td><td class="n">150 or</td></tr><tr><td></td><td><b>Soif de sang</b></td><td>Chaque ennemi abattu te rend 2 % de ta vie.</td><td class="n">300 or</td></tr><tr><td></td><td><b>Onde de choc</b></td><td>Un coup sur quatre libère une onde qui frappe tout autour.</td><td class="n">500 or</td></tr><tr><td><b>Archer</b></td><td><b>Tir en course</b></td><td>Tu tires à pleine cadence même en courant.</td><td class="n">150 or</td></tr><tr><td></td><td><b>Pas de l&#x27;ombre</b></td><td>Après une esquive, tes 3 tirs suivants sont critiques.</td><td class="n">300 or</td></tr><tr><td></td><td><b>Ricochet</b></td><td>Chaque carreau rebondit une fois vers un autre ennemi.</td><td class="n">500 or</td></tr><tr><td><b>Magicien</b></td><td><b>Sillage de givre</b></td><td>L&#x27;esquive laisse une explosion glacée qui ralentit.</td><td class="n">150 or</td></tr><tr><td></td><td><b>Barrière</b></td><td>Un bouclier absorbe 25 % de ta vie. Il se recharge après 4 s sans être touché.</td><td class="n">300 or</td></tr><tr><td></td><td><b>Chaîne d&#x27;éclairs</b></td><td>Une orbe sur quatre foudroie 3 ennemis proches.</td><td class="n">500 or</td></tr></tbody></table></div></details>
   </div>
 </div></section>
 
@@ -206,7 +217,11 @@ dialog button{position:absolute;top:8px;right:8px;width:40px;height:40px;border-
       <li><span><b>Boutons</b> : esquive, potion (avec le nombre restant), compétence, ultime (avec le nombre d'ennemis encore à abattre).</span></li>
     </ol>
     <h3>Expérience et bonus de niveau</h3>
-    <p>Chaque ennemi lâche un cristal d'expérience (barre fine tout en haut de l'écran). À chaque niveau, le jeu se met en pause et propose <b>3 bonus au hasard</b> : dégâts, vitesse, critique, projectiles, vie, soins, éléments… Chaque carte montre son rang (« rang 1 → 2 / 3 »). Un bonus au maximum n'est plus proposé. Les bonus durent jusqu'à la fin de la mission.</p>
+    <p>Chaque ennemi lâche un cristal d'expérience (barre fine tout en haut de l'écran). Chaque niveau demande plus d'expérience que le précédent : compte environ 9 niveaux sur une première manche de 3 minutes, un peu plus quand les monstres sont nombreux. À chaque niveau, le jeu se met en pause (sauf en coopération) et propose <b>3 bonus au hasard</b> : dégâts, vitesse, critique, projectiles, vie, soins, éléments… Chaque carte montre son rang (« rang 1 → 2 / 3 »). Un bonus au maximum n'est plus proposé. Les bonus durent jusqu'à la fin de la mission.</p>
+    <details class="more"><summary>Les 32 bonus de niveau</summary><p>Un bonus au rang maximum, ou dont la statistique est déjà au plafond (critique 75 %, recharge 50 %), n'est plus proposé. Quand il n'en reste plus assez, le choix se complète avec <b>Soin</b> (40 % de vie) ou <b>Bourse</b> (de l'or).</p><div class="tbl"><table><thead><tr><th>Bonus</th><th>Effet par rang</th><th>Rangs</th><th>Héros</th></tr></thead><tbody><tr><td><b>Rage</b></td><td>+12 % de dégâts</td><td class="n">5</td><td>Tous</td></tr><tr><td><b>Frénésie</b></td><td>+10 % de vitesse d&#x27;attaque</td><td class="n">5</td><td>Tous</td></tr><tr><td><b>Précision</b></td><td>+5 % de chances de critique</td><td class="n">4</td><td>Tous</td></tr><tr><td><b>Cruauté</b></td><td>+30 % de dégâts critiques</td><td class="n">3</td><td>Tous</td></tr><tr><td><b>Salve</b></td><td>+1 projectile par tir</td><td class="n">4</td><td>Archer, Magicien</td></tr><tr><td><b>Éventail</b></td><td>+2 projectiles par tir, −10 % de dégâts</td><td class="n">2</td><td>Archer, Magicien</td></tr><tr><td><b>Double tir</b></td><td>+20 % de chances d&#x27;attaquer deux fois de suite</td><td class="n">3</td><td>Tous</td></tr><tr><td><b>Lames spectrales</b></td><td>Chaque coup projette +1 onde tranchante</td><td class="n">4</td><td>Guerrier</td></tr><tr><td><b>Perforation</b></td><td>Les carreaux percent 1 ennemi de plus</td><td class="n">2</td><td>Archer</td></tr><tr><td><b>Grande allonge</b></td><td>+15 % de portée de frappe</td><td class="n">3</td><td>Guerrier</td></tr><tr><td><b>Onde arcanique</b></td><td>+25 % de rayon d&#x27;explosion</td><td class="n">5</td><td>Magicien</td></tr><tr><td><b>Puissance</b></td><td>+25 % de dégâts de compétence</td><td class="n">3</td><td>Tous</td></tr><tr><td><b>Fureur</b></td><td>−15 % d&#x27;ennemis à abattre pour charger l&#x27;ultime</td><td class="n">3</td><td>Tous</td></tr><tr><td><b>Apothéose</b></td><td>+30 % de dégâts de l&#x27;ultime</td><td class="n">3</td><td>Tous</td></tr><tr><td><b>Robustesse</b></td><td>+15 % de vie maximale, soigne 15 %</td><td class="n">5</td><td>Tous</td></tr><tr><td><b>Régénération</b></td><td>+1,5 PV par seconde</td><td class="n">3</td><td>Tous</td></tr><tr><td><b>Vampirisme</b></td><td>+1,5 % des dégâts rendus en vie</td><td class="n">3</td><td>Guerrier</td></tr><tr><td><b>Célérité</b></td><td>+8 % de vitesse de déplacement</td><td class="n">3</td><td>Tous</td></tr><tr><td><b>Aimant</b></td><td>+40 % de portée de ramassage</td><td class="n">3</td><td>Tous</td></tr><tr><td><b>Concentration</b></td><td>−8 % de temps de recharge</td><td class="n">4</td><td>Tous</td></tr><tr><td><b>Braises</b></td><td>Embrase : 10 % des dégâts par seconde</td><td class="n">3</td><td>Tous</td></tr><tr><td><b>Givre</b></td><td>+10 % de chances de ralentir à l&#x27;impact</td><td class="n">3</td><td>Tous</td></tr><tr><td><b>Orage</b></td><td>+6 % de chances d&#x27;éclair en chaîne</td><td class="n">3</td><td>Tous</td></tr><tr><td><b>Ampleur</b></td><td>+20 % de portée des compétences</td><td class="n">5</td><td>Tous</td></tr><tr><td><b>Prolongation</b></td><td>+15 % de durée des compétences et des ralentissements</td><td class="n">3</td><td>Tous</td></tr><tr><td><b>Exécution</b></td><td>+40 % de dégâts contre les ennemis sous 30 % de vie</td><td class="n">3</td><td>Tous</td></tr><tr><td><b>Tueur de Gardiens</b></td><td>+20 % de dégâts contre les Gardiens</td><td class="n">3</td><td>Tous</td></tr><tr><td><b>Réflexes</b></td><td>−15 % de recharge de l&#x27;esquive</td><td class="n">3</td><td>Tous</td></tr><tr><td><b>Endurci</b></td><td>−20 % de durée du poison et de la brûlure</td><td class="n">2</td><td>Tous</td></tr><tr><td><b>Savoir</b></td><td>+20 % d&#x27;expérience</td><td class="n">3</td><td>Tous</td></tr><tr><td><b>Bonne étoile</b></td><td>+15 % de chances de butin pendant la mission</td><td class="n">3</td><td>Tous</td></tr><tr><td><b>Fiole de réserve</b></td><td>+1 potion tout de suite</td><td class="n">3</td><td>Tous</td></tr></tbody></table></div></details>
+    <h3>Portée des compétences et rayon d'explosion</h3>
+    <p>La <b>portée des compétences</b> agrandit le Tourbillon, l'Onde de choc, la Nova de givre, le Sillage de givre, les ultimes et la portée des carreaux de la Volée. Le <b>rayon d'explosion</b> agrandit les orbes du Magicien. Les sources s'additionnent, jusqu'à +300 % chacune (zone ×4). Ta fiche de héros affiche le total.</p>
+    <details class="more"><summary>Toutes les sources</summary><div class="tbl"><table><thead><tr><th>Source</th><th>Portée des compétences</th><th>Rayon d&#x27;explosion (Magicien)</th></tr></thead><tbody><tr><td>Affixe d'équipement</td><td>+10 à 20 % (plus au niveau d'objet élevé)</td><td>—</td></tr><tr><td>Mod de héros Étendue / mod d'arme Déflagration</td><td>+15 % par rang, jusqu'à +90 % (+144 % surchargé ★5)</td><td>+20 % par rang, jusqu'à +120 % (+192 % surchargé ★5)</td></tr><tr><td>Bonus de niveau</td><td>Ampleur : +20 % × 5</td><td>Onde arcanique : +25 % × 5</td></tr><tr><td>Prestige</td><td>Envergure : +3 % par point, 50 points</td><td>Déflagration : +3 % par point, 50 points</td></tr><tr><td>Frénésie critique</td><td>—</td><td>+50 % pendant 5 s</td></tr></tbody></table></div></details>
     <h3>Ultime</h3>
     <p>Il se charge en abattant <b>60 ennemis</b> (un Gardien compte pour 10). Le bouton s'allume quand il est prêt. Les bonus Fureur et Apothéose le rendent plus fréquent et plus fort.</p>
     <h3>Frénésie critique</h3>
@@ -231,6 +246,11 @@ dialog button{position:absolute;top:8px;right:8px;width:40px;height:40px;border-
         <tr><td><b>Capture</b></td><td>Mettre la cible à terre, rester près d'elle pour la capturer, puis tenir 3 s dans la zone d'extraction. Une flèche dorée la montre.</td><td>1 relique et de l'or</td></tr>
       </tbody>
     </table></div>
+    <h3>Défense et Capture en détail</h3>
+    <ul>
+      <li><b>Défense</b> : chaque vague compte un peu plus de monstres que la précédente, et davantage aux niveaux élevés (80 au maximum). Six monstres sur dix visent le cryopode, qui encaisse leurs coups à 60 %. Entre deux vagues, 4 s de répit, et le cryopode récupère 8 % de sa vie (30 % quand tu choisis de continuer). Toutes les 5 vagues : une relique, un équipement magique ou mieux, et le choix de sortir.</li>
+      <li><b>Capture</b> : la cible fuit quand tu approches et se téléporte un peu plus loin toutes les 4 à 6 s si tu la serres de près. Mets-la à terre, reste 2,5 s à côté d'elle pour la capturer, puis rejoins la zone d'extraction et tiens-y 3 s (la jauge redescend si tu en sors).</li>
+    </ul>
     <h3>Sortir ou continuer</h3>
     <p><b>Sortir avec le butin</b> garde tout ce que tu as ramassé. <b>Continuer</b> fait monter le niveau : monstres plus forts, meilleur butin, et le niveau atteint devient disponible comme niveau de départ.</p>
     <p class="tip warn"><b>Si tu meurs</b>, tu gardes la moitié de l'or, les mods et ce que tu as équipé depuis le sac. Les objets et reliques trouvés pendant la mission sont perdus. Équipe tout de suite ce qui compte vraiment.</p>
@@ -342,6 +362,7 @@ dialog button{position:absolute;top:8px;right:8px;width:40px;height:40px;border-
         <tr><td><b style="color:var(--r3)">Objets Prime</b></td><td>reliques Abysse (Couronne du Blizzard pour ceux de givre) et reliques forgées, ouvertes en mission</td></tr>
       </tbody>
     </table></div>
+    <details class="more"><summary>Les 12 armes à fabriquer</summary><p>Les dégâts de l'arme s'ajoutent à ceux du héros. Une arme fabriquée s'améliore ensuite de +0 à +100 avec de l'essence.</p><div class="tbl"><table><thead><tr><th>Arme</th><th>Héros</th><th>Rareté</th><th>Dégâts</th><th>Bonus</th><th>Prix</th></tr></thead><tbody><tr><td><b>Arc court du Pèlerin</b></td><td>Archer</td><td>Magique</td><td class="n">10</td><td>+15 % de vitesse d&#x27;attaque</td><td class="n">75 or</td></tr><tr><td><b>Arc long du Corbeau</b></td><td>Archer</td><td>Rare</td><td class="n">15</td><td>+8 % de chances de critique, les carreaux transpercent 1 ennemi</td><td class="n">175 or</td></tr><tr><td><b>Baliste de poing</b></td><td>Archer</td><td>Rare</td><td class="n">21</td><td>+1 projectile par tir, +30 % de dégâts critiques</td><td class="n">350 or</td></tr><tr><td><b>Ultime Soupir</b></td><td>Archer</td><td>Légendaire</td><td class="n">30</td><td>+1 projectile par tir, les carreaux transpercent 2 ennemis, +15 % de vitesse d&#x27;attaque</td><td class="n">700 or</td></tr><tr><td><b>Épée longue du Veilleur</b></td><td>Guerrier</td><td>Magique</td><td class="n">11</td><td>2 % des dégâts rendus en vie</td><td class="n">75 or</td></tr><tr><td><b>Hache de guerre</b></td><td>Guerrier</td><td>Rare</td><td class="n">17</td><td>+40 % de dégâts critiques, +10 % de portée de frappe</td><td class="n">175 or</td></tr><tr><td><b>Espadon de Fer-Sang</b></td><td>Guerrier</td><td>Rare</td><td class="n">24</td><td>+25 % de portée de frappe, 2 % des dégâts rendus en vie</td><td class="n">350 or</td></tr><tr><td><b>Brise-Serment</b></td><td>Guerrier</td><td>Légendaire</td><td class="n">32</td><td>+20 % de portée de frappe, 3 % des dégâts rendus en vie, +10 % de chances de critique</td><td class="n">700 or</td></tr><tr><td><b>Sceptre des Murmures</b></td><td>Magicien</td><td>Magique</td><td class="n">10</td><td>−10 % de temps de recharge</td><td class="n">75 or</td></tr><tr><td><b>Grimoire de la Veuve</b></td><td>Magicien</td><td>Rare</td><td class="n">15</td><td>+25 % de rayon d&#x27;explosion, +30 % de dégâts de compétence</td><td class="n">175 or</td></tr><tr><td><b>Orbe de la Lune noire</b></td><td>Magicien</td><td>Rare</td><td class="n">21</td><td>+1 projectile par tir</td><td class="n">350 or</td></tr><tr><td><b>Étoile Mourante</b></td><td>Magicien</td><td>Légendaire</td><td class="n">30</td><td>+1 projectile par tir, +30 % de rayon d&#x27;explosion, +10 % de chances de critique</td><td class="n">700 or</td></tr></tbody></table></div></details><details class="more"><summary>Les 10 objets Prime</summary><p>Légendaires, utilisables par tous les héros. Fragments dans les reliques Abysse (Couronne du Blizzard pour ceux de givre).</p><div class="tbl"><table><thead><tr><th>Objet Prime</th><th>Emplacement</th><th>Base</th><th>Bonus</th><th>Prix</th></tr></thead><tbody><tr><td><b>Linceul du Néant</b></td><td>Armure</td><td>+90 points de vie</td><td>−10 % de dégâts subis, +2 PV par seconde</td><td class="n">500 or</td></tr><tr><td><b>Cuirasse du Veilleur Prime</b></td><td>Armure</td><td>+70 points de vie</td><td>+15 % de dégâts, −6 % de dégâts subis</td><td class="n">500 or</td></tr><tr><td><b>Amulette des Échos</b></td><td>Amulette</td><td>+6 % de chances de critique</td><td>+15 % de vitesse d&#x27;attaque, −10 % de temps de recharge</td><td class="n">500 or</td></tr><tr><td><b>Sceau du Néant</b></td><td>Amulette</td><td>+8 % de chances de critique</td><td>+50 % de dégâts critiques, +10 % de dégâts</td><td class="n">500 or</td></tr><tr><td><b>Foulée du Néant</b></td><td>Bottes</td><td>+12 % de vitesse de déplacement</td><td>−10 % de temps de recharge, +2 PV par seconde</td><td class="n">500 or</td></tr><tr><td><b>Chevalière du Premier Roi</b></td><td>Anneau</td><td>+15 % de dégâts</td><td>+6 % de chances de critique, +30 % de dégâts critiques</td><td class="n">500 or</td></tr><tr><td><b>Manteau du Blizzard</b> <span class="mut">(givre)</span></td><td>Armure</td><td>+110 points de vie</td><td>+60 points de vie, +25 % de dégâts contre les ennemis ralentis ou gelés</td><td class="n">800 or</td></tr><tr><td><b>Cœur de Givre</b> <span class="mut">(givre)</span></td><td>Amulette</td><td>+8 % de chances de critique</td><td>+8 % de chances de geler l&#x27;ennemi 1 s, +30 % de dégâts critiques</td><td class="n">800 or</td></tr><tr><td><b>Bottes de l&#x27;Avalanche</b> <span class="mut">(givre)</span></td><td>Bottes</td><td>+14 % de vitesse de déplacement</td><td>+8 % de vitesse de déplacement, 12 % de chances qu&#x27;un ennemi tué éclate en glace</td><td class="n">800 or</td></tr><tr><td><b>Anneau du Zéro absolu</b> <span class="mut">(givre)</span></td><td>Anneau</td><td>+18 % de dégâts</td><td>+30 % de dégâts contre les ennemis ralentis ou gelés, +6 % de chances de critique</td><td class="n">800 or</td></tr></tbody></table></div></details>
     <p>Une relique donne toujours un fragment qui te manque, s'il en reste un à trouver pour ce schéma.</p>
     <ul>
       <li>Chaque héros a 4 armes à fabriquer, de magique à légendaire, en plus de son arme de départ.</li>
@@ -360,6 +381,7 @@ dialog button{position:absolute;top:8px;right:8px;width:40px;height:40px;border-
   <div class="txt">
     <h2><small>Camp · onglet 3</small>Reliques</h2>
     <p>Les reliques sont des coffres à ouvrir <b>en mission</b>. Il en existe quatre niveaux : <b style="color:#c9a46a">Cendre</b>, <b style="color:#a9bccf">Ossuaire</b>, <b style="color:#e07a7a">Sanguine</b> et <b style="color:#f0cf4a">Abysse</b>. Chacune contient 6 récompenses possibles.</p>
+    <details class="more"><summary>Les 18 reliques</summary><div class="tbl"><table><thead><tr><th>Niveau</th><th>Reliques</th></tr></thead><tbody><tr><td><b>Cendre</b></td><td>Dent du Pèlerin, Larme de suie, Clou du Bûcher, Éclat de givre (givre)</td></tr><tr><td><b>Ossuaire</b></td><td>Phalange du Veilleur, Crâne fêlé, Côte du Roi-mendiant, Larme gelée (givre)</td></tr><tr><td><b>Sanguine</b></td><td>Cœur noirci, Calice rouge, Veine de la Veuve, Fiole d&#x27;ichor, Cœur d&#x27;hiver (givre)</td></tr><tr><td><b>Abysse</b></td><td>Prunelle du Néant, Couronne brisée, Os du Premier Roi, Sablier noir, Couronne du Blizzard (givre)</td></tr></tbody></table></div><p>Chaque fiche de relique, au Camp, détaille ses 6 récompenses et leurs chances.</p></details>
     <h3>Où les trouver</h3>
     <p>Monstres (rarement), Gardiens (toujours), élites (30 %) et récompense de fin de manche. Le niveau de la relique dépend du <b>niveau de mission</b> au moment où elle tombe :</p>
     <div class="tbl"><table>
@@ -389,6 +411,7 @@ dialog button{position:absolute;top:8px;right:8px;width:40px;height:40px;border-
     <p>3 reliques d'un même niveau donnent 1 relique du niveau au-dessus (20, 40 puis 80 essence). S'il en manque, la <b>fusion en chaîne</b> les crée d'abord avec les niveaux inférieurs. 3 reliques Abysse donnent une <b>relique forgée</b> du schéma légendaire de ton choix. Comme toute relique, elle s'ouvre en mission, et donne alors à coup sûr un fragment de ce schéma.</p>
     <h3>Objets exclusifs</h3>
     <p>Les reliques <b style="color:var(--r5)">Sanguine</b> peuvent donner des objets <b style="color:var(--r5)">Sanguins</b>, et les reliques <b style="color:var(--r2)">Abysse</b> des objets <b style="color:var(--r6)">Abyssaux</b>. On ne les trouve nulle part ailleurs. Chaque objet Abyssal porte un pouvoir unique, lié à l'objet, qui ne peut pas être transféré :</p>
+    <details class="more"><summary>Les 10 objets Sanguins</summary><p>Niveau de la mission + 20, statistique de base ×1,4. Chance par ouverture : environ 24 % (intacte), 50 % (éclatante).</p><div class="tbl"><table><thead><tr><th>Objet Sanguin</th><th>Emplacement</th><th>Affixes (×1,8)</th><th>Reliques</th></tr></thead><tbody><tr><td><b>Cœur du Martyr</b></td><td>Amulette</td><td>Dégâts, Dégâts critiques, Critique, Vol de vie</td><td>Cœur noirci, Veine de la Veuve</td></tr><tr><td><b>Cuirasse de la Veuve rouge</b></td><td>Armure</td><td>Vie, Réduction des dégâts, Régénération, Dégâts</td><td>Cœur noirci, Fiole d&#x27;ichor</td></tr><tr><td><b>Pas de l&#x27;Hémorragie</b></td><td>Bottes</td><td>Vitesse, Vitesse d&#x27;attaque, Dégâts, Critique</td><td>Cœur noirci</td></tr><tr><td><b>Anneau du Sang versé</b></td><td>Anneau</td><td>Critique, Dégâts critiques, Vitesse d&#x27;attaque, Dégâts</td><td>Calice rouge</td></tr><tr><td><b>Linceul écarlate</b></td><td>Armure</td><td>Vie, Dégâts de compétence, Portée des compétences, Réduction des dégâts</td><td>Calice rouge</td></tr><tr><td><b>Œil du Calice</b></td><td>Amulette</td><td>Recharge, Dégâts de compétence, Portée des compétences, Dégâts critiques</td><td>Calice rouge, Fiole d&#x27;ichor</td></tr><tr><td><b>Grèves du Bourreau rouge</b></td><td>Bottes</td><td>Vitesse, Vie, Réduction des dégâts, Recharge</td><td>Veine de la Veuve, Fiole d&#x27;ichor</td></tr><tr><td><b>Sceau de l&#x27;Ichor</b></td><td>Anneau</td><td>Dégâts, Vitesse d&#x27;attaque, Vol de vie, Régénération</td><td>Veine de la Veuve</td></tr><tr><td><b>Cœur gelé du Martyr</b></td><td>Amulette</td><td>Dégâts contre ralentis, Gel, Dégâts critiques, Dégâts</td><td>Cœur d&#x27;hiver</td></tr><tr><td><b>Anneau de l&#x27;Hiver sanglant</b></td><td>Anneau</td><td>Éclats de glace, Dégâts contre ralentis, Critique, Vitesse d&#x27;attaque</td><td>Cœur d&#x27;hiver</td></tr></tbody></table></div></details>
     <div class="tbl"><table>
       <thead><tr><th>Pouvoir</th><th>Effet</th></tr></thead>
       <tbody>
@@ -485,11 +508,56 @@ dialog button{position:absolute;top:8px;right:8px;width:40px;height:40px;border-
     <p>On y achète aussi les <b>3 talents</b> de chaque héros (150, 300 et 500 or).</p>
     <h3>Prestige</h3>
     <p>Quand les 8 améliorations sont au maximum, le <b>prestige</b> s'ouvre pour chaque héros, sans limite de niveau. Chaque niveau coûte de l'or et de l'essence et donne 1 point à placer dans 12 statistiques (vie, dégâts, critique, portée des compétences, rayon d'explosion…). Les points se redistribuent gratuitement.</p>
+    <details class="more"><summary>Les 12 statistiques de prestige</summary><p>Le prestige s'ouvre quand les 8 améliorations de la Forge sont au maximum. Chaque niveau coûte un peu plus d'or et d'essence que le précédent. Les plafonds généraux s'appliquent toujours : critique 75 %, réduction des dégâts 60 %, recharge 50 %.</p><div class="tbl"><table><thead><tr><th>Statistique</th><th>Par point</th><th>Plafond</th></tr></thead><tbody><tr><td><b>Vitalité</b></td><td>+2 % de vie maximale</td><td>—</td></tr><tr><td><b>Puissance</b></td><td>+2 % de dégâts</td><td>—</td></tr><tr><td><b>Vivacité</b></td><td>+1 % de vitesse d&#x27;attaque</td><td>—</td></tr><tr><td><b>Acuité</b></td><td>+0,5 % de chances de critique</td><td>40 points</td></tr><tr><td><b>Brutalité</b></td><td>+3 % de dégâts critiques</td><td>—</td></tr><tr><td><b>Arcanes</b></td><td>+3 % de dégâts de compétence</td><td>—</td></tr><tr><td><b>Ténacité</b></td><td>−0,5 % de dégâts subis</td><td>40 points</td></tr><tr><td><b>Sang-froid</b></td><td>−0,5 % de temps de recharge</td><td>30 points</td></tr><tr><td><b>Foulée</b></td><td>+0,5 % de vitesse de déplacement</td><td>30 points</td></tr><tr><td><b>Opulence</b></td><td>+2 % d&#x27;or ramassé</td><td>—</td></tr><tr><td><b>Envergure</b></td><td>+3 % de portée des compétences</td><td>50 points</td></tr><tr><td><b>Déflagration</b></td><td>+3 % de rayon d&#x27;explosion</td><td>50 points</td></tr></tbody></table></div></details>
     <h3>Sauvegarde</h3>
     <p>Ta progression est enregistrée dans le navigateur. En bas de la Forge, tu peux l'exporter en fichier et l'importer sur un autre appareil.</p>
   </div>
   <div class="shots one">
     <figure><button class="shot" type="button"><img src="img/camp_forge.jpg" alt="La Forge : améliorations permanentes et prestige" width="780" height="1688" loading="lazy"></button><figcaption>Les améliorations de la Forge.</figcaption></figure>
+  </div>
+</div></section>
+
+<section id="coop"><div class="sec wide">
+  <div class="txt" style="max-width:none">
+    <h2><small>De 2 à 4 joueurs</small>Coopération</h2>
+    <p style="max-width:66ch">Jusqu'à 4 joueurs sur le même wifi peuvent partir ensemble en mission, chacun sur son téléphone, sans compte ni serveur : chaque appareil se connecte directement à celui de l'hôte.</p>
+    <h3>Héberger une partie</h3>
+    <ol style="max-width:66ch">
+      <li>Sur l'écran d'accueil, choisis ton héros, le niveau, le biome et la difficulté : ils s'appliquent à toute l'équipe.</li>
+      <li>Touche <b>Coop</b>, puis <b>Héberger une partie</b>. Un QR code et un code texte d'invitation s'affichent pour le joueur 2.</li>
+      <li>Le joueur scanne le QR code, ou tu lui envoies le code avec <b>Copier</b> ou <b>Partager</b>.</li>
+      <li>Il te renvoie son <b>code de réponse</b> : scanne-le ou colle-le dans la case du dessous, puis touche <b>Valider</b>. Il apparaît dans la liste des joueurs.</li>
+      <li>Pour un joueur de plus, touche <b>Inviter un joueur</b> et recommence, une personne à la fois, jusqu'à 4.</li>
+      <li>Ferme la fenêtre et touche <b>Lancer</b> : tout le monde part en mission en même temps.</li>
+    </ol>
+    <h3>Rejoindre une partie</h3>
+    <ol style="max-width:66ch">
+      <li>Choisis ton héros sur l'écran d'accueil (tu peux en changer jusqu'au lancement).</li>
+      <li>Touche <b>Coop</b>, puis <b>Rejoindre</b>.</li>
+      <li>Scanne le QR code de l'hôte avec <b>Scanner le QR code</b> (Android), ou colle le code reçu, puis touche <b>Rejoindre</b>.</li>
+      <li>Un <b>code de réponse</b> s'affiche : montre ce QR code à l'hôte ou envoie-lui le code avec <b>Partager</b>.</li>
+      <li>Une fois validé par l'hôte, « Connecté » s'affiche avec la liste des joueurs. Attends que l'hôte lance la mission.</li>
+    </ol>
+    <h3>Héberger depuis un ordinateur</h3>
+    <p style="max-width:66ch">Un PC ou un Mac est le meilleur hôte à 3 ou 4 joueurs, car l'hôte fait tourner tous les monstres. Ouvre le jeu dans un navigateur récent (Chrome, Edge, Firefox ou Safari), à la même adresse que les téléphones, sur la même box (wifi ou câble). Les téléphones scannent le QR code affiché à l'écran. Le code de réponse du téléphone arrive sur le PC par le bouton <b>Partager</b> : un message à soi-même, un mail ou une messagerie web, puis <b>Coller</b> sur le PC. On joue au clavier : <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd>, <kbd>Espace</kbd>, <kbd>E</kbd>, <kbd>R</kbd>, <kbd>F</kbd>.</p>
+    <h3>Ce qui passe entre les appareils</h3>
+    <p style="max-width:66ch">Seulement la partie en cours : positions, vie et tirs des héros, monstres, projectiles et coups portés, une vingtaine de fois par seconde, sur une liaison chiffrée. La sauvegarde, l'inventaire, l'or et le butin ne quittent jamais ton appareil.</p>
+    <h3>Règles de la partie</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>Sujet</th><th>En coopération</th></tr></thead>
+      <tbody>
+        <tr><td>Mode</td><td>Survie, au niveau, biome et difficulté choisis par l'hôte</td></tr>
+        <tr><td>Monstres</td><td>Partagés ; par joueur en plus, +50 % de vie et 40 % plus nombreux (à 4 : vie ×2,5, nombre ×2,2) ; ils visent le héros debout le plus proche</td></tr>
+        <tr><td>Héros</td><td>Chacun joue le héros choisi sur son propre téléphone, avec l'équipement, les mods, le prestige et les reliques enregistrés sur cet appareil. Il peut changer de héros sur l'écran d'accueil tant que la mission n'est pas lancée.</td></tr>
+        <tr><td>Repères</td><td>Chaque partenaire porte son numéro et sa classe au-dessus de lui (J2 · Guerrier…), dans sa couleur, avec son anneau de vie</td></tr>
+        <tr><td>Butin</td><td>Séparé : chaque monstre abattu, par n'importe qui, lâche un butin différent pour chaque joueur</td></tr>
+        <tr><td>Expérience et bonus</td><td>Propres à chacun ; la partie ne se met pas en pause pendant le choix d'un bonus, mais le héros est protégé pendant ce temps</td></tr>
+        <tr><td>À terre</td><td>Un héros tombé se relève 8 s plus tard près du partenaire debout le plus proche, avec la moitié de sa vie ; si tout le monde tombe, la mission échoue pour tous</td></tr>
+        <tr><td>Fin de manche</td><td>L'hôte choisit de sortir ou de continuer pour tous ; chacun reçoit sa relique de manche</td></tr>
+        <tr><td>Déconnexion</td><td>Si un invité part, les autres continuent ; si l'hôte part, chaque invité termine la mission en gardant son butin</td></tr>
+      </tbody>
+    </table></div>
+    <p style="max-width:66ch">Si la connexion échoue, vérifie que tous les appareils sont bien sur le même réseau wifi (pas en données mobiles) et recommence l'invitation. Certains wifi publics ou d'entreprise bloquent les connexions entre appareils. À 4, le téléphone de l'hôte fait tourner tous les monstres : prends le plus récent comme hôte.</p>
   </div>
 </div></section>
 
@@ -502,6 +570,7 @@ dialog button{position:absolute;top:8px;right:8px;width:40px;height:40px;border-
       <li><b>Tremblement</b> de l'écran : Normal, Réduit ou Désactivé.</li>
       <li><b>Flash de butin</b>, <b>chiffres de dégâts</b> et <b>vibrations</b> (Android).</li>
       <li><b>Rendu</b> : WebGL, plus fluide, ou standard si ton appareil a du mal.</li>
+      <li><b>Application</b> : la version installée, un bouton <b>Rechercher</b> une mise à jour, et la ligne « Dernier incident » à me transmettre en cas de souci d'affichage. Quand une nouvelle version est prête, un bandeau <b>Mettre à jour</b> apparaît en haut de l'écran, jamais pendant un combat.</li>
     </ul>
     <p>Ces réglages sont propres à chaque appareil.</p>
   </div>
@@ -527,7 +596,7 @@ dialog button{position:absolute;top:8px;right:8px;width:40px;height:40px;border-
 
 </main>
 
-<footer class="wrap">Crypte des Cendres · guide à jour de la version 59 du jeu. <a href="../index.html">Retour au jeu</a></footer>
+<footer class="wrap">Crypte des Cendres · guide à jour de la version 65 du jeu. <a href="../index.html">Retour au jeu</a></footer>
 
 <dialog id="zoom" aria-label="Capture agrandie"><button type="button" id="zoomX" aria-label="Fermer">×</button><img id="zoomImg" alt=""></dialog>
 

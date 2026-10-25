@@ -19,7 +19,7 @@ let floorPat=null;
 
 function newGame(){
   const C=CLS[heroCls],L=clamp(meta.start|0||1,1,LV_MAX);
-  G={cls:heroCls,level:L,t:0,tl:0,potions:2+lv('alc'),kills:0,gold:0,loot:{items:[],parts:[],relics:[]},fresh:0,run:{},hl:1,xp:0,pend:0,nxp:0,
+  G={eid:0,bid:0,zid:0,hold:false,mates:[],oshots:null,cls:heroCls,level:L,t:0,tl:0,potions:2+lv('alc'),kills:0,gold:0,loot:{items:[],parts:[],relics:[]},fresh:0,run:{},hl:1,xp:0,pend:0,nxp:0,
     en:[],shots:[],eb:[],zaps:[],zones:[],lobs:[],parts:[],texts:[],drops:[],rings:[],spawns:[],shake:0,spawnT:1.2,bossT:BOSS_T,bossN:0,vw:600,vh:900};
   G.eq=curEq();G.wid=curWid();S=stats(G.eq);
   G.P={x:MAP/2,y:MAP/2,r:17,hp:S.hp,face:-Math.PI/2,fire:0,inv:1,flash:0,dashT:0,dashCd:0,novaCd:0,dx:0,dy:-1,spin:0,spinTick:0,swing:null,
@@ -68,7 +68,8 @@ function spawnEnemy(s){
   if(s.type==='boss'){$('bossBar').hidden=false;G.bossN++}
   if(G.pod&&s.type!=='boss'&&Math.random()<.6)e.tgtPod=true;
   if(s.kx){e.kx=s.kx;e.ky=s.ky}if(s.tgtPod!=null)e.tgtPod=s.tgtPod;
-  if(G.relic&&!G.cracked&&s.type!=='boss'&&!s.split&&Math.random()<.18){e.corr=true;e.hp*=1.3;e.max*=1.3}
+  if((G.relic||(NET.host&&NET.peers.some(p=>p.relic)))&&!G.cracked&&s.type!=='boss'&&!s.split&&Math.random()<.18){e.corr=true;e.hp*=1.3;e.max*=1.3}
+  e.id=++G.eid;if(NET.host&&NET.on){const k=coopHp();e.hp*=k;e.max*=k}
   G.en.push(e);
   if(s.fx)burst(s.x,s.y,10,'#9a6bc4',120);
 }
@@ -111,7 +112,7 @@ function spawner(dt){
   if(G.bossT<=0){G.bossT=bossIv();spawnBosses()}
   G.spawnT-=dt;if(G.spawnT>0)return;
   G.spawnT=Math.max(.14,(.85-.12*(L-1)-.4*f)*.87);
-  const target=Math.min(250,Math.round((22+14*(L-1)+Math.floor(34*f))*1.15));
+  const target=Math.min(NET.host&&NET.on?coopCap():250,Math.round((22+14*(L-1)+Math.floor(34*f))*1.15*(NET.host&&NET.on?coopCnt():1)));
   if(G.en.length>=target)return;
   const [type,n]=chooseType(G.t,L);spawnPack(type,n);
 }
@@ -153,6 +154,9 @@ function dmgEnemy(e,d,crit,dot){
   if(S.cold&&(e.slow>0||e.frz>0))d*=1+S.cold/100;
   if(S.abHunt&&(e.type==='boss'||e.elite))d*=1+S.abHunt/100;
   if(S.abSoul&&G.P.soulN)d*=1+G.P.soulN*S.abSoul/100;
+  if(NET.guest){if(dot)return;if(S.abExec&&e.type!=='boss'&&e.hp-d<e.max*S.abExec/100)d=Math.max(d,e.hp);
+    netHit(e,d,crit);e.hp=Math.max(1,e.hp-d);e.shown=2;if(crit)critTick();SND.play(crit?'crit':'hit');e.flash=1;if(SET.dmgNum&&(crit||G.en.length<60))ftext(e.x+rand(-8,8),e.y-e.r,Math.round(d)+(crit?'!':''),crit?'#ffd34d':'#f1e8d6',crit?20:15);
+    if(crit&&S.abRift&&!G._rift&&Math.random()*100<S.abRift){G._rift=1;chain(e,d*.7);G._rift=0}return}
   e.hp-=d;e.shown=2;
   if(S.abExec&&e.hp>0&&e.type!=='boss'&&e.type!=='cible'&&e.hp<e.max*S.abExec/100){e.hp=0;ftext(e.x,e.y-e.r-6,'jugé','#b07cff',14);burst(e.x,e.y,10,'#b07cff',140,3)}
   if(!dot&&crit&&S.abRift&&!G._rift&&Math.random()*100<S.abRift){G._rift=1;chain(e,d*.7);G._rift=0}
@@ -175,10 +179,11 @@ function shatter(e){G.rings.push({x:e.x,y:e.y,t:0,max:95,col:'170,225,255'});bur
   if(G._sh<4)for(const o of G.en){if(!o.dead&&o!==e&&Math.abs(o.x-e.x)<120&&Math.hypot(o.x-e.x,o.y-e.y)<85+o.r){o.slow=Math.max(o.slow,1.5);dmgEnemy(o,S.dmg*1.5,false)}}G._sh--}
 function kill(e){
   e.dead=true;G.kills++;
+  if(NET.host)netSend({t:'kill',id:e.id,type:e.type,x:e.x|0,y:e.y|0,elite:e.elite||0,corr:e.corr?1:0,gen:e.gen||0});
   if(S.abSoul){G.P.soulN=Math.min(10,(G.P.soulN||0)+1);G.P.soulT=5}
   if(S.abWard)G.P.shield=Math.max(G.P.shield||0,Math.min(S.hp*.3,(G.P.shield||0)+S.abWard));
   if(S.shard&&Math.random()*100<S.shard)shatter(e);
-  if(e.type==='slime'&&e.gen<2){burst(e.x,e.y,14,'#7fe0c8',150,3);
+  if(e.type==='slime'&&e.gen<2&&!NET.guest){burst(e.x,e.y,14,'#7fe0c8',150,3);
     for(const sd of[-1,1]){const a=rand(0,Math.PI*2)*0+Math.atan2(e.y-G.P.y,e.x-G.P.x)+sd*Math.PI/2+rand(-.4,.4);
       G.spawns.push({type:'slime',gen:e.gen+1,split:1,tgtPod:e.tgtPod,x:clamp(e.x+Math.cos(a)*e.r*.6,EDGE+30,MAP-EDGE-30),y:clamp(e.y+Math.sin(a)*e.r*.6,EDGE+30,MAP-EDGE-30),kx:Math.cos(a)*260,ky:Math.sin(a)*260,t:.12})}}
   const boss=e.type==='boss',L=G.level,DL=dif().loot,dl=1+DL*.5,lm=lootMul(L)*(1+(S.lootPct||0)/100)*(1+DL*.15)*biome().loot;
@@ -203,7 +208,7 @@ function kill(e){
     if(Math.random()<(t==='brute'?.05:.005))push({kind:'potion'});
   }
   if(e.elite){push({kind:'item',item:genItem(itemLvl(),1)},30);if(Math.random()<.4)push({kind:'item',item:genItem(itemLvl(),1)},30);if(Math.random()<.3*lm)push({kind:'relic',id:relicDrop()},30);
-    if(e.elite==='explosif')G.lobs.push({x0:e.x,y0:e.y,tx:e.x,ty:e.y,t:0,T:.7,kind:'pyro',r:95,dps:2*diff().ds});
+    if(e.elite==='explosif'&&!NET.guest)G.lobs.push({x0:e.x,y0:e.y,tx:e.x,ty:e.y,t:0,T:.7,kind:'pyro',r:95,dps:2*diff().ds});
     burst(e.x,e.y,30,ELITE[e.elite].c,240,4);SND.play('bossdie');toast(`<b style="color:${ELITE[e.elite].c}">Élite ${ELITE[e.elite].n} vaincue</b>`)}
   const gv=({ghoul:1,bat:.6,archer:1.5,poison:1.5,pyro:1.5,brute:5,boss:50,slime:.8,givrin:1.2})[e.type]*goldMul(L)*dl*(e.elite?5:1),n=boss?8:e.elite?5:(Math.random()<Math.min(1,(e.type==='bat'?.35:.65)*(1+.05*(L-1)))?1:0);
   for(let i=0;i<n;i++)push({kind:'gold',amt:Math.max(1,Math.round(gv/(boss?8:1)*rand(.7,1.3)))},boss?45:15);
@@ -212,14 +217,14 @@ function kill(e){
   else{push({kind:'xp',v:xv},6);G.nxp++}
   if(G.cls==='guerrier'&&hasTal('g_blood'))heal(S.hp*.02);
 }
-function dotHurt(d){if(GOD||G.over||d<=0)return;const P=G.P;d*=1-S.armor/200;P.hp-=d;P.noHit=0;if(P.hp<=0){P.hp=0;gameOver()}}
+function dotHurt(d){if(GOD||G.over||d<=0||G.P.down)return;const P=G.P;d*=1-S.armor/200;P.hp-=d;P.noHit=0;if(P.hp<=0){P.hp=0;NET.on?heroDown():gameOver()}}
 function hurt(d){
-  const P=G.P;if(P.inv>0||P.dashT>0||GOD)return;
+  const P=G.P;if(P.inv>0||P.dashT>0||GOD||P.down)return;
   d*=1-S.armor/100;if(P.hp<S.hp*.3)d*=1-S.lowArmor/100;if(P.spin>0)d*=.5;P.noHit=0;
   if(P.shield>0){const ab=Math.min(P.shield,d);P.shield-=ab;d-=ab;if(d<=0){P.inv=.35;ftext(P.x,P.y-P.r,'bloqué','#9fd0ff',13);return}}
   P.hp-=d;P.flash=1;P.inv=.35;SND.play('hurt');vibe(d/S.hp>.15?60:25);G.hshake=Math.max(G.hshake||0,Math.min(12,4+d/S.hp*45));
   ftext(P.x,P.y-P.r,'-'+Math.round(d),'#ff5a5a',16);
-  if(P.hp<=0){P.hp=0;gameOver()}
+  if(P.hp<=0){P.hp=0;NET.on?heroDown():gameOver()}
 }
 function heal(v){G.P.hp=Math.min(S.hp,G.P.hp+v)}
 function onHit(e,d){if(S.frz&&e.type!=='boss'&&Math.random()*100<S.frz){e.frz=1;e.slow=Math.max(e.slow,1.5)}if(S.chill&&Math.random()*100<S.chill)e.slow=2;if(S.shock&&Math.random()*100<S.shock)chain(e,d*.6)}
@@ -243,7 +248,7 @@ function explode(s,primary,frost){
   G.rings.push({x:s.x,y:s.y,t:.22,max:R,col:'140,190,255'});burst(s.x,s.y,8,'#9fc8ff',140,3);
   for(const e of G.en){if(e===primary||e.dead)continue;if(Math.abs(e.x-s.x)<R+e.r&&Math.hypot(e.x-s.x,e.y-s.y)<R+e.r){if(frost)e.slow=2.5;dmgEnemy(e,s.d*(frost?1:.6),false);if(S.burn){e.burnT=2.5;e.burnDps=S.burn}}}
 }
-function fireE(e,a,sp,d,r=7){G.eb.push({x:e.x+Math.cos(a)*e.r,y:e.y+Math.sin(a)*e.r,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,d,r,life:4})}
+function fireE(e,a,sp,d,r=7){G.eb.push({id:++G.bid,x:e.x+Math.cos(a)*e.r,y:e.y+Math.sin(a)*e.r,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,d,r,life:4})}
 function ring(e,n,sp){e.rot+=.27;for(let i=0;i<n;i++)fireE(e,e.rot+i/n*Math.PI*2,sp,e.dmg*.55,8)}
 function blocked(x,y,r){
   if(x<EDGE+r||x>MAP-EDGE-r||y<EDGE+r||y>MAP-EDGE-r)return true;
@@ -291,12 +296,12 @@ function inputVec(){
   return {x,y,m:Math.min(m,1)};
 }
 const dashCdMax=()=>3*(1-S.cdr/100)*(1-S.dashCd/100);
-function doDash(){const P=G.P;if(P.dashCd>0)return;SND.play('dash');P.dashT=.2;P.dashCd=dashCdMax();burst(P.x,P.y,10,'#9fc2b8',120);
+function doDash(){const P=G.P;if(P.down)return;if(P.dashCd>0)return;SND.play('dash');P.dashT=.2;P.dashCd=dashCdMax();burst(P.x,P.y,10,'#9fc2b8',120);
   P.dashHit=new Set();
   if(G.cls==='archer'&&hasTal('a_shadow'))P.critShots=3;
   if(G.cls==='magicien'&&hasTal('m_blink'))explode({x:P.x,y:P.y,d:S.dmg*1.6},null,true)}
 function doNova(){
-  const P=G.P;if(P.novaCd>0)return;P.novaCd=CLS[G.cls].cd*(1-S.cdr/100);G.hshake=Math.max(G.hshake||0,3.5);SND.play('skill_'+G.cls);
+  const P=G.P;if(P.down)return;if(P.novaCd>0)return;P.novaCd=CLS[G.cls].cd*(1-S.cdr/100);G.hshake=Math.max(G.hshake||0,3.5);SND.play('skill_'+G.cls);
   if(G.cls==='guerrier'){P.spin=1.6*(1+S.skillDur/100);P.spinTick=0;return}
   if(G.cls==='archer'){
     for(let i=0;i<24;i++){const a=i/24*Math.PI*2;G.shots.push({kind:'bolt',x:P.x,y:P.y,vx:Math.cos(a)*640,vy:Math.sin(a)*640,a,d:S.nova*.35,crit:false,pierce:S.pierce+2,hit:new Set(),life:1.2*(1+S.skillRad/100)})}
@@ -308,7 +313,7 @@ function doNova(){
 }
 const ultNeed=()=>Math.max(10,Math.round(ULT_N*(1-((S&&S.fury)||0)/100)));
 function doUlt(){
-  const P=G.P,need=ultNeed();if((G.ult||0)<need)return;G.ult=0;const m=1+(S.ultPct||0)/100,RR=1+S.skillRad/100;G.shake=Math.max(G.shake,12);G.hshake=Math.max(G.hshake||0,G.cls==='guerrier'?11:7);SND.play('ult');
+  const P=G.P,need=ultNeed();if(P.down)return;if((G.ult||0)<need)return;G.ult=0;const m=1+(S.ultPct||0)/100,RR=1+S.skillRad/100;G.shake=Math.max(G.shake,12);G.hshake=Math.max(G.hshake||0,G.cls==='guerrier'?11:7);SND.play('ult');
   if(G.cls==='guerrier'){const r=320*RR;P.inv=3;G.rings.push({x:P.x,y:P.y,t:0,max:r,col:'255,190,110'});G.rings.push({x:P.x,y:P.y,t:.12,max:r*.6,col:'255,110,60'});burst(P.x,P.y,50,'#ffb070',320,4);
     for(const e of G.en){if(e.dead)continue;const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy);if(d<r+e.r){const k=e.type==='boss'?120:700;e.kx+=dx/(d||1)*k;e.ky+=dy/(d||1)*k;e.slow=2;dmgEnemy(e,S.nova*3*m,false)}}
     toast('<b style="color:#ffd45a">Colère du Titan</b> : invulnérable pendant 3 s.');return}
@@ -325,7 +330,7 @@ function ultTick(dt){const P=G.P;
       for(const e of G.en){if(!e.dead&&Math.hypot(e.x-x,e.y-y)<R+e.r)dmgEnemy(e,S.nova*3*m,Math.random()*100<S.crit)}}}
 }
 function doPotion(){
-  const P=G.P;if(G.potions<=0||P.hp>=S.hp)return;G.potions--;SND.play('potion');const h=S.hp*.45*(1+S.potHeal/100)*(P.psnT>0?.5:1);P.hp=Math.min(S.hp,P.hp+h);
+  const P=G.P;if(P.down)return;if(G.potions<=0||P.hp>=S.hp)return;G.potions--;SND.play('potion');const h=S.hp*.45*(1+S.potHeal/100)*(P.psnT>0?.5:1);P.hp=Math.min(S.hp,P.hp+h);
   ftext(P.x,P.y-P.r-6,'+'+Math.round(h),'#5fbf7a',18);burst(P.x,P.y,16,'#5fbf7a',110);
 }
 
@@ -338,24 +343,27 @@ function gridEach(x,y,r,fn){const x0=clamp((x-r)/CELL|0,0,GW-1),x1=clamp((x+r)/C
 function compact(arr,alive){let j=0;for(let i=0;i<arr.length;i++){const o=arr[i];if(alive(o))arr[j++]=o}arr.length=j}
 /* ---------- Mise à jour ---------- */
 function update(dt){
+  if(NET.guest)netApplySnap();
   G.t+=dt;G.tl+=dt;
-  if(G.mode==='survie'&&G.tl>=LEVEL_T){G.tl=LEVEL_T;roundDone();return}
+  if(!NET.guest&&G.mode==='survie'&&G.tl>=LEVEL_T){G.tl=LEVEL_T;roundDone();return}
   if(G.pod)G.pod.flash=Math.max(0,G.pod.flash-dt*6);
   const P=G.P;
-  for(const s of G.spawns)s.t-=dt;
+  if(!NET.guest){for(const s of G.spawns)s.t-=dt;
   for(const s of G.spawns.filter(s=>s.t<=0))spawnEnemy({...s,fx:!s.split});
   G.spawns=G.spawns.filter(s=>s.t>0);
-  spawner(dt);
+  spawner(dt)}
+  if(G.oshots){for(const s of G.oshots){s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt}G.oshots=G.oshots.filter(s=>s.life>0)}
   // joueur
   const iv=inputVec(), moving=iv.m>.15;
   P.inv-=dt;P.flash=Math.max(0,P.flash-dt*5);P.dashCd-=dt;P.novaCd-=dt;P.fire-=dt;ultTick(dt);
-  if(S.regen)P.hp=Math.min(S.hp,P.hp+S.regen*dt*(P.psnT>0?.5:1));
+  if(P.down)heroDownTick(dt);if(NET.on&&!$('lvlup').hidden)P.inv=Math.max(P.inv,.3);
+  if(S.regen&&!P.down)P.hp=Math.min(S.hp,P.hp+S.regen*dt*(P.psnT>0?.5:1));
   if(P.soulT>0){P.soulT-=dt;if(P.soulT<=0)P.soulN=0}
   if(S.abPulse){P.abT=(P.abT==null?5:P.abT)-dt;if(P.abT<=0){P.abT=5;const R=200*(1+S.skillRad/200);G.rings.push({x:P.x,y:P.y,t:0,max:R,col:'176,124,255'});burst(P.x,P.y,20,'#b07cff',220,3);SND.play('boom');
     for(const o of G.en.slice())if(!o.dead&&Math.abs(o.x-P.x)<R+o.r&&Math.hypot(o.x-P.x,o.y-P.y)<R+o.r)dmgEnemy(o,S.dmg*S.abPulse/100,false)}}
   const antiM=1-Math.min(60,S.antidote||0)/100;
   for(const z of G.zones){z.life-=dt;
-    if(Math.hypot(P.x-z.x,P.y-z.y)<z.r+P.r*.4){
+    if(!P.down&&Math.hypot(P.x-z.x,P.y-z.y)<z.r+P.r*.4){
       if(z.kind==='poison'){z.tick=(z.tick||0)-dt;if(z.tick<=0){z.tick=.6;P.psn=Math.min(5,P.psn+1);P.psnT=8*antiM;P.psnD=Math.max(P.psnD,z.dps*.5)}}
       else{P.brnT=5*antiM;P.brnD=Math.max(P.brnD||0,z.dps*2)}}
     if(G.pod&&Math.hypot(G.pod.x-z.x,G.pod.y-z.y)<z.r+G.pod.r)podHurt(z.dps*(z.kind==='pyro'?2:1.2)*dt)}
@@ -365,14 +373,14 @@ function update(dt){
   if(G.biome===1&&Math.random()<dt*16&&G.parts.length<420)G.parts.push({x:G.cam.x+rand(-G.vw/2,G.vw/2),y:G.cam.y+rand(-G.vh/2,G.vh/2),vx:rand(-12,12),vy:rand(18,42),life:2.4,max:2.4,col:'#e4f4ff',size:rand(1,2.2)});
   if(P.brnT>0){P.brnT-=dt;dotHurt(P.brnD*dt);if(Math.random()<dt*10)G.parts.push({x:P.x+rand(-8,8),y:P.y+rand(-6,6),vx:0,vy:-60,life:.5,max:.5,col:'#ff8a3a',size:3})}
   if(G.over)return;
-  for(const l of G.lobs){l.t+=dt;if(l.t>=l.T){l.done=true;const life=l.kind==='poison'?5:3;G.zones.push({x:l.tx,y:l.ty,r:l.r,life,max:life,kind:l.kind,dps:l.dps});burst(l.tx,l.ty,14,l.kind==='poison'?'#7fd36a':'#ff8a3a',140,3)}}
+  if(NET.guest)for(const l of G.lobs)l.t+=dt;else for(const l of G.lobs){l.t+=dt;if(l.t>=l.T){l.done=true;const life=l.kind==='poison'?5:3;G.zones.push({id:++G.zid,x:l.tx,y:l.ty,r:l.r,life,max:life,kind:l.kind,dps:l.dps});burst(l.tx,l.ty,14,l.kind==='poison'?'#7fd36a':'#ff8a3a',140,3)}}
   compact(G.lobs,l=>!l.done);
   for(const w of G.wells){if(!w.on){w.cd-=dt;if(w.cd<=0)placeWell(w)}
     else if((P.psnT>0||P.brnT>0||P.frzT>0)&&Math.hypot(P.x-w.x,P.y-w.y)<w.r+P.r){P.psn=0;P.psnT=0;P.psnD=0;P.brnT=0;P.frzT=0;w.on=false;w.cd=30;burst(w.x,w.y,24,'#bfeaff',160,3);toast('<b style="color:#9fdcff">Source sacrée</b> : altérations purifiées. Elle réapparaîtra ailleurs.')}}
   if(P.cbT>0){P.cbT-=dt;if(Math.random()<dt*24){const a=rand(0,Math.PI*2);G.parts.push({x:P.x+Math.cos(a)*P.r*1.4,y:P.y+Math.sin(a)*P.r*1.4,vx:Math.cos(a)*30,vy:-50,life:.45,max:.45,col:'#ffd34d',size:3})}if(P.cbT<=0){P.cbT=0;refreshStats()}}
   if(G.cls==='magicien'&&hasTal('m_shield')){P.noHit+=dt;if(P.noHit>4)P.shield=Math.min(S.hp*.25,P.shield+S.hp*.08*dt)}
   if(moving){P.dx=iv.x/iv.m;P.dy=iv.y/iv.m;P.face=Math.atan2(P.dy,P.dx)}
-  let sp=S.speed*iv.m*(P.frzT>0?.62:1);
+  let sp=P.down?0:S.speed*iv.m*(P.frzT>0?.62:1);
   if(P.dashT>0){P.dashT-=dt;sp=S.speed*3.4;P.x+=P.dx*sp*dt;P.y+=P.dy*sp*dt;if(Math.random()<.6)G.parts.push({x:P.x,y:P.y,vx:0,vy:0,life:.25,max:.25,col:'#9fc2b8',size:P.r*.8})}
   else{P.x+=iv.x/(iv.m||1)*sp*dt;P.y+=iv.y/(iv.m||1)*sp*dt}
   resolve(P);
@@ -394,7 +402,7 @@ function update(dt){
   if(P.spin>0){P.spin-=dt;P.spinTick-=dt;P.face+=dt*18;
     if(P.spinTick<=0){P.spinTick=.2;const R=130*(1+S.reach/100)*(1+S.skillRad/100);
       for(const e of G.en){const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy)||1;if(d<R+e.r){const crit=Math.random()*100<S.crit,dd=S.nova*.22*(crit?S.critDmg/100:1);dmgEnemy(e,dd,crit);if(S.leech)heal(dd*S.leech/100);const k=e.type==='boss'?10:90;e.kx+=dx/d*k;e.ky+=dy/d*k}}}}
-  let tgt=null,td=1e9;for(const e of G.en){const d=Math.hypot(e.x-P.x,e.y-P.y);if(d<td){td=d;tgt=e}}
+  let tgt=null,td=1e9;if(!P.down)for(const e of G.en){const d=Math.hypot(e.x-P.x,e.y-P.y);if(d<td){td=d;tgt=e}}
   if(G.cls==='guerrier'){
     const R=(78+P.r)*(1+S.reach/100);
     if(tgt&&P.dashT<=0&&P.spin<=0){
@@ -445,14 +453,14 @@ function update(dt){
   compact(G.shots,s=>s.life>0);
   // ennemis
   const farR=Math.hypot(G.vw,G.vh)*1.1;
-  for(const e of G.en){
+  if(NET.guest)netGuestEnemies(dt,P);else for(const e of G.en){
     if(e.dead)continue;
     e.flash=Math.max(0,e.flash-dt*7);e.hitCd-=dt;e.shown-=dt;
     if(e.burnT>0){e.burnT-=dt;e.burnAcc+=e.burnDps*dt;if(e.burnAcc>=1){const d=Math.floor(e.burnAcc);e.burnAcc-=d;dmgEnemy(e,d,false,true)}
       if(Math.random()<dt*8)G.parts.push({x:e.x+rand(-e.r,e.r)*.6,y:e.y+rand(-e.r,e.r)*.4,vx:0,vy:-50,life:.5,max:.5,col:'#ff8a3a',size:2.5})}
     if(e.dead)continue;
-    const T=(e.tgtPod&&G.pod)?G.pod:P,dx=T.x-e.x,dy=T.y-e.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d;let mx=0,my=0;
-    const dP=T===P?d:Math.hypot(P.x-e.x,P.y-e.y);
+    const PT=netNear(e,P),T=(e.tgtPod&&G.pod)?G.pod:PT,dx=T.x-e.x,dy=T.y-e.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d;let mx=0,my=0;
+    const dP=T===PT?d:Math.hypot(PT.x-e.x,PT.y-e.y);
     if(dP>farR&&e.type!=='boss'&&e.type!=='cible'&&!e.tgtPod){const p=ringPos();e.x=p.x;e.y=p.y;continue}
     if(e.type==='cible'){
       if(!e.downed){
@@ -499,22 +507,22 @@ function update(dt){
     const f=Math.pow(.002,dt);e.kx*=f;e.ky*=f;
     if(resolve(e)&&e.state==='charge'){e.state='walk';e.timer=e.type==='boss'?1.6:e.type==='slime'?1.5:2.5;G.shake=Math.max(G.shake,e.type==='boss'?8:4);burst(e.x,e.y,10,'#6b5a60',150)}
     if(e.type!=='archer'&&e.type!=='cible'&&e.hitCd<=0){const cd=e.state==='charge'?e.dmg*1.4:e.dmg;
-      if(T!==P&&d<e.r+T.r+5){podHurt(cd);e.hitCd=.8}else if(dP<e.r+P.r){hurt(cd);e.hitCd=.8;if(e.type==='givrin'){P.frzT=2.2*(1-Math.min(60,S.antidote||0)/100)}if(e.elite==='vampire'){e.hp=Math.min(e.max,e.hp+e.max*.1);ftext(e.x,e.y-e.r,'+vie','#ff5a6a',13)}}}
+      if(T===G.pod&&d<e.r+T.r+5){podHurt(cd);e.hitCd=.8}else if(PT===P&&dP<e.r+P.r){hurt(cd);e.hitCd=.8;if(e.type==='givrin'){P.frzT=2.2*(1-Math.min(60,S.antidote||0)/100)}if(e.elite==='vampire'){e.hp=Math.min(e.max,e.hp+e.max*.1);ftext(e.x,e.y-e.r,'+vie','#ff5a6a',13)}}}
   }
   // séparation
   gridBuild();const L=G.en;
-  for(let i=0;i<L.length;i++){const a=L[i];gridEach(a.x,a.y,a.r+50,(b,j)=>{if(j<=i)return;const m=a.r+b.r,dx=b.x-a.x;if(dx>m||dx<-m)return;const dy=b.y-a.y;if(dy>m||dy<-m)return;
+  if(!NET.guest)for(let i=0;i<L.length;i++){const a=L[i];gridEach(a.x,a.y,a.r+50,(b,j)=>{if(j<=i)return;const m=a.r+b.r,dx=b.x-a.x;if(dx>m||dx<-m)return;const dy=b.y-a.y;if(dy>m||dy<-m)return;
     const d=Math.hypot(dx,dy)||1;if(d<m){const p=(m-d)/2,wa=a.type==='boss'?0:1,wb=b.type==='boss'?0:1;a.x-=dx/d*p*wa;a.y-=dy/d*p*wa;b.x+=dx/d*p*wb;b.y+=dy/d*p*wb}})}
   compact(G.en,e=>!e.dead);
   // projectiles ennemis
-  for(const b of G.eb){b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;if(G.pod&&Math.hypot(b.x-G.pod.x,b.y-G.pod.y)<b.r+G.pod.r){podHurt(b.d);b.life=0}else if(blocked(b.x,b.y,b.r*.5))b.life=0;else if(Math.hypot(b.x-P.x,b.y-P.y)<b.r+P.r-3){hurt(b.d);b.life=0}}
+  for(const b of G.eb){b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;if(G.pod&&Math.hypot(b.x-G.pod.x,b.y-G.pod.y)<b.r+G.pod.r){podHurt(b.d);b.life=0}else if(blocked(b.x,b.y,b.r*.5))b.life=0;else if(!P.down&&Math.hypot(b.x-P.x,b.y-P.y)<b.r+P.r-3){hurt(b.d);b.life=0;if(NET.guest)NET.ebUsed.add(b.id)}}
   compact(G.eb,b=>b.life>0);
   // butin
   for(const d of G.drops){
     d.t+=dt;d.age+=dt;if(d.kind==='gold'&&d.age>45){d.gone=true;continue}
     const dx=P.x-d.x,dy=P.y-d.y,dist=Math.hypot(dx,dy)||1;
     if(dist<S.magnet||d.mt>0){d.mt+=dt;const v=Math.min(800,260+d.mt*500);d.x+=dx/dist*v*dt;d.y+=dy/dist*v*dt}
-    if(dist<P.r+16){
+    if(!P.down&&dist<P.r+16){
       d.gone=true;
       if(d.kind==='xp'){G.nxp--;gainXp(d.v)}
       else if(d.kind==='gold'){SND.play('gold');const a=Math.round(d.amt*(1+lv('for')*.15)*(1+S.goldPct/100));G.gold+=a;ftext(P.x+rand(-10,10),P.y-P.r-12,'+'+a,'#f0cf4a',13)}
