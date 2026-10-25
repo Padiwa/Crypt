@@ -1,0 +1,5 @@
+- En faire une PWA
+- Rajouter du tremblement quand tu lances une compétence ou un ulti
+- à partir d'une certaine valeur de crit, un bonus apparait pour x secondes (vitesse de projectil, souffle d'explosion, etc)
+- Améliorer l'ergonomie dans l'interface, simplifier l'utilisation selon les bonnes pratique utilisé par les différents jeux
+- Afficher le flash uniquement quand la valeur de l'affix est la plus haute que celle de l'objet équipé ayant cet affix
