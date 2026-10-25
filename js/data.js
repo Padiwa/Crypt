@@ -10,6 +10,15 @@ let dpr=1;
 /* ---------- Données ---------- */
 const RAR=[{n:'Commun',c:'#bdb6a8',aff:1,shard:1},{n:'Magique',c:'#7b95ff',aff:2,shard:2},{n:'Rare',c:'#f0cf4a',aff:3,shard:4},{n:'Légendaire',c:'#ff8a24',aff:4,shard:8},{n:'Ancestral',c:'#ff5a7a',aff:4,shard:16}];
 const SLOT={arme:'Arme',armure:'Armure',amulette:'Amulette',bottes:'Bottes',anneau:'Anneau'};
+const BIOMES=[
+  {id:'crypte',n:'Crypte des Cendres',d:'La crypte d\'origine : braseros, sang séché, monstres connus.',hp:1,dm:1,loot:1,
+   tile:{h:285,s:9,l:12.5},stain:'110,25,30',chip:'214,204,180',pil:['#4a4050','#231d27'],wall:['#211a26','#3d3440'],rune:'232,133,59',light:'255,140,60',flame:'255,190,90',tint:0xff8c3c},
+  {id:'givre',n:'Abîmes gelés',d:'Cavernes de glace sous la crypte. Monstres plus coriaces (vie ×1,3, dégâts ×1,2), Revenants de givre qui ralentissent, butin +30 %. Seul biome où tombent les affixes de givre, les reliques de givre et leurs schémas.',hp:1.3,dm:1.2,loot:1.3,
+   tile:{h:205,s:24,l:14},stain:'150,210,255',chip:'220,240,255',pil:['#5d7f96','#1b2c3a'],wall:['#142231','#3b5a73'],rune:'140,200,255',light:'120,190,255',flame:'190,230,255',tint:0x78beff},
+];
+const biome=()=>BIOMES[Math.max(0,Math.min(BIOMES.length-1,(typeof G!=='undefined'&&G&&G.biome!=null)?G.biome:(meta.biome|0)))];
+const BASES_GIVRE={armure:['Pelisse givrée','Cuirasse de glace'],amulette:['Talisman de givre','Pendentif cristallin'],bottes:['Bottes fourrées','Grèves de glace'],anneau:['Anneau de givre','Bague cristalline']};
+const LEGEND_GIVRE={armure:['Linceul de l\'Hiver éternel'],amulette:['Œil du Blizzard'],bottes:['Pas de l\'Avalanche'],anneau:['Sceau du Zéro absolu']};
 const BASES={armure:['Cuirasse','Brigandine','Cotte de mailles','Manteau de chasseur'],amulette:['Talisman','Amulette','Médaillon'],bottes:['Bottes de cuir','Grèves','Solerets','Bottes de pèlerin'],anneau:['Anneau','Chevalière','Bague']};
 const SUFFIX=['du Corbeau','des Cendres','de la Veuve','du Pèlerin',"de l'Ossuaire",'du Loup gris','de la Lune noire','des Murmures','du Bourreau','de Fer-Sang'];
 const LEGEND={armure:["Linceul d'Argent",'Serment du Veilleur','Peau de Wyverne'],amulette:["Œil de l'Abîme",'Larme de la Sorcière','Sceau du Premier Mort'],bottes:['Pas du Spectre','Foulée de Cendre','Semelles du Banni'],anneau:['Alliance Brisée','Anneau du Bourreau','Cercle de Braise']};
@@ -65,11 +74,21 @@ const GEAR_BP=[
   {id:'x4',n:'Sceau du Néant',slot:'amulette',r:3,base:8,aff:{critDmg:50,dmgPct:10},craft:500},
   {id:'x5',n:'Foulée du Néant',slot:'bottes',r:3,base:12,aff:{cdr:10,regen:2},craft:500},
   {id:'x6',n:'Chevalière du Premier Roi',slot:'anneau',r:3,base:15,aff:{crit:6,critDmg:30},craft:500},
+  {id:'y1',n:'Manteau du Blizzard',slot:'armure',r:3,base:110,aff:{hp:60,cold:25},craft:800,bio:1},
+  {id:'y2',n:'Cœur de Givre',slot:'amulette',r:3,base:8,aff:{frz:8,critDmg:30},craft:800,bio:1},
+  {id:'y3',n:'Bottes de l\'Avalanche',slot:'bottes',r:3,base:14,aff:{speed:8,shard:12},craft:800,bio:1},
+  {id:'y4',n:'Anneau du Zéro absolu',slot:'anneau',r:3,base:18,aff:{cold:30,crit:6},craft:800,bio:1},
 ];
 const FRAG={archer:['Branches','Corde','Mécanisme'],guerrier:['Lame','Garde','Poignée'],magicien:['Hampe','Focus','Runes'],armure:['Plastron','Sangles','Doublure'],amulette:['Chaîne','Sertissure','Gemme'],bottes:['Tige','Semelle','Boucle'],anneau:['Anneau brut','Chaton','Pierre']};
 function bpdef(id){const w=wdef(id);if(w)return {...w,kind:'arme',frag:FRAG[w.cls]};const g=GEAR_BP.find(x=>x.id===id);return g?{...g,kind:g.slot,frag:FRAG[g.slot]}:null}
 /* ---------- Reliques ---------- */
 const RTIER=[{n:'Cendre',c:'#c9a46a'},{n:'Ossuaire',c:'#a9bccf'},{n:'Sanguine',c:'#e07a7a'},{n:'Abysse',c:'#f0cf4a'}];
+const RELICS_GIVRE={
+  fA1:{t:0,n:"Éclat de givre",bio:1,rw:['y1:0','y2:0','ess:30','y3:0','y4:0','y1:1']},
+  fB1:{t:1,n:"Larme gelée",bio:1,rw:['y2:1','y3:1','gold:200','y4:1','y1:2','y2:2']},
+  fC1:{t:2,n:"Cœur d'hiver",bio:1,rw:['y3:2','y4:2','ess:80','y1:1','y2:1','y3:1']},
+  fD1:{t:3,n:"Couronne du Blizzard",bio:1,rw:['y4:0','y1:0','ess:150','y2:2','y3:2','y4:2']},
+};
 const RELICS={
   lA1:{t:0,n:"Dent du Pèlerin",rw:['a1:0','g1:0','ess:20','m1:1','a2:0','g2:2']},
   lB1:{t:0,n:"Larme de suie",rw:['m1:0','a1:1','gold:80','g1:1','m2:0','a2:2']},
@@ -87,7 +106,8 @@ const RELICS={
   xD1:{t:3,n:"Sablier noir",rw:['x6:1','x5:0','gold:300','x6:2','x5:2','x6:0']},
 };
 const RW_RAR=[0,0,0,1,1,2], CH=[[25.33,11,2],[16.67,20,10]], REACT_N=10;
-const relicName=id=>`${RELICS[id].n} (${RTIER[RELICS[id].t].n})`;
+Object.assign(RELICS,RELICS_GIVRE);
+const relicName=id=>`${RELICS[id].n} (${RTIER[RELICS[id].t].n}${RELICS[id].bio?' · givre':''})`;
 function rollRelic(id,rad){const ch=CH[rad?1:0];let x=Math.random()*100;for(let i=0;i<6;i++){x-=ch[RW_RAR[i]];if(x<0)return RELICS[id].rw[i]}return RELICS[id].rw[0]}
 function rwLabel(r){const [k,v]=r.split(':');if(k==='ess')return `Essence ×${v}`;if(k==='gold')return `${v} or`;const b=bpdef(k);return `${b.n} · ${b.frag[+v]}`}
 const MODES={
@@ -282,6 +302,9 @@ const AFF={
   speed:{t:v=>`+${v} % de vitesse de déplacement`,r:l=>ri(4,9)},
   regen:{t:v=>`+${v} PV par seconde`,r:l=>ri(1,2)+Math.floor(l/4)},
   cdr:{t:v=>`−${v} % de temps de recharge`,r:l=>ri(5,12)},
+  frz:{t:v=>`+${v} % de chances de geler l'ennemi 1 s`,r:l=>ri(4,8)+Math.floor(l*.04),bio:1},
+  cold:{t:v=>`+${v} % de dégâts contre les ennemis ralentis ou gelés`,r:l=>ri(12,22)+Math.floor(l*.3),bio:1},
+  shard:{t:v=>`${v} % de chances qu'un ennemi tué éclate en glace`,r:l=>ri(6,12)+Math.floor(l*.05),bio:1},
   skillRad:{t:v=>`+${v} % de portée des compétences`,r:l=>ri(10,20)+Math.floor(l*.5)},
   novaPct:{t:v=>`+${v} % de dégâts de compétence`,r:l=>ri(20,45)},
   burn:{t:v=>`Embrase : ${v} dégâts par seconde`,w:1},
@@ -300,12 +323,14 @@ function genItem(l,minR=0){
   let r=Math.max(rollRarity(l+lv('luc')*3),minR);const DQ=G?dif():{anc:0,aq:0};if(DQ.anc&&Math.random()<DQ.anc*(minR>=1?3:1))r=4;const slot=pick(['armure','amulette','bottes','anneau']), bk=BASE_STAT[slot];
   const bv=slot==='armure'?Math.round(20+l*7+rand(-4,6)):slot==='bottes'?ri(4,8)+Math.floor(l/4):slot==='anneau'?ri(5,10)+Math.floor(l*.8):ri(2,5);
   const it={id:uid++,slot,r,lvl:l,base:{k:bk,v:bv},aff:{}};
-  let pool=Object.keys(AFF).filter(k=>!AFF[k].w);const chosen=[];
+  const bio=(typeof G!=='undefined'&&G&&G.biome)||0;
+  let pool=Object.keys(AFF).filter(k=>!AFF[k].w&&(!AFF[k].bio||bio===AFF[k].bio));const chosen=[];
+  if(bio){const fr=pool.filter(k=>AFF[k].bio);if(Math.random()<.45){const k=pick(fr);chosen.push(k);pool=pool.filter(x=>x!==k)}}
   while(chosen.length<RAR[r].aff&&pool.length){const k=pick(pool);pool=pool.filter(x=>x!==k);chosen.push(k)}
   for(const k of chosen){let v=AFF[k].r(l);if(r===3)v=v*1.3;if(r===4)v=v*1.6;v=Math.round(v*(1+(DQ.aq||0)));it.aff[k]=Math.max(1,v)}
-  const base=pick(BASES[slot]);
-  if(r===4)it.base.v=Math.round(it.base.v*1.25);
-  it.name=r===4?`${pick(LEGEND[slot])} ancestral`:r===3?pick(LEGEND[slot]):r===0?base:`${base} ${pick(SUFFIX)}`;
+  const base=pick(bio?BASES_GIVRE[slot]:BASES[slot]),LG=bio?LEGEND_GIVRE:LEGEND;
+  if(r===4)it.base.v=Math.round(it.base.v*1.25);if(bio)it.bio=bio;
+  it.name=r===4?`${pick(LG[slot])} ancestral`:r===3?pick(LG[slot]):r===0?base:`${base} ${pick(SUFFIX)}`;
   it.type=base;
   return it;
 }
@@ -325,7 +350,7 @@ function rollPart(){
 const partLabel=p=>{const w=bpdef(p.w);return `<span style="color:${RAR[w.r].c}">${w.n}</span> · ${w.frag[p.p]}`};
 
 function stats(eq){
-  const b=CLS[heroCls].base,s={dmg:b.dmg,aps:b.aps,hp:b.hp,crit:b.crit,critDmg:150,multi:0,pierce:0,burn:0,armor:b.armor,speed:b.speed,regen:0,cdr:b.cdr,novaPct:0,dmgPct:0,apsPct:0,leech:0,reach:0,splash:0,burnPct:0,chill:0,shock:0,skillRad:0,skillDur:0,dashCd:0,potHeal:0,magnetPct:0,lowArmor:0,lowDmg:0,auraSlow:0,goldPct:0,antidote:0};
+  const b=CLS[heroCls].base,s={dmg:b.dmg,aps:b.aps,hp:b.hp,crit:b.crit,critDmg:150,multi:0,pierce:0,burn:0,armor:b.armor,speed:b.speed,regen:0,cdr:b.cdr,novaPct:0,dmgPct:0,apsPct:0,leech:0,reach:0,splash:0,burnPct:0,chill:0,shock:0,skillRad:0,skillDur:0,dashCd:0,potHeal:0,magnetPct:0,lowArmor:0,lowDmg:0,auraSlow:0,goldPct:0,antidote:0,frz:0,cold:0,shard:0};
   for(const it of Object.values(eq))if(it){const m=upMul(it.up);s[it.base.k]+=it.base.v*m;for(const k in it.aff)s[k]+=NOSCALE[k]?it.aff[k]:it.aff[k]*m}
   for(const id of allMods(heroCls))s[MODS[id].k]+=modVal(id,meta.mods[id]);
   const R=(G&&G.run)||{},rr=k=>R[k]||0;
@@ -340,7 +365,7 @@ function stats(eq){
   if(cb){if(heroCls==='archer')s.pierce+=1;else if(heroCls==='magicien')s.splash+=50;else{s.reach+=30;s.apsPct+=25}}
   const dmg=s.dmg*(1+s.dmgPct/100);
   return {shotSpd:cb&&heroCls==='archer'?1.5:1,dmg,aps:s.aps*(1+s.apsPct/100),hp:s.hp,crit:Math.min(s.crit,75),critDmg:s.critDmg,multi:s.multi,pierce:s.pierce,burn:s.burn+dmg*s.burnPct/100,chill:s.chill,shock:s.shock,
-    armor:Math.min(s.armor,60),speed:220*(1+s.speed/100),regen:s.regen,cdr:Math.min(s.cdr,50),nova:dmg*4*(1+s.novaPct/100),leech:s.leech,reach:s.reach,splash:Math.min(s.splash,300),magnet:s.magnet,skillRad:Math.min(s.skillRad,300),skillDur:s.skillDur,dashCd:Math.min(s.dashCd,60),potHeal:s.potHeal,lowArmor:Math.min(s.lowArmor,60),lowDmg:s.lowDmg,auraSlow:Math.min(s.auraSlow,50),goldPct:s.goldPct,antidote:s.antidote,execute:s.execute||0,bossDmg:s.bossDmg||0,xpPct:s.xpPct||0,lootPct:s.lootPct||0,echo:s.echo||0,waves:s.waves||0};
+    armor:Math.min(s.armor,60),speed:220*(1+s.speed/100),regen:s.regen,cdr:Math.min(s.cdr,50),nova:dmg*4*(1+s.novaPct/100),leech:s.leech,reach:s.reach,splash:Math.min(s.splash,300),magnet:s.magnet,skillRad:Math.min(s.skillRad,300),skillDur:s.skillDur,dashCd:Math.min(s.dashCd,60),potHeal:s.potHeal,lowArmor:Math.min(s.lowArmor,60),lowDmg:s.lowDmg,auraSlow:Math.min(s.auraSlow,50),goldPct:s.goldPct,antidote:s.antidote,execute:s.execute||0,bossDmg:s.bossDmg||0,xpPct:s.xpPct||0,lootPct:s.lootPct||0,echo:s.echo||0,waves:s.waves||0,frz:Math.min(s.frz,40),cold:s.cold,shard:Math.min(s.shard,60)};
 }
 const dps=S=>S.dmg*S.aps*(1+S.crit/100*(S.critDmg/100-1))*(1+S.multi*.8)*(1+S.echo/100)*(1+S.waves*.5)*(heroCls==='archer'?1:1.2)+S.burn;
 

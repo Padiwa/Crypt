@@ -68,7 +68,7 @@ function bpCard(b){
   else foot=`<div class="parts">${b.frag.map((n,i)=>`<span class="part${pc[i]?' have':''}">${n}${pc[i]>1?' ×'+pc[i]:''}</span>`).join('')}</div>
     <button class="btn main buy" data-cact="craft" data-arg="${b.id}" ${ready&&meta.gold>=cost&&true?'':'disabled'}>Fabriquer · <span class="coin"></span>${cost}</button>`;
   const src=own||b.bp===0?'':`<div class="meta">Fragments dans les reliques :</div><div class="parts">${relicBtns(b.id)}</div>`;
-  return `<div class="wpn${eq&&mine?' on':''}"><div class="nm" style="color:${r.c}">${b.n}</div><div class="meta">${r.n} · ${isW?'Arme · '+CLS[b.cls].n:SLOT[b.slot]+' Prime · toutes classes'} · ${baseTxt}</div>
+  return `<div class="wpn${eq&&mine?' on':''}"><div class="nm" style="color:${r.c}">${b.n}</div><div class="meta">${r.n} · ${isW?'Arme · '+CLS[b.cls].n:SLOT[b.slot]+' Prime · toutes classes'+(b.bio?' · ❄ Abîmes gelés':'')} · ${baseTxt}</div>
     <ul>${Object.keys(b.aff).map(k=>`<li>${AFF[k].t(b.aff[k])}</li>`).join('')||'<li>Aucun bonus</li>'}</ul>
     ${src}<div class="wfoot">${foot}</div></div>`;
 }
@@ -174,8 +174,8 @@ function xfCard(lab,it,where,lines,extra=''){
   return `<div class="xfc${extra}"><span class="lab">${lab}</span>${it?`<span class="nm" style="color:${RAR[it.r].c}">${esc(itemName(it))}</span><span class="sub">${RAR[it.r].n} · ${where}</span>
     <ul><li class="base">${baseTxtOf(it.slot,fmtN(it.base.v*upMul(it.up)))}</li>${lines}</ul>`:`<span class="sub">${lines}</span>`}</div>`}
 let afF='all',afP=0,afCat='all',afOpen='';
-const AFF_CAT={dmgPct:'off',apsPct:'off',crit:'off',critDmg:'off',novaPct:'off',skillRad:'off',burn:'off',multi:'off',pierce:'off',reach:'off',splash:'off',hp:'def',armor:'def',regen:'def',leech:'def',speed:'uti',cdr:'uti'};
-const AFF_NAME={dmgPct:'Dégâts',apsPct:'Vitesse d\'attaque',crit:'Chances de critique',critDmg:'Dégâts critiques',hp:'Points de vie',armor:'Réduction des dégâts',speed:'Vitesse de déplacement',regen:'Régénération',cdr:'Temps de recharge',skillRad:'Portée des compétences',novaPct:'Dégâts de compétence',burn:'Embrasement',multi:'Projectiles par tir',leech:'Vol de vie',reach:'Portée de frappe',splash:'Rayon d\'explosion',pierce:'Transpercement'};
+const AFF_CAT={frz:'off',cold:'off',shard:'off',dmgPct:'off',apsPct:'off',crit:'off',critDmg:'off',novaPct:'off',skillRad:'off',burn:'off',multi:'off',pierce:'off',reach:'off',splash:'off',hp:'def',armor:'def',regen:'def',leech:'def',speed:'uti',cdr:'uti'};
+const AFF_NAME={frz:'Gel',cold:'Dégâts contre ralentis',shard:'Éclats de glace',dmgPct:'Dégâts',apsPct:'Vitesse d\'attaque',crit:'Chances de critique',critDmg:'Dégâts critiques',hp:'Points de vie',armor:'Réduction des dégâts',speed:'Vitesse de déplacement',regen:'Régénération',cdr:'Temps de recharge',skillRad:'Portée des compétences',novaPct:'Dégâts de compétence',burn:'Embrasement',multi:'Projectiles par tir',leech:'Vol de vie',reach:'Portée de frappe',splash:'Rayon d\'explosion',pierce:'Transpercement'};
 const AFF_CATN={off:'Offensives',def:'Défensives',uti:'Utilitaires'};
 const affShort=(k,v)=>{const pct=!['hp','regen','burn','multi','pierce'].includes(k),neg=k==='armor'||k==='cdr';return `${neg?'−':'+'}${fmtN(v)}${pct?' %':k==='regen'?' PV/s':k==='burn'?' /s':''}`};
 const affEff=(it,k)=>NOSCALE[k]?it.aff[k]:it.aff[k]*upMul(it.up);
@@ -408,13 +408,14 @@ function openCamp(){$('camp').hidden=false;campSel=null;campMsg='';recyConfirm=f
 function closeCamp(){$('camp').hidden=true;if(!started)newGame();refreshMenus()}
 function refreshMenus(){
   $('introGold').textContent=meta.gold;
-  const st=clamp(meta.start|0||1,1,LV_MAX);$('startBtn').textContent=`Lancer · ${MODES[meta.mode].n} · niveau ${st}${meta.diff?` · ${dif().n}`:''}`;
+  const st=clamp(meta.start|0||1,1,LV_MAX);$('startBtn').textContent=`Lancer · ${MODES[meta.mode].n} · niveau ${st}${meta.diff?` · ${dif().n}`:''}${meta.biome?' · '+BIOMES[meta.biome].n:''}`;
   if(document.activeElement!==$('lvIn'))$('lvIn').value=st;
   const lm=lootMul(st);$('lvDesc').innerHTML=st===1?'Niveau de base. Monte le niveau pour plus de butin, mais des monstres plus nombreux et plus forts.'
     :`Butin ×${lm.toFixed(2).replace(/\.?0+$/,'').replace('.',',')} (équipements, reliques, fragments) · or ×${goldMul(st).toFixed(1).replace('.',',')} · monstres : vie ×${fmtN((1+.75*(st-1))*Math.pow(1.025,st-1))}, dégâts ×${fmtN((1+.35*(st-1))*Math.pow(1.012,st-1))}, plus nombreux`;
   $('bestTxt').textContent=best?`Ton record : ${fmt(best)} en mission`:'';
   document.querySelectorAll('.cls[data-m]').forEach(b=>b.setAttribute('aria-checked',String(b.dataset.m===meta.mode)));
   $('modeDesc').textContent=MODES[meta.mode].d;
+  {const bi=Math.max(0,Math.min(BIOMES.length-1,meta.biome|0));$('bioSel').innerHTML=BIOMES.map((b,i)=>`<button class="chip" role="radio" data-bio="${i}" aria-checked="${i===bi}" aria-pressed="${i===bi}">${i?'❄ ':''}${b.n}</button>`).join('');$('bioDesc').textContent=BIOMES[bi].d}
   relicQFix();const rn=meta.relicQ.length,rt=Object.values(meta.relics).reduce((n,a)=>n+(a[0]||0)+(a[1]||0),0);
   $('relicBtn').textContent=rn?`${rn} · Gérer`:rt?'Aucune · Équiper':'Aucune relique';$('relicBtn').disabled=!rt;
   const D=dif(),di=Math.max(0,Math.min(3,meta.diff|0));
@@ -427,6 +428,7 @@ const setLv=v=>{meta.start=clamp(Math.round(+v)||1,1,LV_MAX);saveMeta();newGame(
 $('lvMinus').onclick=()=>setLv((meta.start|0||1)-1);$('lvPlus').onclick=()=>setLv((meta.start|0||1)+1);
 $('lvIn').addEventListener('change',e=>{setLv(e.target.value);e.target.value=meta.start});
 $('relicBtn').onclick=()=>{campTab='relics';openCamp()};
+$('bioSel').addEventListener('click',e=>{const b=e.target.closest('[data-bio]');if(!b)return;meta.biome=+b.dataset.bio;saveMeta();newGame();refreshMenus()});
 const setTorm=v=>{meta.torm=Math.max(1,Math.min(10,v));saveMeta();newGame();refreshMenus()};
 $('tormMinus').onclick=()=>setTorm((meta.torm|0||1)-1);$('tormPlus').onclick=()=>setTorm((meta.torm|0||1)+1);
 $('diffSel').addEventListener('click',e=>{const b=e.target.closest('[data-d]');if(!b)return;meta.diff=+b.dataset.d;saveMeta();newGame();refreshMenus()});

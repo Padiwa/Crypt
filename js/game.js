@@ -9,6 +9,7 @@ const ETYPE={
   brute:{r:26,hp:70,spd:66,dmg:18,col:'#7a2f30'},
   poison:{r:15,hp:22,spd:80,dmg:6,col:'#5f8f3e'},
   pyro:{r:15,hp:24,spd:80,dmg:6,col:'#b5532a'},
+  givrin:{r:15,hp:26,spd:108,dmg:7,col:'#9cc8e8'},
   slime:{r:22,hp:34,spd:72,dmg:8,col:'#3f9e8c'},
   boss:{r:50,hp:650,spd:60,dmg:22,col:'#3d2150'},
 };
@@ -26,6 +27,7 @@ function newGame(){
   if(heroCls==='magicien'&&hasTal('m_shield'))G.P.shield=S.hp*.25;
   G.cam={x:G.P.x,y:G.P.y};
   genMap();
+  G.biome=clamp(meta.biome|0,0,BIOMES.length-1);if(floorPat&&floorPat.__b!==G.biome)floorPat=null;
   G.mode=meta.mode;G.relic=null;G.react=0;G.cracked=false;G.ult=0;G.bossT=bossIv();G.pod=null;G.target=null;G.exitPt=null;G.capT=0;G.extT=0;
   relicQFix();G.relQ=meta.relicQ.map(q=>({id:q.id,rad:!!q.rad}));G.relI=0;G.opened=[];G.relic=G.relQ[0]||null;
   if(G.mode==='defense'){const m=1200*(1+.5*(L-1));G.pod={x:MAP/2,y:MAP/2,r:28,hp:m,max:m,flash:0};G.pillars.push(G.pod);G.P.y+=110;G.cam.y=G.P.y;G.wave=0;G.waveState='break';G.waveT=3;G.toSpawn=0}
@@ -52,11 +54,11 @@ function spawnTarget(){
     state:'walk',slow:0,timer:0,blink:4,shown:0,wob:rand(0,6),downed:false};
   G.en.push(G.target);
 }
-function relicDrop(){const t=clamp(G.level-1+(Math.random()<.25?-1:Math.random()<.1?1:0),0,3);return pick(Object.keys(RELICS).filter(id=>RELICS[id].t===t))}
+function relicDrop(){const t=clamp(G.level-1+(Math.random()<.25?-1:Math.random()<.1?1:0),0,3),frost=G.biome===1&&Math.random()<.5;return pick(Object.keys(RELICS).filter(id=>RELICS[id].t===t&&(frost?RELICS[id].bio===1:!RELICS[id].bio)))}
 const LV_MAX=50;
 const lootMul=L=>1+.06*(L-1);
 const goldMul=L=>1+.15*(L-1);
-function diff(){const L=G.level,f=G.mode==='defense'?Math.max(0,((G.wave||1)-1)%5)/5:Math.min(1.5,G.tl/LEVEL_T);const D=dif();return {hs:1.2*D.hp*(1+.75*(L-1))*Math.pow(1.025,L-1)*(1+.35*f),ds:1.15*D.dm*(1+.35*(L-1))*Math.pow(1.012,L-1)*(1+.15*f)}}
+function diff(){const L=G.level,f=G.mode==='defense'?Math.max(0,((G.wave||1)-1)%5)/5:Math.min(1.5,G.tl/LEVEL_T);const D=dif();return {hs:1.2*biome().hp*D.hp*(1+.75*(L-1))*Math.pow(1.025,L-1)*(1+.35*f),ds:1.15*biome().dm*D.dm*(1+.35*(L-1))*Math.pow(1.012,L-1)*(1+.15*f)}}
 function spawnEnemy(s){
   const d=ETYPE[s.type],{hs,ds}=diff(),bm=s.type==='boss'?(1+.25*G.bossN):1;
   const gn=s.type==='slime'?(s.gen||0):0,gr=[1,.66,.45][gn],gh=[1,.45,.2][gn],gs=[1,1.2,1.45][gn];
@@ -82,7 +84,7 @@ function chooseType(tt,L){const x=Math.random();
   if((tt>50||L>1)&&x<.26)return ['brute',1];
   if((tt>30||L>1)&&x>=.5&&x<.58)return ['slime',ri(1,2)];
   if(tt>25&&x<.5)return ['archer',ri(1,2)];
-  return ['ghoul',ri(2,4)];}
+  return G.biome===1&&x>.35?['givrin',ri(2,3)]:['ghoul',ri(2,4)];}
 const ELITE={rapide:{n:'Rapide',c:'#8fd3e0'},bouclier:{n:'Bouclier',c:'#c8d6e6'},vampire:{n:'Vampire',c:'#ff5a6a'},explosif:{n:'Explosif',c:'#ff8a3a'}};
 function makeElite(e){const k=pick(Object.keys(ELITE));e.elite=k;e.hp*=4;e.max*=4;e.r*=1.25;e.dmg*=1.3;if(k==='rapide')e.spd*=1.55;e.corr=false;
   SND.play('elite');banner(`Élite ${ELITE[k].n} en approche`,ELITE[k].c,1)}
@@ -114,16 +116,17 @@ function spawner(dt){
 }
 
 /* ---------- Sol (motif) ---------- */
-function buildTile(){
+function buildTile(bi){
+  const B=BIOMES[bi==null?(G?G.biome:0):bi]||BIOMES[0],TL=B.tile;
   const S=512,c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d');
   g.fillStyle='#0a080c';g.fillRect(0,0,S,S);
   const TW=64,TH=32;
   for(let row=0;row<S/TH;row++)for(let col=-1;col<S/TW+1;col++){
-    const x=col*TW+(row%2?TW/2:0),y=row*TH,l=12.5+Math.random()*4;g.fillStyle=`hsl(285 9% ${l}%)`;g.fillRect(x+1.5,y+1.5,TW-3,TH-3)}
+    const x=col*TW+(row%2?TW/2:0),y=row*TH,l=12.5+Math.random()*4;g.fillStyle=`hsl(${TL.h} ${TL.s}% ${l-12.5+TL.l}%)`;g.fillRect(x+1.5,y+1.5,TW-3,TH-3)}
   g.strokeStyle='rgba(0,0,0,.5)';g.lineWidth=1.2;
   for(let i=0;i<14;i++){let x=rand(30,S-30),y=rand(30,S-30);g.beginPath();g.moveTo(x,y);for(let k=0;k<4;k++){x+=rand(-16,16);y+=rand(-16,16);g.lineTo(x,y)}g.stroke()}
-  for(let i=0;i<4;i++){const x=rand(70,S-70),y=rand(70,S-70),r=rand(20,50),gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,'rgba(110,25,30,.22)');gr.addColorStop(1,'rgba(110,25,30,0)');g.fillStyle=gr;g.fillRect(x-r,y-r,r*2,r*2)}
-  g.strokeStyle='rgba(214,204,180,.16)';g.lineWidth=3;g.lineCap='round';
+  for(let i=0;i<4;i++){const x=rand(70,S-70),y=rand(70,S-70),r=rand(20,50),gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,`rgba(${B.stain},.22)`);gr.addColorStop(1,`rgba(${B.stain},0)`);g.fillStyle=gr;g.fillRect(x-r,y-r,r*2,r*2)}
+  g.strokeStyle=`rgba(${B.chip},.16)`;g.lineWidth=3;g.lineCap='round';
   for(let i=0;i<4;i++){const x=rand(40,S-40),y=rand(40,S-40),a=rand(0,6);g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(a)*16,y+Math.sin(a)*16);g.stroke()}
   return c;
 }
@@ -146,6 +149,7 @@ function dmgEnemy(e,d,crit,dot){
   if(!dot&&S.execute&&e.hp<e.max*.3)d*=1+S.execute/100;
   if(S.bossDmg&&e.type==='boss')d*=1+S.bossDmg/100;
   if(e.elite==='bouclier'&&e.hp>e.max*.5)d*=.5;
+  if(S.cold&&(e.slow>0||e.frz>0))d*=1+S.cold/100;
   e.hp-=d;e.shown=2;
   if(!dot&&crit)critTick();
   if(!dot){SND.play(crit?'crit':'hit');e.flash=1;if(SET.dmgNum&&(crit||G.en.length<60))ftext(e.x+rand(-8,8),e.y-e.r,Math.round(d)+(crit?'!':''),crit?'#ffd34d':'#f1e8d6',crit?20:15)}
@@ -162,12 +166,15 @@ let lfT=0;
 function lootFlash(w,it){const now=performance.now(),el=$('lootFlash');
   if(now-lfT>350){lfT=now;SND.play(w.leg?'leg':'wish');vibe([30,40,30]);if(SET.flash){el.className='';void el.offsetWidth;el.className='on'+(w.leg?' leg':'')}}
 }
+function shatter(e){G.rings.push({x:e.x,y:e.y,t:0,max:95,col:'170,225,255'});burst(e.x,e.y,14,'#cfefff',180,3);SND.play('crit');G._sh=(G._sh||0)+1;
+  if(G._sh<4)for(const o of G.en){if(!o.dead&&o!==e&&Math.abs(o.x-e.x)<120&&Math.hypot(o.x-e.x,o.y-e.y)<85+o.r){o.slow=Math.max(o.slow,1.5);dmgEnemy(o,S.dmg*1.5,false)}}G._sh--}
 function kill(e){
   e.dead=true;G.kills++;
+  if(S.shard&&Math.random()*100<S.shard)shatter(e);
   if(e.type==='slime'&&e.gen<2){burst(e.x,e.y,14,'#7fe0c8',150,3);
     for(const sd of[-1,1]){const a=rand(0,Math.PI*2)*0+Math.atan2(e.y-G.P.y,e.x-G.P.x)+sd*Math.PI/2+rand(-.4,.4);
       G.spawns.push({type:'slime',gen:e.gen+1,split:1,tgtPod:e.tgtPod,x:clamp(e.x+Math.cos(a)*e.r*.6,EDGE+30,MAP-EDGE-30),y:clamp(e.y+Math.sin(a)*e.r*.6,EDGE+30,MAP-EDGE-30),kx:Math.cos(a)*260,ky:Math.sin(a)*260,t:.12})}}
-  const boss=e.type==='boss',L=G.level,DL=dif().loot,dl=1+DL*.5,lm=lootMul(L)*(1+(S.lootPct||0)/100)*(1+DL*.15);
+  const boss=e.type==='boss',L=G.level,DL=dif().loot,dl=1+DL*.5,lm=lootMul(L)*(1+(S.lootPct||0)/100)*(1+DL*.15)*biome().loot;
   G.ult=Math.min(ultNeed(),(G.ult||0)+(boss?10:1));
   burst(e.x,e.y,boss?60:10,e.col,boss?320:150,4);burst(e.x,e.y,boss?20:4,'#e8853b',120);
   const push=(o,s=20)=>{const d=Object.assign({x:e.x+rand(-s,s),y:e.y+rand(-s,s),t:rand(0,6),age:0,mt:0},o);G.drops.push(d);if(o.kind==='item'){const w=wishMatch(o.item);if(w){d.wish=1;lootFlash(w,o.item)}}};
@@ -181,19 +188,19 @@ function kill(e){
     if(!G.en.some(o=>o.type==='boss'&&!o.dead))$('bossBar').hidden=true;
   }else{
     const t=e.type;
-    if(Math.random()<({ghoul:.006,bat:.002,archer:.008,poison:.008,pyro:.008,brute:.035,slime:.0035})[t]*lm)push({kind:'item',item:genItem(itemLvl())});
-    if(Math.random()<({ghoul:.003,bat:.001,archer:.004,poison:.004,pyro:.004,brute:.025,slime:.0018})[t]*lm)push({kind:'relic',id:relicDrop()});
-    if(L>1&&Math.random()<({ghoul:.0015,bat:.0005,archer:.002,poison:.002,pyro:.002,brute:.012,slime:.0009})[t]*(lm-1))push({kind:'part',part:rollPart()});
+    if(Math.random()<({ghoul:.006,bat:.002,archer:.008,poison:.008,pyro:.008,brute:.035,slime:.0035,givrin:.007})[t]*lm)push({kind:'item',item:genItem(itemLvl())});
+    if(Math.random()<({ghoul:.003,bat:.001,archer:.004,poison:.004,pyro:.004,brute:.025,slime:.0018,givrin:.0035})[t]*lm)push({kind:'relic',id:relicDrop()});
+    if(L>1&&Math.random()<({ghoul:.0015,bat:.0005,archer:.002,poison:.002,pyro:.002,brute:.012,slime:.0009,givrin:.0018})[t]*(lm-1))push({kind:'part',part:rollPart()});
     if(e.corr)push({kind:'react'},6);
-    if(Math.random()<({ghoul:.006,bat:.002,archer:.008,poison:.008,pyro:.008,brute:.06,slime:.004})[t])push({kind:'mod',id:rollMod(false)});
+    if(Math.random()<({ghoul:.006,bat:.002,archer:.008,poison:.008,pyro:.008,brute:.06,slime:.004,givrin:.007})[t])push({kind:'mod',id:rollMod(false)});
     if(Math.random()<(t==='brute'?.05:.005))push({kind:'potion'});
   }
   if(e.elite){push({kind:'item',item:genItem(itemLvl(),1)},30);if(Math.random()<.4)push({kind:'item',item:genItem(itemLvl(),1)},30);if(Math.random()<.3*lm)push({kind:'relic',id:relicDrop()},30);
     if(e.elite==='explosif')G.lobs.push({x0:e.x,y0:e.y,tx:e.x,ty:e.y,t:0,T:.7,kind:'pyro',r:95,dps:2*diff().ds});
     burst(e.x,e.y,30,ELITE[e.elite].c,240,4);SND.play('bossdie');toast(`<b style="color:${ELITE[e.elite].c}">Élite ${ELITE[e.elite].n} vaincue</b>`)}
-  const gv=({ghoul:1,bat:.6,archer:1.5,poison:1.5,pyro:1.5,brute:5,boss:50,slime:.8})[e.type]*goldMul(L)*dl*(e.elite?5:1),n=boss?8:e.elite?5:(Math.random()<Math.min(1,(e.type==='bat'?.35:.65)*(1+.05*(L-1)))?1:0);
+  const gv=({ghoul:1,bat:.6,archer:1.5,poison:1.5,pyro:1.5,brute:5,boss:50,slime:.8,givrin:1.2})[e.type]*goldMul(L)*dl*(e.elite?5:1),n=boss?8:e.elite?5:(Math.random()<Math.min(1,(e.type==='bat'?.35:.65)*(1+.05*(L-1)))?1:0);
   for(let i=0;i<n;i++)push({kind:'gold',amt:Math.max(1,Math.round(gv/(boss?8:1)*rand(.7,1.3)))},boss?45:15);
-  const xv=({ghoul:1,bat:1,archer:2,poison:2,pyro:2,brute:5,boss:30,slime:1})[e.type]*(e.elite?6:1);
+  const xv=({ghoul:1,bat:1,archer:2,poison:2,pyro:2,brute:5,boss:30,slime:1,givrin:1})[e.type]*(e.elite?6:1);
   if(G.nxp>220){for(let k=0;k<12;k++){const o=G.drops[Math.floor(Math.random()*G.drops.length)];if(o&&o.kind==='xp'){o.v+=xv;break}}}
   else{push({kind:'xp',v:xv},6);G.nxp++}
   if(G.cls==='guerrier'&&hasTal('g_blood'))heal(S.hp*.02);
@@ -208,7 +215,7 @@ function hurt(d){
   if(P.hp<=0){P.hp=0;gameOver()}
 }
 function heal(v){G.P.hp=Math.min(S.hp,G.P.hp+v)}
-function onHit(e,d){if(S.chill&&Math.random()*100<S.chill)e.slow=2;if(S.shock&&Math.random()*100<S.shock)chain(e,d*.6)}
+function onHit(e,d){if(S.frz&&e.type!=='boss'&&Math.random()*100<S.frz){e.frz=1;e.slow=Math.max(e.slow,1.5)}if(S.chill&&Math.random()*100<S.chill)e.slow=2;if(S.shock&&Math.random()*100<S.shock)chain(e,d*.6)}
 function gainMod(id){
   const m=MODS[id],c=MOD_RAR[m.r].c;
   if(meta.mods[id]==null){
@@ -343,16 +350,18 @@ function update(dt){
     if(G.pod&&Math.hypot(G.pod.x-z.x,G.pod.y-z.y)<z.r+G.pod.r)podHurt(z.dps*(z.kind==='pyro'?2:1.2)*dt)}
   compact(G.zones,z=>z.life>0);
   if(P.psnT>0){P.psnT-=dt;dotHurt(P.psn*P.psnD*dt);if(P.psnT<=0){P.psn=0;P.psnD=0}}
+  if(P.frzT>0)P.frzT-=dt;
+  if(G.biome===1&&Math.random()<dt*16&&G.parts.length<420)G.parts.push({x:G.cam.x+rand(-G.vw/2,G.vw/2),y:G.cam.y+rand(-G.vh/2,G.vh/2),vx:rand(-12,12),vy:rand(18,42),life:2.4,max:2.4,col:'#e4f4ff',size:rand(1,2.2)});
   if(P.brnT>0){P.brnT-=dt;dotHurt(P.brnD*dt);if(Math.random()<dt*10)G.parts.push({x:P.x+rand(-8,8),y:P.y+rand(-6,6),vx:0,vy:-60,life:.5,max:.5,col:'#ff8a3a',size:3})}
   if(G.over)return;
   for(const l of G.lobs){l.t+=dt;if(l.t>=l.T){l.done=true;const life=l.kind==='poison'?5:3;G.zones.push({x:l.tx,y:l.ty,r:l.r,life,max:life,kind:l.kind,dps:l.dps});burst(l.tx,l.ty,14,l.kind==='poison'?'#7fd36a':'#ff8a3a',140,3)}}
   compact(G.lobs,l=>!l.done);
   for(const w of G.wells){if(!w.on){w.cd-=dt;if(w.cd<=0)placeWell(w)}
-    else if((P.psnT>0||P.brnT>0)&&Math.hypot(P.x-w.x,P.y-w.y)<w.r+P.r){P.psn=0;P.psnT=0;P.psnD=0;P.brnT=0;w.on=false;w.cd=30;burst(w.x,w.y,24,'#bfeaff',160,3);toast('<b style="color:#9fdcff">Source sacrée</b> : altérations purifiées. Elle réapparaîtra ailleurs.')}}
+    else if((P.psnT>0||P.brnT>0||P.frzT>0)&&Math.hypot(P.x-w.x,P.y-w.y)<w.r+P.r){P.psn=0;P.psnT=0;P.psnD=0;P.brnT=0;P.frzT=0;w.on=false;w.cd=30;burst(w.x,w.y,24,'#bfeaff',160,3);toast('<b style="color:#9fdcff">Source sacrée</b> : altérations purifiées. Elle réapparaîtra ailleurs.')}}
   if(P.cbT>0){P.cbT-=dt;if(Math.random()<dt*24){const a=rand(0,Math.PI*2);G.parts.push({x:P.x+Math.cos(a)*P.r*1.4,y:P.y+Math.sin(a)*P.r*1.4,vx:Math.cos(a)*30,vy:-50,life:.45,max:.45,col:'#ffd34d',size:3})}if(P.cbT<=0){P.cbT=0;refreshStats()}}
   if(G.cls==='magicien'&&hasTal('m_shield')){P.noHit+=dt;if(P.noHit>4)P.shield=Math.min(S.hp*.25,P.shield+S.hp*.08*dt)}
   if(moving){P.dx=iv.x/iv.m;P.dy=iv.y/iv.m;P.face=Math.atan2(P.dy,P.dx)}
-  let sp=S.speed*iv.m;
+  let sp=S.speed*iv.m*(P.frzT>0?.62:1);
   if(P.dashT>0){P.dashT-=dt;sp=S.speed*3.4;P.x+=P.dx*sp*dt;P.y+=P.dy*sp*dt;if(Math.random()<.6)G.parts.push({x:P.x,y:P.y,vx:0,vy:0,life:.25,max:.25,col:'#9fc2b8',size:P.r*.8})}
   else{P.x+=iv.x/(iv.m||1)*sp*dt;P.y+=iv.y/(iv.m||1)*sp*dt}
   resolve(P);
@@ -442,7 +451,7 @@ function update(dt){
         else{e.wob+=dt*.7;mx=Math.cos(e.wob)*.4;my=Math.sin(e.wob*1.3)*.4}
       }
     }
-    else if(e.type==='ghoul'){mx=ux;my=uy}
+    else if(e.type==='ghoul'||e.type==='givrin'){mx=ux;my=uy}
     else if(e.type==='slime'){e.timer-=dt;
       if(e.state==='walk'){const h=Math.max(0,Math.sin(G.t*5+e.wob));mx=ux*(.35+1.3*h);my=uy*(.35+1.3*h);
         if(e.timer<=0){if(d<170+e.r){e.state='wind';e.timer=[.45,.38,.3][e.gen];e.ang=Math.atan2(dy,dx)}else e.timer=.4}}
@@ -474,12 +483,12 @@ function update(dt){
         if(Math.random()<.5)G.parts.push({x:e.x,y:e.y+e.r*.6,vx:rand(-30,30),vy:rand(-30,30),life:.4,max:.4,col:'#5b4a52',size:4});
         if(e.timer<=0){e.state='walk';e.timer=boss?1.3:rand(2.5,4)}}
     }
-    e.slow-=dt;let sm=e.slow>0?.4:1;if(S.auraSlow&&dP<180)sm*=1-S.auraSlow/100;
+    e.slow-=dt;if(e.frz>0)e.frz-=dt;let sm=e.frz>0?0:e.slow>0?.4:1;if(S.auraSlow&&dP<180)sm*=1-S.auraSlow/100;
     e.x+=(mx*e.spd*sm+e.kx)*dt;e.y+=(my*e.spd*sm+e.ky)*dt;
     const f=Math.pow(.002,dt);e.kx*=f;e.ky*=f;
     if(resolve(e)&&e.state==='charge'){e.state='walk';e.timer=e.type==='boss'?1.6:e.type==='slime'?1.5:2.5;G.shake=Math.max(G.shake,e.type==='boss'?8:4);burst(e.x,e.y,10,'#6b5a60',150)}
     if(e.type!=='archer'&&e.type!=='cible'&&e.hitCd<=0){const cd=e.state==='charge'?e.dmg*1.4:e.dmg;
-      if(T!==P&&d<e.r+T.r+5){podHurt(cd);e.hitCd=.8}else if(dP<e.r+P.r){hurt(cd);e.hitCd=.8;if(e.elite==='vampire'){e.hp=Math.min(e.max,e.hp+e.max*.1);ftext(e.x,e.y-e.r,'+vie','#ff5a6a',13)}}}
+      if(T!==P&&d<e.r+T.r+5){podHurt(cd);e.hitCd=.8}else if(dP<e.r+P.r){hurt(cd);e.hitCd=.8;if(e.type==='givrin'){P.frzT=2.2*(1-Math.min(60,S.antidote||0)/100)}if(e.elite==='vampire'){e.hp=Math.min(e.max,e.hp+e.max*.1);ftext(e.x,e.y-e.r,'+vie','#ff5a6a',13)}}}
   }
   // séparation
   gridBuild();const L=G.en;

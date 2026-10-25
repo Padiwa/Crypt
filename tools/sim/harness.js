@@ -55,7 +55,7 @@ SIM.bot=function(){
   if(G.potions>0&&P.hp<S.hp*.42)doPotion();
 };
 SIM.run=function(o){
-  const t0=performance.now();SIM.profile(o.cls,o.tier);meta.mode='survie';meta.start=o.level;meta.diff=o.diff;meta.torm=o.torm||1;meta.wish={leg:false,aff:{}};
+  const t0=performance.now();SIM.profile(o.cls,o.tier);meta.mode='survie';meta.start=o.level;meta.diff=o.diff;meta.torm=o.torm||1;meta.biome=o.biome||0;meta.wish={leg:false,aff:{}};
   newGame();started=false;paused=true;$('intro').hidden=true;
   const S0=stats(G.eq),dps0=dps(S0),R={cls:o.cls,tier:o.tier,level:o.level,diff:o.diff,torm:o.torm||0,dps:Math.round(dps0),hp:Math.round(S0.hp),armor:Math.round(S0.armor),rounds:0,died:false,t:0,kills:0,gold:0,items:[0,0,0,0,0],dmgTaken:0,hl:1,potions:0,bossT:[],enMax:0,maxRounds:o.rounds||1};
   const ess0=meta.essence;let hp=G.P.hp,bossSeen={};
