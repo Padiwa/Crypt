@@ -72,9 +72,31 @@ function bpCard(b){
     <ul>${Object.keys(b.aff).map(k=>`<li>${AFF[k].t(b.aff[k])}</li>`).join('')||'<li>Aucun bonus</li>'}</ul>
     ${src}<div class="wfoot">${foot}</div></div>`;
 }
+let arsAsk=null;
+const bpCost=b=>b.kind==='arme'?Math.round(b.bp/2):b.craft;
+function craftPlan(){const ids=[...WPN[heroCls],...Object.keys(WPN).filter(c=>c!==heroCls).flatMap(c=>WPN[c]),...GEAR_BP].map(x=>x.id).filter(id=>bpdef(id).bp!==0||bpdef(id).kind!=='arme');
+  const parts={},plan=[];let gold=meta.gold;for(const id of ids)parts[id]=[...(meta.parts[id]||[0,0,0])];
+  for(const id of ids){const b=bpdef(id);if(b.kind==='arme'&&(ownedW(id)||b.bp===0))continue;
+    for(let n=0;n<(b.kind==='arme'?1:20);n++){const pc=parts[id],c=bpCost(b);if(!pc.every(x=>x>0)||gold<c)break;parts[id]=pc.map(x=>x-1);gold-=c;plan.push(id)}}
+  return {plan,cost:meta.gold-gold}}
+function recyPlan(){const ws=Object.keys(WPN).flatMap(c=>WPN[c].filter(w=>w.bp>0&&ownedW(w.id)&&(meta.wpn[c]||WPN[c][0].id)!==w.id));
+  const pr=meta.stash.filter(it=>primeBp(it)&&!it.lock);
+  return {ws,pr,ess:ws.reduce((a,w)=>a+wRecyEss(bpdef(w.id)),0)+pr.reduce((a,it)=>a+primeRecyEss(it),0)}}
+function craftOne(id){const b=bpdef(id),pc=meta.parts[id],cost=bpCost(b);if(!pc||!pc.every(x=>x>0)||meta.gold<cost)return false;if(b.kind==='arme'&&ownedW(id))return false;
+  meta.parts[id]=pc.map(x=>x-1);meta.gold-=cost;
+  if(b.kind==='arme'){meta.built[id]=true;if(b.cls===heroCls)meta.wpn[heroCls]=id}
+  else meta.stash.push({id:uid++,slot:b.slot,r:b.r,lvl:20,base:{k:BASE_STAT[b.slot],v:b.base},aff:{...b.aff},name:b.n,type:'Prime',bp:b.id});
+  return true}
+function arsBar(){const cp=craftPlan(),rp=recyPlan(),nr=rp.ws.length+rp.pr.length;
+  let h=`<div class="actions" style="margin:0"><button class="btn${cp.plan.length?' main':''}" data-cact="craftask" ${cp.plan.length?'':'disabled'}>Tout fabriquer${cp.plan.length?` · ${cp.plan.length}`:''}</button><button class="btn danger" data-cact="arecyask" ${nr?'':'disabled'}>Tout recycler${nr?` · ${nr}`:''}</button></div>`;
+  if(!cp.plan.length&&!nr)h+='<p class="cx-hint" style="margin:0">Rien à fabriquer (il faut les 3 fragments et l\'or) ni à recycler (armes fabriquées non équipées, objets Prime non verrouillés).</p>';
+  if(arsAsk==='craft'&&cp.plan.length){const cnt={};for(const id of cp.plan)cnt[id]=(cnt[id]||0)+1;
+    h+=`<div class="card"><p style="margin:0;font-size:14px">Fabriquer ${cp.plan.length} objet${cp.plan.length>1?'s':''} pour <b><span class="coin"></span> ${cp.cost} or</b> : ${Object.keys(cnt).map(id=>`<b style="color:${RAR[bpdef(id).r].c}">${bpdef(id).n}</b>${cnt[id]>1?' ×'+cnt[id]:''}`).join(', ')}. L'arme de ton héros fabriquée est équipée tout de suite ; les objets Prime vont au coffre.</p><div class="actions"><button class="btn main" data-cact="craftall">Tout fabriquer</button><button class="btn" data-cact="arsno">Annuler</button></div></div>`}
+  if(arsAsk==='recy'&&nr){h+=`<div class="card"><p style="margin:0;font-size:14px">Recycler ${nr} objet${nr>1?'s':''} fabriqué${nr>1?'s':''} : ${[...rp.ws.map(w=>`<b style="color:${RAR[w.r].c}">${w.n}</b>`),...rp.pr.map(it=>`<b style="color:${RAR[it.r].c}">${esc(itemName(it))}</b>`)].join(', ')}. Tu récupères <b>${rp.ess} essence</b> et 1 fragment de schéma par objet. Les armes équipées et les objets verrouillés sont gardés.</p><div class="actions"><button class="btn danger" data-cact="arecyall">Tout recycler</button><button class="btn" data-cact="arsno">Annuler</button></div></div>`}
+  return h}
 function campArsenal2(){
   const order=[heroCls,...Object.keys(CLS).filter(c=>c!==heroCls)];
-  return `${campMsg}<p class="empty" style="font-size:13px">Toutes les recettes. Chaque équipement se fabrique avec ses 3 fragments de schéma, trouvés dans les reliques. Équipe tes reliques ici ou à l'onglet Reliques : elles s'ouvrent en mission, une par une, tous les 10 réactifs (+25 essence chacune).</p>`
+  return `${campMsg}${arsBar()}<p class="empty" style="font-size:13px">Toutes les recettes. Chaque équipement se fabrique avec ses 3 fragments de schéma, trouvés dans les reliques. Équipe tes reliques ici ou à l'onglet Reliques : elles s'ouvrent en mission, une par une, tous les 10 réactifs (+25 essence chacune).</p>`
     +order.map(c=>`<h3>Armes · ${CLS[c].n}${c===heroCls?' · ton héros':''}</h3>`+WPN[c].filter((w,i)=>i>0||c===heroCls).map(w=>bpCard(bpdef(w.id))).join('')).join('')
     +`<h3>Équipement Prime · toutes classes</h3>`+GEAR_BP.map(g=>bpCard(bpdef(g.id))).join('');
 }
@@ -354,6 +376,12 @@ $('campSheet').addEventListener('click',e=>{
     else if(a==='wrecyno'){wRecy=null}
     else if(a==='wrecyok'){const b=bpdef(arg);if(b&&ownedW(arg)&&b.bp>0&&(meta.wpn[b.cls]||WPN[b.cls][0].id)!==arg){const e=wRecyEss(b);delete meta.built[arg];delete meta.wlv[arg];if(meta.waff)delete meta.waff[arg];meta.essence+=e;const i=giveFrag(arg);
       toast(`<b style="color:${RAR[b.r].c}">${b.n}</b> recyclée : +${e} essence et le fragment ${b.frag[i]}`)}wRecy=null}
+    else if(a==='craftask'){arsAsk=arsAsk==='craft'?null:'craft'}
+    else if(a==='arecyask'){arsAsk=arsAsk==='recy'?null:'recy'}
+    else if(a==='arsno'){arsAsk=null}
+    else if(a==='craftall'){const cp=craftPlan();let n=0;for(const id of cp.plan)if(craftOne(id))n++;arsAsk=null;if(n){SND.play('pick3');toast(`${n} objet${n>1?'s':''} fabriqué${n>1?'s':''}`)}}
+    else if(a==='arecyall'){const rp=recyPlan();let e=0,n=0;for(const w of rp.ws){const b=bpdef(w.id);e+=wRecyEss(b);delete meta.built[w.id];delete meta.wlv[w.id];if(meta.waff)delete meta.waff[w.id];giveFrag(w.id);n++}
+      for(const it of rp.pr){e+=primeRecyEss(it);meta.stash=meta.stash.filter(x=>x!==it);giveFrag(primeBp(it));n++}meta.essence+=e;arsAsk=null;campSel=null;if(n)toast(`${n} objet${n>1?'s':''} recyclé${n>1?'s':''} · +${e} essence et ${n} fragment${n>1?'s':''}`)}
     else if(a==='craft'){const b=bpdef(arg),pc=meta.parts[arg],cost=b.kind==='arme'?Math.round(b.bp/2):b.craft;
       if(pc&&pc.every(x=>x>0)&&meta.gold>=cost){
         if(b.kind==='arme'){meta.parts[arg]=pc.map(x=>x-1);meta.gold-=cost;meta.built[arg]=true;if(b.cls===heroCls)meta.wpn[heroCls]=arg;toast(`<b style="color:${RAR[b.r].c}">${b.n}</b> fabriquée et équipée`)}
