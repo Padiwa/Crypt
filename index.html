@@ -139,7 +139,7 @@ body:has(#camp:not([hidden])) .toast,body:has(#bag:not([hidden])) .toast{top:aut
 .aurarow{display:grid;grid-template-columns:minmax(80px,96px) 1fr;gap:10px;align-items:center}
 .mod.lockd{opacity:.55;font-size:11px;border-style:dotted}
 .mslot{display:flex;flex-direction:column;gap:3px;min-width:0}
-.mslot .sp{font-size:11px;text-align:center;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mslot .sp{all:unset;box-sizing:border-box;display:block;cursor:pointer;border-radius:var(--radius-sm,4px);padding:3px 2px;border:1px dashed transparent;font-size:11px;text-align:center;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mod .pl{position:absolute;top:2px;left:6px;font-size:11px}
 .mod.off{opacity:.4;filter:grayscale(1)}
 .alrow{display:flex;flex-wrap:wrap;gap:6px}
@@ -583,6 +583,11 @@ button.cx-line[aria-pressed="true"]::before{content:"→"; display:inline-block;
 .cx-choice[aria-checked="true"]{border-color:var(--cc); background:color-mix(in srgb, var(--cc) 14%, var(--panel-2)); box-shadow:inset 0 0 0 1px var(--cc)}
 
 @media (prefers-reduced-motion:reduce){.cx-btn,.cx-choice,.cx-icon-btn{transition:none}.cx-btn:active,.cx-choice:active{transform:none}}
+/* ---------- Filtre de mods par case ---------- */
+.mslot .sp:hover{border-color:currentColor}
+.mslot .sp:focus-visible{outline:2px solid var(--ember-hi);outline-offset:1px}
+.mslot .sp[aria-pressed="true"]{border:1px solid currentColor;background:var(--ember-soft)}
+.mslot.fsel .mod{box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--ember-hi)}
 /* ---------- Habillage des anciens composants avec le design system ---------- */
 .overlay{background:var(--scrim)}
 .sheet{border-radius:var(--radius-lg) var(--radius-lg) 0 0;box-shadow:var(--sheet)}
@@ -2161,7 +2166,7 @@ function equipRun(id){
 function refreshStats(){if(!G)return;const ratio=G.P.hp/S.hp;S=stats(G.eq);G.P.hp=Math.max(1,Math.min(S.hp,ratio*S.hp))}
 
 /* ---------- Mods (interface) ---------- */
-let modSel=null,alSel=null,modTab='h';
+let modSel=null,alSel=null,modTab='h',modPF='all',modSF=null;
 const AURA_C='#f0cf4a';
 function modCard(id,cls='',i,b){const m=MODS[id],rk=meta.mods[id],isA=modKind(id)==='a',p=isA?{c:AURA_C,s:'✦',n:'Aura'}:POL[MOD_POL[id]];
   const d=isA?`+${MODS[id].cap+rk}`:(b&&i!==undefined?bDrain(b,id,rk,i):modDrain(id,rk));
@@ -2176,7 +2181,7 @@ function modDetail(id){
     act=eq?'<button class="btn" data-act="unequip">Retirer</button>':`<button class="btn main" data-act="equip">${b.aura?'Remplacer l\'aura':'Équiper l\'aura'}</button>`;
     if(eq&&u>cap-(m.cap+rk)){why='Retirer cette aura ferait dépasser la capacité du héros : les mods en trop deviendraient inactifs.'}
   }else{
-    const p=POL[MOD_POL[id]],bs=bBest(b,id,rk),fits=bs.i>=0&&u+bs.d<=cap;
+    const p=POL[MOD_POL[id]],bs0=bBest(b,id,rk),bs=(modSF!=null&&modSF<b.slots&&!b.load[modSF]&&b.kind===(modKind(id)==='w'?'w':'h'))?{i:modSF,d:bDrain(b,id,rk,modSF)}:bs0,fits=bs.i>=0&&u+bs.d<=cap;
     costLine=`Mod ${k==='w'?'d\'arme':'de héros'} · <span style="color:${p.c}">${p.s} ${p.n}</span> · `+(eq?`coûte ${bDrain(b,id,rk,slot)} dans la case ${slot+1}`:`coûte ${modDrain(id,rk)}, ${Math.ceil(modDrain(id,rk)/2)} dans une case ${p.n}`);
     if(!ok){why=`Réservé à : ${m.cls.map(x=>CLS[x].n).join(', ')}.`}
     else if(eq)act='<button class="btn" data-act="unequip">Retirer</button>';
@@ -2210,10 +2215,19 @@ function renderMods(rootId){
   if(modSel&&meta.mods[modSel]==null)modSel=null;
   if(modSel&&(modKind(modSel)==='w')!==(modTab==='w'))modSel=null;
   const fits=id=>modTab==='w'?modKind(id)==='w':modKind(id)!=='w';
-  const rest=owned.filter(id=>fits(id)&&!b.load.includes(id)&&b.aura!==id).sort((x,y)=>(modOk(y,heroCls)-modOk(x,heroCls))||(modKind(y)==='a')-(modKind(x)==='a')||MODS[y].r-MODS[x].r);
+  if(modSF!=null&&modSF>=b.slots)modSF=null;
+  const pool=owned.filter(id=>fits(id)&&!b.load.includes(id)&&b.aura!==id);
+  const sp=modSF!=null?b.pol[modSF]:null,polOf=id=>modKind(id)==='a'?'a':MOD_POL[id];
+  const pcount={all:pool.length};for(const id of pool){const q=polOf(id);pcount[q]=(pcount[q]||0)+1}
+  let rest=pool.filter(id=>modSF!=null?(polOf(id)!=='a'&&(!sp||polOf(id)===sp)):(modPF==='all'||polOf(id)===modPF));
+  rest.sort(modSF!=null?(x,y)=>(modOk(y,heroCls)-modOk(x,heroCls))||bDrain(b,x,meta.mods[x],modSF)-bDrain(b,y,meta.mods[y],modSF)||MODS[y].r-MODS[x].r
+    :(x,y)=>(modOk(y,heroCls)-modOk(x,heroCls))||(modKind(y)==='a')-(modKind(x)==='a')||MODS[y].r-MODS[x].r);
+  const pchip=(k,lab,c)=>`<button class="cx-chip cx-chip--sm" data-act="polf" data-p="${k}" aria-pressed="${modSF==null&&modPF===k}"${c&&!(modSF==null&&modPF===k)?` style="color:${c}"`:''}>${lab} <span class="n">${pcount[k]||0}</span></button>`;
+  const filt=`<div class="cx-chips" role="group" aria-label="Filtrer les mods par polarité">${pchip('all','Tous')}${Object.keys(POL).map(k=>pchip(k,`${POL[k].s} ${POL[k].n}`,POL[k].c)).join('')}${modTab==='h'&&pcount.a?pchip('a','✦ Aura',AURA_C):''}</div>
+    ${modSF!=null?`<p class="cx-hint" style="margin:0">Case ${modSF+1} · ${sp?`<b style="color:${POL[sp].c}">${POL[sp].s} ${POL[sp].n}</b> : seuls les mods ${POL[sp].n} (coût divisé par 2)`:'neutre : tous les mods'}, du moins cher au plus cher dans cette case${b.load[modSF]?'':' ; « Équiper » les place dans cette case'}. <button class="cx-btn cx-btn--ghost cx-btn--sm" data-act="slotf" data-i="${modSF}" style="margin:0">Retirer le filtre</button></p>`:'<p class="cx-hint" style="margin:0">Touche le nom de polarité au-dessus d\'une case pour voir les mods qui lui conviennent le mieux.</p>'}`;
   const slotsN=modTab==='w'?4:HSLOT_MAX;
   const slotHtml=i=>{if(i>=b.slots){const nx=i===b.slots;return `<div class="mslot"><span class="sp" style="color:var(--muted)">Verrouillée</span><div class="mod empty lockd">${nx?`${HSLOT_COST[b.slots-3]} fragments`:'—'}</div></div>`}
-    const id=b.load[i],p=b.pol[i];return `<div class="mslot"><span class="sp" style="color:${p?POL[p].c:'var(--muted)'}">${p?POL[p].s+' '+POL[p].n:'Neutre'}</span>${id?modCard(id,(modSel===id?' sel':'')+(act.includes(id)?'':' off'),i,b):'<div class="mod empty">Libre</div>'}</div>`};
+    const id=b.load[i],p=b.pol[i];return `<div class="mslot${modSF===i?' fsel':''}"><button class="sp" data-act="slotf" data-i="${i}" aria-pressed="${modSF===i}" aria-label="Filtrer les mods pour la case ${i+1} (${p?POL[p].n:'neutre'})" style="color:${p?POL[p].c:'var(--muted)'}">${p?POL[p].s+' '+POL[p].n:'Neutre'}</button>${id?modCard(id,(modSel===id?' sel':'')+(act.includes(id)?'':' off'),i,b):'<div class="mod empty">Libre</div>'}</div>`};
   const buyBox=modTab==='h'&&b.slots<HSLOT_MAX&&inCamp?(()=>{const c=HSLOT_COST[b.slots-3],have=fragTotal();
     return `<div class="card"><p style="margin:0;font-size:14px">Débloquer la case ${b.slots+1} du héros : <b>${c} fragments de schéma</b>, pris parmi ceux que tu as en plus grand nombre. Tu en as ${have}.</p><div class="actions"><button class="btn buy" data-act="slotbuy" ${have<c?'disabled':''}>Débloquer · ${c} fragments</button></div></div>`})():'';
   root.innerHTML=`<div class="alrow"><button class="chip" data-act="mtab" data-t="h" aria-pressed="${modTab==='h'}">Héros · ${CLS[heroCls].n}</button><button class="chip" data-act="mtab" data-t="w" aria-pressed="${modTab==='w'}">Arme · ${wdef(curWid()).n}</button></div>
@@ -2223,7 +2237,8 @@ function renderMods(rootId){
     ${modTab==='h'?`<div class="aurarow"><div class="mslot"><span class="sp" style="color:${AURA_C}">✦ Aura</span>${b.aura?modCard(b.aura,modSel===b.aura?' sel':''):'<div class="mod empty">Aura libre</div>'}</div><p class="empty" style="font-size:13px">Une aura rapporte de la capacité au héros au lieu d'en coûter, et donne un effet permanent.</p></div>`:''}
     <div class="modslots${slotsN>4?' six':''}">${Array.from({length:slotsN},(_,i)=>slotHtml(i)).join('')}</div>
     ${buyBox}
-    <div class="modlist">${rest.map(id=>modCard(id,(modSel===id?' sel':'')+(modOk(id,heroCls)?'':' lock'))).join('')||`<p class="empty" style="grid-column:1/-1">Aucun autre mod ${modTab==='w'?'d\'arme':'de héros'}. Les monstres en laissent parfois tomber, les Gardiens toujours.</p>`}</div>
+    ${filt}
+    <div class="modlist">${rest.map(id=>modCard(id,(modSel===id?' sel':'')+(modOk(id,heroCls)?'':' lock'),modSF!=null&&modKind(id)!=='a'?modSF:undefined,modSF!=null?b:undefined)).join('')||`<p class="empty" style="grid-column:1/-1">${pool.length?'Aucun mod pour ce filtre.':`Aucun autre mod ${modTab==='w'?'d\'arme':'de héros'}.`} Les monstres en laissent parfois tomber, les Gardiens toujours.</p>`}</div>
     ${modSel?modDetail(modSel):`<p class="empty" style="font-size:13px">${modTab==='w'?'Les mods d\'arme restent attachés à cette arme : chaque arme a son propre build.':'Les mods de héros servent à la survie, au déplacement et aux compétences.'} Le symbole en haut à gauche d'un mod est sa polarité, le chiffre son coût.</p>`}
     ${inCamp?alignPanel(b):''}`;
   root.querySelectorAll('[data-mod]').forEach(x=>x.onclick=()=>{modSel=x.dataset.mod;modsChanged()});
@@ -2231,10 +2246,12 @@ function renderMods(rootId){
 }
 function modAct(a,ds){
   const id=modSel,rk=id?meta.mods[id]:0;
-  if(a==='mtab'){modTab=ds.t;modSel=null;alSel=null}
+  if(a==='mtab'){modTab=ds.t;modSel=null;alSel=null;modSF=null;modPF='all'}
+  else if(a==='polf'){modPF=ds.p;modSF=null}
+  else if(a==='slotf'){const i=+ds.i;modSF=modSF===i?null:i}
   else if(a==='equip'||a==='unequip'||a==='fuse'){
     const k=modKind(id),b=build(k==='w'?'w':'h');
-    if(a==='equip'){if(!modOk(id,heroCls))return;if(k==='a')meta.aura[heroCls]=id;else{const bs=bBest(b,id,rk);if(bs.i<0||bUsed(b)+bs.d>bCap(b))return;b.load[bs.i]=id}}
+    if(a==='equip'){if(!modOk(id,heroCls))return;if(k==='a')meta.aura[heroCls]=id;else{let bs=bBest(b,id,rk);if(modSF!=null&&modSF<b.slots&&!b.load[modSF]&&(k==='w')===(modTab==='w'))bs={i:modSF,d:bDrain(b,id,rk,modSF)};if(bs.i<0||bUsed(b)+bs.d>bCap(b))return;b.load[bs.i]=id}}
     else if(a==='unequip'){if(k==='a'){if(meta.aura[heroCls]===id)meta.aura[heroCls]=null}else{const i=b.load.indexOf(id);if(i>=0)b.load[i]=null}}
     else{const c=fuseCost(id,rk);if(meta.essence<c||rk>=MODS[id].max)return;if(k!=='a'){const i=b.load.indexOf(id);if(i>=0&&bUsed(b)-bDrain(b,id,rk,i)+bDrain(b,id,rk+1,i)>bCap(b))return}meta.essence-=c;meta.mods[id]=rk+1}
   }
