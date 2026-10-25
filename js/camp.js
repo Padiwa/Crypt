@@ -79,8 +79,8 @@ function campRelics(){
   let h=`${campMsg}<p class="cx-hint" style="margin:0">Équipe des reliques : en mission, ${REACT_N} réactifs (ennemis au halo doré) ouvrent la première de la liste, puis la suivante. Récompense et +25 essence par relique ouverte, à la réussite de la mission.</p>`;
   if(!own.length)return h+'<p class="empty">Aucune relique pour l\'instant. Les monstres en lâchent parfois, et chaque manche réussie en rapporte une.</p>';
   const tot=own.reduce((n,id)=>n+meta.relics[id][0]+meta.relics[id][1],0);
-  // file d'ouverture
-  h+=`<section class="cx-section"><h3 class="cx-section__label">Ordre d'ouverture · ${Q.length} / ${tot}</h3>
+  // file d'ouverture (affichée après la collection)
+  const qh=`<section class="cx-section"><h3 class="cx-section__label">Ordre d'ouverture · ${Q.length} / ${tot}</h3>
     ${Q.length?`<div class="rq"><ol>${Q.map((q,i)=>`<li><span class="rqn">${i+1}.</span><span class="rgem${q.rad?' rad':''}" style="--tc:${RTIER[RELICS[q.id].t].c}">${RELIC_SVG}</span><b style="color:${RTIER[RELICS[q.id].t].c}">${RELICS[q.id].n}${q.rad?' · éclatante':''}</b>
       <button class="btn" data-cact="rqup" data-arg="${i}" ${i?'':'disabled'} aria-label="Monter">↑</button><button class="btn" data-cact="rqdn" data-arg="${i}" ${i<Q.length-1?'':'disabled'} aria-label="Descendre">↓</button><button class="btn" data-cact="rqrm" data-arg="${i}" aria-label="Retirer">✕</button></li>`).join('')}</ol></div>`
       :'<p class="cx-hint" style="margin:0">Aucune relique équipée : la prochaine mission n\'en ouvrira aucune.</p>'}
@@ -105,7 +105,7 @@ function campRelics(){
       <div class="cx-card__foot">${a[0]?ctl(false,'Intactes'):''}${a[1]?ctl(true,'Éclatantes'):''}
         ${a[0]?`<button class="btn buy" data-cact="refine" data-arg="${id}" ${meta.essence<50||relicQN(id,false)>=a[0]?'disabled':''}>Raffiner en éclatante · <span class="essi"></span>50</button>`:''}</div></section>`}
   else h+='<p class="cx-hint" style="margin:0">Touche une relique pour voir ses récompenses, tes chances et ce qu\'il te manque. ★ : contient le dernier fragment d\'un schéma.</p>';
-  return h;
+  return h+qh;
 }
 let saveMode=null,saveDraft='',saveMsg='',savePending=null;
 const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
