@@ -140,6 +140,12 @@ body:has(#camp:not([hidden])) .toast{top:auto;bottom:calc(env(safe-area-inset-bo
 .over{color:var(--blood)!important}
 .upg{display:flex;flex-direction:column;gap:6px;border-top:1px solid #2a242e;padding-top:8px;margin-top:4px;font-size:13px;color:var(--muted)}
 .upg b{color:var(--ess)}
+.cell .lk{position:absolute;bottom:2px;right:3px;color:var(--ink);line-height:0}
+.cell .lk svg{width:12px;height:12px;stroke-width:2.2}
+.cell .cup{position:absolute;bottom:1px;left:4px;font-size:10px;font-weight:700;color:var(--ess);font-variant-numeric:tabular-nums}
+.chip.sm{padding:4px 10px;font-size:12px}
+.pager{display:flex;align-items:center;justify-content:center;gap:14px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.pager .btn{width:40px;height:36px;padding:0;font-size:20px}
 .relb{border-color:var(--tc);color:var(--tc);padding:6px 10px;font-size:13px;font-weight:700}
 .tab[aria-selected="true"]{background:var(--panel2);color:var(--ink);box-shadow:inset 0 -2px 0 var(--ember)}
 .ups{display:flex;flex-direction:column;gap:6px}
@@ -1414,7 +1420,8 @@ function slotsHtml(eq,click,selSlot){
     return `<${tag} class="slot${selSlot===k?' sel':''}"${click?` data-slot="${k}"`:''}><span>${SLOT[k]}</span><strong style="color:${it?RAR[it.r].c:'var(--muted)'}">${it?itemName(it):'Vide'}</strong></${tag}>`}).join('');
 }
 function better(it){const e=curEq(),a=stats(e),b=stats({...e,[it.slot]:it});return dps(b)+b.hp*.3>dps(a)+a.hp*.3}
-const cellHtml=(it,attr,sel,up)=>`<button class="cell${sel?' sel':''}${up?' up':''}" data-${attr}="${it.id}" style="border-color:${RAR[it.r].c};color:${RAR[it.r].c}" aria-label="${it.name}">${GLYPH[it.slot]}</button>`;
+const LOCK_SVG='<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+const cellHtml=(it,attr,sel,up)=>`<button class="cell${sel?' sel':''}${up?' up':''}" data-${attr}="${it.id}" style="border-color:${RAR[it.r].c};color:${RAR[it.r].c}" aria-label="${itemName(it)}${it.lock?', verrouillé':''}">${it.lock?`<span class="lk">${LOCK_SVG}</span>`:''}${it.up?`<span class="cup">+${it.up}</span>`:''}${GLYPH[it.slot]}</button>`;
 function upBlock(it){
   const n=it.up||0;
   if(n>=UP_MAX)return `<div class="upg"><span>Amélioration <b>+100 / 100</b> · statistiques ×3</span></div>`;
@@ -1429,10 +1436,10 @@ function card(it,mode){
     const line=(lab,x,y)=>{const d=Math.round(y)-Math.round(x);return `<span>${lab} ${Math.round(x)} → <b class="${d>0?'g':d<0?'b':''}">${Math.round(y)}</b></span>`};
     extra=`<div class="cmp">${line('DPS',dps(a),dps(b))}${line('Vie',a.hp,b.hp)}${line('Compétence',a.nova,b.nova)}</div>`+(mode==='run'
       ?`<div class="actions"><button class="btn main" data-ract="${it.id}">Équiper maintenant</button></div><p class="empty" style="font-size:13px">Un objet équipé est gardé même si tu meurs. L'ancien part au coffre du Camp.</p>`
-      :`<div class="actions"><button class="btn main" data-cact="equip">Équiper</button><button class="btn" data-cact="recycle">Recycler · +${r.shard*2+Math.floor(upInvested(it.up)/2)} essence</button></div>`+upBlock(it));
+      :`<div class="actions"><button class="btn main" data-cact="equip">Équiper</button><button class="btn" data-cact="lock">${it.lock?'Déverrouiller':'Verrouiller'}</button></div><div class="actions"><button class="btn" data-cact="recycle" ${it.lock?'disabled':''}>${it.lock?'Verrouillé : recyclage impossible':`Recycler · +${r.shard*2+Math.floor(upInvested(it.up)/2)} essence`}</button></div>`+upBlock(it));
   }else if(mode==='worn'){
     extra=it.slot==='arme'?'<div class="actions"><button class="btn" data-cact="toarsenal">Changer d\'arme à l\'Armurerie</button></div>'
-      :`<div class="actions"><button class="btn" data-cact="unequip" ${meta.stash.length>=40?'disabled':''}>Retirer au coffre</button></div>`;
+      :`<div class="actions"><button class="btn" data-cact="unequip">Retirer au coffre</button><button class="btn" data-cact="lock">${it.lock?'Déverrouiller':'Verrouiller'}</button></div>`;
     extra+=upBlock(it);
   }
   return `<div class="card"><div class="nm" style="color:${r.c}">${itemName(it)}</div><div class="meta">${r.n} · ${SLOT[it.slot]}${it.wid?' · fabriquée':` · ${it.type} · niveau ${it.lvl}`}${mode==='worn'?' · équipé':''}</div>
@@ -1494,7 +1501,7 @@ function pickUp(k){
 function equipRun(id){
   const it=G.loot.items.find(i=>i.id===id);if(!it)return;
   G.loot.items=G.loot.items.filter(i=>i!==it);
-  const old=meta.gear[it.slot];if(old){if(meta.stash.length<40)meta.stash.push(old);else G.loot.items.push(old)}
+  const old=meta.gear[it.slot];if(old){meta.stash.push(old)}
   meta.gear[it.slot]=it;G.eq[it.slot]=it;saveMeta();refreshStats();runSel=null;
   toast(`<span style="color:${RAR[it.r].c}">${it.name}</span> équipé`);drawBag();
 }
@@ -1589,7 +1596,7 @@ function bank(full){
   const mt=mastOf(G.cls);let up=0;if(mt.r<10){mt.xp+=G.kills;while(mt.r<10&&mt.xp>=mastNeed(mt.r)){mt.xp-=mastNeed(mt.r);mt.r++;up++}if(mt.r>=10)mt.xp=0}
   G.mastMsg=`Maîtrise ${deCls(G.cls)} : rang ${mt.r} / 10`+(mt.r<10?` (${mt.xp} / ${mastNeed(mt.r)})`:'')+(up?` · +${up} rang${up>1?'s':''}, +${up} de capacité de mods`:'');
   if(full){
-    for(const it of G.loot.items){if(meta.stash.length<40)meta.stash.push(it);else meta.essence+=RAR[it.r].shard*2}
+    for(const it of G.loot.items)meta.stash.push(it)
     for(const p of G.loot.parts){if(meta.built[p.w])meta.essence+=6;else{const a=meta.parts[p.w]||(meta.parts[p.w]=[0,0,0]);a[p.p]++}}
     for(const id of G.loot.relics){const a=meta.relics[id]||(meta.relics[id]=[0,0]);a[0]++}
   }
@@ -1635,18 +1642,33 @@ let campTab='equip',campSel=null;
 function syncEq(){if(G&&(!started||G.over)){G.eq=curEq();S=stats(G.eq);G.P.hp=S.hp}}
 let campMsg='',recyConfirm=false;
 function fragStatus(id){const pc=meta.parts[id]||[0,0,0];return pc.filter(n=>n>0).length}
+let stF='all',stS='rar',stP=0;const ST_PAGE=24;
+function stashView(){
+  const counts={all:meta.stash.length};for(const it of meta.stash)counts[it.slot]=(counts[it.slot]||0)+1;
+  let list=meta.stash.filter(i=>stF==='all'||i.slot===stF);
+  const by={rar:(a,b)=>b.r-a.r||(b.up||0)-(a.up||0)||b.lvl-a.lvl,up:(a,b)=>(b.up||0)-(a.up||0)||b.r-a.r,lvl:(a,b)=>b.lvl-a.lvl||b.r-a.r,new:(a,b)=>b.id-a.id};
+  list=[...list].sort(by[stS]);
+  const pages=Math.max(1,Math.ceil(list.length/ST_PAGE));stP=clamp(stP,0,pages-1);
+  const pageItems=list.slice(stP*ST_PAGE,stP*ST_PAGE+ST_PAGE);
+  const fChip=(k,lab)=>`<button class="chip" data-cact="sfilter" data-arg="${k}" aria-pressed="${stF===k}">${lab} <span style="color:var(--muted)">${counts[k]||0}</span></button>`;
+  const sChip=(k,lab)=>`<button class="chip sm" data-cact="ssort" data-arg="${k}" aria-pressed="${stS===k}">${lab}</button>`;
+  return `<div class="alrow">${fChip('all','Tout')}${['armure','amulette','bottes','anneau'].map(k=>fChip(k,SLOT[k])).join('')}</div>
+    <div class="alrow" style="align-items:center"><span class="empty" style="font-size:12px">Trier :</span>${sChip('rar','Rareté')}${sChip('up','Amélioration')}${sChip('lvl','Niveau')}${sChip('new','Récents')}</div>
+    ${pageItems.length?`<div class="grid">${pageItems.map(it=>cellHtml(it,'stash',campSel&&campSel.stash===it.id,better(it))).join('')}</div>`:`<p class="empty">${meta.stash.length?'Aucun objet de ce type.':'Ton coffre est vide. Sors vivant d\'une mission pour y ramener les objets trouvés.'}</p>`}
+    ${pages>1?`<div class="pager"><button class="btn" data-cact="spage" data-arg="-1" ${stP===0?'disabled':''} aria-label="Page précédente">‹</button><span>Page ${stP+1} / ${pages}</span><button class="btn" data-cact="spage" data-arg="1" ${stP>=pages-1?'disabled':''} aria-label="Page suivante">›</button></div>`:''}`;
+}
 function campEquip(){
-  const eq=curEq(),St=stats(eq),rec=meta.stash.filter(i=>i.type!=='Prime'&&!i.up),ess=rec.reduce((a,i)=>a+RAR[i.r].shard*2,0);
-  let det='<p class="empty" style="font-size:13px">Touche un emplacement ou un objet du coffre. ▲ signale une amélioration.</p>';
+  const eq=curEq(),St=stats(eq),rec=meta.stash.filter(i=>!(i.type==='Prime'||i.up||i.lock)),ess=rec.reduce((a,i)=>a+RAR[i.r].shard*2,0);
+  let det='<p class="empty" style="font-size:13px">Touche un emplacement ou un objet du coffre. ▲ signale une amélioration, le cadenas un objet verrouillé.</p>';
   if(campSel&&campSel.slot){const it=eq[campSel.slot];det=it?card(it,'worn'):'<p class="empty">Emplacement vide. Équipe un objet depuis le coffre.</p>'}
   else if(campSel&&campSel.stash){const it=meta.stash.find(i=>i.id===campSel.stash);if(it)det=card(it,'stash')}
   const recBtn=!rec.length?'':recyConfirm
-    ?`<div class="card"><p class="empty" style="font-size:13px">Recycler ${rec.length} objet${rec.length>1?'s':''} du coffre contre ${ess} essence ? Les objets Prime et les objets améliorés sont gardés.</p><div class="actions"><button class="btn main" data-cact="recyall">Tout recycler</button><button class="btn" data-cact="recycancel">Annuler</button></div></div>`
-    :`<button class="btn" data-cact="recyask" style="align-self:flex-start">Tout recycler · +${ess} essence</button>`;
+    ?`<div class="card"><p class="empty" style="font-size:13px">Recycler ${rec.length} objet${rec.length>1?'s':''} du coffre contre ${ess} essence ? Les objets verrouillés, améliorés et Prime sont gardés.</p><div class="actions"><button class="btn main" data-cact="recyall">Tout recycler</button><button class="btn" data-cact="recycancel">Annuler</button></div></div>`
+    :`<button class="btn" data-cact="recyask" style="align-self:flex-start">Tout recycler · ${rec.length} objet${rec.length>1?'s':''} · +${ess} essence</button>`;
   return `${campMsg}<h3>${CLS[heroCls].n} · équipement</h3><div class="slots">${slotsHtml(eq,true,campSel&&campSel.slot)}</div><div class="statgrid">${statRows(St)}</div>
-    <h3>Coffre · ${meta.stash.length} / 40</h3>${recBtn}
-    ${meta.stash.length?`<div class="grid">${meta.stash.map(it=>cellHtml(it,'stash',campSel&&campSel.stash===it.id,better(it))).join('')}</div>`:'<p class="empty">Ton coffre est vide. Sors vivant d\'une mission pour y ramener les armures et amulettes trouvées.</p>'}
     ${det}
+    <h3>Coffre · ${meta.stash.length} objet${meta.stash.length>1?'s':''}</h3>${recBtn}
+    ${stashView()}
     <h3>Fragments de schéma</h3>${fragInv()}`;
 }
 function fragInv(){
@@ -1671,7 +1693,7 @@ function bpCard(b){
   let foot;
   if(own)foot=eq?`<span class="owned">Équipée${mine?'':' · '+CLS[b.cls].n}</span>`:mine?`<button class="btn main" data-cact="wequip" data-arg="${b.id}">Équiper</button>`:`<span class="owned">Fabriquée · ${CLS[b.cls].n}</span>`;
   else foot=`<div class="parts">${b.frag.map((n,i)=>`<span class="part${pc[i]?' have':''}">${n}${pc[i]>1?' ×'+pc[i]:''}</span>`).join('')}</div>
-    <button class="btn main buy" data-cact="craft" data-arg="${b.id}" ${ready&&meta.gold>=cost&&(isW||meta.stash.length<40)?'':'disabled'}>Fabriquer · <span class="coin"></span>${cost}</button>`;
+    <button class="btn main buy" data-cact="craft" data-arg="${b.id}" ${ready&&meta.gold>=cost&&true?'':'disabled'}>Fabriquer · <span class="coin"></span>${cost}</button>`;
   const src=own||b.bp===0?'':`<div class="meta">Fragments dans les reliques :</div><div class="parts">${relicBtns(b.id)}</div>`;
   return `<div class="wpn${eq&&mine?' on':''}"><div class="nm" style="color:${r.c}">${b.n}</div><div class="meta">${r.n} · ${isW?'Arme · '+CLS[b.cls].n:SLOT[b.slot]+' Prime · toutes classes'} · ${baseTxt}</div>
     <ul>${Object.keys(b.aff).map(k=>`<li>${AFF[k].t(b.aff[k])}</li>`).join('')||'<li>Aucun bonus</li>'}</ul>
@@ -1750,23 +1772,27 @@ $('campBody').addEventListener('click',e=>{
     else if(a==='imp'){const v=($('saveIn')||{}).value||saveDraft;saveDraft=v;const dd=parseCode(v);if(!dd)saveMsg='Ce JSON n\'est pas une sauvegarde valide. Vérifie qu\'il est complet, de la première accolade à la dernière.';else{savePending=dd;saveMsg=''}}
     else if(a==='impcancel'){savePending=null}
     else if(a==='impok'){const dd=savePending;try{localStorage.setItem('crypte-meta',JSON.stringify(dd.meta));if(dd.cls)localStorage.setItem('crypte-cls',dd.cls);if(dd.best)localStorage.setItem('crypte-best2',String(dd.best));location.reload();return}catch(err){saveMsg='Impossible d\'écrire la sauvegarde : le stockage de ce navigateur est bloqué.'}}
+    else if(a==='sfilter'){stF=arg;stP=0}
+    else if(a==='ssort'){stS=arg;stP=0}
+    else if(a==='spage'){stP+=+arg}
+    else if(a==='lock'){const it=campSel&&campSel.stash?meta.stash.find(i=>i.id===campSel.stash):campSel&&campSel.slot?meta.gear[campSel.slot]:null;if(it){it.lock=!it.lock;toast(it.lock?'Objet verrouillé':'Objet déverrouillé')}}
     else if(a==='recyask')recyConfirm=true;
     else if(a==='recycancel')recyConfirm=false;
-    else if(a==='recyall'){const rec=meta.stash.filter(i=>i.type!=='Prime'&&!i.up);let e=0;for(const it of rec)e+=RAR[it.r].shard*2;meta.stash=meta.stash.filter(i=>i.type==='Prime'||i.up);meta.essence+=e;recyConfirm=false;campSel=null;toast(`${rec.length} objet${rec.length>1?'s':''} recyclé${rec.length>1?'s':''} · +${e} essence`)}
+    else if(a==='recyall'){const rec=meta.stash.filter(i=>!(i.type==='Prime'||i.up||i.lock));let e=0;for(const it of rec)e+=RAR[it.r].shard*2;meta.stash=meta.stash.filter(i=>i.type==='Prime'||i.up||i.lock);meta.essence+=e;recyConfirm=false;campSel=null;toast(`${rec.length} objet${rec.length>1?'s':''} recyclé${rec.length>1?'s':''} · +${e} essence`)}
     if(a==='equip'){const it=meta.stash.find(i=>i.id===campSel.stash);if(it){meta.stash=meta.stash.filter(i=>i!==it);const old=meta.gear[it.slot];if(old)meta.stash.push(old);meta.gear[it.slot]=it;campSel={slot:it.slot}}}
-    else if(a==='recycle'){const it=meta.stash.find(i=>i.id===campSel.stash);if(it){meta.stash=meta.stash.filter(i=>i!==it);meta.essence+=RAR[it.r].shard*2+Math.floor(upInvested(it.up)/2);campSel=null}}
+    else if(a==='recycle'){const it=meta.stash.find(i=>i.id===campSel.stash);if(it&&!it.lock){meta.stash=meta.stash.filter(i=>i!==it);meta.essence+=RAR[it.r].shard*2+Math.floor(upInvested(it.up)/2);campSel=null}}
     else if(a==='upg'){const k=+arg;let it=null,isW=false,wid=null;
       if(campSel&&campSel.slot==='arme'){isW=true;wid=meta.wpn[heroCls]&&ownedW(meta.wpn[heroCls])?meta.wpn[heroCls]:WPN[heroCls][0].id}
       else if(campSel&&campSel.slot)it=meta.gear[campSel.slot];else if(campSel&&campSel.stash)it=meta.stash.find(i=>i.id===campSel.stash);
       const n=isW?(meta.wlv[wid]||0):it?(it.up||0):null;
       if(n!==null&&n<UP_MAX){const kk=Math.min(k,UP_MAX-n),c=upCostRange(n,kk);if(meta.essence>=c){meta.essence-=c;if(isW)meta.wlv[wid]=n+kk;else it.up=n+kk;toast(`Amélioré à +${n+kk}`)}}}
-    else if(a==='unequip'){const s=campSel.slot,it=meta.gear[s];if(it&&meta.stash.length<40){meta.stash.push(it);meta.gear[s]=null;campSel={stash:it.id}}}
+    else if(a==='unequip'){const s=campSel.slot,it=meta.gear[s];if(it){meta.stash.push(it);meta.gear[s]=null;campSel={stash:it.id}}}
     else if(a==='toarsenal'){campTab='arsenal';campSel=null}
     else if(a==='wequip'){if(ownedW(arg))meta.wpn[heroCls]=arg}
     else if(a==='craft'){const b=bpdef(arg),pc=meta.parts[arg],cost=b.kind==='arme'?Math.round(b.bp/2):b.craft;
       if(pc&&pc.every(x=>x>0)&&meta.gold>=cost){
         if(b.kind==='arme'){meta.parts[arg]=pc.map(x=>x-1);meta.gold-=cost;meta.built[arg]=true;if(b.cls===heroCls)meta.wpn[heroCls]=arg;toast(`<b style="color:${RAR[b.r].c}">${b.n}</b> fabriquée et équipée`)}
-        else if(meta.stash.length<40){meta.parts[arg]=pc.map(x=>x-1);meta.gold-=cost;meta.stash.push({id:uid++,slot:b.slot,r:b.r,lvl:20,base:{k:BASE_STAT[b.slot],v:b.base},aff:{...b.aff},name:b.n,type:'Prime'});toast(`<b style="color:${RAR[b.r].c}">${b.n}</b> fabriqué, il t'attend au coffre`)}}}
+        else{meta.parts[arg]=pc.map(x=>x-1);meta.gold-=cost;meta.stash.push({id:uid++,slot:b.slot,r:b.r,lvl:20,base:{k:BASE_STAT[b.slot],v:b.base},aff:{...b.aff},name:b.n,type:'Prime'});toast(`<b style="color:${RAR[b.r].c}">${b.n}</b> fabriqué, il t'attend au coffre`)}}}
     else if(a==='relsel'){const [id,rd]=arg.split('|');meta.relicSel={id,rad:rd==='1'}}
     else if(a==='refine'){const r=meta.relics[arg];if(r&&r[0]>0&&meta.essence>=50){r[0]--;r[1]++;meta.essence-=50}}
     else if(a==='up'){const u=UPG.find(x=>x.k===arg),c=upCost(u);if(meta.gold>=c&&lv(u.k)<u.max){meta.gold-=c;meta.up[u.k]=lv(u.k)+1}}
