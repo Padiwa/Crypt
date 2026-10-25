@@ -103,14 +103,14 @@ function campArsenal2(){
 let relSel=null,relTier='all';
 const FUSE_COST=[20,40,80,150];
 function relAvail(t){const out=[];for(const id in RELICS){if(RELICS[id].t!==t)continue;const a=meta.relics[id];if(!a)continue;
-  const fi=a[0]-relicQN(id,false),fr=a[1]-relicQN(id,true);for(let k=0;k<fi;k++)out.push({id,rad:false});for(let k=0;k<fr;k++)out.push({id,rad:true})}
-  return out.sort((x,y)=>(x.rad-y.rad)||((meta.relics[y.id][0]+meta.relics[y.id][1])-(meta.relics[x.id][0]+meta.relics[x.id][1])))}
+  for(const rad of [false,true]){const own=Math.max(0,a[rad?1:0]|0),q=Math.min(own,relicQN(id,rad));for(let k=0;k<own;k++)out.push({id,rad,q:k>=own-q})}}
+  return out.sort((x,y)=>(x.q-y.q)||(x.rad-y.rad)||((meta.relics[y.id][0]+meta.relics[y.id][1])-(meta.relics[x.id][0]+meta.relics[x.id][1])))}
 const legBps=()=>[...WPN[heroCls].filter(w=>w.r===3&&!ownedW(w.id)),...Object.keys(WPN).filter(c=>c!==heroCls).flatMap(c=>WPN[c].filter(w=>w.r===3&&!ownedW(w.id))),...GEAR_BP.filter(g=>g.r===3)].map(x=>x.id);
 function fusionSection(){
-  let h=`<section class="cx-section"><h3 class="cx-section__label">Fusion de reliques</h3><p class="cx-hint" style="margin:0">Fusionne 3 reliques non équipées d'un même niveau. Les intactes partent en premier, puis les éclatantes. Trois reliques Abysse donnent un fragment de schéma légendaire de ton choix.</p><div class="fuse">`;
-  for(let t=0;t<4;t++){const av=relAvail(t).length,cost=FUSE_COST[t],ok=av>=3&&meta.essence>=cost;
+  let h=`<section class="cx-section"><h3 class="cx-section__label">Fusion de reliques</h3><p class="cx-hint" style="margin:0">Fusionne 3 reliques d'un même niveau. Celles hors de la file d'ouverture partent en premier, les intactes avant les éclatantes ; si besoin, des reliques de la file sont utilisées et en sont retirées. Trois reliques Abysse donnent un fragment de schéma légendaire de ton choix.</p><div class="fuse">`;
+  for(let t=0;t<4;t++){const AV=relAvail(t),av=AV.length,qn=AV.slice(0,3).filter(q=>q.q).length,inQ=AV.filter(q=>q.q).length,cost=FUSE_COST[t],ok=av>=3&&meta.essence>=cost;
     const res=t<3?`1 relique <b style="color:${RTIER[t+1].c}">${RTIER[t+1].n}</b>`:'<b style="color:var(--rar-legend)">1 fragment légendaire</b>';
-    h+=`<div class="frow"><span class="rgem" style="--tc:${RTIER[t].c}">${RELIC_SVG}</span><div class="fl"><b>3 × <span style="color:${RTIER[t].c}">${RTIER[t].n}</span> → ${res}</b><span>${av} disponible${av>1?'s':''}${av<3?` · il en faut ${3-av} de plus`:''}${av>=3&&meta.essence<cost?` · il manque ${cost-meta.essence} essence`:''}</span></div>
+    h+=`<div class="frow"><span class="rgem" style="--tc:${RTIER[t].c}">${RELIC_SVG}</span><div class="fl"><b>3 × <span style="color:${RTIER[t].c}">${RTIER[t].n}</span> → ${res}</b><span>${av} possédée${av>1?'s':''}${inQ?` dont ${inQ} dans la file d'ouverture`:''}${av<3?` · il en faut ${3-av} de plus`:''}${av>=3&&meta.essence<cost?` · il manque ${cost-meta.essence} essence`:''}${ok&&qn?` · ${qn} ${qn>1?'seront retirées':'sera retirée'} de la file`:''}</span></div>
       <button class="btn buy" data-cact="rfuse" data-arg="${t}" ${ok&&(t<3||fuseTgt)?'':'disabled'}>Fusionner · <span class="essi"></span>${cost}</button></div>`;
     if(t===3){const L=legBps();if(!fuseTgt||!L.includes(fuseTgt))fuseTgt=L[0]||null;
       h+=`<div class="ftgt"><span class="cx-hint" style="margin:0">Schéma visé :</span><div class="cx-chips">${L.map(id=>{const b=bpdef(id);return `<button class="cx-chip cx-chip--sm" data-cact="rftgt" data-arg="${id}" aria-pressed="${fuseTgt===id}">${b.n} <span class="n">${fragStatus(id)} / 3</span></button>`}).join('')||'<span class="cx-hint">Toutes les armes légendaires sont déjà fabriquées.</span>'}</div></div>`}}
