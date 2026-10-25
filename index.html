@@ -64,6 +64,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
   padding:calc(env(safe-area-inset-top,0px) + 12px) max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px))}
 .sheet{background:var(--panel);border:1px solid var(--line);border-bottom:0;border-radius:14px 14px 0 0;width:min(560px,100%);max-height:100%;overflow:auto;
   padding:18px 18px calc(env(safe-area-inset-bottom,0px) + 18px);display:flex;flex-direction:column;gap:14px;touch-action:pan-y;box-sizing:border-box}
+.sheet>*{flex-shrink:0}
 .sheet header{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .sheet h2{font-family:var(--display);font-weight:500;font-size:28px;margin:0;letter-spacing:.02em}
 .sheet h3{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:500}
@@ -72,7 +73,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 .btn:disabled{opacity:.4;cursor:default}
 header .btn{margin-left:auto}
 .col{display:flex;flex-direction:column;gap:10px}
-.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
 .slot{border:1px solid var(--line);background:var(--panel2);border-radius:8px;padding:8px;text-align:left;display:flex;flex-direction:column;gap:3px;min-width:0}
 .slot.sel{box-shadow:0 0 0 2px var(--ink)}
 .slot span{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
@@ -118,6 +119,9 @@ header .btn{margin-left:auto}
 .boss.obj b{color:#9fe3f0}
 .boss.obj .hp-bar{background:#10202a;border-color:#2d5560}
 .boss.obj .hp-fill{background:linear-gradient(#8fd3e0,#3d8a99)}
+.lvsel{display:flex;align-items:center;gap:6px}
+.lvsel .btn{width:40px;height:40px;padding:0;font-size:20px;font-weight:700}
+#lvIn{width:64px;height:40px;box-sizing:border-box;text-align:center;font:700 18px var(--body);color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:8px;user-select:text;-webkit-user-select:text}
 .relicpick{display:flex;align-items:center;justify-content:center;gap:10px;font-size:14px;color:var(--muted);width:100%;flex-wrap:wrap}
 select{font:inherit;color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;max-width:100%}
 select:disabled{opacity:.5}
@@ -128,6 +132,12 @@ select:disabled{opacity:.5}
 .rw b{font-weight:500;text-align:right}
 body:has(#camp:not([hidden])) .toast{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 24px)}
 .savebox{width:100%;box-sizing:border-box;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;color:var(--ink);background:#141117;border:1px solid var(--line);border-radius:8px;padding:10px;resize:vertical;user-select:text;-webkit-user-select:text;touch-action:auto;word-break:break-all}
+.mslot{display:flex;flex-direction:column;gap:3px;min-width:0}
+.mslot .sp{font-size:11px;text-align:center;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mod .pl{position:absolute;top:2px;left:6px;font-size:11px}
+.mod.off{opacity:.4;filter:grayscale(1)}
+.alrow{display:flex;flex-wrap:wrap;gap:6px}
+.over{color:var(--blood)!important}
 .relb{border-color:var(--tc);color:var(--tc);padding:6px 10px;font-size:13px;font-weight:700}
 .tab[aria-selected="true"]{background:var(--panel2);color:var(--ink);box-shadow:inset 0 -2px 0 var(--ember)}
 .ups{display:flex;flex-direction:column;gap:6px}
@@ -251,6 +261,8 @@ body:has(#camp:not([hidden])) .toast{top:auto;bottom:calc(env(safe-area-inset-bo
       <button class="cls" data-m="capture" role="radio" aria-checked="false" style="--cc:#f0cf4a"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg><b>Capture</b><span>Traque</span></button>
     </div>
     <p class="desc" id="modeDesc" style="min-height:3em"></p>
+    <div class="relicpick"><span>Niveau de mission</span><span class="lvsel"><button class="btn" id="lvMinus" aria-label="Baisser le niveau">−</button><input id="lvIn" type="number" min="1" max="50" inputmode="numeric" aria-label="Niveau de mission"><button class="btn" id="lvPlus" aria-label="Monter le niveau">+</button></span></div>
+    <p class="desc" id="lvDesc" style="min-height:0;font-size:13px;color:var(--muted)"></p>
     <label class="relicpick" for="relicSel">Relique à ouvrir <select id="relicSel"></select></label>
     <div class="btnrow">
       <button class="btn main" id="startBtn" style="padding:12px 22px;font-size:17px">Entrer dans la crypte</button>
@@ -321,14 +333,16 @@ let dpr=1;
 
 /* ---------- Données ---------- */
 const RAR=[{n:'Commun',c:'#bdb6a8',aff:1,shard:1},{n:'Magique',c:'#7b95ff',aff:2,shard:2},{n:'Rare',c:'#f0cf4a',aff:3,shard:4},{n:'Légendaire',c:'#ff8a24',aff:4,shard:8}];
-const SLOT={arme:'Arme',armure:'Armure',amulette:'Amulette'};
-const BASES={armure:['Cuirasse','Brigandine','Cotte de mailles','Manteau de chasseur'],amulette:['Talisman','Amulette','Médaillon']};
+const SLOT={arme:'Arme',armure:'Armure',amulette:'Amulette',bottes:'Bottes',anneau:'Anneau'};
+const BASES={armure:['Cuirasse','Brigandine','Cotte de mailles','Manteau de chasseur'],amulette:['Talisman','Amulette','Médaillon'],bottes:['Bottes de cuir','Grèves','Solerets','Bottes de pèlerin'],anneau:['Anneau','Chevalière','Bague']};
 const SUFFIX=['du Corbeau','des Cendres','de la Veuve','du Pèlerin',"de l'Ossuaire",'du Loup gris','de la Lune noire','des Murmures','du Bourreau','de Fer-Sang'];
-const LEGEND={armure:["Linceul d'Argent",'Serment du Veilleur','Peau de Wyverne'],amulette:["Œil de l'Abîme",'Larme de la Sorcière','Sceau du Premier Mort']};
+const LEGEND={armure:["Linceul d'Argent",'Serment du Veilleur','Peau de Wyverne'],amulette:["Œil de l'Abîme",'Larme de la Sorcière','Sceau du Premier Mort'],bottes:['Pas du Spectre','Foulée de Cendre','Semelles du Banni'],anneau:['Alliance Brisée','Anneau du Bourreau','Cercle de Braise']};
 const GLYPH={
   arme:'<svg viewBox="0 0 24 24"><path d="M5 19 19 5M13 5h6v6M7 11l6 6M4 14l6 6"/></svg>',
   armure:'<svg viewBox="0 0 24 24"><path d="M6 4l6 2 6-2 2.5 5-3 2v9h-11v-9l-3-2z"/></svg>',
-  amulette:'<svg viewBox="0 0 24 24"><path d="M7 3c0 6 10 6 10 0"/><circle cx="12" cy="15" r="5"/><circle cx="12" cy="15" r="1.5"/></svg>'};
+  amulette:'<svg viewBox="0 0 24 24"><path d="M7 3c0 6 10 6 10 0"/><circle cx="12" cy="15" r="5"/><circle cx="12" cy="15" r="1.5"/></svg>',
+  bottes:'<svg viewBox="0 0 24 24"><path d="M8 3h6v10l6 3v4H5v-6l3-1z"/><path d="M5 18h15"/></svg>',
+  anneau:'<svg viewBox="0 0 24 24"><circle cx="12" cy="14" r="6"/><path d="m9 7 3-4 3 4z"/></svg>'};
 const CLS={
   archer:{n:'Archer',skill:'Volée',cd:7,base:{dmg:8,aps:1.8,hp:100,crit:5,speed:0,armor:0,cdr:0},
     cloak:'#2d4c50',rim:'#a9cbc0',inner:'#14232a',col:'#e8853b',
@@ -373,27 +387,31 @@ const GEAR_BP=[
   {id:'x2',n:'Cuirasse du Veilleur Prime',slot:'armure',r:3,base:70,aff:{dmgPct:15,armor:6},craft:500},
   {id:'x3',n:'Amulette des Échos',slot:'amulette',r:3,base:6,aff:{apsPct:15,cdr:10},craft:500},
   {id:'x4',n:'Sceau du Néant',slot:'amulette',r:3,base:8,aff:{critDmg:50,dmgPct:10},craft:500},
+  {id:'x5',n:'Foulée du Néant',slot:'bottes',r:3,base:12,aff:{cdr:10,regen:2},craft:500},
+  {id:'x6',n:'Chevalière du Premier Roi',slot:'anneau',r:3,base:15,aff:{crit:6,critDmg:30},craft:500},
 ];
-const FRAG={archer:['Branches','Corde','Mécanisme'],guerrier:['Lame','Garde','Poignée'],magicien:['Hampe','Focus','Runes'],armure:['Plastron','Sangles','Doublure'],amulette:['Chaîne','Sertissure','Gemme']};
+const FRAG={archer:['Branches','Corde','Mécanisme'],guerrier:['Lame','Garde','Poignée'],magicien:['Hampe','Focus','Runes'],armure:['Plastron','Sangles','Doublure'],amulette:['Chaîne','Sertissure','Gemme'],bottes:['Tige','Semelle','Boucle'],anneau:['Anneau brut','Chaton','Pierre']};
 function bpdef(id){const w=wdef(id);if(w)return {...w,kind:'arme',frag:FRAG[w.cls]};const g=GEAR_BP.find(x=>x.id===id);return g?{...g,kind:g.slot,frag:FRAG[g.slot]}:null}
 /* ---------- Reliques ---------- */
-const RTIER=[{n:'Lith',c:'#c9a46a'},{n:'Méso',c:'#a9bccf'},{n:'Néo',c:'#d4c8e8'},{n:'Axi',c:'#f0cf4a'}];
+const RTIER=[{n:'Cendre',c:'#c9a46a'},{n:'Ossuaire',c:'#a9bccf'},{n:'Sanguine',c:'#e07a7a'},{n:'Abysse',c:'#f0cf4a'}];
 const RELICS={
-  lA1:{t:0,n:'A1',rw:['a1:0','g1:0','ess:20','m1:1','a2:0','g2:2']},
-  lB1:{t:0,n:'B1',rw:['m1:0','a1:1','gold:80','g1:1','m2:0','a2:2']},
-  lC1:{t:0,n:'C1',rw:['g1:2','m1:2','a1:2','g2:0','a2:1','m2:2']},
-  mA1:{t:1,n:'A1',rw:['g2:1','m2:1','ess:40','a3:0','g3:0','m3:0']},
-  mB1:{t:1,n:'B1',rw:['a2:0','g2:2','m2:0','a3:1','m3:1','g3:1']},
-  mC1:{t:1,n:'C1',rw:['a2:2','m2:2','gold:200','g3:2','m3:2','a3:2']},
-  nA1:{t:2,n:'A1',rw:['a3:0','g3:0','m3:0','a4:0','x1:0','g4:0']},
-  nB1:{t:2,n:'B1',rw:['a3:1','g3:1','m3:1','m4:0','x2:0','a4:1']},
-  nC1:{t:2,n:'C1',rw:['a3:2','g3:2','m3:2','g4:1','x3:0','m4:1']},
-  xA1:{t:3,n:'A1',rw:['x1:1','x2:1','ess:100','a4:2','x3:1','x1:2']},
-  xB1:{t:3,n:'B1',rw:['x4:0','x2:2','gold:400','g4:2','x4:1','x3:2']},
-  xC1:{t:3,n:'C1',rw:['x1:0','x3:0','ess:100','m4:2','a4:0','x4:2']},
+  lA1:{t:0,n:"Dent du Pèlerin",rw:['a1:0','g1:0','ess:20','m1:1','a2:0','g2:2']},
+  lB1:{t:0,n:"Larme de suie",rw:['m1:0','a1:1','gold:80','g1:1','m2:0','a2:2']},
+  lC1:{t:0,n:"Clou du Bûcher",rw:['g1:2','m1:2','a1:2','g2:0','a2:1','m2:2']},
+  mA1:{t:1,n:"Phalange du Veilleur",rw:['g2:1','m2:1','ess:40','a3:0','g3:0','m3:0']},
+  mB1:{t:1,n:"Crâne fêlé",rw:['a2:0','g2:2','m2:0','a3:1','m3:1','g3:1']},
+  mC1:{t:1,n:"Côte du Roi-mendiant",rw:['a2:2','m2:2','gold:200','g3:2','m3:2','a3:2']},
+  nA1:{t:2,n:"Cœur noirci",rw:['a3:0','g3:0','m3:0','a4:0','x1:0','g4:0']},
+  nB1:{t:2,n:"Calice rouge",rw:['a3:1','g3:1','m3:1','m4:0','x2:0','a4:1']},
+  nC1:{t:2,n:"Veine de la Veuve",rw:['a3:2','g3:2','m3:2','g4:1','x3:0','m4:1']},
+  xA1:{t:3,n:"Prunelle du Néant",rw:['x1:1','x2:1','ess:100','a4:2','x3:1','x1:2']},
+  xB1:{t:3,n:"Couronne brisée",rw:['x4:0','x2:2','gold:400','g4:2','x4:1','x3:2']},
+  xC1:{t:3,n:"Os du Premier Roi",rw:['x1:0','x3:0','ess:100','m4:2','a4:0','x4:2']},
+  nD1:{t:2,n:"Fiole d'ichor",rw:['x5:0','x6:0','ess:60','x5:1','x6:1','x5:2']},
+  xD1:{t:3,n:"Sablier noir",rw:['x6:1','x5:0','gold:300','x6:2','x5:2','x6:0']},
 };
 const RW_RAR=[0,0,0,1,1,2], CH=[[25.33,11,2],[16.67,20,10]], REACT_N=10;
-const relicName=id=>`${RTIER[RELICS[id].t].n} ${RELICS[id].n}`;
+const relicName=id=>`${RELICS[id].n} (${RTIER[RELICS[id].t].n})`;
 function rollRelic(id,rad){const ch=CH[rad?1:0];let x=Math.random()*100;for(let i=0;i<6;i++){x-=ch[RW_RAR[i]];if(x<0)return RELICS[id].rw[i]}return RELICS[id].rw[0]}
 function rwLabel(r){const [k,v]=r.split(':');if(k==='ess')return `Essence ×${v}`;if(k==='gold')return `${v} or`;const b=bpdef(k);return `${b.n} · ${b.frag[+v]}`}
 const MODES={
@@ -405,7 +423,7 @@ const MODES={
 /* ---------- Progression permanente ---------- */
 let meta={gold:0,up:{},tal:{},cp:1,start:1,essence:0,mods:{ferocite:0},
   load:{guerrier:['ferocite',null,null,null],archer:['ferocite',null,null,null],magicien:['ferocite',null,null,null]},
-  gear:{armure:null,amulette:null},stash:[],wpn:{guerrier:'g0',archer:'a0',magicien:'m0'},bp:{},built:{},parts:{},relics:{},mode:'survie',relicSel:null};
+  gear:{armure:null,amulette:null,bottes:null,anneau:null},stash:[],wpn:{guerrier:'g0',archer:'a0',magicien:'m0'},bp:{},built:{},parts:{},relics:{},mode:'survie',relicSel:null,pol:{},mast:{},align:{}};
 try{const m=JSON.parse(localStorage.getItem('crypte-meta')||'null');if(m)meta=Object.assign(meta,m)}catch(e){}
 if(!meta.v2){meta.cp=1;meta.start=1;meta.v2=1}
 if(!meta.v3){for(const id in meta.bp||{}){const w=wdef(id);if(w&&!meta.built[id])meta.gold+=w.bp}meta.bp={};meta.v3=1;meta.relics={lA1:[1,0],...(meta.relics||{})}}
@@ -486,9 +504,20 @@ const MODS={
 const modVal=(id,rk)=>+(MODS[id].v*(rk+1)).toFixed(2);
 const modDrain=(id,rk)=>MODS[id].drain+rk;
 const fuseCost=(id,rk)=>10*Math.pow(2,rk)*(MODS[id].r+1);
-const modCap=()=>10+lv('cat')*3;
+const POL={b:{n:'Braise',c:'#e8853b',s:'▲'},r:{n:'Rempart',c:'#5fbf7a',s:'■'},s:{n:'Spirale',c:'#b9a6f0',s:'◆'}};
+const MOD_POL={ferocite:'b',cadence:'b',oeil:'b',boucherie:'b',dedoublement:'b',diamant:'b',allonge:'b',deflagration:'b',vitalite:'r',egide:'r',sangsue:'r',pas:'r',intensite:'s',flux:'s',braise:'s',givre:'s',orage:'s'};
+const polOf=c=>(meta.pol[c]||(meta.pol[c]=[null,null,null,null]));
+const mastOf=c=>(meta.mast[c]||(meta.mast[c]={r:0,xp:0}));
+const mastNeed=r=>100*(r+1);
+const deCls=c=>c==='archer'?"de l'Archer":`du ${CLS[c].n}`;
+const alignCost=c=>200*Math.pow(2,Math.min(3,meta.align[c]||0));
+const slotDrain=(id,rk,i,c=heroCls)=>{const b=modDrain(id,rk),p=polOf(c)[i];return !p?b:p===MOD_POL[id]?Math.ceil(b/2):Math.ceil(b*1.25)};
+const capOf=c=>10+lv('cat')*3+mastOf(c).r;
+const modCap=()=>capOf(heroCls);
+function activeMods(c){const out=[];let u=0;(meta.load[c]||[]).forEach((id,i)=>{if(!id||meta.mods[id]==null||!modOk(id,c))return;const d=slotDrain(id,meta.mods[id],i,c);if(u+d<=capOf(c)){u+=d;out.push(id)}});return out}
+function bestSlot(id,rk){let best=-1,bd=1e9;meta.load[heroCls].forEach((x,i)=>{if(x)return;const d=slotDrain(id,rk,i);if(d<bd){bd=d;best=i}});return {i:best,d:bd}}
 const modOk=(id,c)=>!MODS[id].cls||MODS[id].cls.includes(c);
-const modUsed=()=>meta.load[heroCls].reduce((a,id)=>a+(id?modDrain(id,meta.mods[id]):0),0);
+const modUsed=()=>meta.load[heroCls].reduce((a,id,i)=>a+(id?slotDrain(id,meta.mods[id],i):0),0);
 function rollMod(boss){const x=Math.random()*100,r=x<(boss?30:8)?2:x<(boss?75:38)?1:0;return pick(Object.keys(MODS).filter(id=>MODS[id].r===r&&modOk(id,heroCls)))}
 
 /* ---------- Objets ---------- */
@@ -510,13 +539,14 @@ const AFF={
   splash:{t:v=>`+${v} % de rayon d'explosion`,w:1},
   pierce:{t:v=>`Les carreaux transpercent ${v} ennemi${v>1?'s':''}`,w:1},
 };
-const BASE_STAT={arme:'dmg',armure:'hp',amulette:'crit'};
-function baseLine(it){const v=it.base.v;return it.slot==='arme'?`${v} dégâts de base`:it.slot==='armure'?`+${v} points de vie`:`+${v} % de chances de critique`}
-let uid=1+Math.max(0,...meta.stash.map(i=>i.id),...[meta.gear.armure,meta.gear.amulette].filter(Boolean).map(i=>i.id));
+const BASE_STAT={arme:'dmg',armure:'hp',amulette:'crit',bottes:'speed',anneau:'dmgPct'};
+const baseTxtOf=(slot,v)=>slot==='arme'?`${v} dégâts de base`:slot==='armure'?`+${v} points de vie`:slot==='bottes'?`+${v} % de vitesse de déplacement`:slot==='anneau'?`+${v} % de dégâts`:`+${v} % de chances de critique`;
+function baseLine(it){return baseTxtOf(it.slot,it.base.v)}
+let uid=1+Math.max(0,...meta.stash.map(i=>i.id),...Object.values(meta.gear).filter(Boolean).map(i=>i.id));
 function rollRarity(l){const x=Math.random()*100,leg=1.5+l*.6,rare=8+l*1.2;return x<leg?3:x<leg+rare?2:x<leg+rare+32?1:0}
 function genItem(l,minR=0){
-  const r=Math.max(rollRarity(l+lv('luc')*3),minR), slot=pick(['armure','amulette']), bk=BASE_STAT[slot];
-  const bv=slot==='armure'?Math.round(20+l*7+rand(-4,6)):ri(2,5);
+  const r=Math.max(rollRarity(l+lv('luc')*3),minR), slot=pick(['armure','amulette','bottes','anneau']), bk=BASE_STAT[slot];
+  const bv=slot==='armure'?Math.round(20+l*7+rand(-4,6)):slot==='bottes'?ri(4,8)+Math.floor(l/4):slot==='anneau'?ri(5,10)+Math.floor(l*.8):ri(2,5);
   const it={id:uid++,slot,r,lvl:l,base:{k:bk,v:bv},aff:{}};
   let pool=Object.keys(AFF).filter(k=>!AFF[k].w);const chosen=[];
   while(chosen.length<RAR[r].aff&&pool.length){const k=pick(pool);pool=pool.filter(x=>x!==k);chosen.push(k)}
@@ -528,18 +558,18 @@ function genItem(l,minR=0){
 }
 function weaponItem(c,id){const w=(id&&wdef(id)&&ownedW(id))?wdef(id):wdef(WPN[c][0].id);
   return {id:'w_'+w.id,wid:w.id,slot:'arme',r:w.r,lvl:1,base:{k:'dmg',v:w.dmg},aff:{...w.aff},name:w.n,type:'Arme'}}
-const curEq=()=>({arme:weaponItem(heroCls,meta.wpn[heroCls]),armure:meta.gear.armure,amulette:meta.gear.amulette});
+const curEq=()=>({arme:weaponItem(heroCls,meta.wpn[heroCls]),armure:meta.gear.armure||null,amulette:meta.gear.amulette||null,bottes:meta.gear.bottes||null,anneau:meta.gear.anneau||null});
 function rollPart(){
-  const L=G?G.level:1,ws=WPN[heroCls].slice(1),wt=ws.map((w,i)=>Math.max(.5,4-i+(L-1)*i*.7));
+  const L=G?G.level:1,ws=[...WPN[heroCls].slice(1),...GEAR_BP],wt=ws.map((w,i)=>i<4?Math.max(.5,4-i+(L-1)*i*.7):Math.max(.3,.2*L));
   let x=Math.random()*wt.reduce((a,b)=>a+b,0),k=0;while(x>wt[k]){x-=wt[k];k++}
   return {w:ws[Math.min(k,ws.length-1)].id,p:ri(0,2)};
 }
-const partLabel=p=>{const w=wdef(p.w);return `<span style="color:${RAR[w.r].c}">${w.n}</span> · ${PARTS[w.cls][p.p]}`};
+const partLabel=p=>{const w=bpdef(p.w);return `<span style="color:${RAR[w.r].c}">${w.n}</span> · ${w.frag[p.p]}`};
 
 function stats(eq){
   const b=CLS[heroCls].base,s={dmg:b.dmg,aps:b.aps,hp:b.hp,crit:b.crit,critDmg:150,multi:0,pierce:0,burn:0,armor:b.armor,speed:b.speed,regen:0,cdr:b.cdr,novaPct:0,dmgPct:0,apsPct:0,leech:0,reach:0,splash:0,burnPct:0,chill:0,shock:0};
   for(const it of Object.values(eq))if(it){s[it.base.k]+=it.base.v;for(const k in it.aff)s[k]+=it.aff[k]}
-  for(const id of meta.load[heroCls]||[])if(id&&meta.mods[id]!=null&&modOk(id,heroCls))s[MODS[id].k]+=modVal(id,meta.mods[id]);
+  for(const id of activeMods(heroCls))s[MODS[id].k]+=modVal(id,meta.mods[id]);
   const R=(G&&G.run)||{},rr=k=>R[k]||0;
   s.dmgPct+=rr('dmg')*12;s.apsPct+=rr('aps')*10;s.crit+=rr('crit')*5;s.critDmg+=rr('cdmg')*30;s.speed+=rr('spd')*8;s.regen+=rr('regen')*1.5;
   s.cdr+=rr('cdr')*8;s.novaPct+=rr('nova')*25;s.multi+=rr('multi')+rr('fan')*2;s.dmgPct-=rr('fan')*10;s.echo=rr('echo')*20;s.waves=rr('wave');s.pierce+=rr('pierce');s.reach+=rr('reach')*15;s.leech+=rr('leech')*1.5;
@@ -566,7 +596,7 @@ if(!CLS[heroCls])heroCls='archer';
 let floorPat=null;
 
 function newGame(){
-  const C=CLS[heroCls],L=Math.min(meta.start,meta.cp);
+  const C=CLS[heroCls],L=clamp(meta.start|0||1,1,LV_MAX);
   G={cls:heroCls,level:L,t:0,tl:0,potions:2+lv('alc'),kills:0,gold:0,loot:{items:[],parts:[],relics:[]},fresh:0,run:{},hl:1,xp:0,pend:0,nxp:0,
     en:[],shots:[],eb:[],zaps:[],parts:[],texts:[],drops:[],rings:[],spawns:[],shake:0,spawnT:1.2,bossT:BOSS_T,bossN:0,vw:600,vh:900};
   G.eq=curEq();S=stats(G.eq);
@@ -600,7 +630,9 @@ function spawnTarget(){
   G.en.push(G.target);
 }
 function relicDrop(){const t=clamp(G.level-1+(Math.random()<.25?-1:Math.random()<.1?1:0),0,3);return pick(Object.keys(RELICS).filter(id=>RELICS[id].t===t))}
-function diff(){const L=G.level,f=G.mode==='defense'?Math.max(0,((G.wave||1)-1)%5)/5:Math.min(1.5,G.tl/LEVEL_T);return {hs:(1+.75*(L-1))*(1+.35*f),ds:(1+.3*(L-1))*(1+.15*f)}}
+const LV_MAX=50;
+const lootMul=L=>1+.25*(L-1);
+function diff(){const L=G.level,f=G.mode==='defense'?Math.max(0,((G.wave||1)-1)%5)/5:Math.min(1.5,G.tl/LEVEL_T);return {hs:(1+.75*(L-1))*(1+.35*f),ds:(1+.35*(L-1))*(1+.15*f)}}
 function spawnEnemy(s){
   const d=ETYPE[s.type],{hs,ds}=diff(),bm=s.type==='boss'?(1+.25*G.bossN):1;
   const e={type:s.type,x:s.x,y:s.y,r:d.r,hp:d.hp*hs*bm,max:d.hp*hs*bm,spd:d.spd*rand(.92,1.08),dmg:d.dmg*ds,col:d.col,flash:0,hitCd:0,kx:0,ky:0,burnT:0,burnDps:0,burnAcc:0,
@@ -624,7 +656,7 @@ function chooseType(tt,L){const x=Math.random();
   return ['ghoul',ri(2,4)];}
 function spawnPack(type,n){const p=ringPos();let k=0;for(let i=0;i<n;i++){const q={x:clamp(p.x+rand(-40,40),EDGE+30,MAP-EDGE-30),y:clamp(p.y+rand(-40,40),EDGE+30,MAP-EDGE-30)};if(!blocked(q.x,q.y,14)){spawnEnemy({type,...q});k++}}return k}
 function defenseTick(dt){
-  if(G.waveState==='break'){G.waveT-=dt;if(G.waveT<=0){G.wave++;G.waveState='fight';G.toSpawn=Math.min(80,10+G.wave*4+(G.level-1)*8);G.spawnT=.5;
+  if(G.waveState==='break'){G.waveT-=dt;if(G.waveT<=0){G.wave++;G.waveState='fight';G.toSpawn=Math.min(140,10+G.wave*4+(G.level-1)*10);G.spawnT=.5;
       toast(`<b style="color:var(--ember)">Vague ${G.wave}</b>`+(G.wave%5===0?' · un Gardien l\'accompagne':''));
       if(G.wave%5===0){const p=ringPos(40);spawnEnemy({type:'boss',x:p.x,y:p.y})}}return}
   if(G.toSpawn>0){G.spawnT-=dt;if(G.spawnT<=0){G.spawnT=Math.max(.3,.9-G.wave*.03);const [type,n]=chooseType(G.wave*18,G.level);const k=spawnPack(type,Math.min(n,G.toSpawn));G.toSpawn-=Math.max(1,k)}}
@@ -640,7 +672,7 @@ function spawner(dt){
   if(G.bossT<=0){G.bossT=G.mode==='capture'?90:BOSS_T;const p=ringPos(40);spawnEnemy({type:'boss',x:p.x,y:p.y});toast('<b style="color:#e7c6ff">Un Gardien surgit des ténèbres.</b>');G.shake=6}
   G.spawnT-=dt;if(G.spawnT>0)return;
   G.spawnT=Math.max(.16,.85-.12*(L-1)-.4*f);
-  const target=Math.min(150,22+12*(L-1)+Math.floor(34*f));
+  const target=Math.min(220,22+14*(L-1)+Math.floor(34*f));
   if(G.en.length>=target)return;
   const [type,n]=chooseType(G.t,L);spawnPack(type,n);
 }
@@ -677,23 +709,27 @@ function podHurt(d){const p=G.pod;if(!p||G.over||GOD)return;d*=.6;p.hp-=d;p.flas
 const itemLvl=()=>1+(G.level-1)*4+Math.floor(G.tl/45);
 function kill(e){
   e.dead=true;G.kills++;
-  const boss=e.type==='boss',L=G.level;
+  const boss=e.type==='boss',L=G.level,lm=lootMul(L);
   burst(e.x,e.y,boss?60:10,e.col,boss?320:150,4);burst(e.x,e.y,boss?20:4,'#e8853b',120);
   const push=(o,s=20)=>G.drops.push(Object.assign({x:e.x+rand(-s,s),y:e.y+rand(-s,s),t:rand(0,6),age:0,mt:0},o));
   if(boss){
     push({kind:'item',item:genItem(itemLvl(),2)},40);push({kind:'item',item:genItem(itemLvl(),1)},40);push({kind:'relic',id:relicDrop()},40);push({kind:'potion'},40);
+    for(let i=0;i<Math.floor((L-1)/3);i++)push({kind:'item',item:genItem(itemLvl(),1)},50);
+    for(let i=0;i<Math.floor((L-1)/4);i++)push({kind:'relic',id:relicDrop()},50);
+    if(Math.random()<Math.min(1,.15*lm))push({kind:'part',part:rollPart()},40);
     for(let i=0;i<2;i++)push({kind:'mod',id:rollMod(true)},40);
     meta.essence+=25;saveMeta();G.shake=14;toast('<b style="color:var(--ember)">Gardien vaincu.</b> Son butin est à toi.');
     if(!G.en.some(o=>o.type==='boss'&&!o.dead))$('bossBar').hidden=true;
   }else{
     const t=e.type;
-    if(Math.random()<({ghoul:.012,bat:.004,archer:.016,brute:.07})[t])push({kind:'item',item:genItem(itemLvl())});
-    if(Math.random()<({ghoul:.003,bat:.001,archer:.004,brute:.025})[t])push({kind:'relic',id:relicDrop()});
+    if(Math.random()<({ghoul:.012,bat:.004,archer:.016,brute:.07})[t]*lm)push({kind:'item',item:genItem(itemLvl())});
+    if(Math.random()<({ghoul:.003,bat:.001,archer:.004,brute:.025})[t]*lm)push({kind:'relic',id:relicDrop()});
+    if(L>1&&Math.random()<({ghoul:.0015,bat:.0005,archer:.002,brute:.012})[t]*(lm-1))push({kind:'part',part:rollPart()});
     if(e.corr)push({kind:'react'},6);
     if(Math.random()<({ghoul:.006,bat:.002,archer:.008,brute:.06})[t])push({kind:'mod',id:rollMod(false)});
     if(Math.random()<(t==='brute'?.05:.005))push({kind:'potion'});
   }
-  const gv=({ghoul:1,bat:.6,archer:1.5,brute:5,boss:50})[e.type]*(1+.5*(L-1)),n=boss?8:(Math.random()<(e.type==='bat'?.35:.65)?1:0);
+  const gv=({ghoul:1,bat:.6,archer:1.5,brute:5,boss:50})[e.type]*(1+.6*(L-1)),n=boss?8:(Math.random()<Math.min(1,(e.type==='bat'?.35:.65)*(1+.05*(L-1)))?1:0);
   for(let i=0;i<n;i++)push({kind:'gold',amt:Math.max(1,Math.round(gv/(boss?8:1)*rand(.7,1.3)))},boss?45:15);
   const xv=({ghoul:1,bat:1,archer:2,brute:5,boss:30})[e.type];
   if(G.nxp>220){for(let k=0;k<12;k++){const o=G.drops[Math.floor(Math.random()*G.drops.length)];if(o&&o.kind==='xp'){o.v+=xv;break}}}
@@ -714,8 +750,8 @@ function gainMod(id){
   const m=MODS[id],c=MOD_RAR[m.r].c;
   if(meta.mods[id]==null){
     meta.mods[id]=0;let msg=`Nouveau mod : <span style="color:${c}">${m.n}</span>`;
-    const load=meta.load[heroCls],i=load.indexOf(null);
-    if(i>=0&&modOk(id,heroCls)&&modUsed()+modDrain(id,0)<=modCap()){load[i]=id;refreshStats();msg+=' · équipé'}
+    const load=meta.load[heroCls],bs=bestSlot(id,0);
+    if(bs.i>=0&&modOk(id,heroCls)&&modUsed()+bs.d<=modCap()){load[bs.i]=id;refreshStats();msg+=' · équipé'}
     toast(msg);
   }else{const e=8*(m.r+1);meta.essence+=e;toast(`<span style="color:${c}">${m.n}</span> en double · +${e} essence`)}
   saveMeta();
@@ -837,18 +873,18 @@ function update(dt){
   // attaque
   if(P.swing){P.swing.t+=dt;if(P.swing.t>.2)P.swing=null}
   if(P.spin>0){P.spin-=dt;P.spinTick-=dt;P.face+=dt*18;
-    if(P.spinTick<=0){P.spinTick=.2;const R=100*(1+S.reach/100);
+    if(P.spinTick<=0){P.spinTick=.2;const R=130*(1+S.reach/100);
       for(const e of G.en){const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy)||1;if(d<R+e.r){const crit=Math.random()*100<S.crit,dd=S.nova*.22*(crit?S.critDmg/100:1);dmgEnemy(e,dd,crit);if(S.leech)heal(dd*S.leech/100);const k=e.type==='boss'?10:90;e.kx+=dx/d*k;e.ky+=dy/d*k}}}}
   let tgt=null,td=1e9;for(const e of G.en){const d=Math.hypot(e.x-P.x,e.y-P.y);if(d<td){td=d;tgt=e}}
   if(G.cls==='guerrier'){
-    const R=(52+P.r)*(1+S.reach/100);
+    const R=(78+P.r)*(1+S.reach/100);
     if(tgt&&P.dashT<=0&&P.spin<=0){
       if(td<R+tgt.r+40)P.face=Math.atan2(tgt.y-P.y,tgt.x-P.x);
       if(td<R+tgt.r&&P.fire<=0){
         P.fire=1/S.aps;const a=P.face;P.swing={t:0,a,R};
         for(const e of G.en){const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy)||1;if(d>R+e.r)continue;
           const da=Math.abs((((Math.atan2(dy,dx)-a)%(2*Math.PI))+3*Math.PI)%(2*Math.PI)-Math.PI);
-          if(da>1.2&&d>e.r+P.r+6)continue;
+          if(da>1.35&&d>e.r+P.r+6)continue;
           const crit=Math.random()*100<S.crit,dd=S.dmg*(crit?S.critDmg/100:1);dmgEnemy(e,dd,crit);onHit(e,dd);
           if(S.burn){e.burnT=2.5;e.burnDps=S.burn}if(S.leech)heal(dd*S.leech/100);
           const k=e.type==='boss'?30:e.type==='brute'?140:280;e.kx+=dx/d*k;e.ky+=dy/d*k}
@@ -856,7 +892,7 @@ function update(dt){
         for(let i=0;i<S.waves;i++){const wa=a+(i-(S.waves-1)/2)*.35;G.shots.push({kind:'wave',x:P.x+Math.cos(wa)*P.r,y:P.y+Math.sin(wa)*P.r,vx:Math.cos(wa)*520,vy:Math.sin(wa)*520,a:wa,d:S.dmg*.6,crit:false,pierce:99,hit:new Set(),life:.5})}
         if(Math.random()*100<S.echo)P.fire=Math.min(P.fire,.12);
         P.swings++;
-        if(hasTal('g_quake')&&P.swings%4===0){const R2=130*(1+S.reach/100);G.rings.push({x:P.x,y:P.y,t:.1,max:R2,col:'255,210,160'});G.shake=Math.max(G.shake,5);
+        if(hasTal('g_quake')&&P.swings%4===0){const R2=160*(1+S.reach/100);G.rings.push({x:P.x,y:P.y,t:.1,max:R2,col:'255,210,160'});G.shake=Math.max(G.shake,5);
           for(const e of G.en){if(e.dead)continue;const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy)||1;if(d<R2+e.r){const k=e.type==='boss'?20:200;e.kx+=dx/d*k;e.ky+=dy/d*k;dmgEnemy(e,S.dmg*.9,false)}}}
       }
     }
@@ -1016,7 +1052,7 @@ function drawPlayer(P){
     ctx.beginPath();ctx.moveTo(P.x+Math.cos(a)*P.r*.3,P.y+Math.sin(a)*P.r*.3);ctx.lineTo(bx,by);ctx.stroke();
     ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(bx-Math.sin(a)*11-Math.cos(a)*4,by+Math.cos(a)*11-Math.sin(a)*4);ctx.quadraticCurveTo(bx+Math.cos(a)*3,by+Math.sin(a)*3,bx+Math.sin(a)*11-Math.cos(a)*4,by-Math.cos(a)*11-Math.sin(a)*4);ctx.stroke();
   }else if(G.cls==='guerrier'){
-    if(P.spin>0){const R=100*(1+S.reach/100);ctx.strokeStyle='rgba(255,225,190,.28)';ctx.lineWidth=12;ctx.beginPath();ctx.arc(P.x,P.y,R*.8,a,a+4.5);ctx.stroke()}
+    if(P.spin>0){const R=130*(1+S.reach/100);ctx.strokeStyle='rgba(255,225,190,.28)';ctx.lineWidth=12;ctx.beginPath();ctx.arc(P.x,P.y,R*.8,a,a+4.5);ctx.stroke()}
     const hx=P.x+Math.cos(a)*(P.r+1),hy=P.y+Math.sin(a)*(P.r+1),bx=P.x+Math.cos(a)*(P.r+26),by=P.y+Math.sin(a)*(P.r+26);
     ctx.strokeStyle='#cfd6dc';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(hx,hy);ctx.lineTo(bx,by);ctx.stroke();
     ctx.strokeStyle='#8a6a45';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(hx-Math.sin(a)*8,hy+Math.cos(a)*8);ctx.lineTo(hx+Math.sin(a)*8,hy-Math.cos(a)*8);ctx.stroke();
@@ -1029,7 +1065,7 @@ function drawPlayer(P){
   ctx.fillStyle=P.flash>0?'#ffdede':C.cloak;circle(P.x,P.y,P.r);ctx.fill();
   ctx.strokeStyle=C.rim;ctx.lineWidth=2;ctx.stroke();
   if(P.shield>0){ctx.strokeStyle=`rgba(150,210,255,${.3+.5*P.shield/(S.hp*.25)})`;ctx.lineWidth=2.5;circle(P.x,P.y,P.r+6);ctx.stroke()}
-  if(P.swing){const k=P.swing.t/.2,R=P.swing.R;ctx.strokeStyle=`rgba(255,235,210,${.85*(1-k)})`;ctx.lineWidth=9*(1-k)+2;ctx.beginPath();ctx.arc(P.x,P.y,R*.85,P.swing.a-1.2,P.swing.a-1.2+2.4*Math.min(1,k*2.2));ctx.stroke()}
+  if(P.swing){const k=P.swing.t/.2,R=P.swing.R;ctx.strokeStyle=`rgba(255,235,210,${.85*(1-k)})`;ctx.lineWidth=9*(1-k)+2;ctx.beginPath();ctx.arc(P.x,P.y,R*.85,P.swing.a-1.35,P.swing.a-1.35+2.7*Math.min(1,k*2.2));ctx.stroke()}
   ctx.fillStyle=C.inner;circle(P.x+Math.cos(a)*5,P.y+Math.sin(a)*5,P.r*.55);ctx.fill();
   ctx.fillStyle='#e8d9b8';circle(P.x+Math.cos(a)*8,P.y+Math.sin(a)*8,2);ctx.fill();
   ctx.globalAlpha=1;
@@ -1047,7 +1083,7 @@ function drawDrop(d){
   if(d.kind==='mod'){const c=MOD_RAR[MODS[d.id].r].c;beam(d.x,d.y,90,c,.3);
     ctx.save();ctx.translate(d.x,d.y+bob);ctx.rotate(Math.sin(d.t*2)*.25);ctx.fillStyle='#1d1822';ctx.fillRect(-8,-11,16,22);
     ctx.strokeStyle=c;ctx.lineWidth=2;ctx.strokeRect(-8,-11,16,22);ctx.fillStyle=c;ctx.fillRect(-4,-6,8,2);ctx.fillRect(-4,-1,8,2);ctx.fillRect(-2,4,4,2);ctx.restore();return}
-  if(d.kind==='part'){const c=RAR[wdef(d.part.w).r].c;beam(d.x,d.y,90,c,.3);
+  if(d.kind==='part'){const c=RAR[bpdef(d.part.w).r].c;beam(d.x,d.y,90,c,.3);
     ctx.save();ctx.translate(d.x,d.y+bob);ctx.rotate(d.t*.8);ctx.fillStyle='#1d1822';ctx.strokeStyle=c;ctx.lineWidth=2.5;ctx.beginPath();
     for(let i=0;i<6;i++){const a=i/6*Math.PI*2;ctx.lineTo(Math.cos(a)*10,Math.sin(a)*10)}ctx.closePath();ctx.fill();ctx.stroke();ctx.fillStyle=c;circle(0,0,3.5);ctx.fill();ctx.restore();return}
   const col=d.kind==='potion'?'#5fbf7a':RAR[d.item.r].c;
@@ -1296,7 +1332,7 @@ function renderPixi(){
     else if(d.kind==='react'){s.texture=T.react;s.position.set(d.x,d.y);s.alpha=.75+.25*Math.sin(d.t*6)}
     else if(d.kind==='mod'){const r=MODS[d.id].r;s.texture=T.mod[r];s.position.set(d.x,d.y+bob);s.rotation=Math.sin(d.t*2)*.25;beamC=MOD_RAR[r].c;beamH=90}
     else if(d.kind==='relic'){const r=RELICS[d.id].t;s.texture=T.relic[r];s.position.set(d.x,d.y+bob);beamC=RTIER[r].c;beamH=130;beamA=.4}
-    else if(d.kind==='part'){const r=wdef(d.part.w).r;s.texture=T.part[r];s.position.set(d.x,d.y+bob);s.rotation=d.t*.8;beamC=RAR[r].c;beamH=90}
+    else if(d.kind==='part'){const r=bpdef(d.part.w).r;s.texture=T.part[r];s.position.set(d.x,d.y+bob);s.rotation=d.t*.8;beamC=RAR[r].c;beamH=90}
     else if(d.kind==='potion'){s.texture=T.potion;s.position.set(d.x,d.y+bob)}
     else{s.texture=T.item[d.item.r];s.position.set(d.x,d.y+bob);beamC=RAR[d.item.r].c;beamH=d.item.r===3?150:d.item.r===2?100:60;beamA=.35}
     if(beamH){const b=take(PP.beam);b.texture=T.beam;b.tint=hexc(beamC);b.alpha=beamA;b.position.set(d.x,d.y);b.width=8;b.height=beamH}}
@@ -1318,9 +1354,9 @@ function renderPixi(){
     f.lineStyle(0);f.beginFill(0x000000,.6);f.drawRect(e.x-w/2,e.y-e.r-10,w,4);f.endFill();f.beginFill(0xd9454a,1);f.drawRect(e.x-w/2,e.y-e.r-10,w*Math.max(0,e.hp/e.max),4);f.endFill()}
   if(t){if(!t.downed){f.lineStyle(2,0xf0cf4a,.5);f.drawCircle(t.x,t.y,t.r+7+Math.sin(G.t*6)*1.5);const w=48;f.lineStyle(0);f.beginFill(0,.6);f.drawRect(t.x-w/2,t.y-t.r-14,w,5);f.endFill();f.beginFill(0xf0cf4a,1);f.drawRect(t.x-w/2,t.y-t.r-14,w*t.hp/t.max,5);f.endFill()}
     else if(G.capT>0){f.lineStyle(5,0xf0cf4a,1);arcLine(f,t.x,t.y,t.r+14,-Math.PI/2,-Math.PI/2+Math.PI*2*G.capT/2.5)}}
-  if(P.spin>0){const R2=100*(1+S.reach/100);f.lineStyle(12,0xffe1be,.28);arcLine(f,P.x,P.y,R2*.8,P.face,P.face+4.5)}
+  if(P.spin>0){const R2=130*(1+S.reach/100);f.lineStyle(12,0xffe1be,.28);arcLine(f,P.x,P.y,R2*.8,P.face,P.face+4.5)}
   if(P.shield>0){f.lineStyle(2.5,0x96d2ff,.3+.5*P.shield/(S.hp*.25));f.drawCircle(P.x,P.y,P.r+6)}
-  if(P.swing){const k=P.swing.t/.2,R2=P.swing.R;f.lineStyle(9*(1-k)+2,0xffebd2,.85*(1-k));arcLine(f,P.x,P.y,R2*.85,P.swing.a-1.2,P.swing.a-1.2+2.4*Math.min(1,k*2.2))}
+  if(P.swing){const k=P.swing.t/.2,R2=P.swing.R;f.lineStyle(9*(1-k)+2,0xffebd2,.85*(1-k));arcLine(f,P.x,P.y,R2*.85,P.swing.a-1.35,P.swing.a-1.35+2.7*Math.min(1,k*2.2))}
   for(const r of G.rings){const k=r.t/.45,Rr=r.max||175;f.lineStyle(14*(1-k)+2,hexc('rgb('+(r.col||'255,140,60')+')'),Math.max(0,1-k));f.drawCircle(r.x,r.y,Rr*.17+Rr*.83*k)}
   for(const zp of G.zaps){f.lineStyle(2.5,0xc8e6ff,Math.max(0,1-zp.t/.25));f.moveTo(zp.x1,zp.y1);for(let i=1;i<6;i++){const k=i/6;f.lineTo(zp.x1+(zp.x2-zp.x1)*k+rand(-9,9),zp.y1+(zp.y2-zp.y1)*k+rand(-9,9))}f.lineTo(zp.x2,zp.y2)}
   // projectiles
@@ -1363,7 +1399,7 @@ function render(){
 
 /* ---------- Fiches partagées ---------- */
 function statRows(St){
-  const rows=[['Dégâts',Math.round(St.dmg)],['Attaques / s',St.aps.toFixed(2)],['Critique',Math.round(St.crit)+' %'],['Dégâts critiques',Math.round(St.critDmg)+' %'],['Puissance (DPS)',Math.round(dps(St))],['Vie',Math.round(St.hp)],['Réduction',Math.round(St.armor)+' %'],heroCls==='guerrier'?['Ondes par coup',St.waves]:['Projectiles par tir',(1+St.multi).toFixed(St.multi%1?2:0)],['Double attaque',St.echo+' %'],[CLS[heroCls].skill,Math.round(St.nova)]];
+  const rows=[['Dégâts',Math.round(St.dmg)],['Attaques / s',St.aps.toFixed(2)],['Critique',Math.round(St.crit)+' %'],['Dégâts critiques',Math.round(St.critDmg)+' %'],['Puissance (DPS)',Math.round(dps(St))],['Vie',Math.round(St.hp)],['Réduction',Math.round(St.armor)+' %'],['Vitesse',Math.round(St.speed/2.2)+' %'],heroCls==='guerrier'?['Ondes par coup',St.waves]:['Projectiles par tir',(1+St.multi).toFixed(St.multi%1?2:0)],['Double attaque',St.echo+' %'],[CLS[heroCls].skill,Math.round(St.nova)]];
   return rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join('');
 }
 function slotsHtml(eq,click,selSlot){
@@ -1450,40 +1486,66 @@ function equipRun(id){
 function refreshStats(){if(!G)return;const ratio=G.P.hp/S.hp;S=stats(G.eq);G.P.hp=Math.max(1,Math.min(S.hp,ratio*S.hp))}
 
 /* ---------- Mods (interface) ---------- */
-let modSel=null;
-function modCard(id,cls=''){const m=MODS[id],rk=meta.mods[id];
-  return `<button class="mod${cls}" data-mod="${id}" style="--mc:${MOD_RAR[m.r].c}" aria-label="${m.n}, rang ${rk}"><span class="dr">${modDrain(id,rk)}</span><b>${m.n}</b><span class="pp">${'<i class="on"></i>'.repeat(rk)}${'<i></i>'.repeat(m.max-rk)}</span></button>`}
+let modSel=null,alSel=null;
+function modCard(id,cls='',i){const m=MODS[id],rk=meta.mods[id],p=POL[MOD_POL[id]],d=i===undefined?modDrain(id,rk):slotDrain(id,rk,i);
+  return `<button class="mod${cls}" data-mod="${id}" style="--mc:${MOD_RAR[m.r].c}" aria-label="${m.n}, rang ${rk}, polarité ${p.n}"><span class="pl" style="color:${p.c}">${p.s}</span><span class="dr">${d}</span><b>${m.n}</b><span class="pp">${'<i class="on"></i>'.repeat(rk)}${'<i></i>'.repeat(m.max-rk)}</span></button>`}
 function modDetail(id){
-  const m=MODS[id],rk=meta.mods[id],c=MOD_RAR[m.r].c,load=meta.load[heroCls],eq=load.includes(id),ok=modOk(id,heroCls);
-  const free=load.indexOf(null),u=modUsed(),cap=modCap(),fits=u+modDrain(id,rk)<=cap,fc=fuseCost(id,rk),maxed=rk>=m.max;
+  const m=MODS[id],rk=meta.mods[id],c=MOD_RAR[m.r].c,load=meta.load[heroCls],slot=load.indexOf(id),eq=slot>=0,ok=modOk(id,heroCls),p=POL[MOD_POL[id]];
+  const u=modUsed(),cap=modCap(),bs=bestSlot(id,rk),fc=fuseCost(id,rk),maxed=rk>=m.max;
+  const fits=bs.i>=0&&u+bs.d<=cap;
   let act,why='';
   if(!ok){act='';why=`Réservé à : ${m.cls.map(k=>CLS[k].n).join(', ')}.`}
   else if(eq)act='<button class="btn" data-act="unequip">Retirer</button>';
-  else{act=`<button class="btn main" data-act="equip" ${free<0||!fits?'disabled':''}>Équiper</button>`;why=free<0?'Les 4 emplacements sont pris. Retire un mod d\'abord.':!fits?`Capacité insuffisante : il faut ${modDrain(id,rk)} points, il en reste ${cap-u}.`:''}
-  const fuseBlocked=eq&&u+1>cap;
+  else{act=`<button class="btn main" data-act="equip" ${!fits?'disabled':''}>Équiper${bs.i>=0?` · case ${bs.i+1}`:''}</button>`;
+    why=bs.i<0?'Les 4 cases sont prises. Retire un mod d\'abord.':!fits?`Capacité insuffisante : il faut ${bs.d} points, il en reste ${Math.max(0,cap-u)}.`:''}
+  const fuseUsed=eq?u-slotDrain(id,rk,slot)+slotDrain(id,rk+1,slot):u,fuseBlocked=eq&&fuseUsed>cap;
   const fuse=maxed?'<span class="owned" style="align-self:center;flex:1;text-align:center">Rang max</span>':`<button class="btn buy" data-act="fuse" ${meta.essence<fc||fuseBlocked?'disabled':''}>Fusionner · ${fc} essence</button>`;
   if(!why&&fuseBlocked&&!maxed)why='Monter ce mod de rang dépasserait la capacité.';
-  return `<div class="card"><div class="nm" style="color:${c}">${m.n}</div><div class="meta">Mod ${MOD_RAR[m.r].n.toLowerCase()} · rang ${rk} / ${m.max} · coûte ${modDrain(id,rk)} de capacité</div>
+  const costLine=eq?`coûte ${slotDrain(id,rk,slot)} dans la case ${slot+1} (${modDrain(id,rk)} sans alignement)`:`coûte ${modDrain(id,rk)} de capacité, ${Math.ceil(modDrain(id,rk)/2)} dans une case ${p.n}`;
+  return `<div class="card"><div class="nm" style="color:${c}">${m.n}</div><div class="meta">Mod ${MOD_RAR[m.r].n.toLowerCase()} · <span style="color:${p.c}">${p.s} ${p.n}</span> · rang ${rk} / ${m.max} · ${costLine}</div>
     <ul><li>${m.t(modVal(id,rk))}</li>${maxed?'':`<li style="color:var(--muted)">Rang ${rk+1} : ${m.t(modVal(id,rk+1))}</li>`}</ul>
     <div class="actions">${act}${fuse}</div>${why?`<p class="empty" style="font-size:13px">${why}</p>`:''}</div>`;
 }
+function alignPanel(){
+  const pol=polOf(heroCls),mt=mastOf(heroCls),cost=alignCost(heroCls),n=CLS[heroCls].n;
+  let h=`<h3>Alignement des cases</h3><p class="empty" style="font-size:13px">Aligne une case sur une polarité : un mod de la même polarité y coûte moitié moins de capacité, un mod d'une autre polarité y coûte 25 % de plus. Chaque alignement coûte de l'essence (200, 400, 800 puis 1 600) et remet la maîtrise ${deCls(heroCls)} à 0.</p>
+    <div class="alrow">${pol.map((p,i)=>`<button class="chip" data-act="alslot" data-i="${i}" aria-pressed="${!!alSel&&alSel.i===i}">Case ${i+1} · ${p?`<span style="color:${POL[p].c}">${POL[p].s} ${POL[p].n}</span>`:'neutre'}</button>`).join('')}</div>`;
+  if(alSel){const cur=pol[alSel.i];
+    h+=`<div class="alrow">${Object.keys(POL).map(k=>`<button class="chip" data-act="alpol" data-p="${k}" aria-pressed="${alSel.p===k}" ${cur===k?'disabled':''}><span style="color:${POL[k].c}">${POL[k].s}</span> ${POL[k].n}</button>`).join('')}</div>`;
+    if(alSel.p)h+=`<div class="card"><p style="margin:0;font-size:14px">Aligner la case ${alSel.i+1} en <b style="color:${POL[alSel.p].c}">${POL[alSel.p].n}</b> pour <b>${cost} essence</b>. Ta maîtrise ${deCls(heroCls)} repasse du rang ${mt.r} à 0${mt.r?` : −${mt.r} de capacité jusqu'à ce que tu la regagnes en mission`:''}.</p>
+      <div class="actions"><button class="btn main" data-act="alok" ${meta.essence<cost?'disabled':''}>Aligner · ${cost} essence</button><button class="btn" data-act="alcancel">Annuler</button></div>
+      ${meta.essence<cost?`<p class="empty" style="font-size:13px">Il te manque ${cost-meta.essence} essence.</p>`:''}</div>`;
+    else h+='<p class="empty" style="font-size:13px">Choisis la polarité de cette case.</p>';
+  }
+  return h;
+}
 function renderMods(rootId){
-  const root=$(rootId);if(!root)return;const load=meta.load[heroCls],u=modUsed(),cap=modCap();
+  const root=$(rootId);if(!root)return;const load=meta.load[heroCls],u=modUsed(),cap=modCap(),pol=polOf(heroCls),mt=mastOf(heroCls),act=activeMods(heroCls);
   const owned=Object.keys(MODS).filter(id=>meta.mods[id]!=null);
   if(modSel&&meta.mods[modSel]==null)modSel=null;
   const rest=owned.filter(id=>!load.includes(id)).sort((a,b)=>(modOk(b,heroCls)-modOk(a,heroCls))||MODS[b].r-MODS[a].r);
-  root.innerHTML=`<div class="modhead"><span>Capacité <b>${u} / ${cap}</b></span><span>Essence <b>${meta.essence}</b></span><span>Collection <b>${owned.length} / ${Object.keys(MODS).length}</b></span></div>
-    <div class="modslots">${load.map(id=>id?modCard(id,modSel===id?' sel':''):'<div class="mod empty">Libre</div>').join('')}</div>
+  root.innerHTML=`<div class="modhead"><span>Capacité <b class="${u>cap?'over':''}">${u} / ${cap}</b></span><span>Essence <b>${meta.essence}</b></span><span>Collection <b>${owned.length} / ${Object.keys(MODS).length}</b></span>
+      <span>Maîtrise ${CLS[heroCls].n} <b>${mt.r} / 10</b>${mt.r<10?` · ${mt.xp} / ${mastNeed(mt.r)}`:''}</span></div>
+    ${u>cap?'<p class="empty" style="font-size:13px;color:var(--blood)">Capacité dépassée : les mods en trop sont inactifs (grisés). Regagne de la maîtrise en mission ou retire un mod.</p>':''}
+    <div class="modslots">${load.map((id,i)=>{const p=pol[i];return `<div class="mslot"><span class="sp" style="color:${p?POL[p].c:'var(--muted)'}">${p?POL[p].s+' '+POL[p].n:'Neutre'}</span>${id?modCard(id,(modSel===id?' sel':'')+(act.includes(id)?'':' off'),i):'<div class="mod empty">Libre</div>'}</div>`}).join('')}</div>
     <div class="modlist">${rest.map(id=>modCard(id,(modSel===id?' sel':'')+(modOk(id,heroCls)?'':' lock'))).join('')||'<p class="empty" style="grid-column:1/-1">Aucun autre mod. Les monstres en laissent parfois tomber, les Gardiens toujours.</p>'}</div>
-    ${modSel?modDetail(modSel):'<p class="empty" style="font-size:13px">Touche un mod pour l\'équiper ou le fusionner. Les doublons et le recyclage d\'objets donnent de l\'essence.</p>'}`;
+    ${modSel?modDetail(modSel):'<p class="empty" style="font-size:13px">Touche un mod pour l\'équiper ou le fusionner. Le symbole en haut à gauche est sa polarité, le chiffre en haut à droite son coût.</p>'}
+    ${rootId==='modsCamp'?alignPanel():''}`;
   root.querySelectorAll('[data-mod]').forEach(b=>b.onclick=()=>{modSel=b.dataset.mod;modsChanged()});
-  root.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>modAct(b.dataset.act));
+  root.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>modAct(b.dataset.act,b.dataset));
 }
-function modAct(a){
-  const id=modSel,load=meta.load[heroCls],rk=meta.mods[id];
-  if(a==='equip'){const i=load.indexOf(null);if(i<0||!modOk(id,heroCls)||modUsed()+modDrain(id,rk)>modCap())return;load[i]=id}
+function modAct(a,ds){
+  const id=modSel,load=meta.load[heroCls],rk=id?meta.mods[id]:0;
+  if(a==='equip'){const bs=bestSlot(id,rk);if(bs.i<0||!modOk(id,heroCls)||modUsed()+bs.d>modCap())return;load[bs.i]=id}
   else if(a==='unequip'){const i=load.indexOf(id);if(i>=0)load[i]=null}
-  else if(a==='fuse'){const c=fuseCost(id,rk);if(meta.essence<c||rk>=MODS[id].max||(load.includes(id)&&modUsed()+1>modCap()))return;meta.essence-=c;meta.mods[id]=rk+1}
+  else if(a==='fuse'){const c=fuseCost(id,rk),i=load.indexOf(id);if(meta.essence<c||rk>=MODS[id].max)return;
+    if(i>=0&&modUsed()-slotDrain(id,rk,i)+slotDrain(id,rk+1,i)>modCap())return;meta.essence-=c;meta.mods[id]=rk+1}
+  else if(a==='alslot'){const i=+ds.i;alSel=alSel&&alSel.i===i?null:{i,p:null}}
+  else if(a==='alpol'){if(alSel)alSel.p=ds.p}
+  else if(a==='alcancel'){alSel=null}
+  else if(a==='alok'){if(!alSel||!alSel.p)return;const cost=alignCost(heroCls);if(meta.essence<cost)return;
+    meta.essence-=cost;polOf(heroCls)[alSel.i]=alSel.p;meta.align[heroCls]=(meta.align[heroCls]||0)+1;const mt=mastOf(heroCls);mt.r=0;mt.xp=0;
+    toast(`Case ${alSel.i+1} alignée en <b style="color:${POL[alSel.p].c}">${POL[alSel.p].n}</b>. Maîtrise ${deCls(heroCls)} remise à 0.`);alSel=null}
   saveMeta();modsChanged();
 }
 function modsChanged(){if(started&&G&&!G.over)refreshStats();if(!$('bag').hidden)drawBag();if(!$('camp').hidden)drawCamp()}
@@ -1497,7 +1559,7 @@ function lootSummary(){
 }
 function roundDone(){
   paused=true;resetJoy();$('bag').hidden=true;$('lvlup').hidden=true;
-  const nl=Math.min(G.level+1,9),unlock=nl>meta.cp;
+  const nl=G.level+1,unlock=false;
   if(unlock){meta.cp=nl;saveMeta()}
   const r=relicDrop();G.loot.relics.push(r);let extra='';
   if(G.mode==='defense'){const it=genItem(itemLvl(),1);G.loot.items.push(it);extra=` et <span style="color:${RAR[it.r].c}">${it.name}</span>`}
@@ -1509,6 +1571,8 @@ function roundDone(){
 }
 function bank(full){
   const g=full?G.gold:Math.floor(G.gold/2);meta.gold+=g;G.run={};
+  const mt=mastOf(G.cls);let up=0;if(mt.r<10){mt.xp+=G.kills;while(mt.r<10&&mt.xp>=mastNeed(mt.r)){mt.xp-=mastNeed(mt.r);mt.r++;up++}if(mt.r>=10)mt.xp=0}
+  G.mastMsg=`Maîtrise ${deCls(G.cls)} : rang ${mt.r} / 10`+(mt.r<10?` (${mt.xp} / ${mastNeed(mt.r)})`:'')+(up?` · +${up} rang${up>1?'s':''}, +${up} de capacité de mods`:'');
   if(full){
     for(const it of G.loot.items){if(meta.stash.length<40)meta.stash.push(it);else meta.essence+=RAR[it.r].shard*2}
     for(const p of G.loot.parts){if(meta.built[p.w])meta.essence+=6;else{const a=meta.parts[p.w]||(meta.parts[p.w]=[0,0,0]);a[p.p]++}}
@@ -1517,7 +1581,7 @@ function bank(full){
   saveMeta();return g;
 }
 function recordBest(){if(G.t>best){best=G.t;try{localStorage.setItem('crypte-best2',String(best))}catch(e){}}}
-function showOver(title,txt,earn,rel){$('overTitle').textContent=title;$('overTxt').textContent=txt;$('earnTxt').innerHTML=earn;$('relicTxt').innerHTML=rel||'';refreshMenus();$('over').hidden=false}
+function showOver(title,txt,earn,rel){$('overTitle').textContent=title;$('overTxt').textContent=txt;$('earnTxt').innerHTML=earn;$('relicTxt').innerHTML=[rel,G&&G.mastMsg].filter(Boolean).join('<br>');refreshMenus();$('over').hidden=false}
 function grantRelic(id,rad){
   const a=meta.relics[id];if(!a||a[rad?1:0]<=0)return null;
   a[rad?1:0]--;const r=rollRelic(id,rad),rar=RW_RAR[RELICS[id].rw.indexOf(r)];
@@ -1588,7 +1652,7 @@ function bpCard(b){
   const pc=meta.parts[b.id]||[0,0,0],isW=b.kind==='arme',r=RAR[b.r],mine=!isW||b.cls===heroCls;
   const own=isW&&ownedW(b.id),eq=isW&&(meta.wpn[b.cls]||WPN[b.cls][0].id)===b.id;
   const cost=isW?Math.round(b.bp/2):b.craft,ready=pc.every(x=>x>0);
-  const baseTxt=isW?`${b.dmg} dégâts de base`:b.slot==='armure'?`+${b.base} points de vie`:`+${b.base} % de chances de critique`;
+  const baseTxt=isW?`${b.dmg} dégâts de base`:baseTxtOf(b.slot,b.base);
   let foot;
   if(own)foot=eq?`<span class="owned">Équipée${mine?'':' · '+CLS[b.cls].n}</span>`:mine?`<button class="btn main" data-cact="wequip" data-arg="${b.id}">Équiper</button>`:`<span class="owned">Fabriquée · ${CLS[b.cls].n}</span>`;
   else foot=`<div class="parts">${b.frag.map((n,i)=>`<span class="part${pc[i]?' have':''}">${n}${pc[i]>1?' ×'+pc[i]:''}</span>`).join('')}</div>
@@ -1644,9 +1708,8 @@ function campForge0(){
       <button class="btn buy" data-cact="up" data-arg="${u.k}" ${mx||meta.gold<c?'disabled':''}>${mx?'Max':`<span class="coin"></span>${c}`}</button></div>`}).join('');
   const tals=TAL[heroCls].map(t=>{const own=hasTal(t.k);
     return `<div class="tal${own?' own':''}"><b>${t.n}</b><p>${t.d}</p>${own?'<span class="owned">Acquis</span>':`<button class="btn buy" data-cact="tal" data-arg="${t.k}" ${meta.gold<t.cost?'disabled':''}><span class="coin"></span>${t.cost}</button>`}</div>`}).join('');
-  const st=Math.min(meta.start,meta.cp),chips=Array.from({length:meta.cp},(_,i)=>i+1).map(l=>`<button class="chip" data-cact="start" data-arg="${l}" aria-pressed="${st===l}">Niveau ${l}</button>`).join('');
-  return `<h3>Améliorations permanentes</h3><div class="ups">${ups}</div><h3>Talents · ${CLS[heroCls].n}</h3><div class="tals">${tals}</div>
-    <h3>Niveau de départ</h3><div class="starts">${chips}</div><p class="empty" style="font-size:13px">${meta.cp>1?'Commencer plus profond : monstres plus forts, butin de meilleure qualité.':'Termine un niveau de 3 minutes pour pouvoir commencer directement au suivant.'}</p>`;
+  
+  return `<h3>Améliorations permanentes</h3><div class="ups">${ups}</div><h3>Talents · ${CLS[heroCls].n}</h3><div class="tals">${tals}</div>`;
 }
 function drawCamp(){
   $('campGold').innerHTML=`<span class="coin"></span>${meta.gold}<span class="e"><span class="essi"></span>${meta.essence}</span>`;
@@ -1700,7 +1763,10 @@ function openCamp(){$('camp').hidden=false;campSel=null;campMsg='';recyConfirm=f
 function closeCamp(){$('camp').hidden=true;if(!started)newGame();refreshMenus()}
 function refreshMenus(){
   $('introGold').textContent=meta.gold;
-  const st=Math.min(meta.start,meta.cp);$('startBtn').textContent=`Lancer · ${MODES[meta.mode].n}`+(st>1?` · niveau ${st}`:'');
+  const st=clamp(meta.start|0||1,1,LV_MAX);$('startBtn').textContent=`Lancer · ${MODES[meta.mode].n} · niveau ${st}`;
+  if(document.activeElement!==$('lvIn'))$('lvIn').value=st;
+  const lm=lootMul(st);$('lvDesc').innerHTML=st===1?'Niveau de base. Monte le niveau pour plus de butin, mais des monstres plus nombreux et plus forts.'
+    :`Butin ×${lm.toFixed(2).replace(/\.?0+$/,'').replace('.',',')} (équipements, reliques, fragments) · or ×${(1+.6*(st-1)).toFixed(1).replace('.',',')} · monstres : vie ×${(1+.75*(st-1)).toFixed(1).replace('.',',')}, dégâts ×${(1+.35*(st-1)).toFixed(1).replace('.',',')}, plus nombreux`;
   $('bestTxt').textContent=best?`Ton record : ${fmt(best)} en mission`:'';
   document.querySelectorAll('.cls[data-m]').forEach(b=>b.setAttribute('aria-checked',String(b.dataset.m===meta.mode)));
   $('modeDesc').textContent=MODES[meta.mode].d;
@@ -1709,6 +1775,9 @@ function refreshMenus(){
   sel.innerHTML=opts.join('');const cur=meta.relicSel?`${meta.relicSel.id}|${meta.relicSel.rad?1:0}`:'';
   sel.value=[...sel.options].some(o=>o.value===cur)?cur:'';sel.disabled=opts.length===1;
 }
+const setLv=v=>{meta.start=clamp(Math.round(+v)||1,1,LV_MAX);saveMeta();newGame();refreshMenus()};
+$('lvMinus').onclick=()=>setLv((meta.start|0||1)-1);$('lvPlus').onclick=()=>setLv((meta.start|0||1)+1);
+$('lvIn').addEventListener('change',e=>{setLv(e.target.value);e.target.value=meta.start});
 $('relicSel').addEventListener('change',e=>{const v=e.target.value;meta.relicSel=v?{id:v.split('|')[0],rad:v.split('|')[1]==='1'}:null;saveMeta();newGame()});
 document.querySelectorAll('.cls[data-m]').forEach(b=>b.onclick=()=>{meta.mode=b.dataset.m;saveMeta();newGame();refreshMenus()});
 
