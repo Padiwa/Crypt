@@ -37,6 +37,7 @@ function newGame(){
   if(PX)try{buildStatic()}catch(err){dropPixi(err)}
   const ub=$('bUlt');ub.querySelector('svg').innerHTML=C.uicon;ub.setAttribute('aria-label',C.ult+', ultime');const nb=$('bNova');nb.querySelector('svg').innerHTML=C.icon;nb.setAttribute('aria-label',C.skill);nb.style.color=C.col;
   $('hintTxt').innerHTML=C.hint;$('bossBar').hidden=true;
+  petInit();
 }
 function placeWell(w){const P=G.P;for(let k=0;k<200;k++){const x=rand(160,MAP-160),y=rand(160,MAP-160);if(Math.hypot(x-P.x,y-P.y)>(G.t?450:250)&&!blocked(x,y,50)&&(!G.wells||G.wells.every(o=>o===w||Math.hypot(o.x-x,o.y-y)>500))){w.x=x;w.y=y;w.on=true;return}}w.x=rand(200,MAP-200);w.y=rand(200,MAP-200);w.on=true}
 function genMap(){
@@ -193,7 +194,7 @@ function kill(e){
     for(const sd of[-1,1]){const a=rand(0,Math.PI*2)*0+Math.atan2(e.y-G.P.y,e.x-G.P.x)+sd*Math.PI/2+rand(-.4,.4);
       G.spawns.push({type:'slime',gen:e.gen+1,split:1,tgtPod:e.tgtPod,x:clamp(e.x+Math.cos(a)*e.r*.6,EDGE+30,MAP-EDGE-30),y:clamp(e.y+Math.sin(a)*e.r*.6,EDGE+30,MAP-EDGE-30),kx:Math.cos(a)*260,ky:Math.sin(a)*260,t:.12})}}
   if(e.twin&&!NET.guest)twinDied(e);
-  const boss=e.type==='boss'&&!e.noLoot,L=G.level,DL=dif().loot,dl=1+DL*.5,lm=lootMul(L)*(1+(S.lootPct||0)/100)*(1+DL*.15)*biome().loot*(teamHas('fort')?1.1:1);
+  const boss=e.type==='boss'&&!e.noLoot,L=G.level,DL=dif().loot,dl=1+DL*.5,lm=lootMul(L)*(1+(S.lootPct||0)/100)*(1+DL*.15)*biome().loot*(teamHas('fort')?1.1:1)*(1+petLootPct()/100);
   G.ult=Math.min(ultNeed(),(G.ult||0)+(boss?10:1)*(teamHas('cri')?1.2:1));
   burst(e.x,e.y,boss?60:10,e.col,boss?320:150,4);burst(e.x,e.y,boss?20:4,'#e8853b',120);
   const push=(o,s=20)=>{const d=Object.assign({x:e.x+rand(-s,s),y:e.y+rand(-s,s),t:rand(0,6),age:0,mt:0},o);G.drops.push(d);if(o.kind==='item'){const w=wishMatch(o.item);if(w){d.wish=1;lootFlash(w,o.item)}}};
@@ -361,6 +362,8 @@ function update(dt){
   G.spawns=G.spawns.filter(s=>s.t>0);
   spawner(dt);twinTick(dt)}
   if(NET.on&&G.mates&&G.mates.length)matesSmooth(dt);
+  petTick(dt);
+  petTick(dt);
   if(G.oshots){for(const s of G.oshots){s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt}G.oshots=G.oshots.filter(s=>s.life>0)}
   // joueur
   const iv=inputVec(), moving=iv.m>.15;
@@ -468,7 +471,7 @@ function update(dt){
     if(e.burnT>0){e.burnT-=dt;e.burnAcc+=e.burnDps*dt;if(e.burnAcc>=1){const d=Math.floor(e.burnAcc);e.burnAcc-=d;dmgEnemy(e,d,false,true)}
       if(Math.random()<dt*8)G.parts.push({x:e.x+rand(-e.r,e.r)*.6,y:e.y+rand(-e.r,e.r)*.4,vx:0,vy:-50,life:.5,max:.5,col:'#ff8a3a',size:2.5})}
     if(e.dead)continue;
-    const PT=netNear(e,P),T=(e.tgtPod&&G.pod)?G.pod:PT,dx=T.x-e.x,dy=T.y-e.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d;let mx=0,my=0;
+    const PT=(!NET.guest&&e.type!=='boss'&&petLure(e))||netNear(e,P),T=(e.tgtPod&&G.pod)?G.pod:PT,dx=T.x-e.x,dy=T.y-e.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d;let mx=0,my=0;
     const dP=T===PT?d:Math.hypot(PT.x-e.x,PT.y-e.y);
     if(dP>farR&&e.type!=='boss'&&e.type!=='cible'&&!e.tgtPod){const p=ringPos();e.x=p.x;e.y=p.y;continue}
     if(e.type==='cible'){
@@ -530,7 +533,7 @@ function update(dt){
   for(const d of G.drops){
     d.t+=dt;d.age+=dt;if(d.kind==='gold'&&d.age>45){d.gone=true;continue}
     const dx=P.x-d.x,dy=P.y-d.y,dist=Math.hypot(dx,dy)||1;
-    if(dist<S.magnet||d.mt>0){d.mt+=dt;const v=Math.min(800,260+d.mt*500);d.x+=dx/dist*v*dt;d.y+=dy/dist*v*dt}
+    if(dist<S.magnet*petMagnet()||d.mt>0){d.mt+=dt;const v=Math.min(800,260+d.mt*500);d.x+=dx/dist*v*dt;d.y+=dy/dist*v*dt}
     if(!P.down&&dist<P.r+16){
       d.gone=true;
       if(d.kind==='xp'){G.nxp--;gainXp(d.v)}

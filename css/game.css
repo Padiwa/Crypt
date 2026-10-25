@@ -834,3 +834,11 @@ li.abyp{color:#cdb2ff;font-weight:600;border-left:2px solid #b07cff;padding-left
 .sealtg{display:flex;flex-wrap:wrap;gap:6px}
 .sealrow{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-size:14px}
 li.sealp{color:#ffb3ea}
+/* familiers */
+.petl{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.petl li{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:start;padding:10px;border:1px solid var(--line,#3a3040);border-radius:10px;background:rgba(255,255,255,.02)}
+.petl li.on{border-color:#f0cf4a;background:rgba(240,207,74,.06)}
+.petl li .actions{grid-column:1/-1;flex-wrap:wrap;gap:6px}
+.petic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-size:18px;color:var(--pc);border:2px solid var(--pc);background:#1d1822}
+.petinfo{display:flex;flex-direction:column;gap:2px;min-width:0}
+.pstar{color:#f0cf4a;letter-spacing:1px;font-size:13px}

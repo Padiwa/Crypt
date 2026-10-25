@@ -138,7 +138,9 @@ function render2D(){
   for(const b of G.braziers){if(!vis(b.x,b.y))continue;ctx.fillStyle='#2a2228';circle(b.x,b.y,9);ctx.fill();ctx.strokeStyle='#4a3e44';ctx.lineWidth=2;ctx.stroke()}
   for(const e of G.en){if(!vis(e.x,e.y,e.r+40))continue;if(e.corr){ctx.fillStyle='rgba(240,190,60,.22)';circle(e.x,e.y,e.r+9);ctx.fill();ctx.strokeStyle='rgba(255,207,90,.7)';ctx.lineWidth=1.5;ctx.stroke()}if(e.elite){const c=ELITE[e.elite].c,k=Math.sin(G.t*5)*.5+.5;ctx.strokeStyle=c;ctx.globalAlpha=.55+.4*k;ctx.lineWidth=3;circle(e.x,e.y,e.r+8+k*3);ctx.stroke();ctx.globalAlpha=1}drawEnemy(e);if(e.elite){ctx.font='700 11px Alegreya Sans,sans-serif';ctx.textAlign='center';ctx.fillStyle=ELITE[e.elite].c;ctx.fillText('Élite · '+ELITE[e.elite].n,e.x,e.y-e.r-14)}if(e.frz>0){ctx.fillStyle='rgba(215,245,255,.55)';circle(e.x,e.y,e.r+3);ctx.fill();ctx.strokeStyle='rgba(235,250,255,.9)';ctx.lineWidth=2;ctx.stroke()}if(e.slow>0){ctx.fillStyle='rgba(150,210,255,.35)';circle(e.x,e.y,e.r+2);ctx.fill()}}
   if(NET.on)for(const Q of G.mates||[]){const sc=G.cls;G.cls=Q.cls;drawPlayer(Q);G.cls=sc;ctx.globalAlpha=1;if(Q.down){ctx.fillStyle='rgba(10,8,12,.55)';circle(Q.x,Q.y,Q.r+4);ctx.fill()}hpRing2D(Q,Q.max);allyTag2D(Q)}
+  if(NET.on)for(const Q of G.mates||[])petDraw2D(Q.pet,.85);petDraw2D(G.pet,1);
   if(P.down){ctx.globalAlpha=.4}drawPlayer(P);ctx.globalAlpha=1;hpRing2D(P);
+  if(NET.on)for(const Q of G.mates||[])petDraw2D(Q.pet,.85);petDraw2D(G.pet,1);
   ctx.lineCap='round';
   for(const s of allShots()){if(!vis(s.x,s.y,20))continue;
     if(s.kind==='wave'){ctx.strokeStyle=`rgba(255,230,200,${Math.min(1,s.life*2.2)})`;ctx.lineWidth=4;ctx.beginPath();ctx.arc(s.x-Math.cos(s.a)*14,s.y-Math.sin(s.a)*14,16,s.a-1,s.a+1);ctx.stroke();continue}
@@ -399,6 +401,8 @@ function renderPixi(){
       q.visible=true;q.texture=T.pl[Q.cls][Q.flash>0?1:0];q.position.set(Q.x,Q.y);q.rotation=Q.face;q.alpha=Q.down?.35:Q.dashT>0?.6:1;shadow(Q.x,Q.y,Q.r)}}
   // effets
   const f=L.fxG;f.clear();
+  if(NET.on)for(const Q of G.mates||[])petDrawPx(f,Q.pet,.85);petDrawPx(f,G.pet,1);
+  if(NET.on)for(const Q of G.mates||[])petDrawPx(f,Q.pet,.85);petDrawPx(f,G.pet,1);
   for(const e of G.en){if(e.type==='cible'||!(e.shown>0&&e.hp<e.max)||!vis(e.x,e.y,e.r+20))continue;const w=e.r*2;
     f.lineStyle(0);f.beginFill(0x000000,.6);f.drawRect(e.x-w/2,e.y-e.r-10,w,4);f.endFill();f.beginFill(0xd9454a,1);f.drawRect(e.x-w/2,e.y-e.r-10,w*Math.max(0,e.hp/e.max),4);f.endFill()}
   if(t){if(!t.downed){f.lineStyle(2,0xf0cf4a,.5);f.drawCircle(t.x,t.y,t.r+7+Math.sin(G.t*6)*1.5);const w=48;f.lineStyle(0);f.beginFill(0,.6);f.drawRect(t.x-w/2,t.y-t.r-14,w,5);f.endFill();f.beginFill(0xf0cf4a,1);f.drawRect(t.x-w/2,t.y-t.r-14,w*t.hp/t.max,5);f.endFill()}

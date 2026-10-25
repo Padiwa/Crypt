@@ -139,7 +139,7 @@ details.more .tbl{margin:0 14px 14px}
   <nav class="toc" aria-label="Sommaire">
     <a href="#demarrer">Premiers pas</a><a href="#heros">Héros</a><a href="#partie">En mission</a><a href="#missions">Missions</a>
     <a href="#ennemis">Ennemis</a><a href="#difficulte">Difficulté</a><a href="#butin">Butin</a><a href="#camp-equip">Camp · Héros</a>
-    <a href="#camp-arsenal">Armurerie</a><a href="#camp-relics">Reliques</a><a href="#camp-mods">Mods</a><a href="#camp-affix">Affixes</a>
+    <a href="#camp-arsenal">Armurerie</a><a href="#camp-relics">Reliques</a><a href="#camp-mods">Mods</a><a href="#familiers">Familiers</a><a href="#camp-affix">Affixes</a>
     <a href="#camp-forge">Forge</a><a href="#coop">Coop</a><a href="#reglages">Réglages</a><a href="#conseils">Conseils</a>
   </nav>
 </div></div>
@@ -436,7 +436,7 @@ details.more .tbl{margin:0 14px 14px}
 <section id="camp-mods"><div class="sec">
   <div class="txt">
     <h2><small>Camp · onglet 4</small>Mods</h2>
-    <p>Les mods sont des cartes de bonus permanentes, trouvées sur les monstres. Ils se placent dans deux builds :</p>
+    <p>Les mods sont des cartes de bonus permanentes, trouvées sur les monstres. Ils se placent dans trois builds : arme, héros et <a href="#familiers">familier</a>.</p>
     <ul>
       <li><b>Build d'arme</b> : 4 cases, propre à chaque arme. Changer d'arme change ses mods.</li>
       <li><b>Build de héros</b> : 3 à 6 cases (les suivantes se débloquent avec des fragments) et une case d'<b>Aura</b>.</li>
@@ -462,6 +462,33 @@ details.more .tbl{margin:0 14px 14px}
   </div>
   <div class="shots one">
     <figure><button class="shot" type="button"><img src="img/camp_mods.jpg" alt="Onglet Mods : build du héros, capacité et polarités" width="780" height="1688" loading="lazy"></button><figcaption>Le build du héros et son Aura.</figcaption></figure>
+  </div>
+</div></section>
+
+<section id="familiers"><div class="sec">
+  <div class="txt">
+    <h2><small>Camp · Mods › Familier</small>Familiers</h2>
+    <p>Un familier te suit en mission et agit seul. Tu en équipes un à la fois, pour tous tes héros. Ton premier œuf est offert.</p>
+    <ul>
+      <li><b>Œufs</b> : ouvrir une relique en mission peut en contenir un (Ossuaire 8 %, Sanguine 15 %, Abysse 25 %). L'éclosion donne un familier <b>au hasard</b>, au rang ★.</li>
+      <li><b>Fusion</b> : deux familiers <b>identiques et de même rang</b> fusionnent en un seul du rang au-dessus, jusqu'à ★★★★★. Il garde le meilleur niveau des deux. Prix : 100 essence × le rang actuel.</li>
+      <li><b>Niveau</b> : le familier équipé gagne de l'expérience avec les ennemis abattus, comme la maîtrise (50 × niveau par palier, jusqu'au niveau 20).</li>
+      <li><b>Puissance</b> : +35 % par rang au-dessus de ★ et +5 % par niveau au-dessus de 1, multipliés entre eux.</li>
+    </ul>
+    <div class="tbl"><table><thead><tr><th>Familier</th><th>Rôle</th><th>Ce qu'il fait</th></tr></thead><tbody>
+      <tr><td><b style="color:#e8853b">Corbeau de cendre</b></td><td>Attaque</td><td>Pique l'ennemi le plus proche toutes les 1,2 s (60 % des dégâts de ton arme × puissance).</td></tr>
+      <tr><td><b style="color:#7fe08a">Feu follet</b></td><td>Soutien</td><td>Soigne 1 % de ta vie par seconde, le double quand tu ne bouges pas.</td></tr>
+      <tr><td><b style="color:#a9bccf">Golem de poche</b></td><td>Défense</td><td>Toutes les 7 s, attire pendant 4 s les monstres proches (hors Gardiens) qui le frappent au lieu de toi, et blesse ceux qui le touchent.</td></tr>
+      <tr><td><b style="color:#f0cf4a">Furet pilleur</b></td><td>Butin</td><td>Augmente la portée de ramassage et donne +5 % de chances d'objet.</td></tr>
+    </tbody></table></div>
+    <h3>Mods de familier</h3>
+    <p>L'onglet Mods a un troisième build, <b>Familier</b> : 3 cases (4 dès ★★★), une capacité de 10 au rang ★ et +2 par rang au-dessus, plus la moitié de son niveau. Ces mods tombent sur les monstres comme les autres. Les polarités et l'alignement marchent pareil, sans maîtrise à perdre. Un mod réservé à un familier précis reste grisé avec un autre.</p>
+    <details class="more"><summary>Les 14 mods de familier</summary><div class="tbl"><table><thead><tr><th>Mod</th><th>Familier</th><th>Effet</th><th>Rangs</th></tr></thead><tbody><tr><td><b>Crocs</b></td><td>Tous</td><td>+15 % de dégâts du familier par rang</td><td class="n">5</td></tr><tr><td><b>Vivacité</b></td><td>Tous</td><td>+10 % de vitesse d'action par rang</td><td class="n">5</td></tr><tr><td><b>Carapace</b></td><td>Tous</td><td>+15 % d'efficacité défensive (golem : durée d'attirance)</td><td class="n">3</td></tr><tr><td><b>Lien</b></td><td>Tous</td><td>+12 % de portée et de vitesse de déplacement</td><td class="n">3</td></tr><tr><td><b>Bec acéré</b></td><td>Corbeau</td><td>+8 % de chances de critique par rang</td><td class="n">3</td></tr><tr><td><b>Nuée</b></td><td>Corbeau</td><td>Frappe 1 cible de plus</td><td class="n">1</td></tr><tr><td><b>Lumière apaisante</b></td><td>Feu follet</td><td>+20 % de soin par rang</td><td class="n">5</td></tr><tr><td><b>Purification</b></td><td>Feu follet</td><td>Retire poison, brûlure et gelure toutes les 6 s</td><td class="n">1</td></tr><tr><td><b>Provocation</b></td><td>Golem</td><td>+20 % de rayon d'attirance par rang</td><td class="n">3</td></tr><tr><td><b>Épines</b></td><td>Golem</td><td>+25 % de dégâts renvoyés par rang</td><td class="n">3</td></tr><tr><td><b>Flair du furet</b></td><td>Furet</td><td>+3 % de chances d'objet par rang</td><td class="n">3</td></tr><tr><td><b>Poches profondes</b></td><td>Furet</td><td>Va chercher les objets, mods et reliques au sol</td><td class="n">1</td></tr><tr><td><b>Partage de vie</b></td><td>Tous</td><td>Les coups du familier te rendent 2 % de leurs dégâts par rang</td><td class="n">3</td></tr><tr><td><b>Écho élémentaire</b></td><td>Tous</td><td>Les coups du familier appliquent la brûlure et le ralentissement de ton arme</td><td class="n">1</td></tr></tbody></table></div></details>
+    <p>En coop, chacun voit les familiers des autres. Un golem attire aussi les monstres qui visaient un partenaire.</p>
+  </div>
+  <div class="shots">
+    <figure><button class="shot" type="button"><img src="img/camp_pets.jpg" alt="Collection de familiers avec œufs, rangs et bouton de fusion" width="780" height="1688" loading="lazy"></button><figcaption>Œufs, collection et fusion.</figcaption></figure>
+    <figure><button class="shot" type="button"><img src="img/camp_pets_build.jpg" alt="Build de mods du familier" width="780" height="1688" loading="lazy"></button><figcaption>Le build du familier.</figcaption></figure>
   </div>
 </div></section>
 
@@ -612,7 +639,7 @@ details.more .tbl{margin:0 14px 14px}
 
 </main>
 
-<footer class="wrap">Crypte des Cendres · guide à jour de la version 74 du jeu. <a href="../index.html">Retour au jeu</a></footer>
+<footer class="wrap">Crypte des Cendres · guide à jour de la version 75 du jeu. <a href="../index.html">Retour au jeu</a></footer>
 
 <dialog id="zoom" aria-label="Capture agrandie"><button type="button" id="zoomX" aria-label="Fermer">×</button><img id="zoomImg" alt=""></dialog>
 

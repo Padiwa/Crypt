@@ -4,7 +4,7 @@
 const NET={on:false,host:false,guest:false,pc:null,dc:null,state:'idle',code:'',err:'',hits:[],ebUsed:new Set(),snap:null,tick:null,
   peers:[],slot:0,roster:[],hostCls:null,ready:false};
 const NET_MAX=4; // joueurs, hôte compris
-const NET_V=5;
+const NET_V=6;
 const NET_TIMEOUT=20000; // silence toléré en mission (une notification ou un écran qui s'éteint ne doit pas couper la partie)   // version du protocole : deux appareils de versions différentes refusent de jouer ensemble
 const ICE=[{urls:'stun:stun.l.google.com:19302'}];
 const SLOT_C=['#e8853b','#8fd3e0','#b9a6f0','#f0cf4a'];
@@ -113,15 +113,16 @@ function netStartGuest(m){meta.mode='survie';newGame();G.breche=!!m.br;G.level=m
 
 /* ---------- Échanges en partie ---------- */
 const r1=v=>Math.round(v*10)/10;
-const heroPack=P=>[P.x|0,P.y|0,r1(P.face),Math.ceil(P.hp),Math.round(S.hp),heroCls,(P.down?1:0)|(P.dashT>0?2:0)|(P.spin>0?4:0)|(P.flash>0?8:0)|(P.inv>0?16:0),Math.round(P.shield||0),sealMask()];
+const heroPack=P=>[P.x|0,P.y|0,r1(P.face),Math.ceil(P.hp),Math.round(S.hp),heroCls,(P.down?1:0)|(P.dashT>0?2:0)|(P.spin>0?4:0)|(P.flash>0?8:0)|(P.inv>0?16:0),Math.round(P.shield||0),sealMask(),G.pet?PET_IDS.indexOf(G.pet.t)+1:0,G.pet?G.pet.x|0:0,G.pet?G.pet.y|0:0,G.pet&&G.pet.taunt>0?1:0];
 const shotPack=(L,n=70)=>L.slice(0,n).map(s=>[s.kind,s.x|0,s.y|0,r1(s.a),s.vx|0,s.vy|0,r1(s.life),s.crit?1:0]);
 const shotObj=a=>({kind:a[0],x:a[1],y:a[2],a:a[3],vx:a[4],vy:a[5],life:a[6],crit:!!a[7]});
 function heroUnpack(a,Q){Q=Q||{r:17};const now=performance.now();
   if(Q.tx==null||Math.hypot(a[0]-Q.tx,a[1]-Q.ty)>260){Q.x=a[0];Q.y=a[1];Q.vx=0;Q.vy=0}
   else{const dt=Math.min(.25,Math.max(.016,(now-(Q.rt||now))/1000));const k=.5;Q.vx=Q.vx*(1-k)+(a[0]-Q.tx)/dt*k;Q.vy=Q.vy*(1-k)+(a[1]-Q.ty)/dt*k}
-  Q.tx=a[0];Q.ty=a[1];Q.rt=now;Object.assign(Q,{face:a[2],hp:a[3],max:a[4],cls:a[5],down:!!(a[6]&1),dashT:a[6]&2?.1:0,spin:a[6]&4?1:0,flash:a[6]&8?1:0,inv:a[6]&16?.1:0,shield:a[7]||0,aur:a[8]|0,r:17});return Q}
+  Q.tx=a[0];Q.ty=a[1];Q.rt=now;Object.assign(Q,{face:a[2],hp:a[3],max:a[4],cls:a[5],down:!!(a[6]&1),dashT:a[6]&2?.1:0,spin:a[6]&4?1:0,flash:a[6]&8?1:0,inv:a[6]&16?.1:0,shield:a[7]||0,aur:a[8]|0,r:17});
+  if(a[9]){const t=PET_IDS[a[9]-1];if(!Q.pet||Q.pet.t!==t)Q.pet={t,x:a[10],y:a[11],flap:0,r:10};Q.pet.tx=a[10];Q.pet.ty=a[11];Q.pet.taunt=a[12]?1:0}else Q.pet=null;return Q}
 // Lissage des partenaires à chaque image : on prolonge leur dernier mouvement connu et on rattrape en douceur.
-function matesSmooth(dt){const now=performance.now();for(const q of G.mates||[]){if(q.tx==null)continue;const age=Math.min(.2,(now-q.rt)/1000),px=q.tx+(q.vx||0)*age,py=q.ty+(q.vy||0)*age;
+function matesSmooth(dt){const now=performance.now();for(const q of G.mates||[]){if(q.pet){const p=q.pet,k=Math.min(1,dt*12);if(Math.hypot(p.tx-p.x,p.ty-p.y)>400){p.x=p.tx;p.y=p.ty}p.x+=(p.tx-p.x)*k;p.y+=(p.ty-p.y)*k;p.flap+=dt*10}if(q.pet){const p=q.pet,k=Math.min(1,dt*12);if(Math.hypot(p.tx-p.x,p.ty-p.y)>400){p.x=p.tx;p.y=p.ty}p.x+=(p.tx-p.x)*k;p.y+=(p.ty-p.y)*k;p.flap+=dt*10}if(q.tx==null)continue;const age=Math.min(.2,(now-q.rt)/1000),px=q.tx+(q.vx||0)*age,py=q.ty+(q.vy||0)*age;
   const k=Math.min(1,dt*20);q.x+=(px-q.x)*k;q.y+=(py-q.y)*k}}
 // Flux rapide des héros, 30 fois par seconde.
 let hSeq=0;

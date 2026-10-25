@@ -319,7 +319,7 @@ const mastOf=c=>(meta.mast[c]||(meta.mast[c]={r:0,xp:0}));
 const mastNeed=r=>100*(r+1);
 const deCls=c=>c==='archer'?"de l'Archer":`du ${CLS[c].n}`;
 const modOk=(id,c)=>!MODS[id].cls||MODS[id].cls.includes(c);
-const modKind=id=>MODS[id].type||'w';
+const modKind=id=>MODS[id].type||'w',bKind=id=>{const k=modKind(id);return k==='w'||k==='p'?k:'h'};
 const curWid=(c=heroCls)=>meta.wpn[c]&&ownedW(meta.wpn[c])?meta.wpn[c]:WPN[c][0].id;
 const arrOf=(o,k,n)=>{let a=o[k];if(!a)a=o[k]=Array(n).fill(null);while(a.length<n)a.push(null);return a};
 const mstOf=(o,k)=>o[k]||(o[k]={r:0,xp:0});
@@ -327,6 +327,8 @@ const deW=n=>/^[aeiouyéèêâîôh]/i.test(n)&&!/^h/i.test(n)?`de l'${n}`:`de $
 const HSLOT_MAX=6,HSLOT_COST=[15,30,50];
 const auraCap=id=>id&&meta.mods[id]!=null?MODS[id].cap+meta.mods[id]:0;
 function build(kind,c=heroCls){
+  if(kind==='p')return petBuild();
+  if(kind==='p')return petBuild();
   if(kind==='w'){const wid=curWid(c);return {kind,key:wid,load:arrOf(meta.wload,wid,4),pol:arrOf(meta.wpol,wid,4),mast:mstOf(meta.wmast,wid),slots:4,alignStore:meta.walign,cap0:10+lv('cat')*3,name:wdef(wid).n,de:deW(wdef(wid).n)}}
   const au=meta.aura[c]||null;
   return {kind:'h',key:c,load:arrOf(meta.hload,c,HSLOT_MAX),pol:arrOf(meta.pol,c,HSLOT_MAX),mast:mastOf(c),slots:meta.hslots[c]||3,alignStore:meta.align,cap0:10+lv('rea')*3+auraCap(au),name:CLS[c].n,de:deCls(c),aura:au};

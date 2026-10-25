@@ -118,18 +118,19 @@ function modCard(id,cls='',i,b){const m=MODS[id],rk=meta.mods[id],isA=modKind(id
   const d=isA?`+${MODS[id].cap+rk}`:(b&&i!==undefined?bDrain(b,id,rk,i):modDrain(id,rk));
   return `<button class="mod${cls}" data-mod="${id}" style="--mc:${MOD_RAR[m.r].c}" aria-label="${m.n}, rang ${rk}, ${isA?'aura':'polarité '+p.n}"><span class="pl" style="color:${p.c}">${p.s}</span><span class="dr">${d}</span><b>${m.n}</b>${modSt(id)?`<span class="mst" aria-label="${modSt(id)} étoile${modSt(id)>1?'s':''}">${'★'.repeat(modSt(id))}</span>`:''}${meta.modCp[id]?`<span class="mcp" title="Copies">×${meta.modCp[id]}</span>`:''}<span class="pp">${'<i class="on"></i>'.repeat(rk)}${'<i></i>'.repeat(m.max-rk)}</span></button>`}
 function modDetail(id){
-  const m=MODS[id],rk=meta.mods[id],c=MOD_RAR[m.r].c,k=modKind(id),isA=k==='a',b=build(k==='w'?'w':'h'),ok=modOk(id,heroCls);
+  const m=MODS[id],rk=meta.mods[id],c=MOD_RAR[m.r].c,k=modKind(id),isA=k==='a',b=build(bKind(id)),ok=modOk(id,heroCls);
   const slot=isA?(b.aura===id?0:-1):b.load.indexOf(id),eq=slot>=0,u=bUsed(b),cap=bCap(b),fc=fuseCost(id,rk),maxed=rk>=m.max;
   let act='',why='',fuseBlocked=false,costLine;
-  const where=k==='w'?`l'arme (${b.name})`:'le héros';
+  const where=k==='w'?`l'arme (${b.name})`:k==='p'?'le familier':'le héros';
   if(isA){
     costLine=`Aura du héros · rapporte +${m.cap+rk} de capacité`;
     act=eq?'<button class="btn" data-act="unequip">Retirer</button>':`<button class="btn main" data-act="equip">${b.aura?'Remplacer l\'aura':'Équiper l\'aura'}</button>`;
     if(eq&&u>cap-(m.cap+rk)){why='Retirer cette aura ferait dépasser la capacité du héros : les mods en trop deviendraient inactifs.'}
   }else{
-    const p=POL[MOD_POL[id]],bs0=bBest(b,id,rk),bs=(modSF!=null&&modSF<b.slots&&!b.load[modSF]&&b.kind===(modKind(id)==='w'?'w':'h'))?{i:modSF,d:bDrain(b,id,rk,modSF)}:bs0,fits=bs.i>=0&&u+bs.d<=cap;
-    costLine=`Mod ${k==='w'?'d\'arme':'de héros'} · <span style="color:${p.c}">${p.s} ${p.n}</span> · `+(eq?`coûte ${bDrain(b,id,rk,slot)} dans la case ${slot+1}`:`coûte ${modDrain(id,rk)}, ${Math.ceil(modDrain(id,rk)/2)} dans une case ${p.n}`);
+    const p=POL[MOD_POL[id]],bs0=bBest(b,id,rk),bs=(modSF!=null&&modSF<b.slots&&!b.load[modSF]&&b.kind===bKind(id))?{i:modSF,d:bDrain(b,id,rk,modSF)}:bs0,fits=bs.i>=0&&u+bs.d<=cap;
+    costLine=`Mod ${k==='w'?'d\'arme':k==='p'?'de familier':'de héros'} · <span style="color:${p.c}">${p.s} ${p.n}</span> · `+(eq?`coûte ${bDrain(b,id,rk,slot)} dans la case ${slot+1}`:`coûte ${modDrain(id,rk)}, ${Math.ceil(modDrain(id,rk)/2)} dans une case ${p.n}`);
     if(!ok){why=`Réservé à : ${m.cls.map(x=>CLS[x].n).join(', ')}.`}
+    else if(m.pt&&!eq&&(!petEq()||petEq().t!==m.pt)){why=`Ne fonctionne qu'avec le ${PETS[m.pt].n}.`;act=`<button class="btn" data-act="equip" ${!fits?'disabled':''}>Équiper quand même</button>`}
     else if(eq)act='<button class="btn" data-act="unequip">Retirer</button>';
     else{act=`<button class="btn main" data-act="equip" ${!fits?'disabled':''}>Équiper${bs.i>=0?` · case ${bs.i+1}`:''}</button>`;
       why=bs.i<0?`Toutes les cases de ${where} sont prises. Retire un mod d'abord.`:!fits?`Capacité insuffisante : il faut ${bs.d} points, il en reste ${Math.max(0,cap-u)}.`:''}
@@ -156,11 +157,11 @@ function starBlock(id,b,k,slot){const m=MODS[id],rk=meta.mods[id],st=modSt(id),c
     <div class="actions"><button class="btn buy" data-act="star" ${ok?'':'disabled'}>Surcharger · ${c.cp} copie${c.cp>1?'s':''} + ${c.ess} essence</button>${dis}</div>${why?`<p class="empty" style="font-size:13px;margin:0">${why}</p>`:''}</div>`}
 function alignPanel(b){
   const cost=bAlignCost(b),mt=b.mast;
-  let h=`<h3>Alignement · ${b.kind==='w'?'arme':'héros'}</h3><p class="empty" style="font-size:13px">Aligne une case sur une polarité : un mod de la même polarité y coûte moitié moins, un autre 25 % de plus. Chaque alignement coûte de l'essence (200, 400, 800 puis 1 600) et remet la maîtrise ${b.de} à 0.</p>
+  let h=`<h3>Alignement · ${b.kind==='w'?'arme':b.kind==='p'?'familier':'héros'}</h3><p class="empty" style="font-size:13px">Aligne une case sur une polarité : un mod de la même polarité y coûte moitié moins, un autre 25 % de plus. Chaque alignement coûte de l'essence (200, 400, 800 puis 1 600)${b.kind==='p'?'.':` et remet la maîtrise ${b.de} à 0.`}</p>
     <div class="alrow">${b.pol.slice(0,b.slots).map((p,i)=>`<button class="chip" data-act="alslot" data-i="${i}" aria-pressed="${!!alSel&&alSel.i===i}">Case ${i+1} · ${p?`<span style="color:${POL[p].c}">${POL[p].s} ${POL[p].n}</span>`:'neutre'}</button>`).join('')}</div>`;
   if(alSel){const cur=b.pol[alSel.i];
     h+=`<div class="alrow">${Object.keys(POL).map(k=>`<button class="chip" data-act="alpol" data-p="${k}" aria-pressed="${alSel.p===k}" ${cur===k?'disabled':''}><span style="color:${POL[k].c}">${POL[k].s}</span> ${POL[k].n}</button>`).join('')}</div>`;
-    if(alSel.p)h+=`<div class="card"><p style="margin:0;font-size:14px">Aligner la case ${alSel.i+1} en <b style="color:${POL[alSel.p].c}">${POL[alSel.p].n}</b> pour <b>${cost} essence</b>. La maîtrise ${b.de} repasse du rang ${mt.r} à 0${mt.r?` : −${mt.r} de capacité jusqu'à ce que tu la regagnes en mission`:''}.</p>
+    if(alSel.p)h+=`<div class="card"><p style="margin:0;font-size:14px">Aligner la case ${alSel.i+1} en <b style="color:${POL[alSel.p].c}">${POL[alSel.p].n}</b> pour <b>${cost} essence</b>.${b.kind==='p'?'':` La maîtrise ${b.de} repasse du rang ${mt.r} à 0${mt.r?` : −${mt.r} de capacité jusqu'à ce que tu la regagnes en mission`:''}.`}</p>
       <div class="actions"><button class="btn main" data-act="alok" ${meta.essence<cost?'disabled':''}>Aligner · ${cost} essence</button><button class="btn" data-act="alcancel">Annuler</button></div>
       ${meta.essence<cost?`<p class="empty" style="font-size:13px">Il te manque ${cost-meta.essence} essence.</p>`:''}</div>`;
     else h+='<p class="empty" style="font-size:13px">Choisis la polarité de cette case.</p>';
@@ -172,8 +173,8 @@ function renderMods(rootId){
   const b=build(modTab),u=bUsed(b),cap=bCap(b),act=bActive(b),mt=b.mast;
   const owned=Object.keys(MODS).filter(id=>meta.mods[id]!=null);
   if(modSel&&meta.mods[modSel]==null)modSel=null;
-  if(modSel&&(modKind(modSel)==='w')!==(modTab==='w'))modSel=null;
-  const fits=id=>modTab==='w'?modKind(id)==='w':modKind(id)!=='w';
+  const fits=id=>bKind(id)===modTab,ptOff=id=>MODS[id].pt&&(!petEq()||petEq().t!==MODS[id].pt);
+  if(modSel&&!fits(modSel))modSel=null;
   if(modSF!=null&&modSF>=b.slots)modSF=null;
   const pool=owned.filter(id=>fits(id)&&!b.load.includes(id)&&b.aura!==id);
   const sp=modSF!=null?b.pol[modSF]:null,polOf=id=>modKind(id)==='a'?'a':MOD_POL[id];
@@ -184,24 +185,26 @@ function renderMods(rootId){
   const pchip=(k,lab,c)=>`<button class="cx-chip cx-chip--sm" data-act="polf" data-p="${k}" aria-pressed="${modSF==null&&modPF===k}"${c&&!(modSF==null&&modPF===k)?` style="color:${c}"`:''}>${lab} <span class="n">${pcount[k]||0}</span></button>`;
   const filt=`<div class="cx-chips" role="group" aria-label="Filtrer les mods par polarité">${pchip('all','Tous')}${Object.keys(POL).map(k=>pchip(k,`${POL[k].s} ${POL[k].n}`,POL[k].c)).join('')}${modTab==='h'&&pcount.a?pchip('a','✦ Aura',AURA_C):''}</div>
     ${modSF!=null?`<p class="cx-hint" style="margin:0">Case ${modSF+1} · ${sp?`<b style="color:${POL[sp].c}">${POL[sp].s} ${POL[sp].n}</b> : seuls les mods ${POL[sp].n} (coût divisé par 2)`:'neutre : tous les mods'}, du moins cher au plus cher dans cette case${b.load[modSF]?'':' ; « Équiper » les place dans cette case'}. <button class="cx-btn cx-btn--ghost cx-btn--sm" data-act="slotf" data-i="${modSF}" style="margin:0">Retirer le filtre</button></p>`:'<p class="cx-hint" style="margin:0">Touche le nom de polarité au-dessus d\'une case pour voir les mods qui lui conviennent le mieux.</p>'}`;
-  const slotsN=modTab==='w'?4:HSLOT_MAX;
-  const slotHtml=i=>{if(i>=b.slots){const nx=i===b.slots;return `<div class="mslot"><span class="sp" style="color:var(--muted)">Verrouillée</span><div class="mod empty lockd">${nx?`${HSLOT_COST[b.slots-3]} fragments`:'—'}</div></div>`}
+  const slotsN=modTab==='h'?HSLOT_MAX:4;
+  const slotHtml=i=>{if(i>=b.slots){const nx=i===b.slots;return `<div class="mslot"><span class="sp" style="color:var(--muted)">Verrouillée</span><div class="mod empty lockd">${b.kind==='p'?'Familier ★★★':nx?`${HSLOT_COST[b.slots-3]} fragments`:'—'}</div></div>`}
     const id=b.load[i],p=b.pol[i];return `<div class="mslot${modSF===i?' fsel':''}"><button class="sp" data-act="slotf" data-i="${i}" aria-pressed="${modSF===i}" aria-label="Filtrer les mods pour la case ${i+1} (${p?POL[p].n:'neutre'})" style="color:${p?POL[p].c:'var(--muted)'}">${p?POL[p].s+' '+POL[p].n:'Neutre'}</button>${id?modCard(id,(modSel===id?' sel':'')+(act.includes(id)?'':' off'),i,b):'<div class="mod empty">Libre</div>'}</div>`};
   const buyBox=modTab==='h'&&b.slots<HSLOT_MAX&&inCamp?(()=>{const c=HSLOT_COST[b.slots-3],have=fragTotal();
     return `<div class="card"><p style="margin:0;font-size:14px">Débloquer la case ${b.slots+1} du héros : <b>${c} fragments de schéma</b>, pris parmi ceux que tu as en plus grand nombre. Tu en as ${have}.</p><div class="actions"><button class="btn buy" data-act="slotbuy" ${have<c?'disabled':''}>Débloquer · ${c} fragments</button></div></div>`})():'';
-  root.innerHTML=`<div class="alrow"><button class="chip" data-act="mtab" data-t="h" aria-pressed="${modTab==='h'}">Héros · ${CLS[heroCls].n}</button><button class="chip" data-act="mtab" data-t="w" aria-pressed="${modTab==='w'}">Arme · ${wdef(curWid()).n}</button></div>
+  root.innerHTML=`<div class="alrow"><button class="chip" data-act="mtab" data-t="h" aria-pressed="${modTab==='h'}">Héros · ${CLS[heroCls].n}</button><button class="chip" data-act="mtab" data-t="w" aria-pressed="${modTab==='w'}">Arme · ${wdef(curWid()).n}</button><button class="chip" data-act="mtab" data-t="p" aria-pressed="${modTab==='p'}">Familier${petEq()?' · '+PETS[petEq().t].n:''}</button></div>
+    ${modTab==='p'&&inCamp?petPanel():''}
     <div class="modhead"><span>Capacité <b class="${u>cap?'over':''}">${u} / ${cap}</b></span><span>Essence <b>${meta.essence}</b></span>
-      <span>Maîtrise ${b.kind==='w'?'arme':'héros'} <b>${mt.r} / 10</b>${mt.r<10?` · ${mt.xp} / ${mastNeed(mt.r)}`:''}</span></div>
-    ${u>cap?'<p class="empty" style="font-size:13px;color:var(--blood)">Capacité dépassée : les mods en trop sont inactifs (grisés). Regagne de la maîtrise en mission ou retire un mod.</p>':''}
+      ${b.kind==='p'?`<span>Bonus de niveau <b>+${mt.r}</b></span>`:`<span>Maîtrise ${b.kind==='w'?'arme':'héros'} <b>${mt.r} / 10</b>${mt.r<10?` · ${mt.xp} / ${mastNeed(mt.r)}`:''}</span>`}</div>
+    ${u>cap?'<p class="empty" style="font-size:13px;color:var(--blood)">Capacité dépassée : les mods en trop sont inactifs (grisés). Regagne de la maîtrise en mission (le familier : des niveaux) ou retire un mod.</p>':''}
     ${modTab==='h'?`<div class="aurarow"><div class="mslot"><span class="sp" style="color:${AURA_C}">✦ Aura</span>${b.aura?modCard(b.aura,modSel===b.aura?' sel':''):'<div class="mod empty">Aura libre</div>'}</div><p class="empty" style="font-size:13px">Une aura rapporte de la capacité au héros au lieu d'en coûter, et donne un effet permanent.</p></div>`:''}
     <div class="modslots${slotsN>4?' six':''}">${Array.from({length:slotsN},(_,i)=>slotHtml(i)).join('')}</div>
     ${buyBox}
     ${filt}
-    <div class="modlist">${rest.map(id=>modCard(id,(modSel===id?' sel':'')+(modOk(id,heroCls)?'':' lock'),modSF!=null&&modKind(id)!=='a'?modSF:undefined,modSF!=null?b:undefined)).join('')||`<p class="empty" style="grid-column:1/-1">${pool.length?'Aucun mod pour ce filtre.':`Aucun autre mod ${modTab==='w'?'d\'arme':'de héros'}.`} Les monstres en laissent parfois tomber, les Gardiens toujours.</p>`}</div>
-    ${modSel?modDetail(modSel):`<p class="empty" style="font-size:13px">${modTab==='w'?'Les mods d\'arme restent attachés à cette arme : chaque arme a son propre build.':'Les mods de héros servent à la survie, au déplacement et aux compétences.'} Le symbole en haut à gauche d'un mod est sa polarité, le chiffre son coût.</p>`}
+    <div class="modlist">${rest.map(id=>modCard(id,(modSel===id?' sel':'')+(modOk(id,heroCls)&&!ptOff(id)?'':' lock'),modSF!=null&&modKind(id)!=='a'?modSF:undefined,modSF!=null?b:undefined)).join('')||`<p class="empty" style="grid-column:1/-1">${pool.length?'Aucun mod pour ce filtre.':`Aucun autre mod ${modTab==='w'?'d\'arme':modTab==='p'?'de familier':'de héros'}.`} Les monstres en laissent parfois tomber, les Gardiens toujours.</p>`}</div>
+    ${modSel?modDetail(modSel):`<p class="empty" style="font-size:13px">${modTab==='p'?'Les mods de familier renforcent le familier équipé ; certains ne servent qu\'à un familier précis.':modTab==='w'?'Les mods d\'arme restent attachés à cette arme : chaque arme a son propre build.':'Les mods de héros servent à la survie, au déplacement et aux compétences.'} Le symbole en haut à gauche d'un mod est sa polarité, le chiffre son coût.</p>`}
     ${inCamp?alignPanel(b):''}`;
   root.querySelectorAll('[data-mod]').forEach(x=>x.onclick=()=>{modSel=x.dataset.mod;modsChanged()});
   root.querySelectorAll('[data-act]').forEach(x=>x.onclick=()=>modAct(x.dataset.act,x.dataset));
+  root.querySelectorAll('[data-pet]').forEach(x=>x.onclick=()=>petAct(x.dataset.pet,x.dataset.arg));
 }
 function modAct(a,ds){
   const id=modSel,rk=id?meta.mods[id]:0;
@@ -209,12 +212,12 @@ function modAct(a,ds){
   else if(a==='polf'){modPF=ds.p;modSF=null}
   else if(a==='slotf'){const i=+ds.i;modSF=modSF===i?null:i}
   else if(a==='equip'||a==='unequip'||a==='fuse'){
-    const k=modKind(id),b=build(k==='w'?'w':'h');
-    if(a==='equip'){if(!modOk(id,heroCls))return;if(k==='a')meta.aura[heroCls]=id;else{let bs=bBest(b,id,rk);if(modSF!=null&&modSF<b.slots&&!b.load[modSF]&&(k==='w')===(modTab==='w'))bs={i:modSF,d:bDrain(b,id,rk,modSF)};if(bs.i<0||bUsed(b)+bs.d>bCap(b))return;b.load[bs.i]=id}}
+    const k=modKind(id),b=build(bKind(id));
+    if(a==='equip'){if(!modOk(id,heroCls))return;if(k==='a')meta.aura[heroCls]=id;else{let bs=bBest(b,id,rk);if(modSF!=null&&modSF<b.slots&&!b.load[modSF]&&bKind(id)===modTab)bs={i:modSF,d:bDrain(b,id,rk,modSF)};if(bs.i<0||bUsed(b)+bs.d>bCap(b))return;b.load[bs.i]=id}}
     else if(a==='unequip'){if(k==='a'){if(meta.aura[heroCls]===id)meta.aura[heroCls]=null}else{const i=b.load.indexOf(id);if(i>=0)b.load[i]=null}}
     else{const c=fuseCost(id,rk);if(meta.essence<c||rk>=MODS[id].max)return;if(k!=='a'){const i=b.load.indexOf(id);if(i>=0&&bUsed(b)-bDrain(b,id,rk,i)+bDrain(b,id,rk+1,i)>bCap(b))return}meta.essence-=c;meta.mods[id]=rk+1}
   }
-  else if(a==='star'){const k=modKind(id),b=build(k==='w'?'w':'h'),m=MODS[id],st=modSt(id),c=starCost(id,st);
+  else if(a==='star'){const k=modKind(id),b=build(bKind(id)),m=MODS[id],st=modSt(id),c=starCost(id,st);
     if(!modCanStar(id)||rk<m.max||st>=MOD_ST_MAX||(meta.modCp[id]|0)<c.cp||meta.essence<c.ess)return;
     if(k!=='a'){const i=b.load.indexOf(id);if(i>=0&&bUsed(b)-bDrain(b,id,rk,i)+polD(b,id,i,modDrain(id,rk,st+1))>bCap(b))return}
     meta.modCp[id]-=c.cp;meta.essence-=c.ess;meta.modSt[id]=st+1;SND.play('relic');toast(`<b style="color:${MOD_RAR[m.r].c}">${m.n}</b> surchargé : ${'★'.repeat(st+1)}`)}
@@ -224,11 +227,11 @@ function modAct(a,ds){
   else if(a==='alpol'){if(alSel)alSel.p=ds.p}
   else if(a==='alcancel'){alSel=null}
   else if(a==='alok'){const b=build(modTab);if(!alSel||!alSel.p)return;const cost=bAlignCost(b);if(meta.essence<cost)return;
-    meta.essence-=cost;b.pol[alSel.i]=alSel.p;b.alignStore[b.key]=(b.alignStore[b.key]||0)+1;b.mast.r=0;b.mast.xp=0;
-    toast(`Case ${alSel.i+1} alignée en <b style="color:${POL[alSel.p].c}">${POL[alSel.p].n}</b>. Maîtrise ${b.de} remise à 0.`);alSel=null}
+    meta.essence-=cost;b.pol[alSel.i]=alSel.p;b.alignStore[b.key]=(b.alignStore[b.key]||0)+1;if(b.kind!=='p'){b.mast.r=0;b.mast.xp=0}
+    toast(`Case ${alSel.i+1} alignée en <b style="color:${POL[alSel.p].c}">${POL[alSel.p].n}</b>. ${b.kind==='p'?'':` Maîtrise ${b.de} remise à 0.`}`);alSel=null}
   saveMeta();modsChanged();
 }
-function modsChanged(){if(started&&G&&!G.over)refreshStats();if(!$('bag').hidden)drawBag();if(!$('camp').hidden)drawCamp()}
+function modsChanged(){if(started&&G&&!G.over){refreshStats();if(G.pet||petEq())G.petS=petStats()}if(!$('bag').hidden)drawBag();if(!$('camp').hidden)drawCamp()}
 
 /* ---------- Fin de niveau, extraction, mort ---------- */
 function lootSummary(){
@@ -255,6 +258,8 @@ function bank(full){
   const gainM=(mt,label)=>{let up=0;if(mt.r<10){mt.xp+=G.kills;while(mt.r<10&&mt.xp>=mastNeed(mt.r)){mt.xp-=mastNeed(mt.r);mt.r++;up++}if(mt.r>=10)mt.xp=0}
     return `Maîtrise ${label} : rang ${mt.r} / 10`+(mt.r<10?` (${mt.xp} / ${mastNeed(mt.r)})`:'')+(up?` · +${up} de capacité`:'')};
   G.mastMsg=gainM(mastOf(G.cls),deCls(G.cls))+'<br>'+gainM(mstOf(meta.wmast,G.wid),deW(wdef(G.wid).n));
+  {const pm=petBank(G.kills);if(pm)G.mastMsg+='<br>'+pm}
+  {const pm=petBank(G.kills);if(pm)G.mastMsg+='<br>'+pm}
   if(full){
     for(const it of G.loot.items)meta.stash.push(it)
     for(const p of G.loot.parts){if(meta.built[p.w])meta.essence+=6;else{const a=meta.parts[p.w]||(meta.parts[p.w]=[0,0,0]);a[p.p]++}}
@@ -274,7 +279,7 @@ function grantRelic(id,rad){
 }
 function resolveRelic(){
   const out=[];
-  for(const r of G.opened){const g=grantRelic(r.id,r.rad);if(!g)continue;meta.essence+=25;out.push(`Relique ${relicName(r.id)}${r.rad?' éclatante':''} : ${g.html}. +25 essence.`)}
+  for(const r of G.opened){const g=grantRelic(r.id,r.rad);if(!g)continue;meta.essence+=25;out.push(`Relique ${relicName(r.id)}${r.rad?' éclatante':''} : ${g.html}. +25 essence.`+(eggFromRelic(r.id)?' <b style="color:#f0cf4a">Un œuf de familier</b> était caché dedans : fais-le éclore au Camp, onglet Mods › Familier.':''))}
   const left=G.relQ.length-G.opened.length;
   if(left>0)out.push(`${left} relique${left>1?'s':''} non ouverte${left>1?'s':''} faute de réactifs : ${left>1?'elles restent':'elle reste'} équipée${left>1?'s':''}, sans être consommée${left>1?'s':''}.`);
   return out.join('<br>');
