@@ -231,6 +231,8 @@ Le Camp compte 5 onglets : Héros (équipement, coffre, fragments), Armurerie (t
 
 Chaque niveau suivant coûte ×1,7 du précédent. Les talents coûtent 150, 300 et 500 or par classe.
 
+**Prestige du héros** (Forge) : se débloque quand les 8 améliorations permanentes sont au maximum. Il est propre à chaque héros et n'a pas de limite de niveau. Le niveau n+1 coûte 500 + 250 n or et 30 + 15 n essence et donne 1 point à placer, redistribuable gratuitement. Par point : Vitalité +2 % de vie, Puissance +2 % de dégâts, Vivacité +1 % de vitesse d'attaque, Acuité +0,5 % de critique (max 40 points), Brutalité +3 % de dégâts critiques, Arcanes +3 % de dégâts de compétence, Ténacité −0,5 % de dégâts subis (max 40), Sang-froid −0,5 % de recharge (max 30), Foulée +0,5 % de vitesse (max 30), Opulence +2 % d'or. Les plafonds généraux (critique 75 %, armure 60 %, recharge 50 %) s'appliquent toujours.
+
 ## Technique
 
 Une seule page HTML avec JavaScript, sans serveur.

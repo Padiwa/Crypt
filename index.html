@@ -465,7 +465,7 @@ const MODES={
 /* ---------- Progression permanente ---------- */
 let meta={gold:0,up:{},tal:{},cp:1,start:1,essence:0,mods:{ferocite:0},
   load:{guerrier:['ferocite',null,null,null],archer:['ferocite',null,null,null],magicien:['ferocite',null,null,null]},
-  gear:{armure:null,amulette:null,bottes:null,anneau:null},stash:[],wpn:{guerrier:'g0',archer:'a0',magicien:'m0'},bp:{},built:{},parts:{},relics:{},mode:'survie',relicSel:null,relicQ:[],diff:0,waff:{},pol:{},mast:{},align:{},wlv:{},wload:{},wpol:{},wmast:{},walign:{},hload:{},hslots:{},aura:{}};
+  gear:{armure:null,amulette:null,bottes:null,anneau:null},stash:[],wpn:{guerrier:'g0',archer:'a0',magicien:'m0'},bp:{},built:{},parts:{},relics:{},mode:'survie',relicSel:null,relicQ:[],diff:0,waff:{},prest:{},pol:{},mast:{},align:{},wlv:{},wload:{},wpol:{},wmast:{},walign:{},hload:{},hslots:{},aura:{}};
 try{const m=JSON.parse(localStorage.getItem('crypte-meta')||'null');if(m)meta=Object.assign(meta,m)}catch(e){}
 if(!meta.v2){meta.cp=1;meta.start=1;meta.v2=1}
 if(!meta.v3){for(const id in meta.bp||{}){const w=wdef(id);if(w&&!meta.built[id])meta.gold+=w.bp}meta.bp={};meta.v3=1;meta.relics={lA1:[1,0],...(meta.relics||{})}}
@@ -490,6 +490,25 @@ const UPG=[
   {k:'rea',n:'Réacteur',d:l=>`Capacité de mods de héros ${10+l*3}`,max:4,cost:100},
 ];
 const upCost=u=>Math.round(u.cost*Math.pow(1.7,lv(u.k)));
+/* ---------- Prestige du héros ---------- */
+const PREST=[
+  {k:'hp',n:'Vitalité',per:2,t:'% de vie maximale'},
+  {k:'dmg',n:'Puissance',per:2,t:'% de dégâts'},
+  {k:'aps',n:'Vivacité',per:1,t:'% de vitesse d\'attaque'},
+  {k:'crit',n:'Acuité',per:.5,t:'% de chances de critique',max:40},
+  {k:'cdmg',n:'Brutalité',per:3,t:'% de dégâts critiques'},
+  {k:'nova',n:'Arcanes',per:3,t:'% de dégâts de compétence'},
+  {k:'armor',n:'Ténacité',per:.5,t:'% de dégâts subis',neg:1,max:40},
+  {k:'cdr',n:'Sang-froid',per:.5,t:'% de temps de recharge',neg:1,max:30},
+  {k:'spd',n:'Foulée',per:.5,t:'% de vitesse de déplacement',max:30},
+  {k:'gold',n:'Opulence',per:2,t:'% d\'or ramassé'},
+];
+const prOf=(c=heroCls)=>{const o=meta.prest[c]||(meta.prest[c]={lv:0,pts:{}});o.pts=o.pts||{};return o};
+const prPt=(k,c=heroCls)=>(meta.prest[c]&&meta.prest[c].pts&&meta.prest[c].pts[k])||0;
+const prFree=(c=heroCls)=>{const o=prOf(c);return o.lv-Object.values(o.pts).reduce((a,b)=>a+b,0)};
+const prOpen=()=>UPG.every(u=>lv(u.k)>=u.max);
+const prCost=n=>({gold:500+250*n,ess:30+15*n});
+const prFmt=v=>(Math.round(v*10)/10).toLocaleString('fr-FR');
 /* ---------- Bonus de partie (montée de niveau) ---------- */
 const C_ATK='#e8853b',C_DEF='#5fbf7a',C_UTI='#8fd3e0',C_ELE='#b9a6f0';
 const RUP=[
@@ -675,7 +694,8 @@ function stats(eq){
   s.fury=rr('fury')*15;s.ultPct=rr('ultp')*30;
   s.splash+=rr('splash')*20;s.burnPct+=rr('burn')*10;s.chill+=rr('chill')*10;s.shock+=rr('shock')*6;
   s.skillRad+=rr('srad')*12;s.skillDur+=rr('sdur')*15;s.dashCd+=rr('refl')*15;s.antidote+=rr('endu')*20;s.execute=rr('exec')*40;s.bossDmg=rr('slay')*20;s.xpPct=rr('know')*20;s.lootPct=rr('luck')*15;
-  s.dmgPct+=lv('str')*6;s.apsPct+=lv('cel')*5;s.hp=Math.round(s.hp*(1+lv('vig')*.08)*(1+rr('hp')*.15));s.magnet=140*(1+rr('mag')*.4)*(1+s.magnetPct/100);
+  s.dmgPct+=prPt('dmg')*2;s.apsPct+=prPt('aps');s.crit+=prPt('crit')*.5;s.critDmg+=prPt('cdmg')*3;s.novaPct+=prPt('nova')*3;s.armor+=prPt('armor')*.5;s.cdr+=prPt('cdr')*.5;s.speed+=prPt('spd')*.5;s.goldPct+=prPt('gold')*2;
+  s.dmgPct+=lv('str')*6;s.apsPct+=lv('cel')*5;s.hp=Math.round(s.hp*(1+lv('vig')*.08)*(1+prPt('hp')*.02)*(1+rr('hp')*.15));s.magnet=140*(1+rr('mag')*.4)*(1+s.magnetPct/100);
   const dmg=s.dmg*(1+s.dmgPct/100);
   return {dmg,aps:s.aps*(1+s.apsPct/100),hp:s.hp,crit:Math.min(s.crit,75),critDmg:s.critDmg,multi:s.multi,pierce:s.pierce,burn:s.burn+dmg*s.burnPct/100,chill:s.chill,shock:s.shock,
     armor:Math.min(s.armor,60),speed:220*(1+s.speed/100),regen:s.regen,cdr:Math.min(s.cdr,50),nova:dmg*4*(1+s.novaPct/100),leech:s.leech,reach:s.reach,splash:s.splash,magnet:s.magnet,skillRad:s.skillRad,skillDur:s.skillDur,dashCd:Math.min(s.dashCd,60),potHeal:s.potHeal,lowArmor:Math.min(s.lowArmor,60),lowDmg:s.lowDmg,auraSlow:Math.min(s.auraSlow,50),goldPct:s.goldPct,antidote:s.antidote,execute:s.execute||0,bossDmg:s.bossDmg||0,xpPct:s.xpPct||0,lootPct:s.lootPct||0,echo:s.echo||0,waves:s.waves||0};
@@ -1980,6 +2000,19 @@ function xfDo(){const s=xfGet(xf.src),st=xfState();if(!s||s.lock||!st||!st.ok)re
   if(xf.src[0]==='s'){const i=meta.stash.findIndex(x=>String(x.id)===xf.src.slice(2));if(i>=0)meta.stash.splice(i,1)}else meta.gear[xf.src.slice(2)]=null;
   meta.essence-=cost;const dn=itemName(xfGet(xf.dst)||{name:'la cible'});toast(`Affixe transférée : <b>${AFF[k].t(v)}</b> sur ${esc(dn)}. ${esc(itemName(s))} est détruit.`);
   xf={src:'',k:'',dst:'',rep:''};campSel=null}
+function prestSection(){
+  const c=heroCls,o=prOf(c),free=prFree(c),op=prOpen(),cost=prCost(o.lv),nmax=UPG.filter(u=>lv(u.k)>=u.max).length;
+  let h=`<h3>Prestige · ${CLS[c].n}${o.lv?` · niveau ${o.lv}`:''}</h3>`;
+  if(!op&&!o.lv)return h+`<p class="empty" style="font-size:13px">Le prestige se débloque quand toutes les améliorations permanentes sont au maximum (${nmax} / ${UPG.length}). Ensuite, chaque niveau de prestige donne 1 point à placer dans une statistique du ${CLS[c].n.toLowerCase()}, sans limite de niveau.</p>`;
+  h+=`<p class="empty" style="font-size:13px">Chaque niveau de prestige donne 1 point à placer dans une statistique. Le prestige est propre à chaque héros et n'a pas de limite. Tu peux redistribuer tes points gratuitement.</p>
+  <div class="up"><b>Niveau de prestige ${o.lv} → ${o.lv+1}</b><button class="btn buy" data-cact="prbuy" ${meta.gold<cost.gold||meta.essence<cost.ess?'disabled':''}><span class="coin"></span>${cost.gold} · <span class="essi"></span>${cost.ess}</button>
+  <p style="grid-column:1/-1">${free?`<b style="color:var(--ember)">${free} point${free>1?'s':''} à placer</b>`:'Aucun point à placer'} · ${o.lv} au total</p></div><div class="ups">`;
+  h+=PREST.map(q=>{const n=prPt(q.k,c),mx=q.max&&n>=q.max,v=n*q.per;
+    return `<div class="up"><b>${q.n}${n?` · ${n}`:''}</b><button class="btn" data-cact="pradd" data-arg="${q.k}" ${!free||mx?'disabled':''} aria-label="Placer un point en ${q.n}">${mx?'Max':'+1'}</button>
+      <p style="grid-column:1/-1">${q.neg?'−':'+'}${prFmt(q.per)} ${q.t} par point${n?` · actuel ${q.neg?'−':'+'}${prFmt(v)} %`:''}${q.max?` · max ${q.max} points`:''}</p></div>`}).join('');
+  h+=`</div>${o.lv-free?'<div class="actions" style="margin:0"><button class="btn" data-cact="prreset">Redistribuer les points</button></div>':''}`;
+  return h;
+}
 function campForge0(){
   const ups=UPG.map(u=>{const l=lv(u.k),mx=l>=u.max,c=upCost(u);
     return `<div class="up"><b>${u.n}</b><p>${mx?u.d(l):(l?u.d(l)+' → ':'')+u.d(l+1)}</p><div class="pips">${Array.from({length:u.max},(_,i)=>`<i class="${i<l?'on':''}"></i>`).join('')}</div>
@@ -1987,7 +2020,7 @@ function campForge0(){
   const tals=TAL[heroCls].map(t=>{const own=hasTal(t.k);
     return `<div class="tal${own?' own':''}"><b>${t.n}</b><p>${t.d}</p>${own?'<span class="owned">Acquis</span>':`<button class="btn buy" data-cact="tal" data-arg="${t.k}" ${meta.gold<t.cost?'disabled':''}><span class="coin"></span>${t.cost}</button>`}</div>`}).join('');
   
-  return `<h3>Améliorations permanentes</h3><div class="ups">${ups}</div><h3>Talents · ${CLS[heroCls].n}</h3><div class="tals">${tals}</div>`;
+  return `<h3>Améliorations permanentes</h3><div class="ups">${ups}</div>${prestSection()}<h3>Talents · ${CLS[heroCls].n}</h3><div class="tals">${tals}</div>`;
 }
 function drawCamp(){
   $('campGold').innerHTML=`<span class="coin"></span>${meta.gold}<span class="e"><span class="essi"></span>${meta.essence}</span>`;
@@ -2045,6 +2078,9 @@ $('campBody').addEventListener('click',e=>{
     else if(a==='xfcancel'){xf={src:'',k:'',dst:'',rep:''}}
     else if(a==='xfok'){xfDo()}
     else if(a==='refine'){const r=meta.relics[arg];if(r&&r[0]>relicQN(arg,false)&&meta.essence>=50){r[0]--;r[1]++;meta.essence-=50}}
+    else if(a==='prbuy'){const o=prOf(),c=prCost(o.lv);if((prOpen()||o.lv)&&meta.gold>=c.gold&&meta.essence>=c.ess){meta.gold-=c.gold;meta.essence-=c.ess;o.lv++;toast(`Prestige du ${CLS[heroCls].n} : niveau ${o.lv}. Place ton point.`)}}
+    else if(a==='pradd'){const o=prOf(),q=PREST.find(x=>x.k===arg);if(q&&prFree()>0&&!(q.max&&prPt(q.k)>=q.max))o.pts[q.k]=prPt(q.k)+1}
+    else if(a==='prreset'){prOf().pts={}}
     else if(a==='up'){const u=UPG.find(x=>x.k===arg),c=upCost(u);if(meta.gold>=c&&lv(u.k)<u.max){meta.gold-=c;meta.up[u.k]=lv(u.k)+1}}
     else if(a==='tal'){const t=TAL[heroCls].find(x=>x.k===arg);if(meta.gold>=t.cost){meta.gold-=t.cost;meta.tal[t.k]=true}}
     else if(a==='start'){meta.start=+arg}
