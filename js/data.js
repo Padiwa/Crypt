@@ -20,7 +20,7 @@ const GLYPH={
   bottes:'<svg viewBox="0 0 24 24"><path d="M8 3h6v10l6 3v4H5v-6l3-1z"/><path d="M5 18h15"/></svg>',
   anneau:'<svg viewBox="0 0 24 24"><circle cx="12" cy="14" r="6"/><path d="m9 7 3-4 3 4z"/></svg>'};
 const CLS={
-  archer:{n:'Archer',skill:'Volée',cd:7,ult:'Pluie d\'acier',uicon:'<path d="M6 3v12M12 3v15M18 3v12M3.5 12.5 6 15l2.5-2.5M9.5 15.5 12 18l2.5-2.5M15.5 12.5 18 15l2.5-2.5M5 21h14"/>',base:{dmg:8,aps:1.8,hp:100,crit:5,speed:0,armor:0,cdr:0},
+  archer:{n:'Archer',skill:'Volée',cd:7,ult:'Pluie d\'acier',uicon:'<path d="M6 3v12M12 3v15M18 3v12M3.5 12.5 6 15l2.5-2.5M9.5 15.5 12 18l2.5-2.5M15.5 12.5 18 15l2.5-2.5M5 21h14"/>',base:{dmg:8,aps:1.8,hp:115,crit:5,speed:0,armor:5,cdr:0},
     cloak:'#2d4c50',rim:'#a9cbc0',inner:'#14232a',col:'#e8853b',
     hint:'Glisse pour bouger.<br>Tir automatique, plus rapide à l\'arrêt.',
     desc:'Tire des carreaux automatiquement, plus vite à l\'arrêt. Rapide et précis. <b>Volée</b> : 24 carreaux perforants dans toutes les directions. <b>Ultime, Pluie d\'acier</b> : 3 s de flèches qui s\'abattent sur les ennemis proches.',
@@ -30,7 +30,7 @@ const CLS={
     hint:'Glisse pour bouger.<br>Il frappe tout ce qui l\'approche.',
     desc:'Frappe au corps à corps tout ce qui l\'approche. Beaucoup de vie et d\'armure. <b>Tourbillon</b> : tournoie en frappant tout autour, dégâts subis réduits de moitié. <b>Ultime, Colère du Titan</b> : onde de choc géante et 3 s d\'invulnérabilité.',
     icon:'<path d="M12 4a8 8 0 1 1-8 8"/><path d="M12 8a4 4 0 1 1-4 4"/><path d="M4 12 2.5 9M4 12l3-1"/>'},
-  magicien:{n:'Magicien',skill:'Nova de givre',cd:7,ult:'Pluie de météores',uicon:'<circle cx="15" cy="15" r="5"/><path d="M11.5 11.5 3 3M14 9.8 8 3.5M9.8 14 3.5 8"/>',base:{dmg:12,aps:1.25,hp:85,crit:8,speed:-2,armor:0,cdr:10},
+  magicien:{n:'Magicien',skill:'Nova de givre',cd:7,ult:'Pluie de météores',uicon:'<circle cx="15" cy="15" r="5"/><path d="M11.5 11.5 3 3M14 9.8 8 3.5M9.8 14 3.5 8"/>',base:{dmg:12,aps:1.25,hp:100,crit:8,speed:-2,armor:5,cdr:10},
     cloak:'#3c2c63',rim:'#b9a6f0',inner:'#17122b',col:'#9fd0ff',
     hint:'Glisse pour bouger.<br>Orbes automatiques, plus rapides à l\'arrêt.',
     desc:'Lance des orbes qui explosent à l\'impact, plus vite à l\'arrêt. Fragile, redoutable contre les groupes. <b>Nova de givre</b> : blesse, ralentit et dissipe les projectiles. <b>Ultime, Pluie de météores</b> : 3 météores sur les ennemis proches.',
@@ -112,7 +112,7 @@ const DIFF=[{n:'Normal',iv:60,cnt:1,loot:0,c:'#bdb6a8'},{n:'Difficile',iv:45,cnt
 const ROM=['I','II','III','IV','V','VI','VII','VIII','IX','X'];
 const tormT=()=>(meta.diff|0)===3?Math.max(1,Math.min(10,meta.torm|0||1)):0;
 const dif=()=>{const i=Math.max(0,Math.min(3,meta.diff|0)),D=DIFF[i];if(i<3)return Object.assign({hp:1,dm:1,aq:0,anc:0,tier:0},D);
-  const t=tormT();return {n:`Tourment ${ROM[t-1]}`,iv:Math.max(16,26-t),cnt:t>=6?5:4,loot:2+.5*(t-1),c:D.c,hp:1+.35*t,dm:1+.18*t,aq:.05*t,anc:.004*t,tier:t}};
+  const t=tormT();return {n:`Tourment ${ROM[t-1]}`,iv:Math.max(16,26-t),cnt:t>=6?5:4,loot:2+.5*(t-1),c:D.c,hp:1+.5*t,dm:1+.22*t,aq:.05*t,anc:.004*t,tier:t}};
 const ULT_N=60;
 const lv=k=>meta.up[k]||0, hasTal=k=>!!meta.tal[k];
 const ownedW=id=>/0$/.test(id)||!!meta.built[id];
@@ -146,7 +146,7 @@ const prOf=(c=heroCls)=>{const o=meta.prest[c]||(meta.prest[c]={lv:0,pts:{}});o.
 const prPt=(k,c=heroCls)=>(meta.prest[c]&&meta.prest[c].pts&&meta.prest[c].pts[k])||0;
 const prFree=(c=heroCls)=>{const o=prOf(c);return o.lv-Object.values(o.pts).reduce((a,b)=>a+b,0)};
 const prOpen=()=>UPG.every(u=>lv(u.k)>=u.max);
-const prCost=n=>({gold:500+250*n,ess:30+15*n});
+const prCost=n=>({gold:600+300*n+15*n*n,ess:Math.round(30+15*n+n*n/2)});
 const prFmt=v=>(Math.round(v*10)/10).toLocaleString('fr-FR');
 /* ---------- Bonus de partie (montée de niveau) ---------- */
 const C_ATK='#e8853b',C_DEF='#5fbf7a',C_UTI='#8fd3e0',C_ELE='#b9a6f0';
@@ -273,11 +273,11 @@ function rollMod(boss){const x=Math.random()*100,r=x<(boss?30:8)?2:x<(boss?75:38
 
 /* ---------- Objets ---------- */
 const AFF={
-  dmgPct:{t:v=>`+${v} % de dégâts`,r:l=>ri(6,12)+Math.floor(l*1.2)},
+  dmgPct:{t:v=>`+${v} % de dégâts`,r:l=>ri(6,12)+Math.floor(l*.6)},
   apsPct:{t:v=>`+${v} % de vitesse d'attaque`,r:l=>ri(6,14)},
   crit:{t:v=>`+${v} % de chances de critique`,r:l=>ri(3,7)},
   critDmg:{t:v=>`+${v} % de dégâts critiques`,r:l=>ri(15,35)},
-  hp:{t:v=>`+${v} points de vie`,r:l=>ri(12,24)+l*4},
+  hp:{t:v=>`+${v} points de vie`,r:l=>ri(12,24)+Math.round(l*2.5)},
   armor:{t:v=>`−${v} % de dégâts subis`,r:l=>ri(3,7)},
   speed:{t:v=>`+${v} % de vitesse de déplacement`,r:l=>ri(4,9)},
   regen:{t:v=>`+${v} PV par seconde`,r:l=>ri(1,2)+Math.floor(l/4)},
@@ -295,7 +295,7 @@ const BASE_STAT={arme:'dmg',armure:'hp',amulette:'crit',bottes:'speed',anneau:'d
 const baseTxtOf=(slot,v)=>slot==='arme'?`${v} dégâts de base`:slot==='armure'?`+${v} points de vie`:slot==='bottes'?`+${v} % de vitesse de déplacement`:slot==='anneau'?`+${v} % de dégâts`:`+${v} % de chances de critique`;
 function baseLine(it){return baseTxtOf(it.slot,it.base.v)}
 let uid=1+Math.max(0,...meta.stash.map(i=>i.id),...Object.values(meta.gear).filter(Boolean).map(i=>i.id));
-function rollRarity(l){const x=Math.random()*100,leg=1.5+l*.6,rare=8+l*1.2;return x<leg?3:x<leg+rare?2:x<leg+rare+32?1:0}
+function rollRarity(l){const tb=(typeof G!=='undefined'&&G)?dif().tier*.6:0,x=Math.random()*100,leg=Math.min(9,1.5+l*.05)+tb,rare=Math.min(30,8+l*.15);return x<leg?3:x<leg+rare?2:x<leg+rare+32?1:0}
 function genItem(l,minR=0){
   let r=Math.max(rollRarity(l+lv('luc')*3),minR);const DQ=G?dif():{anc:0,aq:0};if(DQ.anc&&Math.random()<DQ.anc*(minR>=1?3:1))r=4;const slot=pick(['armure','amulette','bottes','anneau']), bk=BASE_STAT[slot];
   const bv=slot==='armure'?Math.round(20+l*7+rand(-4,6)):slot==='bottes'?ri(4,8)+Math.floor(l/4):slot==='anneau'?ri(5,10)+Math.floor(l*.8):ri(2,5);

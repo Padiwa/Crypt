@@ -35,7 +35,7 @@ function card(it,mode){
     const e=mode==='run'?G.eq:curEq(),a=stats(e),b=stats({...e,[it.slot]:it});
     extra=cmpBlock(e,it)+(mode==='run'
       ?`<div class="actions"><button class="btn main" data-ract="${it.id}">Équiper maintenant</button></div><p class="empty" style="font-size:13px">Un objet équipé est gardé même si tu meurs. L'ancien part au coffre du Camp.</p>`
-      :`<div class="actions"><button class="btn main" data-cact="equip">Équiper</button><button class="btn" data-cact="lock">${it.lock?'Déverrouiller':'Verrouiller'}</button></div><div class="actions"><button class="btn" data-cact="recycle" ${it.lock?'disabled':''}>${it.lock?'Verrouillé : recyclage impossible':`Recycler · +${r.shard*2+Math.floor(upInvested(it.up)/2)} essence`}</button></div>`+upBlock(it));
+      :`<div class="actions"><button class="btn main" data-cact="equip">Équiper</button><button class="btn" data-cact="lock">${it.lock?'Déverrouiller':'Verrouiller'}</button></div><div class="actions"><button class="btn" data-cact="recycle" ${it.lock?'disabled':''}>${it.lock?'Verrouillé : recyclage impossible':(primeBp(it)?`Recycler · +${primeRecyEss(it)} essence · 1 fragment`:`Recycler · +${r.shard*2+Math.floor(upInvested(it.up)/2)} essence`)}</button></div>`+upBlock(it));
   }else if(mode==='worn'){
     extra=it.slot==='arme'?'<div class="actions"><button class="btn" data-cact="toarsenal">Changer d\'arme à l\'Armurerie</button></div>'
       :`<div class="actions"><button class="btn" data-cact="unequip">Retirer au coffre</button><button class="btn" data-cact="lock">${it.lock?'Déverrouiller':'Verrouiller'}</button></div>`;

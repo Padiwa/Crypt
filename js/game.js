@@ -54,8 +54,9 @@ function spawnTarget(){
 }
 function relicDrop(){const t=clamp(G.level-1+(Math.random()<.25?-1:Math.random()<.1?1:0),0,3);return pick(Object.keys(RELICS).filter(id=>RELICS[id].t===t))}
 const LV_MAX=50;
-const lootMul=L=>1+.25*(L-1);
-function diff(){const L=G.level,f=G.mode==='defense'?Math.max(0,((G.wave||1)-1)%5)/5:Math.min(1.5,G.tl/LEVEL_T);const D=dif();return {hs:1.2*D.hp*(1+.75*(L-1))*(1+.35*f),ds:1.15*D.dm*(1+.35*(L-1))*(1+.15*f)}}
+const lootMul=L=>1+.06*(L-1);
+const goldMul=L=>1+.15*(L-1);
+function diff(){const L=G.level,f=G.mode==='defense'?Math.max(0,((G.wave||1)-1)%5)/5:Math.min(1.5,G.tl/LEVEL_T);const D=dif();return {hs:1.2*D.hp*(1+.75*(L-1))*Math.pow(1.025,L-1)*(1+.35*f),ds:1.15*D.dm*(1+.35*(L-1))*Math.pow(1.012,L-1)*(1+.15*f)}}
 function spawnEnemy(s){
   const d=ETYPE[s.type],{hs,ds}=diff(),bm=s.type==='boss'?(1+.25*G.bossN):1;
   const gn=s.type==='slime'?(s.gen||0):0,gr=[1,.66,.45][gn],gh=[1,.45,.2][gn],gs=[1,1.2,1.45][gn];
@@ -160,27 +161,27 @@ function wishMatch(it){const W=meta.wish||{},hit=Object.keys(it.aff).filter(k=>{
 let lfT=0;
 function lootFlash(w,it){const now=performance.now(),el=$('lootFlash');
   if(now-lfT>350){lfT=now;SND.play(w.leg?'leg':'wish');vibe([30,40,30]);if(SET.flash){el.className='';void el.offsetWidth;el.className='on'+(w.leg?' leg':'')}}
-  banner(w.aff?`✦ ${w.aff.map(k=>{const c=wishBest(k);return AFF[k].t(it.aff[k])+(c==null?'':` <span style="color:var(--muted);font-weight:500">(équipé ${fmtN(c)})</span>`)}).join(' · ')}<br><span style="color:${RAR[it.r].c};font-size:13px">${esc(it.name)}</span>`:`✦ ${RAR[it.r].n} · <span style="color:${RAR[it.r].c}">${esc(it.name)}</span>`,w.aff?'#ffe08a':RAR[it.r].c,3)}
+}
 function kill(e){
   e.dead=true;G.kills++;
   if(e.type==='slime'&&e.gen<2){burst(e.x,e.y,14,'#7fe0c8',150,3);
     for(const sd of[-1,1]){const a=rand(0,Math.PI*2)*0+Math.atan2(e.y-G.P.y,e.x-G.P.x)+sd*Math.PI/2+rand(-.4,.4);
       G.spawns.push({type:'slime',gen:e.gen+1,split:1,tgtPod:e.tgtPod,x:clamp(e.x+Math.cos(a)*e.r*.6,EDGE+30,MAP-EDGE-30),y:clamp(e.y+Math.sin(a)*e.r*.6,EDGE+30,MAP-EDGE-30),kx:Math.cos(a)*260,ky:Math.sin(a)*260,t:.12})}}
-  const boss=e.type==='boss',L=G.level,dl=1+dif().loot,lm=lootMul(L)*(1+(S.lootPct||0)/100)*dl;
+  const boss=e.type==='boss',L=G.level,DL=dif().loot,dl=1+DL*.5,lm=lootMul(L)*(1+(S.lootPct||0)/100)*(1+DL*.15);
   G.ult=Math.min(ultNeed(),(G.ult||0)+(boss?10:1));
   burst(e.x,e.y,boss?60:10,e.col,boss?320:150,4);burst(e.x,e.y,boss?20:4,'#e8853b',120);
   const push=(o,s=20)=>{const d=Object.assign({x:e.x+rand(-s,s),y:e.y+rand(-s,s),t:rand(0,6),age:0,mt:0},o);G.drops.push(d);if(o.kind==='item'){const w=wishMatch(o.item);if(w){d.wish=1;lootFlash(w,o.item)}}};
   if(boss){
     push({kind:'item',item:genItem(itemLvl(),2)},40);push({kind:'item',item:genItem(itemLvl(),1)},40);push({kind:'relic',id:relicDrop()},40);push({kind:'potion'},40);
-    for(let i=0;i<Math.floor((L-1)/3);i++)push({kind:'item',item:genItem(itemLvl(),1)},50);
-    for(let i=0;i<Math.floor((L-1)/4);i++)push({kind:'relic',id:relicDrop()},50);
+    for(let i=0;i<Math.floor((L-1)/10);i++)push({kind:'item',item:genItem(itemLvl(),1)},50);
+    for(let i=0;i<Math.floor((L-1)/12);i++)push({kind:'relic',id:relicDrop()},50);
     if(Math.random()<Math.min(1,.15*lm))push({kind:'part',part:rollPart()},40);
     for(let i=0;i<2;i++)push({kind:'mod',id:rollMod(true)},40);
     meta.essence+=25;saveMeta();G.shake=14;SND.play('bossdie');banner('Gardien vaincu · son butin est à toi','#e8853b',2);
     if(!G.en.some(o=>o.type==='boss'&&!o.dead))$('bossBar').hidden=true;
   }else{
     const t=e.type;
-    if(Math.random()<({ghoul:.012,bat:.004,archer:.016,poison:.016,pyro:.016,brute:.07,slime:.007})[t]*lm)push({kind:'item',item:genItem(itemLvl())});
+    if(Math.random()<({ghoul:.006,bat:.002,archer:.008,poison:.008,pyro:.008,brute:.035,slime:.0035})[t]*lm)push({kind:'item',item:genItem(itemLvl())});
     if(Math.random()<({ghoul:.003,bat:.001,archer:.004,poison:.004,pyro:.004,brute:.025,slime:.0018})[t]*lm)push({kind:'relic',id:relicDrop()});
     if(L>1&&Math.random()<({ghoul:.0015,bat:.0005,archer:.002,poison:.002,pyro:.002,brute:.012,slime:.0009})[t]*(lm-1))push({kind:'part',part:rollPart()});
     if(e.corr)push({kind:'react'},6);
@@ -190,7 +191,7 @@ function kill(e){
   if(e.elite){push({kind:'item',item:genItem(itemLvl(),1)},30);if(Math.random()<.4)push({kind:'item',item:genItem(itemLvl(),1)},30);if(Math.random()<.3*lm)push({kind:'relic',id:relicDrop()},30);
     if(e.elite==='explosif')G.lobs.push({x0:e.x,y0:e.y,tx:e.x,ty:e.y,t:0,T:.7,kind:'pyro',r:95,dps:2*diff().ds});
     burst(e.x,e.y,30,ELITE[e.elite].c,240,4);SND.play('bossdie');toast(`<b style="color:${ELITE[e.elite].c}">Élite ${ELITE[e.elite].n} vaincue</b>`)}
-  const gv=({ghoul:1,bat:.6,archer:1.5,poison:1.5,pyro:1.5,brute:5,boss:50,slime:.8})[e.type]*(1+.6*(L-1))*dl*(e.elite?5:1),n=boss?8:e.elite?5:(Math.random()<Math.min(1,(e.type==='bat'?.35:.65)*(1+.05*(L-1)))?1:0);
+  const gv=({ghoul:1,bat:.6,archer:1.5,poison:1.5,pyro:1.5,brute:5,boss:50,slime:.8})[e.type]*goldMul(L)*dl*(e.elite?5:1),n=boss?8:e.elite?5:(Math.random()<Math.min(1,(e.type==='bat'?.35:.65)*(1+.05*(L-1)))?1:0);
   for(let i=0;i<n;i++)push({kind:'gold',amt:Math.max(1,Math.round(gv/(boss?8:1)*rand(.7,1.3)))},boss?45:15);
   const xv=({ghoul:1,bat:1,archer:2,poison:2,pyro:2,brute:5,boss:30,slime:1})[e.type]*(e.elite?6:1);
   if(G.nxp>220){for(let k=0;k<12;k++){const o=G.drops[Math.floor(Math.random()*G.drops.length)];if(o&&o.kind==='xp'){o.v+=xv;break}}}
@@ -215,8 +216,7 @@ function gainMod(id){
     const kd=modKind(id);
     if(kd==='a'){if(!meta.aura[heroCls]){meta.aura[heroCls]=id;refreshStats();msg+=' · aura équipée'}}
     else if(modOk(id,heroCls)){const b=build(kd),bs=bBest(b,id,0);if(bs.i>=0&&bUsed(b)+bs.d<=bCap(b)){b.load[bs.i]=id;refreshStats();msg+=kd==='w'?' · équipé sur l\'arme':' · équipé sur le héros'}}
-    toast(msg);
-  }else{const e=8*(m.r+1);meta.essence+=e;toast(`<span style="color:${c}">${m.n}</span> en double · +${e} essence`)}
+  }else{const e=8*(m.r+1);meta.essence+=e}
   saveMeta();
 }
 function chain(src,d){
@@ -499,12 +499,12 @@ function update(dt){
       if(d.kind==='xp'){G.nxp--;gainXp(d.v)}
       else if(d.kind==='gold'){SND.play('gold');const a=Math.round(d.amt*(1+lv('for')*.15)*(1+S.goldPct/100));G.gold+=a;ftext(P.x+rand(-10,10),P.y-P.r-12,'+'+a,'#f0cf4a',13)}
       else if(d.kind==='mod'){SND.play('pick2');gainMod(d.id)}
-      else if(d.kind==='relic'){SND.play('pick3');G.loot.relics.push(d.id);G.fresh++;toast(`Relique <b style="color:${RTIER[RELICS[d.id].t].c}">${relicName(d.id)}</b>`)}
+      else if(d.kind==='relic'){SND.play('pick3');G.loot.relics.push(d.id);G.fresh++}
       else if(d.kind==='react'){if(G.relic){G.react++;if(G.react>=REACT_N){const r=G.relic;G.opened.push(r);G.relI++;G.react=0;G.relic=G.relQ[G.relI]||null;G.shake=6;
           SND.play('relic');banner(`Relique ${RELICS[r.id].n}${r.rad?' éclatante':''} ouverte`,RTIER[RELICS[r.id].t].c,2);toast(`<b style="color:var(--r2)">Relique ${relicName(r.id)}${r.rad?' éclatante':''} ouverte.</b> `+(G.relic?`Suivante : ${relicName(G.relic.id)}${G.relic.rad?' éclatante':''}.`:'Toutes tes reliques sont ouvertes.')+' Réussis la mission pour recevoir les récompenses.')}}}
-      else if(d.kind==='potion'){SND.play('pick');if(G.potions<5){G.potions++;toast('<span style="color:var(--heal)">Potion de soin</span> ramassée')}else d.gone=false}
-      else if(d.kind==='item'){SND.play(d.item.r>=3?'pick3':d.item.r>=1?'pick2':'pick');G.loot.items.push(d.item);G.fresh++;const r=RAR[d.item.r];toast(`<span style="color:${r.c}">${d.item.name}</span> · ${r.n.toLowerCase()}`+(better(d.item)?' · <b style="color:var(--heal)">▲ meilleur, à équiper dans la pause</b>':''));if(d.item.r===3)G.shake=6}
-      else if(d.kind==='part'){SND.play('pick3');G.loot.parts.push(d.part);G.fresh++;toast(`Pièce d'arme : ${partLabel(d.part)}`)}
+      else if(d.kind==='potion'){SND.play('pick');if(G.potions<5){G.potions++}else d.gone=false}
+      else if(d.kind==='item'){SND.play(d.item.r>=3?'pick3':d.item.r>=1?'pick2':'pick');G.loot.items.push(d.item);G.fresh++;if(d.item.r===3)G.shake=6}
+      else if(d.kind==='part'){SND.play('pick3');G.loot.parts.push(d.part);G.fresh++}
     }
   }
   compact(G.drops,d=>!d.gone);

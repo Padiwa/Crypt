@@ -50,13 +50,21 @@ function relicBtns(bid){
     if(a[1])out.push(eqb(true,relicName(id)+' éclatante'));
     return out.length?out.join(''):`<span class="part" title="Tu n'as pas cette relique">${relicName(id)}</span>`}).join('');
 }
+let wRecy=null,fuseTgt=null;
+const primeBp=it=>it&&it.type==='Prime'?(it.bp||(GEAR_BP.find(g=>g.n===it.name)||{}).id||null):null;
+function giveFrag(id){const pc=meta.parts[id]||(meta.parts[id]=[0,0,0]),miss=[0,1,2].filter(i=>!pc[i]),i=miss.length?pick(miss):ri(0,2);pc[i]++;return i}
+const wRecyEss=b=>40*(b.r+1)+Math.floor(upInvested(meta.wlv[b.id]||0)/2);
+const primeRecyEss=it=>40*(it.r+1)+Math.floor(upInvested(it.up)/2);
 function bpCard(b){
   const pc=meta.parts[b.id]||[0,0,0],isW=b.kind==='arme',r=RAR[b.r],mine=!isW||b.cls===heroCls;
   const own=isW&&ownedW(b.id),eq=isW&&(meta.wpn[b.cls]||WPN[b.cls][0].id)===b.id;
   const cost=isW?Math.round(b.bp/2):b.craft,ready=pc.every(x=>x>0);
   const baseTxt=isW?`${b.dmg} dégâts de base`:baseTxtOf(b.slot,b.base);
   let foot;
-  if(own)foot=eq?`<span class="owned">Équipée${mine?'':' · '+CLS[b.cls].n}</span>`:mine?`<button class="btn main" data-cact="wequip" data-arg="${b.id}">Équiper</button>`:`<span class="owned">Fabriquée · ${CLS[b.cls].n}</span>`;
+  const canRecy=own&&!eq&&b.bp>0;
+  if(own)foot=(eq?`<span class="owned">Équipée${mine?'':' · '+CLS[b.cls].n}</span>`:mine?`<button class="btn main" data-cact="wequip" data-arg="${b.id}">Équiper</button>`:`<span class="owned">Fabriquée · ${CLS[b.cls].n}</span>`)
+    +(canRecy?(wRecy===b.id?`<div class="card" style="width:100%;box-sizing:border-box"><p style="margin:0;font-size:14px">Recycler <b style="color:${r.c}">${b.n}</b> ? Tu récupères <b>${wRecyEss(b)} essence</b> et <b>1 fragment</b> de son schéma. L'arme, son niveau d'amélioration et ses affixes ajoutées sont perdus ; ses mods restent dans ta collection.</p><div class="actions"><button class="btn danger" data-cact="wrecyok" data-arg="${b.id}">Recycler</button><button class="btn" data-cact="wrecyno">Annuler</button></div></div>`
+      :`<button class="btn danger" data-cact="wrecy" data-arg="${b.id}">Recycler · <span class="essi"></span>${wRecyEss(b)} · 1 fragment</button>`):'');
   else foot=`<div class="parts">${b.frag.map((n,i)=>`<span class="part${pc[i]?' have':''}">${n}${pc[i]>1?' ×'+pc[i]:''}</span>`).join('')}</div>
     <button class="btn main buy" data-cact="craft" data-arg="${b.id}" ${ready&&meta.gold>=cost&&true?'':'disabled'}>Fabriquer · <span class="coin"></span>${cost}</button>`;
   const src=own||b.bp===0?'':`<div class="meta">Fragments dans les reliques :</div><div class="parts">${relicBtns(b.id)}</div>`;
@@ -71,6 +79,20 @@ function campArsenal2(){
     +`<h3>Équipement Prime · toutes classes</h3>`+GEAR_BP.map(g=>bpCard(bpdef(g.id))).join('');
 }
 let relSel=null,relTier='all';
+const FUSE_COST=[20,40,80,150];
+function relAvail(t){const out=[];for(const id in RELICS){if(RELICS[id].t!==t)continue;const a=meta.relics[id];if(!a)continue;
+  const fi=a[0]-relicQN(id,false),fr=a[1]-relicQN(id,true);for(let k=0;k<fi;k++)out.push({id,rad:false});for(let k=0;k<fr;k++)out.push({id,rad:true})}
+  return out.sort((x,y)=>(x.rad-y.rad)||((meta.relics[y.id][0]+meta.relics[y.id][1])-(meta.relics[x.id][0]+meta.relics[x.id][1])))}
+const legBps=()=>[...WPN[heroCls].filter(w=>w.r===3&&!ownedW(w.id)),...Object.keys(WPN).filter(c=>c!==heroCls).flatMap(c=>WPN[c].filter(w=>w.r===3&&!ownedW(w.id))),...GEAR_BP.filter(g=>g.r===3)].map(x=>x.id);
+function fusionSection(){
+  let h=`<section class="cx-section"><h3 class="cx-section__label">Fusion de reliques</h3><p class="cx-hint" style="margin:0">Fusionne 3 reliques non équipées d'un même niveau. Les intactes partent en premier, puis les éclatantes. Trois reliques Abysse donnent un fragment de schéma légendaire de ton choix.</p><div class="fuse">`;
+  for(let t=0;t<4;t++){const av=relAvail(t).length,cost=FUSE_COST[t],ok=av>=3&&meta.essence>=cost;
+    const res=t<3?`1 relique <b style="color:${RTIER[t+1].c}">${RTIER[t+1].n}</b>`:'<b style="color:var(--rar-legend)">1 fragment légendaire</b>';
+    h+=`<div class="frow"><span class="rgem" style="--tc:${RTIER[t].c}">${RELIC_SVG}</span><div class="fl"><b>3 × <span style="color:${RTIER[t].c}">${RTIER[t].n}</span> → ${res}</b><span>${av} disponible${av>1?'s':''}${av<3?` · il en faut ${3-av} de plus`:''}${av>=3&&meta.essence<cost?` · il manque ${cost-meta.essence} essence`:''}</span></div>
+      <button class="btn buy" data-cact="rfuse" data-arg="${t}" ${ok&&(t<3||fuseTgt)?'':'disabled'}>Fusionner · <span class="essi"></span>${cost}</button></div>`;
+    if(t===3){const L=legBps();if(!fuseTgt||!L.includes(fuseTgt))fuseTgt=L[0]||null;
+      h+=`<div class="ftgt"><span class="cx-hint" style="margin:0">Schéma visé :</span><div class="cx-chips">${L.map(id=>{const b=bpdef(id);return `<button class="cx-chip cx-chip--sm" data-cact="rftgt" data-arg="${id}" aria-pressed="${fuseTgt===id}">${b.n} <span class="n">${fragStatus(id)} / 3</span></button>`}).join('')||'<span class="cx-hint">Toutes les armes légendaires sont déjà fabriquées.</span>'}</div></div>`}}
+  return h+'</div></section>'}
 const RELIC_SVG='<svg viewBox="0 0 24 24"><path d="M6 3h12l3 6-9 12L3 9z"/><path d="M3 9h18M9 3l3 6 3-6M12 9v12"/></svg>';
 function rwInfo(r){const [k,v]=r.split(':');if(k==='ess'||k==='gold')return {cur:true};const b=bpdef(k),pc=meta.parts[k]||[0,0,0],have=pc[+v]||0,n=fragStatus(k),built=b.kind==='arme'&&ownedW(k);
   return {b,have,n,built,completes:!have&&n===2&&!built}}
@@ -105,7 +127,7 @@ function campRelics(){
       <div class="cx-card__foot">${a[0]?ctl(false,'Intactes'):''}${a[1]?ctl(true,'Éclatantes'):''}
         ${a[0]?`<button class="btn buy" data-cact="refine" data-arg="${id}" ${meta.essence<50||relicQN(id,false)>=a[0]?'disabled':''}>Raffiner en éclatante · <span class="essi"></span>50</button>`:''}</div></section>`}
   else h+='<p class="cx-hint" style="margin:0">Touche une relique pour voir ses récompenses, tes chances et ce qu\'il te manque. ★ : contient le dernier fragment d\'un schéma.</p>';
-  return h+qh;
+  return h+fusionSection()+qh;
 }
 let saveMode=null,saveDraft='',saveMsg='',savePending=null;
 const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
@@ -309,7 +331,9 @@ $('campSheet').addEventListener('click',e=>{
     else if(a==='recyall'){const rec=meta.stash.filter(i=>!(i.type==='Prime'||i.up||i.lock));let e=0;for(const it of rec)e+=RAR[it.r].shard*2;meta.stash=meta.stash.filter(i=>i.type==='Prime'||i.up||i.lock);meta.essence+=e;recyConfirm=false;campSel=null;toast(`${rec.length} objet${rec.length>1?'s':''} recyclé${rec.length>1?'s':''} · +${e} essence`)}
     if(a==='bestall'){const plan=bestPlan(curEq(),meta.stash),names=[];for(const sl in plan){const it=plan[sl];meta.stash=meta.stash.filter(i=>i!==it);const old=meta.gear[sl];if(old)meta.stash.push(old);meta.gear[sl]=it;names.push(`<span style="color:${RAR[it.r].c}">${esc(itemName(it))}</span>`)}campSel=null;if(names.length)toast('Équipé : '+names.join(', '))}
     if(a==='equip'){const it=meta.stash.find(i=>i.id===campSel.stash);if(it){meta.stash=meta.stash.filter(i=>i!==it);const old=meta.gear[it.slot];if(old)meta.stash.push(old);meta.gear[it.slot]=it;campSel={slot:it.slot}}}
-    else if(a==='recycle'){const it=meta.stash.find(i=>i.id===campSel.stash);if(it&&!it.lock){meta.stash=meta.stash.filter(i=>i!==it);meta.essence+=RAR[it.r].shard*2+Math.floor(upInvested(it.up)/2);campSel=null}}
+    else if(a==='recycle'){const it=meta.stash.find(i=>i.id===campSel.stash);if(it&&!it.lock){meta.stash=meta.stash.filter(i=>i!==it);const pb=primeBp(it);
+      if(pb){const e=primeRecyEss(it);meta.essence+=e;const i=giveFrag(pb);toast(`<b style="color:${RAR[it.r].c}">${esc(it.name)}</b> recyclé : +${e} essence et le fragment ${bpdef(pb).frag[i]}`)}
+      else meta.essence+=RAR[it.r].shard*2+Math.floor(upInvested(it.up)/2);campSel=null}}
     else if(a==='upg'){const k=+arg;let it=null,isW=false,wid=null;
       if(campSel&&campSel.slot==='arme'){isW=true;wid=meta.wpn[heroCls]&&ownedW(meta.wpn[heroCls])?meta.wpn[heroCls]:WPN[heroCls][0].id}
       else if(campSel&&campSel.slot)it=meta.gear[campSel.slot];else if(campSel&&campSel.stash)it=meta.stash.find(i=>i.id===campSel.stash);
@@ -318,10 +342,20 @@ $('campSheet').addEventListener('click',e=>{
     else if(a==='unequip'){const s=campSel.slot,it=meta.gear[s];if(it){meta.stash.push(it);meta.gear[s]=null;campSel={stash:it.id}}}
     else if(a==='toarsenal'){campTab='arsenal';campSel=null}
     else if(a==='wequip'){if(ownedW(arg))meta.wpn[heroCls]=arg}
+    else if(a==='wrecy'){wRecy=arg}
+    else if(a==='wrecyno'){wRecy=null}
+    else if(a==='wrecyok'){const b=bpdef(arg);if(b&&ownedW(arg)&&b.bp>0&&(meta.wpn[b.cls]||WPN[b.cls][0].id)!==arg){const e=wRecyEss(b);delete meta.built[arg];delete meta.wlv[arg];if(meta.waff)delete meta.waff[arg];meta.essence+=e;const i=giveFrag(arg);
+      toast(`<b style="color:${RAR[b.r].c}">${b.n}</b> recyclée : +${e} essence et le fragment ${b.frag[i]}`)}wRecy=null}
     else if(a==='craft'){const b=bpdef(arg),pc=meta.parts[arg],cost=b.kind==='arme'?Math.round(b.bp/2):b.craft;
       if(pc&&pc.every(x=>x>0)&&meta.gold>=cost){
         if(b.kind==='arme'){meta.parts[arg]=pc.map(x=>x-1);meta.gold-=cost;meta.built[arg]=true;if(b.cls===heroCls)meta.wpn[heroCls]=arg;toast(`<b style="color:${RAR[b.r].c}">${b.n}</b> fabriquée et équipée`)}
-        else{meta.parts[arg]=pc.map(x=>x-1);meta.gold-=cost;meta.stash.push({id:uid++,slot:b.slot,r:b.r,lvl:20,base:{k:BASE_STAT[b.slot],v:b.base},aff:{...b.aff},name:b.n,type:'Prime'});toast(`<b style="color:${RAR[b.r].c}">${b.n}</b> fabriqué, il t'attend au coffre`)}}}
+        else{meta.parts[arg]=pc.map(x=>x-1);meta.gold-=cost;meta.stash.push({id:uid++,slot:b.slot,r:b.r,lvl:20,base:{k:BASE_STAT[b.slot],v:b.base},aff:{...b.aff},name:b.n,type:'Prime',bp:b.id});toast(`<b style="color:${RAR[b.r].c}">${b.n}</b> fabriqué, il t'attend au coffre`)}}}
+    else if(a==='rftgt'){fuseTgt=arg}
+    else if(a==='rfuse'){const t=+arg,cost=FUSE_COST[t],av=relAvail(t);if(av.length>=3&&meta.essence>=cost&&(t<3||fuseTgt)){meta.essence-=cost;
+        for(const q of av.slice(0,3))meta.relics[q.id][q.rad?1:0]--;relicQFix();SND.play('relic');
+        if(t<3){const ids=Object.keys(RELICS).filter(id=>RELICS[id].t===t+1),nid=pick(ids);const a=meta.relics[nid]||(meta.relics[nid]=[0,0]);a[0]++;relSel=nid;
+          campMsg=`<div class="card" style="border-color:${RTIER[t+1].c}"><div class="meta">Fusion réussie</div><p style="margin:0;font-size:15px">Tu obtiens la relique <b style="color:${RTIER[t+1].c}">${relicName(nid)}</b>.</p></div>`}
+        else{const b=bpdef(fuseTgt),i=giveFrag(fuseTgt);campMsg=`<div class="card" style="border-color:var(--rar-legend)"><div class="meta">Fusion réussie</div><p style="margin:0;font-size:15px">Fragment <b style="color:var(--rar-legend)">${b.n} · ${b.frag[i]}</b> (${fragStatus(fuseTgt)} / 3). À fabriquer à l'Armurerie une fois complet.</p></div>`}}}
     else if(a==='rsel'){relSel=relSel===arg?null:arg}
     else if(a==='rtier'){relTier=arg;relSel=null}
     else if(a==='rqadd'){const [id,rd]=arg.split('|'),rad=rd==='1',ow=(meta.relics[id]||[0,0])[rad?1:0];if(relicQN(id,rad)<ow)meta.relicQ.push({id,rad})}
@@ -368,7 +402,7 @@ function refreshMenus(){
   const st=clamp(meta.start|0||1,1,LV_MAX);$('startBtn').textContent=`Lancer · ${MODES[meta.mode].n} · niveau ${st}${meta.diff?` · ${dif().n}`:''}`;
   if(document.activeElement!==$('lvIn'))$('lvIn').value=st;
   const lm=lootMul(st);$('lvDesc').innerHTML=st===1?'Niveau de base. Monte le niveau pour plus de butin, mais des monstres plus nombreux et plus forts.'
-    :`Butin ×${lm.toFixed(2).replace(/\.?0+$/,'').replace('.',',')} (équipements, reliques, fragments) · or ×${(1+.6*(st-1)).toFixed(1).replace('.',',')} · monstres : vie ×${(1+.75*(st-1)).toFixed(1).replace('.',',')}, dégâts ×${(1+.35*(st-1)).toFixed(1).replace('.',',')}, plus nombreux`;
+    :`Butin ×${lm.toFixed(2).replace(/\.?0+$/,'').replace('.',',')} (équipements, reliques, fragments) · or ×${goldMul(st).toFixed(1).replace('.',',')} · monstres : vie ×${fmtN((1+.75*(st-1))*Math.pow(1.025,st-1))}, dégâts ×${fmtN((1+.35*(st-1))*Math.pow(1.012,st-1))}, plus nombreux`;
   $('bestTxt').textContent=best?`Ton record : ${fmt(best)} en mission`:'';
   document.querySelectorAll('.cls[data-m]').forEach(b=>b.setAttribute('aria-checked',String(b.dataset.m===meta.mode)));
   $('modeDesc').textContent=MODES[meta.mode].d;

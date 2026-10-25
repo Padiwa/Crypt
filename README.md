@@ -35,3 +35,11 @@ Android (Chrome) : menu ⋮ → « Installer l'application ». iPhone (Safari) :
 
 ## Sauvegarde
 Progression dans le stockage du navigateur (`crypte-meta`), réglages dans `crypte-set`. Camp → Forge → Sauvegarde pour exporter ou importer en JSON.
+
+## Banc d'essai d'équilibrage
+`tools/sim/` lance de vraies parties sans affichage, pilotées par un bot (esquive, compétences, potions, bonus de niveau), avec des profils d'équipement T0 à T4.
+```
+npm i playwright && npx playwright install chromium
+node tools/sim/run.mjs tools/sim/exemple.json resultats.json
+```
+Chaque entrée du JSON : `{"cls":"archer","tier":3,"level":30,"diff":3,"torm":1,"rounds":1}`. Sortie : survie, durée, ennemis tués, dégâts subis par seconde, or, objets par rareté, niveau de héros.
