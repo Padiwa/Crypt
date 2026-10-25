@@ -13,7 +13,7 @@ if(!meta.petGift){meta.eggs+=1;meta.petGift=1}
 let petUid=1+Math.max(0,...meta.pets.map(p=>p.uid|0));
 const petEq=()=>meta.pets.find(p=>p.uid===meta.petEq)||null;
 
-/* ---------- Mods de familier (troisième build de l'onglet Mods) ---------- */
+/* ---------- Mods de familier (build de l'onglet Familier du Camp) ---------- */
 Object.assign(MODS,{
   pcrocs:{type:'p',n:'Crocs',r:0,max:5,drain:3,k:'pDmg',v:15,t:v=>`+${v} % de dégâts du familier`},
   pviv:{type:'p',n:'Vivacité',r:0,max:5,drain:3,k:'pAps',v:10,t:v=>`+${v} % de vitesse d'action du familier`},
@@ -85,7 +85,7 @@ function petDrawPx(f,Q,alpha){if(!Q)return;const c=parseInt(PETS[Q.t].c.slice(1)
   if(Q.t==='corbeau')f.drawPolygon([x-11*k,y,x,y-(6+b)*k,x+11*k,y,x,y+5*k]);else if(Q.t==='golem')f.drawRect(x-8*k,y-8*k,16*k,16*k);else if(Q.t==='furet')f.drawEllipse(x,y,11*k,6*k);else f.drawCircle(x,y,(7+Math.sin(G.t*6))*k);
   f.endFill();f.lineStyle(0);f.beginFill(c,alpha);f.drawCircle(x+2*k,y-k,2*k);f.endFill()}
 
-/* ---------- Camp › Mods › Familier : collection, œufs, fusion ---------- */
+/* ---------- Camp › Familier : collection, œufs, fusion ---------- */
 let petMsg='';
 function petPanel(){const eq=petEq();
   const groups={};for(const p of meta.pets){const k=p.t+'|'+p.rk;(groups[k]||(groups[k]=[])).push(p)}

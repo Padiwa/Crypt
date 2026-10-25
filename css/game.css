@@ -842,3 +842,7 @@ li.sealp{color:#ffb3ea}
 .petic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-size:18px;color:var(--pc);border:2px solid var(--pc);background:#1d1822}
 .petinfo{display:flex;flex-direction:column;gap:2px;min-width:0}
 .pstar{color:#f0cf4a;letter-spacing:1px;font-size:13px}
+.cx-tabs--icons{gap:0;padding-left:2px;padding-right:2px}
+.cx-tabs--icons .cx-tab{flex:1 1 auto;font-size:10.5px;letter-spacing:-.2px;padding:6px 0}
+.cx-tabs--icons .cx-tab span{text-overflow:clip}
+@media (max-width:380px){.cx-tabs--icons .cx-tab{font-size:9.5px}}

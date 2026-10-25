@@ -190,8 +190,8 @@ function renderMods(rootId){
     const id=b.load[i],p=b.pol[i];return `<div class="mslot${modSF===i?' fsel':''}"><button class="sp" data-act="slotf" data-i="${i}" aria-pressed="${modSF===i}" aria-label="Filtrer les mods pour la case ${i+1} (${p?POL[p].n:'neutre'})" style="color:${p?POL[p].c:'var(--muted)'}">${p?POL[p].s+' '+POL[p].n:'Neutre'}</button>${id?modCard(id,(modSel===id?' sel':'')+(act.includes(id)?'':' off'),i,b):'<div class="mod empty">Libre</div>'}</div>`};
   const buyBox=modTab==='h'&&b.slots<HSLOT_MAX&&inCamp?(()=>{const c=HSLOT_COST[b.slots-3],have=fragTotal();
     return `<div class="card"><p style="margin:0;font-size:14px">Débloquer la case ${b.slots+1} du héros : <b>${c} fragments de schéma</b>, pris parmi ceux que tu as en plus grand nombre. Tu en as ${have}.</p><div class="actions"><button class="btn buy" data-act="slotbuy" ${have<c?'disabled':''}>Débloquer · ${c} fragments</button></div></div>`})():'';
-  root.innerHTML=`<div class="alrow"><button class="chip" data-act="mtab" data-t="h" aria-pressed="${modTab==='h'}">Héros · ${CLS[heroCls].n}</button><button class="chip" data-act="mtab" data-t="w" aria-pressed="${modTab==='w'}">Arme · ${wdef(curWid()).n}</button><button class="chip" data-act="mtab" data-t="p" aria-pressed="${modTab==='p'}">Familier${petEq()?' · '+PETS[petEq().t].n:''}</button></div>
-    ${modTab==='p'&&inCamp?petPanel():''}
+  const petTab=inCamp&&campTab==='pets';
+  root.innerHTML=`${petTab?petPanel()+'<h3 class="cx-section__label" style="margin:4px 0 0">Mods du familier</h3>':`<div class="alrow"><button class="chip" data-act="mtab" data-t="h" aria-pressed="${modTab==='h'}">Héros · ${CLS[heroCls].n}</button><button class="chip" data-act="mtab" data-t="w" aria-pressed="${modTab==='w'}">Arme · ${wdef(curWid()).n}</button>${inCamp?'':`<button class="chip" data-act="mtab" data-t="p" aria-pressed="${modTab==='p'}">Familier${petEq()?' · '+PETS[petEq().t].n:''}</button>`}</div>`}
     <div class="modhead"><span>Capacité <b class="${u>cap?'over':''}">${u} / ${cap}</b></span><span>Essence <b>${meta.essence}</b></span>
       ${b.kind==='p'?`<span>Bonus de niveau <b>+${mt.r}</b></span>`:`<span>Maîtrise ${b.kind==='w'?'arme':'héros'} <b>${mt.r} / 10</b>${mt.r<10?` · ${mt.xp} / ${mastNeed(mt.r)}`:''}</span>`}</div>
     ${u>cap?'<p class="empty" style="font-size:13px;color:var(--blood)">Capacité dépassée : les mods en trop sont inactifs (grisés). Regagne de la maîtrise en mission (le familier : des niveaux) ou retire un mod.</p>':''}
@@ -279,7 +279,7 @@ function grantRelic(id,rad){
 }
 function resolveRelic(){
   const out=[];
-  for(const r of G.opened){const g=grantRelic(r.id,r.rad);if(!g)continue;meta.essence+=25;out.push(`Relique ${relicName(r.id)}${r.rad?' éclatante':''} : ${g.html}. +25 essence.`+(eggFromRelic(r.id)?' <b style="color:#f0cf4a">Un œuf de familier</b> était caché dedans : fais-le éclore au Camp, onglet Mods › Familier.':''))}
+  for(const r of G.opened){const g=grantRelic(r.id,r.rad);if(!g)continue;meta.essence+=25;out.push(`Relique ${relicName(r.id)}${r.rad?' éclatante':''} : ${g.html}. +25 essence.`+(eggFromRelic(r.id)?' <b style="color:#f0cf4a">Un œuf de familier</b> était caché dedans : fais-le éclore au Camp, onglet Familier.':''))}
   const left=G.relQ.length-G.opened.length;
   if(left>0)out.push(`${left} relique${left>1?'s':''} non ouverte${left>1?'s':''} faute de réactifs : ${left>1?'elles restent':'elle reste'} équipée${left>1?'s':''}, sans être consommée${left>1?'s':''}.`);
   return out.join('<br>');

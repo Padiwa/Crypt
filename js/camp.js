@@ -359,15 +359,18 @@ function tabBadges(){
   const best=Object.keys(bestPlan(curEq(),meta.stash.slice(0,300))).length;
   const B={equip:best?{n:best,t:`${best} amélioration${best>1?'s':''} d'équipement`}:null,arsenal:craft?{n:craft,t:`${craft} objet${craft>1?'s':''} à fabriquer`}:null,
     relics:relFree&&!meta.relicQ.length?{n:relFree,t:`${relFree} relique${relFree>1?'s':''} non équipée${relFree>1?'s':''}`}:null,
+    pets:meta.eggs>0?{n:meta.eggs,t:`${meta.eggs} œuf${meta.eggs>1?'s':''} à faire éclore`}:null,
+    pets:meta.eggs>0?{n:meta.eggs,t:`${meta.eggs} œuf${meta.eggs>1?'s':''} à faire éclore`}:null,
     forge:(ups+pr+prBuy)?{n:pr?pr:ups+prBuy,t:pr?`${pr} point${pr>1?'s':''} de prestige à placer`:`${ups+prBuy} amélioration${ups+prBuy>1?'s':''} achetable${ups+prBuy>1?'s':''}`}:null};
   document.querySelectorAll('.tab').forEach(t=>{let el=t.querySelector('.tbadge');const b=B[t.dataset.tab];
     if(!b){if(el)el.remove();return}if(!el){el=document.createElement('span');el.className='tbadge';t.appendChild(el)}el.textContent=b.n>9?'9+':b.n;el.title=b.t;el.setAttribute('aria-label',b.t)})}
-function drawCamp(){{const h=document.getElementById('campHelp');if(h)h.href='aide/index.html#camp-'+campTab}
+function drawCamp(){{const h=document.getElementById('campHelp');if(h)h.href=campTab==='pets'?'aide/index.html#familiers':'aide/index.html#camp-'+campTab}
   $('campGold').innerHTML=`<span class="coin"></span>${meta.gold}<span class="e"><span class="essi"></span>${meta.essence}</span>`;
   document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.tab===campTab)));
   const body=$('campBody');
-  body.innerHTML=campTab==='affix'?campSeals()+campAffix():campTab==='equip'?campEquip():campTab==='arsenal'?campArsenal2():campTab==='relics'?campRelics():campTab==='mods'?'<div id="modsCamp" class="col"></div>':campForge();
-  if(campTab==='mods')renderMods('modsCamp');
+  body.innerHTML=campTab==='affix'?campSeals()+campAffix():campTab==='equip'?campEquip():campTab==='arsenal'?campArsenal2():campTab==='relics'?campRelics():campTab==='mods'||campTab==='pets'?'<div id="modsCamp" class="col"></div>':campForge();
+  if(campTab==='pets'){if(modTab!=='p'){modTab='p';modSel=null;modSF=null;modPF='all';alSel=null}renderMods('modsCamp')}
+  else if(campTab==='mods'){if(modTab==='p'){modTab='h';modSel=null;modSF=null;modPF='all';alSel=null}renderMods('modsCamp')}
   tabBadges();
   const ft=campTab==='affix'?affixFoot():'';$('campFoot').innerHTML=ft;$('campFoot').hidden=!ft;$('campFoot').className='cx-sheet__foot'+(ft.includes('cx-hint')?' stack':'');
 }
