@@ -132,6 +132,9 @@ select:disabled{opacity:.5}
 .rw b{font-weight:500;text-align:right}
 body:has(#camp:not([hidden])) .toast{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 24px)}
 .savebox{width:100%;box-sizing:border-box;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;color:var(--ink);background:#141117;border:1px solid var(--line);border-radius:8px;padding:10px;resize:vertical;user-select:text;-webkit-user-select:text;touch-action:auto;word-break:break-all}
+.modslots.six{grid-template-columns:repeat(3,1fr)}
+.aurarow{display:grid;grid-template-columns:minmax(80px,96px) 1fr;gap:10px;align-items:center}
+.mod.lockd{opacity:.55;font-size:11px;border-style:dotted}
 .mslot{display:flex;flex-direction:column;gap:3px;min-width:0}
 .mslot .sp{font-size:11px;text-align:center;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mod .pl{position:absolute;top:2px;left:6px;font-size:11px}
@@ -431,7 +434,7 @@ const MODES={
 /* ---------- Progression permanente ---------- */
 let meta={gold:0,up:{},tal:{},cp:1,start:1,essence:0,mods:{ferocite:0},
   load:{guerrier:['ferocite',null,null,null],archer:['ferocite',null,null,null],magicien:['ferocite',null,null,null]},
-  gear:{armure:null,amulette:null,bottes:null,anneau:null},stash:[],wpn:{guerrier:'g0',archer:'a0',magicien:'m0'},bp:{},built:{},parts:{},relics:{},mode:'survie',relicSel:null,pol:{},mast:{},align:{},wlv:{}};
+  gear:{armure:null,amulette:null,bottes:null,anneau:null},stash:[],wpn:{guerrier:'g0',archer:'a0',magicien:'m0'},bp:{},built:{},parts:{},relics:{},mode:'survie',relicSel:null,pol:{},mast:{},align:{},wlv:{},wload:{},wpol:{},wmast:{},walign:{},hload:{},hslots:{},aura:{}};
 try{const m=JSON.parse(localStorage.getItem('crypte-meta')||'null');if(m)meta=Object.assign(meta,m)}catch(e){}
 if(!meta.v2){meta.cp=1;meta.start=1;meta.v2=1}
 if(!meta.v3){for(const id in meta.bp||{}){const w=wdef(id);if(w&&!meta.built[id])meta.gold+=w.bp}meta.bp={};meta.v3=1;meta.relics={lA1:[1,0],...(meta.relics||{})}}
@@ -446,7 +449,8 @@ const UPG=[
   {k:'alc',n:'Alchimie',d:l=>`${2+l} potions au départ`,max:3,cost:90},
   {k:'for',n:'Fortune',d:l=>`+${l*15} % d'or ramassé`,max:4,cost:80},
   {k:'luc',n:'Flair',d:l=>`Butin plus rare (chance +${l*3})`,max:3,cost:110},
-  {k:'cat',n:'Catalyseur',d:l=>`Capacité de mods ${10+l*3}`,max:4,cost:100},
+  {k:'cat',n:'Catalyseur',d:l=>`Capacité de mods d'arme ${10+l*3}`,max:4,cost:100},
+  {k:'rea',n:'Réacteur',d:l=>`Capacité de mods de héros ${10+l*3}`,max:4,cost:100},
 ];
 const upCost=u=>Math.round(u.cost*Math.pow(1.7,lv(u.k)));
 /* ---------- Bonus de partie (montée de niveau) ---------- */
@@ -493,39 +497,71 @@ const MOD_RAR=[{n:'Bronze',c:'#c98a5a'},{n:'Argent',c:'#cfd8e3'},{n:'Or',c:'#f0c
 const MODS={
   ferocite:{n:'Férocité',r:0,max:5,drain:4,k:'dmgPct',v:15,t:v=>`+${v} % de dégâts`},
   cadence:{n:'Cadence',r:0,max:5,drain:4,k:'apsPct',v:8,t:v=>`+${v} % de vitesse d'attaque`},
-  vitalite:{n:'Vitalité',r:0,max:5,drain:2,k:'hp',v:15,t:v=>`+${v} points de vie`},
-  egide:{n:'Égide',r:0,max:3,drain:3,k:'armor',v:3,t:v=>`−${v} % de dégâts subis`},
-  pas:{n:'Pas léger',r:0,max:3,drain:2,k:'speed',v:5,t:v=>`+${v} % de vitesse de déplacement`},
-  intensite:{n:'Intensité',r:0,max:3,drain:3,k:'novaPct',v:20,t:v=>`+${v} % de dégâts de compétence`},
+  vitalite:{type:'h',n:'Vitalité',r:0,max:5,drain:2,k:'hp',v:15,t:v=>`+${v} points de vie`},
+  egide:{type:'h',n:'Égide',r:0,max:3,drain:3,k:'armor',v:3,t:v=>`−${v} % de dégâts subis`},
+  pas:{type:'h',n:'Pas léger',r:0,max:3,drain:2,k:'speed',v:5,t:v=>`+${v} % de vitesse de déplacement`},
+  intensite:{type:'h',n:'Intensité',r:0,max:3,drain:3,k:'novaPct',v:20,t:v=>`+${v} % de dégâts de compétence`},
   givre:{n:'Morsure du givre',r:0,max:3,drain:3,k:'chill',v:10,t:v=>`${v} % de chances de ralentir à l'impact`},
   allonge:{n:'Allonge',r:0,max:3,drain:3,k:'reach',v:10,t:v=>`+${v} % de portée de frappe`,cls:['guerrier']},
   deflagration:{n:'Déflagration',r:0,max:3,drain:3,k:'splash',v:15,t:v=>`+${v} % de rayon d'explosion`,cls:['magicien']},
   oeil:{n:'Œil du chasseur',r:1,max:3,drain:3,k:'crit',v:5,t:v=>`+${v} % de chances de critique`},
   boucherie:{n:'Boucherie',r:1,max:3,drain:3,k:'critDmg',v:25,t:v=>`+${v} % de dégâts critiques`},
   braise:{n:'Braise vive',r:1,max:3,drain:4,k:'burnPct',v:15,t:v=>`Embrase : ${v} % des dégâts par seconde`},
-  flux:{n:'Flux',r:1,max:3,drain:3,k:'cdr',v:6,t:v=>`−${v} % de temps de recharge`},
+  flux:{type:'h',n:'Flux',r:1,max:3,drain:3,k:'cdr',v:6,t:v=>`−${v} % de temps de recharge`},
   sangsue:{n:'Sangsue',r:1,max:3,drain:4,k:'leech',v:1.5,t:v=>`${v} % des dégâts rendus en vie`,cls:['guerrier']},
   diamant:{n:'Pointe de diamant',r:1,max:1,drain:4,k:'pierce',v:1,t:v=>`Les carreaux percent ${v} ennemi${v>1?'s':''} de plus`,cls:['archer']},
   orage:{n:'Arc électrique',r:2,max:3,drain:5,k:'shock',v:6,t:v=>`${v} % de chances de lancer un éclair en chaîne`},
   dedoublement:{n:'Écho',r:2,max:3,drain:5,k:'multi',v:.25,t:v=>`${Math.round(v*100)} % de chances de projectile supplémentaire`,cls:['archer','magicien']},
+  souffle:{type:'h',n:'Second souffle',r:0,max:3,drain:3,k:'regen',v:1.5,t:v=>`+${v} PV par seconde`},
+  alchimiste:{type:'h',n:'Alchimiste',r:0,max:3,drain:2,k:'potHeal',v:15,t:v=>`+${v} % de soin des potions`},
+  rapace:{type:'h',n:'Rapace',r:0,max:3,drain:2,k:'magnetPct',v:20,t:v=>`+${v} % de portée de ramassage`},
+  etendue:{type:'h',n:'Étendue',r:1,max:3,drain:4,k:'skillRad',v:10,t:v=>`+${v} % de rayon de compétence`},
+  persist:{type:'h',n:'Persistance',r:1,max:3,drain:4,k:'skillDur',v:12,t:v=>`+${v} % de durée de compétence et de ralentissement`},
+  fantome:{type:'h',n:'Pas fantôme',r:1,max:3,drain:3,k:'dashCd',v:10,t:v=>`−${v} % de recharge de l'esquive`},
+  dernier:{type:'h',n:'Dernier rempart',r:1,max:3,drain:4,k:'lowArmor',v:10,t:v=>`−${v} % de dégâts subis sous 30 % de vie`},
+  survivant:{type:'h',n:'Rage du survivant',r:2,max:3,drain:5,k:'lowDmg',v:15,t:v=>`+${v} % de dégâts sous 50 % de vie`},
+  presence:{type:'a',n:'Présence glaciale',r:2,max:3,drain:0,cap:4,k:'auraSlow',v:8,t:v=>`Ennemis proches ralentis de ${v} %`},
+  cupidite:{type:'a',n:'Cupidité',r:1,max:3,drain:0,cap:4,k:'goldPct',v:10,t:v=>`+${v} % d'or ramassé`},
+  ferveur:{type:'a',n:'Ferveur',r:2,max:3,drain:0,cap:4,k:'apsPct',v:5,t:v=>`+${v} % de vitesse d'attaque`},
 };
 const modVal=(id,rk)=>+(MODS[id].v*(rk+1)).toFixed(2);
 const modDrain=(id,rk)=>MODS[id].drain+rk;
 const fuseCost=(id,rk)=>10*Math.pow(2,rk)*(MODS[id].r+1);
 const POL={b:{n:'Braise',c:'#e8853b',s:'▲'},r:{n:'Rempart',c:'#5fbf7a',s:'■'},s:{n:'Spirale',c:'#b9a6f0',s:'◆'}};
-const MOD_POL={ferocite:'b',cadence:'b',oeil:'b',boucherie:'b',dedoublement:'b',diamant:'b',allonge:'b',deflagration:'b',vitalite:'r',egide:'r',sangsue:'r',pas:'r',intensite:'s',flux:'s',braise:'s',givre:'s',orage:'s'};
-const polOf=c=>(meta.pol[c]||(meta.pol[c]=[null,null,null,null]));
+const MOD_POL={ferocite:'b',cadence:'b',oeil:'b',boucherie:'b',dedoublement:'b',diamant:'b',allonge:'b',deflagration:'b',vitalite:'r',egide:'r',sangsue:'r',pas:'r',intensite:'s',flux:'s',braise:'s',givre:'s',orage:'s',souffle:'r',etendue:'s',persist:'s',fantome:'r',alchimiste:'r',rapace:'s',dernier:'r',survivant:'b'};
 const mastOf=c=>(meta.mast[c]||(meta.mast[c]={r:0,xp:0}));
 const mastNeed=r=>100*(r+1);
 const deCls=c=>c==='archer'?"de l'Archer":`du ${CLS[c].n}`;
-const alignCost=c=>200*Math.pow(2,Math.min(3,meta.align[c]||0));
-const slotDrain=(id,rk,i,c=heroCls)=>{const b=modDrain(id,rk),p=polOf(c)[i];return !p?b:p===MOD_POL[id]?Math.ceil(b/2):Math.ceil(b*1.25)};
-const capOf=c=>10+lv('cat')*3+mastOf(c).r;
-const modCap=()=>capOf(heroCls);
-function activeMods(c){const out=[];let u=0;(meta.load[c]||[]).forEach((id,i)=>{if(!id||meta.mods[id]==null||!modOk(id,c))return;const d=slotDrain(id,meta.mods[id],i,c);if(u+d<=capOf(c)){u+=d;out.push(id)}});return out}
-function bestSlot(id,rk){let best=-1,bd=1e9;meta.load[heroCls].forEach((x,i)=>{if(x)return;const d=slotDrain(id,rk,i);if(d<bd){bd=d;best=i}});return {i:best,d:bd}}
 const modOk=(id,c)=>!MODS[id].cls||MODS[id].cls.includes(c);
-const modUsed=()=>meta.load[heroCls].reduce((a,id,i)=>a+(id?slotDrain(id,meta.mods[id],i):0),0);
+const modKind=id=>MODS[id].type||'w';
+const curWid=(c=heroCls)=>meta.wpn[c]&&ownedW(meta.wpn[c])?meta.wpn[c]:WPN[c][0].id;
+const arrOf=(o,k,n)=>{let a=o[k];if(!a)a=o[k]=Array(n).fill(null);while(a.length<n)a.push(null);return a};
+const mstOf=(o,k)=>o[k]||(o[k]={r:0,xp:0});
+const deW=n=>/^[aeiouyéèêâîôh]/i.test(n)&&!/^h/i.test(n)?`de l'${n}`:`de ${n}`;
+const HSLOT_MAX=6,HSLOT_COST=[15,30,50];
+const auraCap=id=>id&&meta.mods[id]!=null?MODS[id].cap+meta.mods[id]:0;
+function build(kind,c=heroCls){
+  if(kind==='w'){const wid=curWid(c);return {kind,key:wid,load:arrOf(meta.wload,wid,4),pol:arrOf(meta.wpol,wid,4),mast:mstOf(meta.wmast,wid),slots:4,alignStore:meta.walign,cap0:10+lv('cat')*3,name:wdef(wid).n,de:deW(wdef(wid).n)}}
+  const au=meta.aura[c]||null;
+  return {kind:'h',key:c,load:arrOf(meta.hload,c,HSLOT_MAX),pol:arrOf(meta.pol,c,HSLOT_MAX),mast:mastOf(c),slots:meta.hslots[c]||3,alignStore:meta.align,cap0:10+lv('rea')*3+auraCap(au),name:CLS[c].n,de:deCls(c),aura:au};
+}
+const bCap=b=>b.cap0+b.mast.r;
+const bDrain=(b,id,rk,i)=>{const base=modDrain(id,rk),p=b.pol[i];return !p?base:p===MOD_POL[id]?Math.ceil(base/2):Math.ceil(base*1.25)};
+const bUsed=b=>b.load.slice(0,b.slots).reduce((a,id,i)=>a+(id&&meta.mods[id]!=null?bDrain(b,id,meta.mods[id],i):0),0);
+function bActive(b,c=heroCls){const out=[];let u=0;const cap=bCap(b);b.load.slice(0,b.slots).forEach((id,i)=>{if(!id||meta.mods[id]==null||!modOk(id,c))return;const d=bDrain(b,id,meta.mods[id],i);if(u+d<=cap){u+=d;out.push(id)}});return out}
+function bBest(b,id,rk){let best=-1,bd=1e9;for(let i=0;i<b.slots;i++){if(b.load[i])continue;const d=bDrain(b,id,rk,i);if(d<bd){bd=d;best=i}}return {i:best,d:bd}}
+const bAlignCost=b=>200*Math.pow(2,Math.min(3,b.alignStore[b.key]||0));
+const fragTotal=()=>Object.values(meta.parts).reduce((a,p)=>a+p.reduce((x,y)=>x+y,0),0);
+function takeFrags(n){while(n>0){let bk=null,bi=0,bv=0;for(const k in meta.parts)meta.parts[k].forEach((v,i)=>{if(v>bv){bv=v;bk=k;bi=i}});if(!bk)return false;meta.parts[bk][bi]--;n--}return true}
+function allMods(c=heroCls){const out=[...bActive(build('w',c),c),...bActive(build('h',c),c)];const au=meta.aura[c];if(au&&meta.mods[au]!=null)out.push(au);return out}
+if(!meta.v4){
+  for(const c of Object.keys(CLS)){const old=(meta.load&&meta.load[c])||[],wid=curWid(c),wl=arrOf(meta.wload,wid,4),hl=arrOf(meta.hload,c,HSLOT_MAX);let hi=0;
+    old.forEach((id,i)=>{if(!id||!MODS[id])return;if(modKind(id)==='w')wl[i]=id;else if(hi<3)hl[hi++]=id});
+    meta.wpol[wid]=meta.pol[c]?meta.pol[c].slice(0,4):[null,null,null,null];meta.walign[wid]=meta.align[c]||0;
+    if(meta.mast[c])meta.wmast[wid]={r:meta.mast[c].r,xp:meta.mast[c].xp};
+    meta.pol[c]=Array(HSLOT_MAX).fill(null);meta.align[c]=0}
+  meta.v4=1;saveMeta();
+}
 function rollMod(boss){const x=Math.random()*100,r=x<(boss?30:8)?2:x<(boss?75:38)?1:0;return pick(Object.keys(MODS).filter(id=>MODS[id].r===r&&modOk(id,heroCls)))}
 
 /* ---------- Objets ---------- */
@@ -580,17 +616,17 @@ function rollPart(){
 const partLabel=p=>{const w=bpdef(p.w);return `<span style="color:${RAR[w.r].c}">${w.n}</span> · ${w.frag[p.p]}`};
 
 function stats(eq){
-  const b=CLS[heroCls].base,s={dmg:b.dmg,aps:b.aps,hp:b.hp,crit:b.crit,critDmg:150,multi:0,pierce:0,burn:0,armor:b.armor,speed:b.speed,regen:0,cdr:b.cdr,novaPct:0,dmgPct:0,apsPct:0,leech:0,reach:0,splash:0,burnPct:0,chill:0,shock:0};
+  const b=CLS[heroCls].base,s={dmg:b.dmg,aps:b.aps,hp:b.hp,crit:b.crit,critDmg:150,multi:0,pierce:0,burn:0,armor:b.armor,speed:b.speed,regen:0,cdr:b.cdr,novaPct:0,dmgPct:0,apsPct:0,leech:0,reach:0,splash:0,burnPct:0,chill:0,shock:0,skillRad:0,skillDur:0,dashCd:0,potHeal:0,magnetPct:0,lowArmor:0,lowDmg:0,auraSlow:0,goldPct:0};
   for(const it of Object.values(eq))if(it){const m=upMul(it.up);s[it.base.k]+=it.base.v*m;for(const k in it.aff)s[k]+=NOSCALE[k]?it.aff[k]:it.aff[k]*m}
-  for(const id of activeMods(heroCls))s[MODS[id].k]+=modVal(id,meta.mods[id]);
+  for(const id of allMods(heroCls))s[MODS[id].k]+=modVal(id,meta.mods[id]);
   const R=(G&&G.run)||{},rr=k=>R[k]||0;
   s.dmgPct+=rr('dmg')*12;s.apsPct+=rr('aps')*10;s.crit+=rr('crit')*5;s.critDmg+=rr('cdmg')*30;s.speed+=rr('spd')*8;s.regen+=rr('regen')*1.5;
   s.cdr+=rr('cdr')*8;s.novaPct+=rr('nova')*25;s.multi+=rr('multi')+rr('fan')*2;s.dmgPct-=rr('fan')*10;s.echo=rr('echo')*20;s.waves=rr('wave');s.pierce+=rr('pierce');s.reach+=rr('reach')*15;s.leech+=rr('leech')*1.5;
   s.splash+=rr('splash')*20;s.burnPct+=rr('burn')*10;s.chill+=rr('chill')*10;s.shock+=rr('shock')*6;
-  s.dmgPct+=lv('str')*6;s.apsPct+=lv('cel')*5;s.hp=Math.round(s.hp*(1+lv('vig')*.08)*(1+rr('hp')*.15));s.magnet=140*(1+rr('mag')*.4);
+  s.dmgPct+=lv('str')*6;s.apsPct+=lv('cel')*5;s.hp=Math.round(s.hp*(1+lv('vig')*.08)*(1+rr('hp')*.15));s.magnet=140*(1+rr('mag')*.4)*(1+s.magnetPct/100);
   const dmg=s.dmg*(1+s.dmgPct/100);
   return {dmg,aps:s.aps*(1+s.apsPct/100),hp:s.hp,crit:Math.min(s.crit,75),critDmg:s.critDmg,multi:s.multi,pierce:s.pierce,burn:s.burn+dmg*s.burnPct/100,chill:s.chill,shock:s.shock,
-    armor:Math.min(s.armor,60),speed:220*(1+s.speed/100),regen:s.regen,cdr:Math.min(s.cdr,50),nova:dmg*4*(1+s.novaPct/100),leech:s.leech,reach:s.reach,splash:s.splash,magnet:s.magnet,echo:s.echo||0,waves:s.waves||0};
+    armor:Math.min(s.armor,60),speed:220*(1+s.speed/100),regen:s.regen,cdr:Math.min(s.cdr,50),nova:dmg*4*(1+s.novaPct/100),leech:s.leech,reach:s.reach,splash:s.splash,magnet:s.magnet,skillRad:s.skillRad,skillDur:s.skillDur,dashCd:Math.min(s.dashCd,60),potHeal:s.potHeal,lowArmor:Math.min(s.lowArmor,60),lowDmg:s.lowDmg,auraSlow:Math.min(s.auraSlow,50),goldPct:s.goldPct,echo:s.echo||0,waves:s.waves||0};
 }
 const dps=S=>S.dmg*S.aps*(1+S.crit/100*(S.critDmg/100-1))*(1+S.multi*.8)*(1+S.echo/100)*(1+S.waves*.5)*(heroCls==='archer'?1:1.2)+S.burn;
 
@@ -612,7 +648,7 @@ function newGame(){
   const C=CLS[heroCls],L=clamp(meta.start|0||1,1,LV_MAX);
   G={cls:heroCls,level:L,t:0,tl:0,potions:2+lv('alc'),kills:0,gold:0,loot:{items:[],parts:[],relics:[]},fresh:0,run:{},hl:1,xp:0,pend:0,nxp:0,
     en:[],shots:[],eb:[],zaps:[],parts:[],texts:[],drops:[],rings:[],spawns:[],shake:0,spawnT:1.2,bossT:BOSS_T,bossN:0,vw:600,vh:900};
-  G.eq=curEq();S=stats(G.eq);
+  G.eq=curEq();G.wid=curWid();S=stats(G.eq);
   G.P={x:MAP/2,y:MAP/2,r:17,hp:S.hp,face:-Math.PI/2,fire:0,inv:1,flash:0,dashT:0,dashCd:0,novaCd:0,dx:0,dy:-1,spin:0,spinTick:0,swing:null,
     shield:0,noHit:0,swings:0,critShots:0,dashHit:new Set()};
   if(heroCls==='magicien'&&hasTal('m_shield'))G.P.shield=S.hp*.25;
@@ -712,6 +748,7 @@ function toast(html){const d=document.createElement('div');d.innerHTML=html;$('t
 
 /* ---------- Combat ---------- */
 function dmgEnemy(e,d,crit,dot){
+  if(!dot&&S.lowDmg&&G.P.hp<S.hp*.5)d*=1+S.lowDmg/100;
   e.hp-=d;e.shown=2;
   if(!dot){e.flash=1;if(crit||G.en.length<60)ftext(e.x+rand(-8,8),e.y-e.r,Math.round(d)+(crit?'!':''),crit?'#ffd34d':'#f1e8d6',crit?20:15)}
   else if(Math.random()<.25)ftext(e.x,e.y-e.r,Math.round(d),'#ff9a4a',12);
@@ -751,7 +788,7 @@ function kill(e){
 }
 function hurt(d){
   const P=G.P;if(P.inv>0||P.dashT>0||GOD)return;
-  d*=1-S.armor/100;if(P.spin>0)d*=.5;P.noHit=0;
+  d*=1-S.armor/100;if(P.hp<S.hp*.3)d*=1-S.lowArmor/100;if(P.spin>0)d*=.5;P.noHit=0;
   if(P.shield>0){const ab=Math.min(P.shield,d);P.shield-=ab;d-=ab;if(d<=0){P.inv=.35;ftext(P.x,P.y-P.r,'bloqué','#9fd0ff',13);return}}
   P.hp-=d;P.flash=1;P.inv=.35;G.shake=Math.max(G.shake,6);
   ftext(P.x,P.y-P.r,'-'+Math.round(d),'#ff5a5a',16);
@@ -763,8 +800,9 @@ function gainMod(id){
   const m=MODS[id],c=MOD_RAR[m.r].c;
   if(meta.mods[id]==null){
     meta.mods[id]=0;let msg=`Nouveau mod : <span style="color:${c}">${m.n}</span>`;
-    const load=meta.load[heroCls],bs=bestSlot(id,0);
-    if(bs.i>=0&&modOk(id,heroCls)&&modUsed()+bs.d<=modCap()){load[bs.i]=id;refreshStats();msg+=' · équipé'}
+    const kd=modKind(id);
+    if(kd==='a'){if(!meta.aura[heroCls]){meta.aura[heroCls]=id;refreshStats();msg+=' · aura équipée'}}
+    else if(modOk(id,heroCls)){const b=build(kd),bs=bBest(b,id,0);if(bs.i>=0&&bUsed(b)+bs.d<=bCap(b)){b.load[bs.i]=id;refreshStats();msg+=kd==='w'?' · équipé sur l\'arme':' · équipé sur le héros'}}
     toast(msg);
   }else{const e=8*(m.r+1);meta.essence+=e;toast(`<span style="color:${c}">${m.n}</span> en double · +${e} essence`)}
   saveMeta();
@@ -825,23 +863,24 @@ function inputVec(){
   const m=Math.hypot(x,y);if(m>1){x/=m;y/=m}
   return {x,y,m:Math.min(m,1)};
 }
-function doDash(){const P=G.P;if(P.dashCd>0)return;P.dashT=.2;P.dashCd=3*(1-S.cdr/100);burst(P.x,P.y,10,'#9fc2b8',120);
+const dashCdMax=()=>3*(1-S.cdr/100)*(1-S.dashCd/100);
+function doDash(){const P=G.P;if(P.dashCd>0)return;P.dashT=.2;P.dashCd=dashCdMax();burst(P.x,P.y,10,'#9fc2b8',120);
   P.dashHit=new Set();
   if(G.cls==='archer'&&hasTal('a_shadow'))P.critShots=3;
   if(G.cls==='magicien'&&hasTal('m_blink'))explode({x:P.x,y:P.y,d:S.dmg*1.6},null,true)}
 function doNova(){
   const P=G.P;if(P.novaCd>0)return;P.novaCd=CLS[G.cls].cd*(1-S.cdr/100);
-  if(G.cls==='guerrier'){P.spin=1.6;P.spinTick=0;return}
+  if(G.cls==='guerrier'){P.spin=1.6*(1+S.skillDur/100);P.spinTick=0;return}
   if(G.cls==='archer'){
     for(let i=0;i<24;i++){const a=i/24*Math.PI*2;G.shots.push({kind:'bolt',x:P.x,y:P.y,vx:Math.cos(a)*640,vy:Math.sin(a)*640,a,d:S.nova*.35,crit:false,pierce:S.pierce+2,hit:new Set(),life:1.2})}
     G.rings.push({x:P.x,y:P.y,t:.15,max:80,col:'255,200,120'});return;
   }
-  G.rings.push({x:P.x,y:P.y,t:0,col:'150,210,255'});G.shake=Math.max(G.shake,5);
-  for(const e of G.en){const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy);if(d<175+e.r){const crit=Math.random()*100<S.crit;e.slow=2.5;dmgEnemy(e,S.nova*(crit?S.critDmg/100:1),crit);const k=e.type==='boss'?80:420;e.kx+=dx/(d||1)*k;e.ky+=dy/(d||1)*k}}
-  G.eb=G.eb.filter(b=>Math.hypot(b.x-P.x,b.y-P.y)>175);
+  G.rings.push({x:P.x,y:P.y,t:0,max:175*(1+S.skillRad/100),col:'150,210,255'});G.shake=Math.max(G.shake,5);
+  for(const e of G.en){const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy);if(d<175*(1+S.skillRad/100)+e.r){const crit=Math.random()*100<S.crit;e.slow=2.5*(1+S.skillDur/100);dmgEnemy(e,S.nova*(crit?S.critDmg/100:1),crit);const k=e.type==='boss'?80:420;e.kx+=dx/(d||1)*k;e.ky+=dy/(d||1)*k}}
+  G.eb=G.eb.filter(b=>Math.hypot(b.x-P.x,b.y-P.y)>175*(1+S.skillRad/100));
 }
 function doPotion(){
-  const P=G.P;if(G.potions<=0||P.hp>=S.hp)return;G.potions--;const h=S.hp*.45;P.hp=Math.min(S.hp,P.hp+h);
+  const P=G.P;if(G.potions<=0||P.hp>=S.hp)return;G.potions--;const h=S.hp*.45*(1+S.potHeal/100);P.hp=Math.min(S.hp,P.hp+h);
   ftext(P.x,P.y-P.r-6,'+'+Math.round(h),'#5fbf7a',18);burst(P.x,P.y,16,'#5fbf7a',110);
 }
 
@@ -886,7 +925,7 @@ function update(dt){
   // attaque
   if(P.swing){P.swing.t+=dt;if(P.swing.t>.2)P.swing=null}
   if(P.spin>0){P.spin-=dt;P.spinTick-=dt;P.face+=dt*18;
-    if(P.spinTick<=0){P.spinTick=.2;const R=130*(1+S.reach/100);
+    if(P.spinTick<=0){P.spinTick=.2;const R=130*(1+S.reach/100)*(1+S.skillRad/100);
       for(const e of G.en){const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy)||1;if(d<R+e.r){const crit=Math.random()*100<S.crit,dd=S.nova*.22*(crit?S.critDmg/100:1);dmgEnemy(e,dd,crit);if(S.leech)heal(dd*S.leech/100);const k=e.type==='boss'?10:90;e.kx+=dx/d*k;e.ky+=dy/d*k}}}}
   let tgt=null,td=1e9;for(const e of G.en){const d=Math.hypot(e.x-P.x,e.y-P.y);if(d<td){td=d;tgt=e}}
   if(G.cls==='guerrier'){
@@ -976,7 +1015,7 @@ function update(dt){
         if(Math.random()<.5)G.parts.push({x:e.x,y:e.y+e.r*.6,vx:rand(-30,30),vy:rand(-30,30),life:.4,max:.4,col:'#5b4a52',size:4});
         if(e.timer<=0){e.state='walk';e.timer=boss?1.3:rand(2.5,4)}}
     }
-    e.slow-=dt;const sm=e.slow>0?.4:1;
+    e.slow-=dt;let sm=e.slow>0?.4:1;if(S.auraSlow&&dP<180)sm*=1-S.auraSlow/100;
     e.x+=(mx*e.spd*sm+e.kx)*dt;e.y+=(my*e.spd*sm+e.ky)*dt;
     const f=Math.pow(.002,dt);e.kx*=f;e.ky*=f;
     if(resolve(e)&&e.state==='charge'){e.state='walk';e.timer=e.type==='boss'?1.6:2.5;G.shake=Math.max(G.shake,e.type==='boss'?8:4);burst(e.x,e.y,10,'#6b5a60',150)}
@@ -999,7 +1038,7 @@ function update(dt){
     if(dist<P.r+16){
       d.gone=true;
       if(d.kind==='xp'){G.nxp--;gainXp(d.v)}
-      else if(d.kind==='gold'){const a=Math.round(d.amt*(1+lv('for')*.15));G.gold+=a;ftext(P.x+rand(-10,10),P.y-P.r-12,'+'+a,'#f0cf4a',13)}
+      else if(d.kind==='gold'){const a=Math.round(d.amt*(1+lv('for')*.15)*(1+S.goldPct/100));G.gold+=a;ftext(P.x+rand(-10,10),P.y-P.r-12,'+'+a,'#f0cf4a',13)}
       else if(d.kind==='mod')gainMod(d.id);
       else if(d.kind==='relic'){G.loot.relics.push(d.id);G.fresh++;toast(`Relique <b style="color:${RTIER[RELICS[d.id].t].c}">${relicName(d.id)}</b>`)}
       else if(d.kind==='react'){G.react++;if(G.relic&&!G.cracked&&G.react>=REACT_N){G.cracked=true;G.shake=6;toast(`<b style="color:var(--r2)">Relique ${relicName(G.relic.id)} ouverte.</b> Réussis la mission pour recevoir sa récompense.`)}}
@@ -1191,7 +1230,7 @@ function hud(){
   setCls('timeTxt','hot',hot);
   setHid('relTxt',!G.relic);if(G.relic)setTx('relTxt',G.cracked?'Relique ouverte':`Réactifs ${G.react} / ${REACT_N}`);
   setTx('potN',String(G.potions));
-  setSt('bDash','--cd',r3(P.dashCd/(3*(1-S.cdr/100))));
+  setSt('bDash','--cd',r3(P.dashCd/dashCdMax()));
   setSt('bNova','--cd',r3(P.novaCd/(CLS[G.cls].cd*(1-S.cdr/100))));
   setSt('bPot','--cd',G.potions?'0':'1');
   const live=started&&!G.over;
@@ -1508,33 +1547,42 @@ function equipRun(id){
 function refreshStats(){if(!G)return;const ratio=G.P.hp/S.hp;S=stats(G.eq);G.P.hp=Math.max(1,Math.min(S.hp,ratio*S.hp))}
 
 /* ---------- Mods (interface) ---------- */
-let modSel=null,alSel=null;
-function modCard(id,cls='',i){const m=MODS[id],rk=meta.mods[id],p=POL[MOD_POL[id]],d=i===undefined?modDrain(id,rk):slotDrain(id,rk,i);
-  return `<button class="mod${cls}" data-mod="${id}" style="--mc:${MOD_RAR[m.r].c}" aria-label="${m.n}, rang ${rk}, polarité ${p.n}"><span class="pl" style="color:${p.c}">${p.s}</span><span class="dr">${d}</span><b>${m.n}</b><span class="pp">${'<i class="on"></i>'.repeat(rk)}${'<i></i>'.repeat(m.max-rk)}</span></button>`}
+let modSel=null,alSel=null,modTab='h';
+const AURA_C='#f0cf4a';
+function modCard(id,cls='',i,b){const m=MODS[id],rk=meta.mods[id],isA=modKind(id)==='a',p=isA?{c:AURA_C,s:'✦',n:'Aura'}:POL[MOD_POL[id]];
+  const d=isA?`+${MODS[id].cap+rk}`:(b&&i!==undefined?bDrain(b,id,rk,i):modDrain(id,rk));
+  return `<button class="mod${cls}" data-mod="${id}" style="--mc:${MOD_RAR[m.r].c}" aria-label="${m.n}, rang ${rk}, ${isA?'aura':'polarité '+p.n}"><span class="pl" style="color:${p.c}">${p.s}</span><span class="dr">${d}</span><b>${m.n}</b><span class="pp">${'<i class="on"></i>'.repeat(rk)}${'<i></i>'.repeat(m.max-rk)}</span></button>`}
 function modDetail(id){
-  const m=MODS[id],rk=meta.mods[id],c=MOD_RAR[m.r].c,load=meta.load[heroCls],slot=load.indexOf(id),eq=slot>=0,ok=modOk(id,heroCls),p=POL[MOD_POL[id]];
-  const u=modUsed(),cap=modCap(),bs=bestSlot(id,rk),fc=fuseCost(id,rk),maxed=rk>=m.max;
-  const fits=bs.i>=0&&u+bs.d<=cap;
-  let act,why='';
-  if(!ok){act='';why=`Réservé à : ${m.cls.map(k=>CLS[k].n).join(', ')}.`}
-  else if(eq)act='<button class="btn" data-act="unequip">Retirer</button>';
-  else{act=`<button class="btn main" data-act="equip" ${!fits?'disabled':''}>Équiper${bs.i>=0?` · case ${bs.i+1}`:''}</button>`;
-    why=bs.i<0?'Les 4 cases sont prises. Retire un mod d\'abord.':!fits?`Capacité insuffisante : il faut ${bs.d} points, il en reste ${Math.max(0,cap-u)}.`:''}
-  const fuseUsed=eq?u-slotDrain(id,rk,slot)+slotDrain(id,rk+1,slot):u,fuseBlocked=eq&&fuseUsed>cap;
+  const m=MODS[id],rk=meta.mods[id],c=MOD_RAR[m.r].c,k=modKind(id),isA=k==='a',b=build(k==='w'?'w':'h'),ok=modOk(id,heroCls);
+  const slot=isA?(b.aura===id?0:-1):b.load.indexOf(id),eq=slot>=0,u=bUsed(b),cap=bCap(b),fc=fuseCost(id,rk),maxed=rk>=m.max;
+  let act='',why='',fuseBlocked=false,costLine;
+  const where=k==='w'?`l'arme (${b.name})`:'le héros';
+  if(isA){
+    costLine=`Aura du héros · rapporte +${m.cap+rk} de capacité`;
+    act=eq?'<button class="btn" data-act="unequip">Retirer</button>':`<button class="btn main" data-act="equip">${b.aura?'Remplacer l\'aura':'Équiper l\'aura'}</button>`;
+    if(eq&&u>cap-(m.cap+rk)){why='Retirer cette aura ferait dépasser la capacité du héros : les mods en trop deviendraient inactifs.'}
+  }else{
+    const p=POL[MOD_POL[id]],bs=bBest(b,id,rk),fits=bs.i>=0&&u+bs.d<=cap;
+    costLine=`Mod ${k==='w'?'d\'arme':'de héros'} · <span style="color:${p.c}">${p.s} ${p.n}</span> · `+(eq?`coûte ${bDrain(b,id,rk,slot)} dans la case ${slot+1}`:`coûte ${modDrain(id,rk)}, ${Math.ceil(modDrain(id,rk)/2)} dans une case ${p.n}`);
+    if(!ok){why=`Réservé à : ${m.cls.map(x=>CLS[x].n).join(', ')}.`}
+    else if(eq)act='<button class="btn" data-act="unequip">Retirer</button>';
+    else{act=`<button class="btn main" data-act="equip" ${!fits?'disabled':''}>Équiper${bs.i>=0?` · case ${bs.i+1}`:''}</button>`;
+      why=bs.i<0?`Toutes les cases de ${where} sont prises. Retire un mod d'abord.`:!fits?`Capacité insuffisante : il faut ${bs.d} points, il en reste ${Math.max(0,cap-u)}.`:''}
+    fuseBlocked=eq&&u-bDrain(b,id,rk,slot)+bDrain(b,id,rk+1,slot)>cap;
+  }
   const fuse=maxed?'<span class="owned" style="align-self:center;flex:1;text-align:center">Rang max</span>':`<button class="btn buy" data-act="fuse" ${meta.essence<fc||fuseBlocked?'disabled':''}>Fusionner · ${fc} essence</button>`;
   if(!why&&fuseBlocked&&!maxed)why='Monter ce mod de rang dépasserait la capacité.';
-  const costLine=eq?`coûte ${slotDrain(id,rk,slot)} dans la case ${slot+1} (${modDrain(id,rk)} sans alignement)`:`coûte ${modDrain(id,rk)} de capacité, ${Math.ceil(modDrain(id,rk)/2)} dans une case ${p.n}`;
-  return `<div class="card"><div class="nm" style="color:${c}">${m.n}</div><div class="meta">Mod ${MOD_RAR[m.r].n.toLowerCase()} · <span style="color:${p.c}">${p.s} ${p.n}</span> · rang ${rk} / ${m.max} · ${costLine}</div>
+  return `<div class="card"><div class="nm" style="color:${c}">${m.n}</div><div class="meta">${MOD_RAR[m.r].n} · ${costLine} · rang ${rk} / ${m.max}</div>
     <ul><li>${m.t(modVal(id,rk))}</li>${maxed?'':`<li style="color:var(--muted)">Rang ${rk+1} : ${m.t(modVal(id,rk+1))}</li>`}</ul>
     <div class="actions">${act}${fuse}</div>${why?`<p class="empty" style="font-size:13px">${why}</p>`:''}</div>`;
 }
-function alignPanel(){
-  const pol=polOf(heroCls),mt=mastOf(heroCls),cost=alignCost(heroCls),n=CLS[heroCls].n;
-  let h=`<h3>Alignement des cases</h3><p class="empty" style="font-size:13px">Aligne une case sur une polarité : un mod de la même polarité y coûte moitié moins de capacité, un mod d'une autre polarité y coûte 25 % de plus. Chaque alignement coûte de l'essence (200, 400, 800 puis 1 600) et remet la maîtrise ${deCls(heroCls)} à 0.</p>
-    <div class="alrow">${pol.map((p,i)=>`<button class="chip" data-act="alslot" data-i="${i}" aria-pressed="${!!alSel&&alSel.i===i}">Case ${i+1} · ${p?`<span style="color:${POL[p].c}">${POL[p].s} ${POL[p].n}</span>`:'neutre'}</button>`).join('')}</div>`;
-  if(alSel){const cur=pol[alSel.i];
+function alignPanel(b){
+  const cost=bAlignCost(b),mt=b.mast;
+  let h=`<h3>Alignement · ${b.kind==='w'?'arme':'héros'}</h3><p class="empty" style="font-size:13px">Aligne une case sur une polarité : un mod de la même polarité y coûte moitié moins, un autre 25 % de plus. Chaque alignement coûte de l'essence (200, 400, 800 puis 1 600) et remet la maîtrise ${b.de} à 0.</p>
+    <div class="alrow">${b.pol.slice(0,b.slots).map((p,i)=>`<button class="chip" data-act="alslot" data-i="${i}" aria-pressed="${!!alSel&&alSel.i===i}">Case ${i+1} · ${p?`<span style="color:${POL[p].c}">${POL[p].s} ${POL[p].n}</span>`:'neutre'}</button>`).join('')}</div>`;
+  if(alSel){const cur=b.pol[alSel.i];
     h+=`<div class="alrow">${Object.keys(POL).map(k=>`<button class="chip" data-act="alpol" data-p="${k}" aria-pressed="${alSel.p===k}" ${cur===k?'disabled':''}><span style="color:${POL[k].c}">${POL[k].s}</span> ${POL[k].n}</button>`).join('')}</div>`;
-    if(alSel.p)h+=`<div class="card"><p style="margin:0;font-size:14px">Aligner la case ${alSel.i+1} en <b style="color:${POL[alSel.p].c}">${POL[alSel.p].n}</b> pour <b>${cost} essence</b>. Ta maîtrise ${deCls(heroCls)} repasse du rang ${mt.r} à 0${mt.r?` : −${mt.r} de capacité jusqu'à ce que tu la regagnes en mission`:''}.</p>
+    if(alSel.p)h+=`<div class="card"><p style="margin:0;font-size:14px">Aligner la case ${alSel.i+1} en <b style="color:${POL[alSel.p].c}">${POL[alSel.p].n}</b> pour <b>${cost} essence</b>. La maîtrise ${b.de} repasse du rang ${mt.r} à 0${mt.r?` : −${mt.r} de capacité jusqu'à ce que tu la regagnes en mission`:''}.</p>
       <div class="actions"><button class="btn main" data-act="alok" ${meta.essence<cost?'disabled':''}>Aligner · ${cost} essence</button><button class="btn" data-act="alcancel">Annuler</button></div>
       ${meta.essence<cost?`<p class="empty" style="font-size:13px">Il te manque ${cost-meta.essence} essence.</p>`:''}</div>`;
     else h+='<p class="empty" style="font-size:13px">Choisis la polarité de cette case.</p>';
@@ -1542,32 +1590,47 @@ function alignPanel(){
   return h;
 }
 function renderMods(rootId){
-  const root=$(rootId);if(!root)return;const load=meta.load[heroCls],u=modUsed(),cap=modCap(),pol=polOf(heroCls),mt=mastOf(heroCls),act=activeMods(heroCls);
+  const root=$(rootId);if(!root)return;const inCamp=rootId==='modsCamp';
+  const b=build(modTab),u=bUsed(b),cap=bCap(b),act=bActive(b),mt=b.mast;
   const owned=Object.keys(MODS).filter(id=>meta.mods[id]!=null);
   if(modSel&&meta.mods[modSel]==null)modSel=null;
-  const rest=owned.filter(id=>!load.includes(id)).sort((a,b)=>(modOk(b,heroCls)-modOk(a,heroCls))||MODS[b].r-MODS[a].r);
-  root.innerHTML=`<div class="modhead"><span>Capacité <b class="${u>cap?'over':''}">${u} / ${cap}</b></span><span>Essence <b>${meta.essence}</b></span><span>Collection <b>${owned.length} / ${Object.keys(MODS).length}</b></span>
-      <span>Maîtrise ${CLS[heroCls].n} <b>${mt.r} / 10</b>${mt.r<10?` · ${mt.xp} / ${mastNeed(mt.r)}`:''}</span></div>
+  if(modSel&&(modKind(modSel)==='w')!==(modTab==='w'))modSel=null;
+  const fits=id=>modTab==='w'?modKind(id)==='w':modKind(id)!=='w';
+  const rest=owned.filter(id=>fits(id)&&!b.load.includes(id)&&b.aura!==id).sort((x,y)=>(modOk(y,heroCls)-modOk(x,heroCls))||(modKind(y)==='a')-(modKind(x)==='a')||MODS[y].r-MODS[x].r);
+  const slotsN=modTab==='w'?4:HSLOT_MAX;
+  const slotHtml=i=>{if(i>=b.slots){const nx=i===b.slots;return `<div class="mslot"><span class="sp" style="color:var(--muted)">Verrouillée</span><div class="mod empty lockd">${nx?`${HSLOT_COST[b.slots-3]} fragments`:'—'}</div></div>`}
+    const id=b.load[i],p=b.pol[i];return `<div class="mslot"><span class="sp" style="color:${p?POL[p].c:'var(--muted)'}">${p?POL[p].s+' '+POL[p].n:'Neutre'}</span>${id?modCard(id,(modSel===id?' sel':'')+(act.includes(id)?'':' off'),i,b):'<div class="mod empty">Libre</div>'}</div>`};
+  const buyBox=modTab==='h'&&b.slots<HSLOT_MAX&&inCamp?(()=>{const c=HSLOT_COST[b.slots-3],have=fragTotal();
+    return `<div class="card"><p style="margin:0;font-size:14px">Débloquer la case ${b.slots+1} du héros : <b>${c} fragments de schéma</b>, pris parmi ceux que tu as en plus grand nombre. Tu en as ${have}.</p><div class="actions"><button class="btn buy" data-act="slotbuy" ${have<c?'disabled':''}>Débloquer · ${c} fragments</button></div></div>`})():'';
+  root.innerHTML=`<div class="alrow"><button class="chip" data-act="mtab" data-t="h" aria-pressed="${modTab==='h'}">Héros · ${CLS[heroCls].n}</button><button class="chip" data-act="mtab" data-t="w" aria-pressed="${modTab==='w'}">Arme · ${wdef(curWid()).n}</button></div>
+    <div class="modhead"><span>Capacité <b class="${u>cap?'over':''}">${u} / ${cap}</b></span><span>Essence <b>${meta.essence}</b></span>
+      <span>Maîtrise ${b.kind==='w'?'arme':'héros'} <b>${mt.r} / 10</b>${mt.r<10?` · ${mt.xp} / ${mastNeed(mt.r)}`:''}</span></div>
     ${u>cap?'<p class="empty" style="font-size:13px;color:var(--blood)">Capacité dépassée : les mods en trop sont inactifs (grisés). Regagne de la maîtrise en mission ou retire un mod.</p>':''}
-    <div class="modslots">${load.map((id,i)=>{const p=pol[i];return `<div class="mslot"><span class="sp" style="color:${p?POL[p].c:'var(--muted)'}">${p?POL[p].s+' '+POL[p].n:'Neutre'}</span>${id?modCard(id,(modSel===id?' sel':'')+(act.includes(id)?'':' off'),i):'<div class="mod empty">Libre</div>'}</div>`}).join('')}</div>
-    <div class="modlist">${rest.map(id=>modCard(id,(modSel===id?' sel':'')+(modOk(id,heroCls)?'':' lock'))).join('')||'<p class="empty" style="grid-column:1/-1">Aucun autre mod. Les monstres en laissent parfois tomber, les Gardiens toujours.</p>'}</div>
-    ${modSel?modDetail(modSel):'<p class="empty" style="font-size:13px">Touche un mod pour l\'équiper ou le fusionner. Le symbole en haut à gauche est sa polarité, le chiffre en haut à droite son coût.</p>'}
-    ${rootId==='modsCamp'?alignPanel():''}`;
-  root.querySelectorAll('[data-mod]').forEach(b=>b.onclick=()=>{modSel=b.dataset.mod;modsChanged()});
-  root.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>modAct(b.dataset.act,b.dataset));
+    ${modTab==='h'?`<div class="aurarow"><div class="mslot"><span class="sp" style="color:${AURA_C}">✦ Aura</span>${b.aura?modCard(b.aura,modSel===b.aura?' sel':''):'<div class="mod empty">Aura libre</div>'}</div><p class="empty" style="font-size:13px">Une aura rapporte de la capacité au héros au lieu d'en coûter, et donne un effet permanent.</p></div>`:''}
+    <div class="modslots${slotsN>4?' six':''}">${Array.from({length:slotsN},(_,i)=>slotHtml(i)).join('')}</div>
+    ${buyBox}
+    <div class="modlist">${rest.map(id=>modCard(id,(modSel===id?' sel':'')+(modOk(id,heroCls)?'':' lock'))).join('')||`<p class="empty" style="grid-column:1/-1">Aucun autre mod ${modTab==='w'?'d\'arme':'de héros'}. Les monstres en laissent parfois tomber, les Gardiens toujours.</p>`}</div>
+    ${modSel?modDetail(modSel):`<p class="empty" style="font-size:13px">${modTab==='w'?'Les mods d\'arme restent attachés à cette arme : chaque arme a son propre build.':'Les mods de héros servent à la survie, au déplacement et aux compétences.'} Le symbole en haut à gauche d'un mod est sa polarité, le chiffre son coût.</p>`}
+    ${inCamp?alignPanel(b):''}`;
+  root.querySelectorAll('[data-mod]').forEach(x=>x.onclick=()=>{modSel=x.dataset.mod;modsChanged()});
+  root.querySelectorAll('[data-act]').forEach(x=>x.onclick=()=>modAct(x.dataset.act,x.dataset));
 }
 function modAct(a,ds){
-  const id=modSel,load=meta.load[heroCls],rk=id?meta.mods[id]:0;
-  if(a==='equip'){const bs=bestSlot(id,rk);if(bs.i<0||!modOk(id,heroCls)||modUsed()+bs.d>modCap())return;load[bs.i]=id}
-  else if(a==='unequip'){const i=load.indexOf(id);if(i>=0)load[i]=null}
-  else if(a==='fuse'){const c=fuseCost(id,rk),i=load.indexOf(id);if(meta.essence<c||rk>=MODS[id].max)return;
-    if(i>=0&&modUsed()-slotDrain(id,rk,i)+slotDrain(id,rk+1,i)>modCap())return;meta.essence-=c;meta.mods[id]=rk+1}
+  const id=modSel,rk=id?meta.mods[id]:0;
+  if(a==='mtab'){modTab=ds.t;modSel=null;alSel=null}
+  else if(a==='equip'||a==='unequip'||a==='fuse'){
+    const k=modKind(id),b=build(k==='w'?'w':'h');
+    if(a==='equip'){if(!modOk(id,heroCls))return;if(k==='a')meta.aura[heroCls]=id;else{const bs=bBest(b,id,rk);if(bs.i<0||bUsed(b)+bs.d>bCap(b))return;b.load[bs.i]=id}}
+    else if(a==='unequip'){if(k==='a'){if(meta.aura[heroCls]===id)meta.aura[heroCls]=null}else{const i=b.load.indexOf(id);if(i>=0)b.load[i]=null}}
+    else{const c=fuseCost(id,rk);if(meta.essence<c||rk>=MODS[id].max)return;if(k!=='a'){const i=b.load.indexOf(id);if(i>=0&&bUsed(b)-bDrain(b,id,rk,i)+bDrain(b,id,rk+1,i)>bCap(b))return}meta.essence-=c;meta.mods[id]=rk+1}
+  }
+  else if(a==='slotbuy'){const b=build('h');if(b.slots>=HSLOT_MAX)return;const c=HSLOT_COST[b.slots-3];if(fragTotal()<c)return;takeFrags(c);meta.hslots[heroCls]=b.slots+1;toast(`Case ${b.slots+1} du héros débloquée`)}
   else if(a==='alslot'){const i=+ds.i;alSel=alSel&&alSel.i===i?null:{i,p:null}}
   else if(a==='alpol'){if(alSel)alSel.p=ds.p}
   else if(a==='alcancel'){alSel=null}
-  else if(a==='alok'){if(!alSel||!alSel.p)return;const cost=alignCost(heroCls);if(meta.essence<cost)return;
-    meta.essence-=cost;polOf(heroCls)[alSel.i]=alSel.p;meta.align[heroCls]=(meta.align[heroCls]||0)+1;const mt=mastOf(heroCls);mt.r=0;mt.xp=0;
-    toast(`Case ${alSel.i+1} alignée en <b style="color:${POL[alSel.p].c}">${POL[alSel.p].n}</b>. Maîtrise ${deCls(heroCls)} remise à 0.`);alSel=null}
+  else if(a==='alok'){const b=build(modTab);if(!alSel||!alSel.p)return;const cost=bAlignCost(b);if(meta.essence<cost)return;
+    meta.essence-=cost;b.pol[alSel.i]=alSel.p;b.alignStore[b.key]=(b.alignStore[b.key]||0)+1;b.mast.r=0;b.mast.xp=0;
+    toast(`Case ${alSel.i+1} alignée en <b style="color:${POL[alSel.p].c}">${POL[alSel.p].n}</b>. Maîtrise ${b.de} remise à 0.`);alSel=null}
   saveMeta();modsChanged();
 }
 function modsChanged(){if(started&&G&&!G.over)refreshStats();if(!$('bag').hidden)drawBag();if(!$('camp').hidden)drawCamp()}
@@ -1593,8 +1656,9 @@ function roundDone(){
 }
 function bank(full){
   const g=full?G.gold:Math.floor(G.gold/2);meta.gold+=g;G.run={};
-  const mt=mastOf(G.cls);let up=0;if(mt.r<10){mt.xp+=G.kills;while(mt.r<10&&mt.xp>=mastNeed(mt.r)){mt.xp-=mastNeed(mt.r);mt.r++;up++}if(mt.r>=10)mt.xp=0}
-  G.mastMsg=`Maîtrise ${deCls(G.cls)} : rang ${mt.r} / 10`+(mt.r<10?` (${mt.xp} / ${mastNeed(mt.r)})`:'')+(up?` · +${up} rang${up>1?'s':''}, +${up} de capacité de mods`:'');
+  const gainM=(mt,label)=>{let up=0;if(mt.r<10){mt.xp+=G.kills;while(mt.r<10&&mt.xp>=mastNeed(mt.r)){mt.xp-=mastNeed(mt.r);mt.r++;up++}if(mt.r>=10)mt.xp=0}
+    return `Maîtrise ${label} : rang ${mt.r} / 10`+(mt.r<10?` (${mt.xp} / ${mastNeed(mt.r)})`:'')+(up?` · +${up} de capacité`:'')};
+  G.mastMsg=gainM(mastOf(G.cls),deCls(G.cls))+'<br>'+gainM(mstOf(meta.wmast,G.wid),deW(wdef(G.wid).n));
   if(full){
     for(const it of G.loot.items)meta.stash.push(it)
     for(const p of G.loot.parts){if(meta.built[p.w])meta.essence+=6;else{const a=meta.parts[p.w]||(meta.parts[p.w]=[0,0,0]);a[p.p]++}}
