@@ -334,7 +334,7 @@ function tabBadges(){
     forge:(ups+pr+prBuy)?{n:pr?pr:ups+prBuy,t:pr?`${pr} point${pr>1?'s':''} de prestige à placer`:`${ups+prBuy} amélioration${ups+prBuy>1?'s':''} achetable${ups+prBuy>1?'s':''}`}:null};
   document.querySelectorAll('.tab').forEach(t=>{let el=t.querySelector('.tbadge');const b=B[t.dataset.tab];
     if(!b){if(el)el.remove();return}if(!el){el=document.createElement('span');el.className='tbadge';t.appendChild(el)}el.textContent=b.n>9?'9+':b.n;el.title=b.t;el.setAttribute('aria-label',b.t)})}
-function drawCamp(){
+function drawCamp(){{const h=document.getElementById('campHelp');if(h)h.href='aide/index.html#camp-'+campTab}
   $('campGold').innerHTML=`<span class="coin"></span>${meta.gold}<span class="e"><span class="essi"></span>${meta.essence}</span>`;
   document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.tab===campTab)));
   const body=$('campBody');

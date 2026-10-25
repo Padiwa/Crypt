@@ -762,3 +762,8 @@ body:has(#camp:not([hidden])) .banner,body:has(#bag:not([hidden])) .banner{displ
 /* ---------- Abyssal ---------- */
 .rs.aby{color:#fff;background:#6b3fc4}
 li.abyp{color:#cdb2ff;font-weight:600;border-left:2px solid #b07cff;padding-left:6px;margin-top:2px}
+
+/* ---------- Guide ---------- */
+.guidebtn{display:inline-flex;align-items:center;gap:6px;color:var(--ink);text-decoration:none}
+#guideBtnBag{text-decoration:none}
+#campHelp{text-decoration:none;color:var(--muted)}

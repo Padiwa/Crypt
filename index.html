@@ -63,7 +63,7 @@
     <h3>Mods de l'arme</h3>
     <div id="modsBag" class="col"></div>
     <h3>Affichage</h3>
-    <div class="cx-actions" style="align-items:center"><span class="cx-hint" id="rendTxt" style="margin:0;flex:1 1 140px"></span><button class="cx-btn cx-btn--sm" id="rendBtn" style="flex:0 0 auto">Rendu standard</button><button class="cx-btn cx-btn--sm" id="setBtnBag" style="flex:0 0 auto">Réglages</button></div>
+    <div class="cx-actions" style="align-items:center"><span class="cx-hint" id="rendTxt" style="margin:0;flex:1 1 140px"></span><button class="cx-btn cx-btn--sm" id="rendBtn" style="flex:0 0 auto">Rendu standard</button><a class="cx-btn cx-btn--sm" id="guideBtnBag" href="aide/index.html#partie" target="_blank" rel="noopener" style="flex:0 0 auto">Guide</a><button class="cx-btn cx-btn--sm" id="setBtnBag" style="flex:0 0 auto">Réglages</button></div>
     </div>
     <footer class="cx-sheet__foot"><button class="cx-btn cx-btn--primary" id="closeBag">Reprendre</button></footer>
   </section>
@@ -100,6 +100,7 @@
     <div class="btnrow">
       <button class="btn main" id="startBtn" style="padding:12px 22px;font-size:17px">Entrer dans la crypte</button>
       <button class="btn" id="campBtn">Le Camp · <span class="coin"></span><span id="introGold">0</span></button>
+      <a class="btn guidebtn" id="guideBtn" href="aide/index.html" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.2-2.5 3.9"/><path d="M12 17h.01"/></svg>Guide</a>
       <button class="btn" id="setBtn" aria-label="Réglages"><svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>Réglages</button>
     </div>
     <p class="lead" id="bestTxt" style="font-size:13px"></p>
@@ -152,7 +153,7 @@
 <div class="overlay" id="camp" hidden>
   <section class="cx-sheet" id="campSheet" role="dialog" aria-label="Le Camp">
     <div class="cx-sheet__grip"></div>
-    <header class="cx-sheet__head"><h2 class="cx-sheet__title">Le Camp</h2><div class="cx-sheet__aside"><span class="purse" id="campGold"></span><button class="cx-icon-btn cx-icon-btn--ghost" id="closeCamp" aria-label="Fermer le Camp"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></header>
+    <header class="cx-sheet__head"><h2 class="cx-sheet__title">Le Camp</h2><div class="cx-sheet__aside"><span class="purse" id="campGold"></span><a class="cx-icon-btn cx-icon-btn--ghost" id="campHelp" href="aide/index.html#camp-equip" target="_blank" rel="noopener" aria-label="Aide sur cet onglet"><svg viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.2-2.5 3.9"/><path d="M12 17h.01"/></svg></a><button class="cx-icon-btn cx-icon-btn--ghost" id="closeCamp" aria-label="Fermer le Camp"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></header>
     <div class="cx-sheet__body">
       <div class="cx-tabs cx-tabs--icons" role="tablist" aria-label="Le Camp"><button class="tab cx-tab" role="tab" data-tab="equip" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M5 13a7 7 0 0 1 14 0v6h-4v-4H9v4H5z"/><path d="M12 6V3"/></svg><span>Héros</span></button><button class="tab cx-tab" role="tab" data-tab="arsenal" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M5 19 19 5M13 5h6v6M7 11l6 6M4 14l6 6"/></svg><span>Armurerie</span></button><button class="tab cx-tab" role="tab" data-tab="relics" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M6 3h12l3 6-9 12L3 9z"/><path d="M3 9h18"/></svg><span>Reliques</span></button><button class="tab cx-tab" role="tab" data-tab="mods" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M12 2l8.5 5v10L12 22l-8.5-5V7z"/><circle cx="12" cy="12" r="3"/></svg><span>Mods</span></button><button class="tab cx-tab" role="tab" data-tab="affix" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M4 8h14l-4-4M20 16H6l4 4"/></svg><span>Affixes</span></button><button class="tab cx-tab" role="tab" data-tab="forge" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M4 9h12a4 4 0 0 0 4-4H8"/><path d="M8 9v3a3 3 0 0 0 3 3h2a3 3 0 0 0 3-3V9M9 21h6M12 15v6"/></svg><span>Forge</span></button></div>
       <div class="col" id="campBody"></div>

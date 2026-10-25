@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Guide de la Crypte</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#0f0c12">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@500;700&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap">
+<style>
+/* Layout : un grimoire de campagne — colonne de texte + capture d'écran de téléphone en marge, sommaire en onglets collants. */
+:root{
+  --bg:#0f0c12; --panel:#1a161e; --panel2:#231d28; --line:#3b3241;
+  --ink:#ede3d1; --muted:#a69a90; --ember:#e8853b; --ember-ink:#1a0f08; --ess:#8fd3e0; --heal:#5fbf7a; --blood:#e0474b;
+  --r0:#bdb6a8; --r1:#7b95ff; --r2:#f0cf4a; --r3:#ff8a24; --r4:#ff5a7a; --r5:#e8383f; --r6:#b07cff;
+  --font-display:'Grenze Gotisch','Palatino Linotype',Georgia,serif;
+  --font-body:'Alegreya Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --step-0:16.5px; --step-1:19px; --step-2:25px; --step-3:34px; --step-4:clamp(40px,8vw,64px);
+  --gut:max(16px,env(safe-area-inset-left,0px));
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:120px}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 var(--step-0)/1.55 var(--font-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0 env(safe-area-inset-bottom,0px)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+img{max-width:100%;display:block}
+a{color:var(--ember)}
+a:focus-visible,button:focus-visible{outline:2px solid var(--ember);outline-offset:3px;border-radius:4px}
+.wrap{max-width:1040px;margin:0 auto}
+
+/* barre collante */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);
+  margin:0 calc(-1 * max(16px,env(safe-area-inset-left,0px))) 0 calc(-1 * max(16px,env(safe-area-inset-right,0px)));
+  padding:10px max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;flex-direction:column;gap:8px}
+.bar{display:flex;align-items:center;gap:12px;justify-content:space-between}
+.brand{font:700 22px/1 var(--font-display);letter-spacing:.02em;color:var(--ink);text-decoration:none}
+.back{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border-radius:999px;background:var(--ember);color:var(--ember-ink);
+  font:700 14px/1 var(--font-body);text-decoration:none;white-space:nowrap}
+.back svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+nav.toc{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none}
+nav.toc::-webkit-scrollbar{display:none}
+nav.toc a{flex:0 0 auto;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--muted);
+  font:700 13px/1 var(--font-body);text-decoration:none;white-space:nowrap}
+nav.toc a[aria-current="true"]{color:var(--ink);border-color:var(--ember);background:var(--panel2)}
+
+/* ouverture */
+header.hero{padding-block:36px 8px}
+.eyebrow{font:700 12px/1 var(--font-body);letter-spacing:.16em;text-transform:uppercase;color:var(--ember)}
+h1{font:700 var(--step-4)/.95 var(--font-display);margin:10px 0 14px;text-wrap:balance}
+.lead{font-size:var(--step-1);color:var(--muted);max-width:60ch;margin:0}
+.loop{list-style:none;padding:0;margin:22px 0 0;display:flex;flex-wrap:wrap;gap:8px;counter-reset:l}
+.loop li{counter-increment:l;display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;font-weight:500}
+.loop li::before{content:counter(l);display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--ember);color:var(--ember-ink);font:800 12px/1 var(--font-body)}
+
+/* sections */
+section{padding-block:40px 8px;border-bottom:1px solid var(--line)}
+section:last-of-type{border-bottom:0}
+.sec{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:28px 40px;align-items:start}
+.sec.wide{grid-template-columns:minmax(0,1fr)}
+.txt{min-width:0;max-width:66ch}
+h2{font:700 var(--step-3)/1 var(--font-display);margin:0 0 6px;text-wrap:balance}
+h2 small{display:block;font:700 12px/1 var(--font-body);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+h3{font:700 var(--step-1)/1.2 var(--font-body);margin:26px 0 6px;color:var(--ink)}
+p{margin:0 0 12px}
+.txt ul,.txt ol{margin:0 0 12px;padding-left:1.2em;display:grid;gap:4px}
+b,strong{font-weight:700;color:var(--ink)}
+.mut{color:var(--muted)}
+.tip{border-left:3px solid var(--ess);background:var(--panel);padding:10px 14px;border-radius:0 8px 8px 0;margin:14px 0}
+.tip b{color:var(--ess)}
+.warn{border-left-color:var(--blood)}
+.warn b{color:var(--blood)}
+
+/* captures */
+.shots{display:grid;gap:16px;position:sticky;top:130px}
+figure{margin:0}
+.shot{display:block;padding:0;border:0;background:none;cursor:zoom-in;width:100%}
+.shot img{width:100%;height:auto;border-radius:18px;border:1px solid var(--line);box-shadow:0 18px 40px -18px #000}
+figcaption{font-size:13.5px;color:var(--muted);margin-top:8px;line-height:1.4}
+.duo{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin:18px 0}
+
+/* tableaux */
+.tbl{overflow-x:auto;margin:12px 0 16px;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:15px;min-width:460px}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:700 12px/1.2 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--panel)}
+tr:last-child td{border-bottom:0}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* touches */
+kbd{display:inline-block;min-width:1.7em;padding:1px 6px;border:1px solid var(--line);border-bottom-width:3px;border-radius:6px;background:var(--panel2);
+  font:700 13px/1.5 var(--font-body);text-align:center;color:var(--ink)}
+
+/* échelle des raretés */
+.rar{list-style:none;padding:0;margin:14px 0;display:grid;gap:6px}
+.rar li{display:grid;grid-template-columns:110px minmax(0,1fr);gap:12px;align-items:baseline;padding:8px 12px;background:var(--panel);border-radius:8px;border-left:4px solid var(--c)}
+.rar li b{color:var(--c)}
+.rar li span{color:var(--muted);font-size:15px}
+
+/* légende numérotée de l'écran de jeu */
+.legend{counter-reset:g;list-style:none;padding:0}
+.legend li{counter-increment:g;display:grid;grid-template-columns:26px minmax(0,1fr);gap:10px}
+.legend li::before{content:counter(g);display:grid;place-items:center;width:24px;height:24px;border-radius:50%;border:2px solid var(--ember);color:var(--ember);font:800 12px/1 var(--font-body);margin-top:1px}
+
+footer{padding-block:28px 40px;color:var(--muted);font-size:14px}
+
+/* agrandissement */
+dialog{border:0;padding:0;background:transparent;max-width:min(94vw,520px);max-height:94vh}
+dialog::backdrop{background:rgba(5,3,8,.86)}
+dialog img{max-height:88vh;width:auto;border-radius:16px}
+dialog button{position:absolute;top:8px;right:8px;width:40px;height:40px;border-radius:50%;border:0;background:var(--panel2);color:var(--ink);font:700 20px/1 var(--font-body);cursor:pointer}
+
+@media (max-width:760px){
+  .sec{grid-template-columns:minmax(0,1fr)}
+  .shots{position:static;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));max-width:560px}
+  .shots.one{max-width:260px}
+  .rar li{grid-template-columns:minmax(0,1fr)}
+}
+</style>
+</head>
+<body>
+
+<div class="top"><div class="wrap">
+  <div class="bar"><a class="brand" href="#debut">Guide de la Crypte</a><a class="back" href="../index.html"><svg viewBox="0 0 24 24"><path d="M15 18 9 12l6-6"/></svg>Retour au jeu</a></div>
+  <nav class="toc" aria-label="Sommaire">
+    <a href="#demarrer">Premiers pas</a><a href="#heros">Héros</a><a href="#partie">En mission</a><a href="#missions">Missions</a>
+    <a href="#ennemis">Ennemis</a><a href="#difficulte">Difficulté</a><a href="#butin">Butin</a><a href="#camp-equip">Camp · Héros</a>
+    <a href="#camp-arsenal">Armurerie</a><a href="#camp-relics">Reliques</a><a href="#camp-mods">Mods</a><a href="#camp-affix">Affixes</a>
+    <a href="#camp-forge">Forge</a><a href="#reglages">Réglages</a><a href="#conseils">Conseils</a>
+  </nav>
+</div></div>
+
+<main class="wrap" id="debut">
+
+<header class="hero">
+  <div class="eyebrow">Manuel du joueur</div>
+  <h1>Crypte des Cendres</h1>
+  <p class="lead">Un jeu de hordes en vue de dessus : tu choisis un héros, tu descends dans la crypte, tu survis aux vagues, et tu reviens au Camp avec du butin pour devenir plus fort. Ce guide explique chaque écran et chaque système, captures à l'appui.</p>
+  <ol class="loop" aria-label="La boucle de jeu">
+    <li>Préparer son héros au Camp</li><li>Lancer une mission</li><li>Survivre et ramasser</li><li>Sortir avec le butin</li><li>Fabriquer, améliorer, recommencer</li>
+  </ol>
+</header>
+
+<section id="demarrer"><div class="sec">
+  <div class="txt">
+    <h2><small>Écran d'accueil</small>Premiers pas</h2>
+    <p>Tout se règle sur l'écran d'accueil, de haut en bas :</p>
+    <ul>
+      <li><b>Héros</b> : Guerrier, Archer ou Magicien (voir la section suivante).</li>
+      <li><b>Mission</b> : Survie, Défense ou Capture.</li>
+      <li><b>Biome</b> : Crypte des Cendres ou Abîmes gelés, plus durs et plus généreux.</li>
+      <li><b>Niveau</b> de départ : de 1 jusqu'au plus haut niveau déjà atteint. Plus il est haut, plus les monstres sont forts et le butin riche.</li>
+      <li><b>Difficulté</b> : Normal, Difficile, Cauchemar ou Tourment I à X.</li>
+      <li><b>Reliques équipées</b> : celles que tu veux ouvrir pendant la mission.</li>
+    </ul>
+    <p>En bas : <b>Entrer dans la crypte</b> lance la partie, <b>Le Camp</b> ouvre la progression permanente, l'engrenage ouvre les réglages et <b>Guide</b> ouvre cette page.</p>
+    <h3>Commandes</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>Action</th><th>Téléphone</th><th>Clavier</th></tr></thead>
+      <tbody>
+        <tr><td>Se déplacer</td><td>glisser le doigt n'importe où (joystick flottant)</td><td><kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> ou flèches</td></tr>
+        <tr><td>Attaquer</td><td colspan="2">automatique, plus rapide à l'arrêt (sauf Guerrier)</td></tr>
+        <tr><td>Esquive</td><td>bouton flèche (recharge 3 s, invulnérable un court instant)</td><td><kbd>Espace</kbd></td></tr>
+        <tr><td>Compétence</td><td>grand bouton orange</td><td><kbd>E</kbd></td></tr>
+        <tr><td>Potion</td><td>bouton fiole verte</td><td><kbd>R</kbd></td></tr>
+        <tr><td>Ultime</td><td>bouton au-dessus de la compétence, quand il est chargé</td><td><kbd>F</kbd></td></tr>
+        <tr><td>Pause et butin</td><td>sac en haut à droite</td><td><kbd>I</kbd></td></tr>
+        <tr><td>Choisir un bonus</td><td>toucher la carte</td><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></td></tr>
+      </tbody>
+    </table></div>
+    <p class="tip"><b>Installer le jeu.</b> Depuis le navigateur du téléphone, « Ajouter à l'écran d'accueil » l'installe comme une application, jouable même hors connexion.</p>
+  </div>
+  <div class="shots one">
+    <figure><button class="shot" type="button"><img src="img/menu.jpg" alt="Écran d'accueil : choix du héros, de la mission et du biome" width="780" height="1688" loading="lazy"></button><figcaption>L'écran d'accueil, Archer et Survie choisis.</figcaption></figure>
+  </div>
+</div></section>
+
+<section id="heros"><div class="sec wide">
+  <div class="txt" style="max-width:none">
+    <h2><small>Trois classes</small>Les héros</h2>
+    <p style="max-width:66ch">Chaque héros a ses statistiques, son attaque, une compétence, un ultime, ses propres armes et trois talents à acheter dans la Forge. Tous ont l'esquive et les potions (45 % de la vie rendue, 5 au maximum).</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Héros</th><th>Style</th><th>Compétence</th><th>Ultime</th></tr></thead>
+      <tbody>
+        <tr><td><b>Guerrier</b></td><td>Corps à corps, frappe tout ce qui l'approche même en marchant. Beaucoup de vie (160) et 15 % d'armure.</td><td><b>Tourbillon</b> (9 s) : tournoie en frappant autour de lui, dégâts subis divisés par deux.</td><td><b>Colère du Titan</b> : onde de choc géante et 3 s d'invulnérabilité.</td></tr>
+        <tr><td><b>Archer</b></td><td>Carreaux à distance, rapide et précis. Tire moins vite en courant.</td><td><b>Volée</b> (7 s) : 24 carreaux perforants dans toutes les directions.</td><td><b>Pluie d'acier</b> : 3 s de flèches sur les ennemis proches.</td></tr>
+        <tr><td><b>Magicien</b></td><td>Orbes qui explosent à l'impact, idéal contre les groupes. Fragile (100 PV).</td><td><b>Nova de givre</b> (7 s) : blesse, ralentit et efface les projectiles ennemis.</td><td><b>Pluie de météores</b> : 3 météores, en priorité sur les Gardiens.</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</div></section>
+
+<section id="partie"><div class="sec">
+  <div class="txt">
+    <h2><small>Pendant la partie</small>En mission</h2>
+    <ol class="legend">
+      <li><span><b>Barre de vie</b> en haut à gauche, avec tes PV écrits dedans. Le bleu par-dessus est ton bouclier. Sous 30 % de vie, la bordure clignote en rouge.</span></li>
+      <li><span><b>Niveau et minuteurs</b> : niveau de mission, temps avant le portail de sortie, avant le prochain Gardien, et avancement de la relique en cours.</span></li>
+      <li><span><b>Or</b> ramassé pendant la mission.</span></li>
+      <li><span><b>Sac</b> : met en pause et montre le butin, tes bonus et ta fiche. Une pastille signale du nouveau butin.</span></li>
+      <li><span><b>Anneau de vie</b> autour du héros : vert, puis jaune, puis rouge pulsant.</span></li>
+      <li><span><b>Boutons</b> : esquive, potion (avec le nombre restant), compétence, ultime (avec le nombre d'ennemis encore à abattre).</span></li>
+    </ol>
+    <h3>Expérience et bonus de niveau</h3>
+    <p>Chaque ennemi lâche un cristal d'expérience (barre fine tout en haut de l'écran). À chaque niveau, le jeu se met en pause et propose <b>3 bonus au hasard</b> : dégâts, vitesse, critique, projectiles, vie, soins, éléments… Chaque carte montre son rang (« rang 1 → 2 / 3 »). Un bonus au maximum n'est plus proposé. Les bonus durent jusqu'à la fin de la mission.</p>
+    <h3>Ultime</h3>
+    <p>Il se charge en abattant <b>60 ennemis</b> (un Gardien compte pour 10). Le bouton s'allume quand il est prêt. Les bonus Fureur et Apothéose le rendent plus fréquent et plus fort.</p>
+    <h3>Frénésie critique</h3>
+    <p><b>8 coups critiques en 5 secondes</b> déclenchent 5 s de bonus : projectiles plus rapides et perforants (Archer), explosions plus larges (Magicien), plus de portée et de vitesse (Guerrier). Le compteur « Critiques n / 8 » s'affiche sous la barre de vie.</p>
+    <h3>Altérations et sources sacrées</h3>
+    <p>Les zones vertes empoisonnent, les flammes brûlent, et le contact des Revenants de givre ralentit (Gelure). Les potions ne retirent pas ces effets : passe sur une <b>source sacrée</b> (une flèche bleue indique la plus proche). Elle se tarit puis réapparaît ailleurs 30 s plus tard.</p>
+  </div>
+  <div class="shots">
+    <figure><button class="shot" type="button"><img src="img/hud.jpg" alt="Écran de jeu avec barre de vie, minuteurs et boutons" width="780" height="1688" loading="lazy"></button><figcaption>L'écran de jeu.</figcaption></figure>
+    <figure><button class="shot" type="button"><img src="img/levelup.jpg" alt="Choix d'un bonus parmi trois cartes" width="780" height="1688" loading="lazy"></button><figcaption>Montée de niveau : un bonus sur trois.</figcaption></figure>
+  </div>
+</div></section>
+
+<section id="missions"><div class="sec">
+  <div class="txt">
+    <h2><small>Objectifs</small>Les missions</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Mode</th><th>Objectif</th><th>Récompense</th></tr></thead>
+      <tbody>
+        <tr><td><b>Survie</b></td><td>Tenir face aux hordes. Toutes les 3 minutes, un portail s'ouvre : sortir ou continuer au niveau suivant.</td><td>1 relique par manche</td></tr>
+        <tr><td><b>Défense</b></td><td>Protéger le cryopode au centre de la carte. Toutes les 5 vagues : sortir ou continuer.</td><td>1 relique et 1 équipement</td></tr>
+        <tr><td><b>Capture</b></td><td>Mettre la cible à terre, rester près d'elle pour la capturer, puis tenir 3 s dans la zone d'extraction. Une flèche dorée la montre.</td><td>1 relique et de l'or</td></tr>
+      </tbody>
+    </table></div>
+    <h3>Sortir ou continuer</h3>
+    <p><b>Sortir avec le butin</b> garde tout ce que tu as ramassé. <b>Continuer</b> fait monter le niveau : monstres plus forts, meilleur butin, et le niveau atteint devient disponible comme niveau de départ.</p>
+    <p class="tip warn"><b>Si tu meurs</b>, tu gardes la moitié de l'or, les mods et ce que tu as équipé depuis le sac. Les objets et reliques trouvés pendant la mission sont perdus. Équipe tout de suite ce qui compte vraiment.</p>
+  </div>
+  <div class="shots one">
+    <figure><button class="shot" type="button"><img src="img/extract.jpg" alt="Fin de manche : sortir avec le butin ou continuer" width="780" height="1688" loading="lazy"></button><figcaption>Fin de manche en Survie.</figcaption></figure>
+  </div>
+</div></section>
+
+<section id="ennemis"><div class="sec">
+  <div class="txt">
+    <h2><small>Ce qui t'attend</small>Ennemis, Gardiens et élites</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Ennemi</th><th>À savoir</th></tr></thead>
+      <tbody>
+        <tr><td><b>Goule</b></td><td>Fonce au contact, par petits groupes. Le gros des hordes.</td></tr>
+        <tr><td><b>Chauve-souris</b></td><td>Essaims rapides à la trajectoire ondulante, très peu de vie.</td></tr>
+        <tr><td><b>Squelette archer</b></td><td>Garde ses distances et tire. Va le chercher.</td></tr>
+        <tr><td><b>Brute</b></td><td>Lente et solide. Un signal rouge annonce sa charge : esquive sur le côté.</td></tr>
+        <tr><td><b>Empoisonneur</b></td><td>Lance des fioles. Le cercle d'alerte laisse 1 s pour sortir de la zone toxique.</td></tr>
+        <tr><td><b>Pyromancien</b></td><td>Même principe, avec des bombes qui laissent des flammes.</td></tr>
+        <tr><td><b>Gelée</b></td><td>Bondit vers toi, puis se divise en 2, puis en 4 en mourant : 7 morceaux à abattre.</td></tr>
+        <tr><td><b>Revenant de givre</b></td><td>Abîmes gelés seulement. Son contact te ralentit (Gelure).</td></tr>
+      </tbody>
+    </table></div>
+    <h3>Gardiens</h3>
+    <p>Un Gardien surgit à intervalle régulier (minuteur en haut). Il tire des anneaux de projectiles, charge, et invoque des goules sous la moitié de sa vie. Sa barre s'affiche en haut de l'écran. Il lâche toujours une relique, deux équipements, des mods, une potion et de l'essence.</p>
+    <h3>Élites</h3>
+    <p>Certains groupes contiennent une élite : plus grande, quatre fois plus de vie, un anneau coloré et son nom au-dessus d'elle. Elle a un pouvoir : <b>Rapide</b>, <b>Bouclier</b> (encaisse moitié moins tant qu'elle a plus de la moitié de sa vie), <b>Vampire</b> (se soigne en frappant) ou <b>Explosif</b> (laisse des flammes en mourant). Elle lâche toujours un bon objet.</p>
+  </div>
+  <div class="shots one">
+    <figure><button class="shot" type="button"><img src="img/boss.jpg" alt="Un Gardien et sa barre de vie en haut de l'écran" width="780" height="1688" loading="lazy"></button><figcaption>Le Gardien des Cendres et sa barre de vie.</figcaption></figure>
+  </div>
+</div></section>
+
+<section id="difficulte"><div class="sec">
+  <div class="txt">
+    <h2><small>Choisir son défi</small>Difficulté et biomes</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Difficulté</th><th>Gardiens</th><th>Butin et or</th><th>Particularité</th></tr></thead>
+      <tbody>
+        <tr><td><b>Normal</b></td><td class="n">1 toutes les 60 s</td><td class="n">normal</td><td>pour commencer</td></tr>
+        <tr><td><b style="color:var(--r1)">Difficile</b></td><td class="n">2 toutes les 45 s</td><td class="n">+50 %</td><td></td></tr>
+        <tr><td><b style="color:var(--r2)">Cauchemar</b></td><td class="n">3 toutes les 35 s</td><td class="n">+100 %</td><td></td></tr>
+        <tr><td><b style="color:#ff6a3a">Tourment I à X</b></td><td class="n">4 à 5, de plus en plus souvent</td><td class="n">+200 % à +650 %</td><td>monstres bien plus forts, affixes plus élevées, objets <b style="color:var(--r4)">Ancestraux</b></td></tr>
+      </tbody>
+    </table></div>
+    <p>Le palier de Tourment se règle avec le sélecteur qui apparaît sous les difficultés.</p>
+    <h3>Biomes</h3>
+    <p><b>Crypte des Cendres</b> : le biome d'origine. <b>Abîmes gelés</b> : cavernes de glace où les monstres ont 30 % de vie et 20 % de dégâts en plus, mais le butin est 30 % plus riche. C'est le seul endroit où tombent les affixes de givre (Gel, Dégâts contre ralentis, Éclats de glace), les reliques de givre et les schémas d'équipement de givre.</p>
+  </div>
+  <div class="shots one">
+    <figure><button class="shot" type="button"><img src="img/givre.jpg" alt="Partie dans les Abîmes gelés, sol de glace et neige" width="780" height="1688" loading="lazy"></button><figcaption>Les Abîmes gelés.</figcaption></figure>
+  </div>
+</div></section>
+
+<section id="butin"><div class="sec">
+  <div class="txt">
+    <h2><small>Ce que tu ramènes</small>Butin et raretés</h2>
+    <p>Les monstres lâchent de l'or, de l'équipement, des mods, des reliques, des fragments de schémas et des potions. Approche-toi pour les ramasser. Les objets ont 5 emplacements : arme, armure (vie), amulette (critique), bottes (vitesse) et anneau (dégâts), et de 1 à 4 propriétés appelées <b>affixes</b>.</p>
+    <ul class="rar" aria-label="Raretés de la plus commune à la plus rare">
+      <li style="--c:var(--r0)"><b>Commun</b><span>1 affixe.</span></li>
+      <li style="--c:var(--r1)"><b>Magique</b><span>2 affixes.</span></li>
+      <li style="--c:var(--r2)"><b>Rare</b><span>3 affixes.</span></li>
+      <li style="--c:var(--r3)"><b>Légendaire</b><span>4 affixes renforcées, nom unique.</span></li>
+      <li style="--c:var(--r4)"><b>Ancestral</b><span>Uniquement en Tourment. Affixes encore plus fortes.</span></li>
+      <li style="--c:var(--r5)"><b>Sanguin</b><span>Exclusif aux reliques Sanguine. Modèles fixes, affixes ×1,8.</span></li>
+      <li style="--c:var(--r6)"><b>Abyssal</b><span>Exclusif aux reliques Abysse. Affixes ×2,1 et un pouvoir unique.</span></li>
+    </ul>
+    <h3>Pendant la mission</h3>
+    <p>Le <b>sac</b> (pause) liste ce que tu as trouvé. Toucher un objet montre sa fiche, comparée à ce que tu portes (▲ vert, ▼ rouge). Tu peux l'équiper tout de suite pour ne pas le perdre en cas de mort. « Équiper le meilleur » choisit pour toi.</p>
+    <h3>Alertes de butin</h3>
+    <p>Un flash lumineux, un son et un grand faisceau doré au sol signalent un légendaire, ou un objet qui porte une affixe que tu recherches avec une valeur meilleure que ton équipement. Les affixes à surveiller se choisissent dans l'onglet Affixes du Camp.</p>
+  </div>
+  <div class="shots one">
+    <figure><button class="shot" type="button"><img src="img/bag.jpg" alt="Le sac en pause : équipement porté, statistiques et butin de la partie" width="780" height="1688" loading="lazy"></button><figcaption>Le sac : équipement, statistiques, bonus et butin.</figcaption></figure>
+  </div>
+</div></section>
+
+<section id="camp-equip"><div class="sec">
+  <div class="txt">
+    <h2><small>Camp · onglet 1</small>Héros et coffre</h2>
+    <p>Le Camp regroupe toute la progression permanente en six onglets. Une pastille orange sur un onglet signale qu'il y a quelque chose à faire. Le bouton <b>?</b> en haut du Camp ouvre ce guide à la bonne section.</p>
+    <p>L'onglet <b>Héros</b> montre tes 5 emplacements, tes statistiques et ton <b>coffre</b> (filtrable par type, triable par rareté, amélioration, niveau ou date). Touche un objet pour voir sa fiche et le comparer.</p>
+    <ul>
+      <li><b>Équiper le meilleur</b> remplit chaque emplacement avec l'objet le plus fort du coffre.</li>
+      <li><b>Améliorer</b> : chaque objet monte de +0 à +100 avec de l'essence, chaque niveau ajoute 2 % de ses valeurs (×3 à +100).</li>
+      <li><b>Verrouiller</b> : le cadenas protège un objet du recyclage.</li>
+      <li><b>Recycler</b> transforme un objet en essence. « Tout recycler » garde les objets verrouillés, améliorés, Prime, Sanguins et Abyssaux.</li>
+    </ul>
+    <p class="tip"><b>Essence</b> (losange bleu) : la deuxième monnaie, gagnée en recyclant, en ouvrant des reliques et sur les Gardiens. Elle sert aux améliorations, aux mods, au raffinage et aux fusions.</p>
+  </div>
+  <div class="shots">
+    <figure><button class="shot" type="button"><img src="img/camp_equip.jpg" alt="Onglet Héros du Camp : emplacements, statistiques et coffre" width="780" height="1688" loading="lazy"></button><figcaption>Équipement et statistiques.</figcaption></figure>
+    <figure><button class="shot" type="button"><img src="img/camp_item.jpg" alt="Fiche d'un objet Abyssal avec son pouvoir" width="780" height="1688" loading="lazy"></button><figcaption>La fiche d'un objet Abyssal.</figcaption></figure>
+  </div>
+</div></section>
+
+<section id="camp-arsenal"><div class="sec">
+  <div class="txt">
+    <h2><small>Camp · onglet 2</small>Armurerie</h2>
+    <p>Les armes et les objets <b>Prime</b> ne tombent pas tout faits : ils se fabriquent à partir d'un <b>schéma en 3 fragments</b> et d'un peu d'or. Les fragments viennent des reliques, et parfois des monstres dès le niveau 2.</p>
+    <ul>
+      <li>Chaque héros a 4 armes à fabriquer, de magique à légendaire, en plus de son arme de départ.</li>
+      <li>Les objets Prime (armures, amulettes, bottes, anneaux) servent à tous les héros. Ceux de givre viennent des Abîmes gelés.</li>
+      <li><b>Tout fabriquer</b> fabrique tout ce qui a ses 3 fragments tant que l'or suffit.</li>
+      <li><b>Recycler</b> une arme fabriquée non équipée ou un objet Prime rend de l'essence et 1 fragment de son schéma. <b>Tout recycler</b> le fait pour tous.</li>
+    </ul>
+    <p>Chaque recette indique dans quelles reliques trouver ses fragments manquants.</p>
+  </div>
+  <div class="shots one">
+    <figure><button class="shot" type="button"><img src="img/camp_arsenal.jpg" alt="Armurerie : armes du héros et fragments" width="780" height="1688" loading="lazy"></button><figcaption>L'Armurerie, avec les boutons groupés.</figcaption></figure>
+  </div>
+</div></section>
+
+<section id="camp-relics"><div class="sec">
+  <div class="txt">
+    <h2><small>Camp · onglet 3</small>Reliques</h2>
+    <p>Les reliques sont des coffres à ouvrir <b>en mission</b>. Il en existe quatre niveaux : <b style="color:#c9a46a">Cendre</b>, <b style="color:#a9bccf">Ossuaire</b>, <b style="color:#e07a7a">Sanguine</b> et <b style="color:#f0cf4a">Abysse</b>. Chacune contient 6 récompenses possibles.</p>
+    <h3>Ouvrir une relique : la Fissure</h3>
+    <ol>
+      <li>Au Camp, équipe une ou plusieurs reliques, dans l'ordre d'ouverture voulu.</li>
+      <li>En mission, une partie des ennemis sont <b>corrompus</b> (halo doré) et lâchent un réactif.</li>
+      <li><b>10 réactifs</b> ouvrent la relique en cours, puis on passe à la suivante.</li>
+      <li>Réussis la mission : chaque relique ouverte donne sa récompense et 25 essence. En cas d'échec, rien n'est consommé.</li>
+    </ol>
+    <h3>Intacte ou éclatante</h3>
+    <p>Le <b>raffinage</b> (50 essence) rend une relique éclatante : les récompenses rares deviennent bien plus probables.</p>
+    <div class="tbl"><table>
+      <thead><tr><th>État</th><th>Chaque commune</th><th>Chaque peu commune</th><th>Rare</th></tr></thead>
+      <tbody><tr><td>Intacte</td><td class="n">25,33 %</td><td class="n">11 %</td><td class="n">2 %</td></tr><tr><td>Éclatante</td><td class="n">16,67 %</td><td class="n">20 %</td><td class="n">10 %</td></tr></tbody>
+    </table></div>
+    <h3>Fusion de reliques</h3>
+    <p>3 reliques d'un même niveau donnent 1 relique du niveau au-dessus (20, 40 puis 80 essence). S'il en manque, la <b>fusion en chaîne</b> les crée d'abord avec les niveaux inférieurs. 3 reliques Abysse donnent un fragment légendaire de ton choix.</p>
+    <h3>Objets exclusifs</h3>
+    <p>Les reliques <b style="color:var(--r5)">Sanguine</b> peuvent donner des objets <b style="color:var(--r5)">Sanguins</b>, et les reliques <b style="color:var(--r2)">Abysse</b> des objets <b style="color:var(--r6)">Abyssaux</b>. On ne les trouve nulle part ailleurs. Chaque objet Abyssal porte un pouvoir unique, lié à l'objet, qui ne peut pas être transféré :</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Pouvoir</th><th>Effet</th></tr></thead>
+      <tbody>
+        <tr><td><b style="color:var(--r6)">Moisson</b></td><td>Chaque ennemi tué : +3 à 4 % de dégâts pendant 5 s, jusqu'à 10 fois.</td></tr>
+        <tr><td><b style="color:var(--r6)">Égide du Néant</b></td><td>Chaque ennemi tué donne du bouclier, jusqu'à 30 % de tes PV.</td></tr>
+        <tr><td><b style="color:var(--r6)">Onde du Vide</b></td><td>Toutes les 5 s, une onde violette frappe tous les ennemis proches.</td></tr>
+        <tr><td><b style="color:var(--r6)">Jugement</b></td><td>Les ennemis presque morts (sous 8 à 12 % de vie) meurent sur le coup, sauf les Gardiens.</td></tr>
+        <tr><td><b style="color:var(--r6)">Faille</b></td><td>Un critique peut rebondir sur 3 ennemis de plus.</td></tr>
+        <tr><td><b style="color:var(--r6)">Chasse royale</b></td><td>+35 à 55 % de dégâts contre les Gardiens et les élites.</td></tr>
+      </tbody>
+    </table></div>
+    <p>Dans la fiche d'une relique, chaque récompense affiche son état (possédé, fragments manquants, « abyssal » ou « exclusif ») et ses chances.</p>
+  </div>
+  <div class="shots">
+    <figure><button class="shot" type="button"><img src="img/camp_relics.jpg" alt="Onglet Reliques : collection et file d'ouverture" width="780" height="1688" loading="lazy"></button><figcaption>La collection et la file d'ouverture.</figcaption></figure>
+    <figure><button class="shot" type="button"><img src="img/relic_detail.jpg" alt="Fiche de la relique Prunelle du Néant avec ses récompenses" width="780" height="1688" loading="lazy"></button><figcaption>Fiche d'une relique Abysse.</figcaption></figure>
+  </div>
+</div></section>
+
+<section id="camp-mods"><div class="sec">
+  <div class="txt">
+    <h2><small>Camp · onglet 4</small>Mods</h2>
+    <p>Les mods sont des cartes de bonus permanentes, trouvées sur les monstres. Ils se placent dans deux builds :</p>
+    <ul>
+      <li><b>Build d'arme</b> : 4 cases, propre à chaque arme. Changer d'arme change ses mods.</li>
+      <li><b>Build de héros</b> : 3 à 6 cases (les suivantes se débloquent avec des fragments) et une case d'<b>Aura</b>.</li>
+    </ul>
+    <p>Chaque build a une <b>capacité</b> : un mod coûte sa valeur plus son rang. La capacité monte avec le Catalyseur et le Réacteur de la Forge, et avec la <b>maîtrise</b> (1 point par ennemi tué, 10 rangs).</p>
+    <h3>Polarités</h3>
+    <p>Chaque mod a une polarité : <b style="color:#e8853b">▲ Braise</b> (attaque), <b style="color:#5fbf7a">■ Rempart</b> (défense) ou <b style="color:#b9a6f0">◆ Spirale</b> (pouvoir). Aligner une case sur une polarité divise par deux le coût des mods de cette polarité, et augmente de 25 % celui des autres.</p>
+    <h3>Fusion et filtres</h3>
+    <p>Fusionner un mod avec de l'essence monte son rang. Un doublon trouvé se change en essence. Les puces au-dessus de la collection filtrent par polarité, et toucher le nom de polarité d'une case montre les mods qui lui vont, du moins cher au plus cher.</p>
+  </div>
+  <div class="shots one">
+    <figure><button class="shot" type="button"><img src="img/camp_mods.jpg" alt="Onglet Mods : build du héros, capacité et polarités" width="780" height="1688" loading="lazy"></button><figcaption>Le build du héros et son Aura.</figcaption></figure>
+  </div>
+</div></section>
+
+<section id="camp-affix"><div class="sec">
+  <div class="txt">
+    <h2><small>Camp · onglet 5</small>Affixes</h2>
+    <p>Cet onglet sert à déplacer les meilleures propriétés d'un objet à l'autre.</p>
+    <h3>Transfert</h3>
+    <ol>
+      <li>Touche <b>Source</b> puis un objet : celui qui sera détruit.</li>
+      <li>Choisis l'affixe à prendre.</li>
+      <li>Touche <b>Cible</b> puis l'objet qui la recevra.</li>
+      <li>L'aperçu montre la ligne retirée (rouge) et la ligne ajoutée (vert). Valide.</li>
+    </ol>
+    <p>Si la cible est pleine, choisis l'affixe à remplacer. Le transfert coûte de l'essence selon la rareté de la source.</p>
+    <h3>Fusion</h3>
+    <p>Si la cible a déjà cette affixe, les deux valeurs fusionnent : la plus forte + 50 % de la plus faible, 3 fois au maximum par affixe.</p>
+    <h3>Chercher par affixe</h3>
+    <p>La liste regroupe toutes les affixes de tes objets, filtrables en Offensives, Défensives et Utilitaires, avec la meilleure valeur et l'objet qui la porte. « Prendre » désigne directement cet objet comme source.</p>
+    <h3>Alertes de butin</h3>
+    <p>Coche les affixes que tu recherches : en mission, un flash t'avertira quand l'une tombe avec une meilleure valeur que ton équipement.</p>
+    <p class="tip"><b>À savoir.</b> Les pouvoirs abyssaux ne se transfèrent pas et ne se remplacent pas.</p>
+  </div>
+  <div class="shots one">
+    <figure><button class="shot" type="button"><img src="img/camp_affix.jpg" alt="Onglet Affixes : source, cible et recherche par affixe" width="780" height="1688" loading="lazy"></button><figcaption>Source, cible et recherche par affixe.</figcaption></figure>
+  </div>
+</div></section>
+
+<section id="camp-forge"><div class="sec">
+  <div class="txt">
+    <h2><small>Camp · onglet 6</small>Forge et prestige</h2>
+    <p>La Forge vend des améliorations permanentes avec l'or. Chaque niveau coûte 1,7 fois le précédent.</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Amélioration</th><th>Effet par niveau</th><th>Niveaux</th></tr></thead>
+      <tbody>
+        <tr><td>Vigueur</td><td>+8 % de vie maximale</td><td class="n">5</td></tr>
+        <tr><td>Force</td><td>+6 % de dégâts</td><td class="n">5</td></tr>
+        <tr><td>Célérité</td><td>+5 % de vitesse d'attaque</td><td class="n">5</td></tr>
+        <tr><td>Alchimie</td><td>+1 potion au départ</td><td class="n">3</td></tr>
+        <tr><td>Fortune</td><td>+15 % d'or ramassé</td><td class="n">4</td></tr>
+        <tr><td>Flair</td><td>butin plus rare</td><td class="n">3</td></tr>
+        <tr><td>Catalyseur</td><td>+3 de capacité de mods d'arme</td><td class="n">4</td></tr>
+        <tr><td>Réacteur</td><td>+3 de capacité de mods de héros</td><td class="n">4</td></tr>
+      </tbody>
+    </table></div>
+    <p>On y achète aussi les <b>3 talents</b> de chaque héros (150, 300 et 500 or).</p>
+    <h3>Prestige</h3>
+    <p>Quand les 8 améliorations sont au maximum, le <b>prestige</b> s'ouvre pour chaque héros, sans limite de niveau. Chaque niveau coûte de l'or et de l'essence et donne 1 point à placer dans 12 statistiques (vie, dégâts, critique, portée des compétences, rayon d'explosion…). Les points se redistribuent gratuitement.</p>
+    <h3>Sauvegarde</h3>
+    <p>Ta progression est enregistrée dans le navigateur. En bas de la Forge, tu peux l'exporter en fichier et l'importer sur un autre appareil.</p>
+  </div>
+  <div class="shots one">
+    <figure><button class="shot" type="button"><img src="img/camp_forge.jpg" alt="La Forge : améliorations permanentes et prestige" width="780" height="1688" loading="lazy"></button><figcaption>Les améliorations de la Forge.</figcaption></figure>
+  </div>
+</div></section>
+
+<section id="reglages"><div class="sec">
+  <div class="txt">
+    <h2><small>Confort</small>Réglages</h2>
+    <p>L'engrenage de l'écran d'accueil, ou le bouton Réglages du sac, ouvre :</p>
+    <ul>
+      <li><b>Son</b> : volume des effets et de la musique.</li>
+      <li><b>Tremblement</b> de l'écran : Normal, Réduit ou Désactivé.</li>
+      <li><b>Flash de butin</b>, <b>chiffres de dégâts</b> et <b>vibrations</b> (Android).</li>
+      <li><b>Rendu</b> : WebGL, plus fluide, ou standard si ton appareil a du mal.</li>
+    </ul>
+    <p>Ces réglages sont propres à chaque appareil.</p>
+  </div>
+  <div class="shots one">
+    <figure><button class="shot" type="button"><img src="img/settings.jpg" alt="Réglages : son, tremblement, flash et rendu" width="780" height="1688" loading="lazy"></button><figcaption>Les réglages.</figcaption></figure>
+  </div>
+</div></section>
+
+<section id="conseils"><div class="sec wide">
+  <div class="txt">
+    <h2><small>Pour bien progresser</small>Conseils</h2>
+    <ol>
+      <li><b>Sors souvent au début.</b> Un butin ramené vaut mieux qu'une manche de trop.</li>
+      <li><b>Équipe pendant la partie</b> les objets importants : ils sont gardés même si tu meurs.</li>
+      <li><b>Garde toujours une relique équipée</b> : les réactifs sont gratuits, et c'est la seule source de fragments sûre.</li>
+      <li><b>Raffine</b> les reliques dont tu veux la récompense rare : ses chances passent de 2 % à 10 %.</li>
+      <li><b>Monte la Forge</b> en priorité (Force, Vigueur, Célérité), puis le Catalyseur et le Réacteur pour les mods.</li>
+      <li><b>Repère tes niveaux</b> : un équipement rare autour de +25 tient jusqu'aux niveaux 20 à 30, un légendaire autour de +60 ouvre le niveau 50 et les premiers paliers de Tourment.</li>
+      <li><b>Les Abîmes gelés</b> donnent 30 % de butin en plus : passe-y dès que ton héros tient le niveau.</li>
+    </ol>
+  </div>
+</div></section>
+
+</main>
+
+<footer class="wrap">Crypte des Cendres · guide à jour de la version 52 du jeu. <a href="../index.html">Retour au jeu</a></footer>
+
+<dialog id="zoom" aria-label="Capture agrandie"><button type="button" id="zoomX" aria-label="Fermer">×</button><img id="zoomImg" alt=""></dialog>
+
+<script>
+(()=>{
+  const dlg=document.getElementById('zoom'),zi=document.getElementById('zoomImg');
+  document.querySelectorAll('.shot').forEach(b=>b.addEventListener('click',()=>{const i=b.querySelector('img');zi.src=i.src;zi.alt=i.alt;try{dlg.showModal()}catch(e){dlg.setAttribute('open','')}}));
+  document.getElementById('zoomX').onclick=()=>dlg.close();
+  dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.close()});
+  // onglet de sommaire actif
+  const links=[...document.querySelectorAll('nav.toc a')],map=new Map(links.map(a=>[a.getAttribute('href').slice(1),a]));
+  const io=new IntersectionObserver(es=>{for(const e of es)if(e.isIntersecting){links.forEach(a=>a.removeAttribute('aria-current'));const a=map.get(e.target.id);if(a){a.setAttribute('aria-current','true');const n=a.parentElement;n.scrollLeft=a.offsetLeft-(n.clientWidth-a.offsetWidth)/2}}},{rootMargin:'-40% 0px -55% 0px'});
+  document.querySelectorAll('section[id]').forEach(s=>io.observe(s));
+  // ouverture directe sur une section (bouton ? du Camp, Guide de la pause)
+  const go=()=>{const id=(location.hash||'').slice(1),el=id&&document.getElementById(id);if(el)el.scrollIntoView({behavior:'auto',block:'start'})};
+  if(location.hash){requestAnimationFrame(go);window.addEventListener('load',go,{once:true})}
+})();
+</script>
+</body>
+</html>
