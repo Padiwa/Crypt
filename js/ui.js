@@ -73,7 +73,8 @@ function drawBag(){
 }
 /* ---------- Montée de niveau ---------- */
 function gainXp(v){
-  G.xp+=v*(1+(S.xpPct||0)/100);
+  // En coopération chacun reçoit l'expérience de tous les monstres, plus nombreux : on la divise d'autant pour garder le rythme du solo.
+  G.xp+=v*(1+(S.xpPct||0)/100)/(typeof NET!=='undefined'&&NET.on?coopCnt():1);
   while(G.xp>=xpNeed(G.hl)){G.xp-=xpNeed(G.hl);G.hl++;G.pend++}
   if(G.pend&&$('lvlup').hidden&&!G.over)showLevelUp();
 }

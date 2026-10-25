@@ -104,7 +104,7 @@ Les ennemis apparaissent hors écran autour du héros ; ceux qui s'éloignent tr
 
 ## Progression en partie
 
-Chaque ennemi lâche un cristal d'expérience (goule et chauve-souris 1, archer 2, brute 5, Gardien 30). Passer du niveau n au suivant demande 10 + 14 × n + 2 × n² points (au lieu de 5 + 7 × n), soit environ 9 niveaux sur une première manche au niveau 1 (18 avant) et 14 au niveau 40 (30 avant), mesuré par le bot. À chaque niveau, le jeu se met en pause et propose 3 bonus au hasard ; ils durent jusqu'à la fin de la mission.
+Chaque ennemi lâche un cristal d'expérience (goule et chauve-souris 1, archer 2, brute 5, Gardien 30). Passer du niveau n au suivant demande 120 × 1,32^(n−1) + 20 × n points (120 ou plus au départ, puis 32 % de plus à chaque niveau : 140, 198, 269, 356, 464, 601, 775…), soit environ 5 niveaux sur une première manche au niveau 1, 8 au niveau 40 et 13 en trois manches, mesuré par le bot (historique : 18 puis 9 sur la première manche). En coopération, l'expérience de chaque cristal est divisée par le facteur de nombre de monstres (1 + 0,4 × (joueurs − 1)), car chacun la reçoit de tous les monstres. À chaque niveau, le jeu se met en pause et propose 3 bonus au hasard ; ils durent jusqu'à la fin de la mission.
 
 | Bonus | Effet par rang | Rangs | Classes |
 | --- | --- | --- | --- |
@@ -230,6 +230,18 @@ Au niveau L, les chances d'équipement, de relique et de fragment sont multipli�
 | Éclatante (raffinage : 50 essence) | 16,67 % | 20 % | 10 % |
 
 **Schémas** : chaque arme ou équipement Prime se fabrique avec 3 fragments plus de l'or. La rareté du schéma suit le niveau de la relique : armes magiques dans les reliques Cendre, armes rares de Cendre à Sanguine, armes légendaires et objets Prime **uniquement dans les reliques Abysse** (Couronne du Blizzard pour les Prime de givre) et par les reliques forgées (fusion de 3 Abysse), toujours ouvertes en mission. En mission, les fragments qui tombent des monstres et des Gardiens ne concernent plus que les armes magiques et rares du héros joué. Chaque récompense de fragment d'une relique donne un fragment manquant de ce schéma s'il en reste un (sinon un doublon au hasard), pour que tout schéma présent dans une relique soit complétable. Les objets Sanguins et Abyssaux restent exclusifs aux reliques Sanguine et Abysse. En jeu tombent les raretés Commun à Légendaire (objets aléatoires) et Ancestral en Tourment.
+
+**Armes abyssales** (rareté Abyssal, une par héros, fabrication 1 200 or) : fragments uniquement dans trois nouvelles reliques Abysse (missions 41 et plus), jamais en mission ni par la fusion ou les reliques forgées. Chaque relique a 2 récompenses sur 6 pour son arme (environ 13 % par relique intacte, 30 % par éclatante).
+
+| Arme | Héros | Dégâts | Bonus | Relique |
+| --- | --- | --- | --- | --- |
+| Arc du Vide éternel | Archer | 42 | +2 projectiles, perce 2, +25 % vitesse, +50 % dég. crit., Faille 25 % | Écharde du Vide |
+| Lame de l'Abîme | Guerrier | 46 | +30 % portée, 4 % vol de vie, +12 % crit., +60 % dég. crit., Moisson 4 % | Cœur de l'Abîme |
+| Sceptre du Néant | Magicien | 42 | +1 projectile, +50 % rayon, +50 % compétence, +12 % crit., Onde du Vide 300 % | Œil du Néant éternel |
+
+Armurerie : toutes les recettes (armes des 3 héros, objets Prime, armes abyssales) affichent les fragments manquants et une liste « Où les trouver ». Pour chaque relique qui contient le schéma : niveau, tranche de missions, nombre de récompenses concernées, exemplaires possédés et boutons d'équipement. S'y ajoutent les autres sources : monstres pour les armes magiques et rares, relique forgée pour les légendaires, mention « uniquement dans ces reliques » pour les abyssales.
+
+Sauvegarde : « Exporter » télécharge aussitôt crypte-sauvegarde-AAAA-MM-JJ.json, avec « Partager le fichier » (Web Share) sur téléphone et « Copier le JSON » en secours. L'import « Depuis un fichier » le relit tel quel, après confirmation.
 
 **Recyclage des objets fabriqués** : à l'Armurerie, une arme fabriquée et non équipée peut être recyclée (confirmation) contre 40 × (rareté + 1) essence + la moitié de l'essence investie dans ses améliorations, et 1 fragment de son schéma (en priorité un fragment manquant) ; elle perd son niveau et ses affixes ajoutées, ses mods restent dans la collection. Un objet Prime du coffre se recycle de la même façon (essence + 1 fragment). « Tout recycler » continue d'épargner les objets Prime.
 
