@@ -657,6 +657,21 @@ button.cx-line[aria-pressed="true"]::before{content:"→"; display:inline-block;
 .cx-sheet .cx-sheet__body{gap:var(--space-4)}
 .cx-sheet__body>.col{gap:var(--space-4)}
 .cx-sheet__foot[hidden]{display:none!important}
+.afind{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.afind>li{border:1px solid var(--line);border-radius:var(--radius-md);background:var(--sunk);overflow:hidden}
+.afind>li.open{border-color:var(--line-strong)}
+.afrow{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:grid;grid-template-columns:1fr auto auto;gap:2px 10px;align-items:center;padding:9px 12px;min-height:var(--control-md)}
+.afrow:focus-visible{outline:2px solid var(--ember-hi);outline-offset:-2px}
+.afrow:hover{background:var(--panel-2)}
+.afn{font:700 14px/1.25 var(--font-body);color:var(--ink);text-transform:none}
+.afn::first-letter{text-transform:uppercase}
+.afv{font:700 14px/1.2 var(--font-body);color:var(--heal);font-variant-numeric:tabular-nums;white-space:nowrap;max-width:46vw;overflow:hidden;text-overflow:ellipsis}
+.afs{grid-column:1/3;font:400 12px/1.3 var(--font-body);color:var(--muted)}
+.afc{grid-column:3;grid-row:1/3;color:var(--muted);font-size:14px}
+.afind ul{list-style:none;margin:0;padding:4px 12px 10px;display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line)}
+.afind ul li{display:flex;align-items:center;justify-content:space-between;gap:10px;font:400 13px/1.3 var(--font-body);color:var(--muted);padding-top:6px}
+.afind ul li .cx-btn{margin:0 0 3px;flex:none}
+.afv2{color:var(--ink);font-weight:700}
 .cx-sheet__foot.stack{flex-direction:column;gap:6px}
 .cx-sheet__foot.stack .cx-hint{margin:0;text-align:center}
 .cx-sheet__foot .row{display:flex;gap:var(--space-2)}
@@ -2422,7 +2437,29 @@ const xfV=(it,k,v)=>AFF[k].t(NOSCALE[k]?v:fmtN(v*upMul(it.up)));
 function xfCard(lab,it,where,lines,extra=''){
   return `<div class="xfc${extra}"><span class="lab">${lab}</span>${it?`<span class="nm" style="color:${RAR[it.r].c}">${esc(itemName(it))}</span><span class="sub">${RAR[it.r].n} · ${where}</span>
     <ul><li class="base">${baseTxtOf(it.slot,fmtN(it.base.v*upMul(it.up)))}</li>${lines}</ul>`:`<span class="sub">${lines}</span>`}</div>`}
-let afF='all',afP=0;
+let afF='all',afP=0,afCat='all',afOpen='';
+const AFF_CAT={dmgPct:'off',apsPct:'off',crit:'off',critDmg:'off',novaPct:'off',skillRad:'off',burn:'off',multi:'off',pierce:'off',reach:'off',splash:'off',hp:'def',armor:'def',regen:'def',leech:'def',speed:'uti',cdr:'uti'};
+const AFF_NAME={dmgPct:'Dégâts',apsPct:'Vitesse d\'attaque',crit:'Chances de critique',critDmg:'Dégâts critiques',hp:'Points de vie',armor:'Réduction des dégâts',speed:'Vitesse de déplacement',regen:'Régénération',cdr:'Temps de recharge',skillRad:'Portée des compétences',novaPct:'Dégâts de compétence',burn:'Embrasement',multi:'Projectiles par tir',leech:'Vol de vie',reach:'Portée de frappe',splash:'Rayon d\'explosion',pierce:'Transpercement'};
+const AFF_CATN={off:'Offensives',def:'Défensives',uti:'Utilitaires'};
+const affShort=(k,v)=>{const pct=!['hp','regen','burn','multi','pierce'].includes(k),neg=k==='armor'||k==='cdr';return `${neg?'−':'+'}${fmtN(v)}${pct?' %':k==='regen'?' PV/s':k==='burn'?' /s':''}`};
+const affEff=(it,k)=>NOSCALE[k]?it.aff[k]:it.aff[k]*upMul(it.up);
+function affFinder(){
+  const srcs=[...Object.entries(meta.gear).filter(([k,i])=>i&&!i.lock).map(([k,i])=>['g:'+k,i,'équipé']),...meta.stash.filter(i=>!i.lock).map(i=>['s:'+i.id,i,'coffre'])];
+  const by={};for(const [key,it,w] of srcs)for(const k in it.aff){if(!AFF[k])continue;(by[k]||(by[k]=[])).push({key,it,w,v:affEff(it,k)})}
+  for(const k in by)by[k].sort((a,b)=>b.v-a.v);
+  const cnt={all:Object.keys(by).length};for(const k in by){const c=AFF_CAT[k]||'uti';cnt[c]=(cnt[c]||0)+1}
+  const keys=Object.keys(by).filter(k=>afCat==='all'||(AFF_CAT[k]||'uti')===afCat).sort((a,b)=>(AFF_CAT[a]||'z').localeCompare(AFF_CAT[b]||'z')||(AFF_NAME[a]||a).localeCompare(AFF_NAME[b]||b));
+  const d=xfGet(xf.dst);
+  const chip=(k,lab)=>`<button class="cx-chip cx-chip--sm" data-cact="afcat" data-arg="${k}" aria-pressed="${afCat===k}">${lab} <span class="n">${cnt[k]||0}</span></button>`;
+  let h=`<section class="cx-section"><h3 class="cx-section__label">Chercher par affixe</h3><div class="cx-chips">${chip('all','Toutes')}${chip('off','Offensives')}${chip('def','Défensives')}${chip('uti','Utilitaires')}</div>`;
+  if(!keys.length)return h+`<p class="cx-hint" style="margin:0">${srcs.length?'Aucune affixe de ce type sur tes objets non verrouillés.':'Aucun objet non verrouillé à prendre comme source.'}</p></section>`;
+  h+='<ul class="afind">'+keys.map(k=>{const L=by[k],b=L[0],open=afOpen===k,mine=d&&d.aff[k]!=null?affEff(d,k):null;
+    const row=`<button class="afrow" data-cact="afopen" data-arg="${k}" aria-expanded="${open}"><span class="afn">${AFF_NAME[k]||k}</span><span class="afv">${affShort(k,b.v)}</span><span class="afs">max · <b style="color:${RARV[b.it.r]}">${esc(itemName(b.it))}</b> · ${b.w}${L.length>1?` · ${L.length} objets`:''}${mine!=null?` · ta cible : ${affShort(k,mine)}`:''}</span><span class="afc" aria-hidden="true">${open?'▴':'▾'}</span></button>`;
+    if(!open)return `<li>${row}</li>`;
+    return `<li class="open">${row}<ul>${L.slice(0,8).map((o,i)=>{const sel=xf.src===o.key&&xf.k===k,same=o.key===xf.dst;
+      return `<li><span><b style="color:${RARV[o.it.r]}">${esc(itemName(o.it))}</b> · ${o.w}<br><span class="afv2">${affShort(k,o.v)}</span>${i===0?' <span class="cx-tag cx-tag--heal">max</span>':''}</span>${same?'<span class="cx-hint" style="margin:0">c\'est ta cible</span>':`<button class="cx-btn cx-btn--sm" data-cact="afuse" data-arg="${k}|${o.key}" ${sel?'disabled':''}>${sel?'Choisi':'Prendre'}</button>`}</li>`}).join('')}${L.length>8?`<li class="cx-hint" style="margin:0">… et ${L.length-8} autres, plus faibles.</li>`:''}</ul></li>`}).join('')+'</ul></section>';
+  return h;
+}
 const RARV=['var(--rar-common)','var(--rar-magic)','var(--rar-rare)','var(--rar-legend)'];
 function xfOk(key,it){if(!it)return false;if(xf.pick==='src')return key[0]!=='w'&&!it.lock&&Object.keys(it.aff).length>0;return key!==xf.src}
 const xfPin=key=>key===xf.src?'<span class="cx-pin cx-pin--src">Source</span>':key===xf.dst?'<span class="cx-pin cx-pin--dst">Cible</span>':'';
@@ -2459,6 +2496,7 @@ function campAffix(){
       if(!Object.keys(d.aff).length&&!(st&&st.mode==='add'))tLines+='<li class="cx-line cx-line--base">Aucune affixe</li>';}
     h+=`<div class="cx-diff">${xfDiffCard('src',s,s?wlab(xf.src):'',sLines,st&&st.ok)}${xfDiffCard('dst',d,d?wlab(xf.dst):'',tLines,st&&st.ok?true:null)}</div>`;
   }
+  h+=affFinder();
   const eqW=meta.wpn[heroCls]&&ownedW(meta.wpn[heroCls])?meta.wpn[heroCls]:WPN[heroCls][0].id;
   h+=`<section class="cx-section"><h3 class="cx-section__label">Équipé · ${CLS[heroCls].n}</h3><div class="cx-slots">${xfSlot('w:'+eqW,weaponItem(heroCls,eqW),'Arme')}${['armure','amulette','bottes','anneau'].map(k=>xfSlot('g:'+k,meta.gear[k],SLOT[k])).join('')}</div></section>`;
   const ow=Object.keys(WPN).flatMap(c=>WPN[c].filter(w=>ownedW(w.id)&&w.id!==eqW).map(w=>[c,w]));
@@ -2562,6 +2600,9 @@ $('campSheet').addEventListener('click',e=>{
     else if(a==='rqall'){for(const id in RELICS){const r=meta.relics[id];if(!r)continue;for(const rad of [true,false])while(relicQN(id,rad)<r[rad?1:0])meta.relicQ.push({id,rad})}}
     else if(a==='xfk'){xf.k=arg;xf.rep=''}
     else if(a==='xfpick'){xf.pick=arg}
+    else if(a==='afcat'){afCat=arg;afOpen=''}
+    else if(a==='afopen'){afOpen=afOpen===arg?'':arg}
+    else if(a==='afuse'){const [k,key]=arg.split('|'),it=xfGet(key);if(!it||it.lock||it.aff[k]==null||key===xf.dst)return;xf.src=key;xf.k=k;xf.rep='';xf.pick='dst'}
     else if(a==='afilter'){afF=arg;afP=0}
     else if(a==='apage'){afP+=+arg}
     else if(a==='xfsel'){const it=xfGet(arg);if(!xfOk(arg,it))return;
