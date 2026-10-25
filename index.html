@@ -951,6 +951,8 @@ const PREST=[
   {k:'cdr',n:'Sang-froid',per:.5,t:'% de temps de recharge',neg:1,max:30},
   {k:'spd',n:'Foulée',per:.5,t:'% de vitesse de déplacement',max:30},
   {k:'gold',n:'Opulence',per:2,t:'% d\'or ramassé'},
+  {k:'srad',n:'Envergure',per:3,t:'% de portée des compétences',max:50},
+  {k:'splash',n:'Déflagration',per:3,t:'% de rayon d\'explosion',max:50},
 ];
 const prOf=(c=heroCls)=>{const o=meta.prest[c]||(meta.prest[c]={lv:0,pts:{}});o.pts=o.pts||{};return o};
 const prPt=(k,c=heroCls)=>(meta.prest[c]&&meta.prest[c].pts&&meta.prest[c].pts[k])||0;
@@ -971,7 +973,7 @@ const RUP=[
   {k:'wave',n:'Lames spectrales',d:'Chaque coup projette +1 onde tranchante',max:4,c:C_ATK,cls:['guerrier']},
   {k:'pierce',n:'Perforation',d:'Les carreaux percent 1 ennemi de plus',max:2,c:C_ATK,cls:['archer']},
   {k:'reach',n:'Grande allonge',d:'+15 % de portée de frappe',max:3,c:C_ATK,cls:['guerrier']},
-  {k:'splash',n:'Onde arcanique',d:'+20 % de rayon d\'explosion',max:3,c:C_ATK,cls:['magicien']},
+  {k:'splash',n:'Onde arcanique',d:'+25 % de rayon d\'explosion',max:5,c:C_ATK,cls:['magicien']},
   {k:'nova',n:'Puissance',d:'+25 % de dégâts de compétence',max:3,c:C_ATK},
   {k:'fury',n:'Fureur',d:'−15 % d\'ennemis à abattre pour charger l\'ultime',max:3,c:C_UTI},
   {k:'ultp',n:'Apothéose',d:'+30 % de dégâts de l\'ultime',max:3,c:C_ATK},
@@ -984,7 +986,7 @@ const RUP=[
   {k:'burn',n:'Braises',d:'Embrase : 10 % des dégâts par seconde',max:3,c:C_ELE},
   {k:'chill',n:'Givre',d:'+10 % de chances de ralentir à l\'impact',max:3,c:C_ELE},
   {k:'shock',n:'Orage',d:'+6 % de chances d\'éclair en chaîne',max:3,c:C_ELE},
-  {k:'srad',n:'Ampleur',d:'+12 % de portée des compétences',max:4,c:C_ATK},
+  {k:'srad',n:'Ampleur',d:'+20 % de portée des compétences',max:5,c:C_ATK},
   {k:'sdur',n:'Prolongation',d:'+15 % de durée des compétences et des ralentissements',max:3,c:C_UTI},
   {k:'exec',n:'Exécution',d:'+40 % de dégâts contre les ennemis sous 30 % de vie',max:3,c:C_ATK},
   {k:'slay',n:'Tueur de Gardiens',d:'+20 % de dégâts contre les Gardiens',max:3,c:C_ATK},
@@ -1019,7 +1021,7 @@ const MODS={
   intensite:{type:'h',n:'Intensité',r:0,max:3,drain:3,k:'novaPct',v:20,t:v=>`+${v} % de dégâts de compétence`},
   givre:{n:'Morsure du givre',r:0,max:3,drain:3,k:'chill',v:10,t:v=>`${v} % de chances de ralentir à l'impact`},
   allonge:{n:'Allonge',r:0,max:3,drain:3,k:'reach',v:10,t:v=>`+${v} % de portée de frappe`,cls:['guerrier']},
-  deflagration:{n:'Déflagration',r:0,max:3,drain:3,k:'splash',v:15,t:v=>`+${v} % de rayon d'explosion`,cls:['magicien']},
+  deflagration:{n:'Déflagration',r:0,max:5,drain:3,k:'splash',v:20,t:v=>`+${v} % de rayon d'explosion`,cls:['magicien']},
   oeil:{n:'Œil du chasseur',r:1,max:3,drain:3,k:'crit',v:5,t:v=>`+${v} % de chances de critique`},
   boucherie:{n:'Boucherie',r:1,max:3,drain:3,k:'critDmg',v:25,t:v=>`+${v} % de dégâts critiques`},
   braise:{n:'Braise vive',r:1,max:3,drain:4,k:'burnPct',v:15,t:v=>`Embrase : ${v} % des dégâts par seconde`},
@@ -1031,7 +1033,7 @@ const MODS={
   souffle:{type:'h',n:'Second souffle',r:0,max:3,drain:3,k:'regen',v:1.5,t:v=>`+${v} PV par seconde`},
   alchimiste:{type:'h',n:'Alchimiste',r:0,max:3,drain:2,k:'potHeal',v:15,t:v=>`+${v} % de soin des potions`},
   rapace:{type:'h',n:'Rapace',r:0,max:3,drain:2,k:'magnetPct',v:20,t:v=>`+${v} % de portée de ramassage`},
-  etendue:{type:'h',n:'Étendue',r:1,max:3,drain:4,k:'skillRad',v:10,t:v=>`+${v} % de rayon de compétence`},
+  etendue:{type:'h',n:'Étendue',r:1,max:5,drain:4,k:'skillRad',v:15,t:v=>`+${v} % de rayon de compétence`},
   persist:{type:'h',n:'Persistance',r:1,max:3,drain:4,k:'skillDur',v:12,t:v=>`+${v} % de durée de compétence et de ralentissement`},
   fantome:{type:'h',n:'Pas fantôme',r:1,max:3,drain:3,k:'dashCd',v:10,t:v=>`−${v} % de recharge de l'esquive`},
   dernier:{type:'h',n:'Dernier rempart',r:1,max:3,drain:4,k:'lowArmor',v:10,t:v=>`−${v} % de dégâts subis sous 30 % de vie`},
@@ -1092,7 +1094,7 @@ const AFF={
   speed:{t:v=>`+${v} % de vitesse de déplacement`,r:l=>ri(4,9)},
   regen:{t:v=>`+${v} PV par seconde`,r:l=>ri(1,2)+Math.floor(l/4)},
   cdr:{t:v=>`−${v} % de temps de recharge`,r:l=>ri(5,12)},
-  skillRad:{t:v=>`+${v} % de portée des compétences`,r:l=>ri(8,16)},
+  skillRad:{t:v=>`+${v} % de portée des compétences`,r:l=>ri(10,20)+Math.floor(l*.5)},
   novaPct:{t:v=>`+${v} % de dégâts de compétence`,r:l=>ri(20,45)},
   burn:{t:v=>`Embrase : ${v} dégâts par seconde`,w:1},
   multi:{t:v=>`+${v} projectile${v>1?'s':''} par tir`,w:1},
@@ -1141,13 +1143,13 @@ function stats(eq){
   s.dmgPct+=rr('dmg')*12;s.apsPct+=rr('aps')*10;s.crit+=rr('crit')*5;s.critDmg+=rr('cdmg')*30;s.speed+=rr('spd')*8;s.regen+=rr('regen')*1.5;
   s.cdr+=rr('cdr')*8;s.novaPct+=rr('nova')*25;s.multi+=rr('multi')+rr('fan')*2;s.dmgPct-=rr('fan')*10;s.echo=rr('echo')*20;s.waves=rr('wave');s.pierce+=rr('pierce');s.reach+=rr('reach')*15;s.leech+=rr('leech')*1.5;
   s.fury=rr('fury')*15;s.ultPct=rr('ultp')*30;
-  s.splash+=rr('splash')*20;s.burnPct+=rr('burn')*10;s.chill+=rr('chill')*10;s.shock+=rr('shock')*6;
-  s.skillRad+=rr('srad')*12;s.skillDur+=rr('sdur')*15;s.dashCd+=rr('refl')*15;s.antidote+=rr('endu')*20;s.execute=rr('exec')*40;s.bossDmg=rr('slay')*20;s.xpPct=rr('know')*20;s.lootPct=rr('luck')*15;
-  s.dmgPct+=prPt('dmg')*2;s.apsPct+=prPt('aps');s.crit+=prPt('crit')*.5;s.critDmg+=prPt('cdmg')*3;s.novaPct+=prPt('nova')*3;s.armor+=prPt('armor')*.5;s.cdr+=prPt('cdr')*.5;s.speed+=prPt('spd')*.5;s.goldPct+=prPt('gold')*2;
+  s.splash+=rr('splash')*25;s.burnPct+=rr('burn')*10;s.chill+=rr('chill')*10;s.shock+=rr('shock')*6;
+  s.skillRad+=rr('srad')*20;s.skillDur+=rr('sdur')*15;s.dashCd+=rr('refl')*15;s.antidote+=rr('endu')*20;s.execute=rr('exec')*40;s.bossDmg=rr('slay')*20;s.xpPct=rr('know')*20;s.lootPct=rr('luck')*15;
+  s.dmgPct+=prPt('dmg')*2;s.apsPct+=prPt('aps');s.crit+=prPt('crit')*.5;s.critDmg+=prPt('cdmg')*3;s.novaPct+=prPt('nova')*3;s.armor+=prPt('armor')*.5;s.cdr+=prPt('cdr')*.5;s.speed+=prPt('spd')*.5;s.goldPct+=prPt('gold')*2;s.skillRad+=prPt('srad')*3;s.splash+=prPt('splash')*3;
   s.dmgPct+=lv('str')*6;s.apsPct+=lv('cel')*5;s.hp=Math.round(s.hp*(1+lv('vig')*.08)*(1+prPt('hp')*.02)*(1+rr('hp')*.15));s.magnet=140*(1+rr('mag')*.4)*(1+s.magnetPct/100);
   const dmg=s.dmg*(1+s.dmgPct/100);
   return {dmg,aps:s.aps*(1+s.apsPct/100),hp:s.hp,crit:Math.min(s.crit,75),critDmg:s.critDmg,multi:s.multi,pierce:s.pierce,burn:s.burn+dmg*s.burnPct/100,chill:s.chill,shock:s.shock,
-    armor:Math.min(s.armor,60),speed:220*(1+s.speed/100),regen:s.regen,cdr:Math.min(s.cdr,50),nova:dmg*4*(1+s.novaPct/100),leech:s.leech,reach:s.reach,splash:s.splash,magnet:s.magnet,skillRad:s.skillRad,skillDur:s.skillDur,dashCd:Math.min(s.dashCd,60),potHeal:s.potHeal,lowArmor:Math.min(s.lowArmor,60),lowDmg:s.lowDmg,auraSlow:Math.min(s.auraSlow,50),goldPct:s.goldPct,antidote:s.antidote,execute:s.execute||0,bossDmg:s.bossDmg||0,xpPct:s.xpPct||0,lootPct:s.lootPct||0,echo:s.echo||0,waves:s.waves||0};
+    armor:Math.min(s.armor,60),speed:220*(1+s.speed/100),regen:s.regen,cdr:Math.min(s.cdr,50),nova:dmg*4*(1+s.novaPct/100),leech:s.leech,reach:s.reach,splash:Math.min(s.splash,300),magnet:s.magnet,skillRad:Math.min(s.skillRad,300),skillDur:s.skillDur,dashCd:Math.min(s.dashCd,60),potHeal:s.potHeal,lowArmor:Math.min(s.lowArmor,60),lowDmg:s.lowDmg,auraSlow:Math.min(s.auraSlow,50),goldPct:s.goldPct,antidote:s.antidote,execute:s.execute||0,bossDmg:s.bossDmg||0,xpPct:s.xpPct||0,lootPct:s.lootPct||0,echo:s.echo||0,waves:s.waves||0};
 }
 const dps=S=>S.dmg*S.aps*(1+S.crit/100*(S.critDmg/100-1))*(1+S.multi*.8)*(1+S.echo/100)*(1+S.waves*.5)*(heroCls==='archer'?1:1.2)+S.burn;
 
@@ -1207,7 +1209,7 @@ function spawnTarget(){
 function relicDrop(){const t=clamp(G.level-1+(Math.random()<.25?-1:Math.random()<.1?1:0),0,3);return pick(Object.keys(RELICS).filter(id=>RELICS[id].t===t))}
 const LV_MAX=50;
 const lootMul=L=>1+.25*(L-1);
-function diff(){const L=G.level,f=G.mode==='defense'?Math.max(0,((G.wave||1)-1)%5)/5:Math.min(1.5,G.tl/LEVEL_T);return {hs:(1+.75*(L-1))*(1+.35*f),ds:(1+.35*(L-1))*(1+.15*f)}}
+function diff(){const L=G.level,f=G.mode==='defense'?Math.max(0,((G.wave||1)-1)%5)/5:Math.min(1.5,G.tl/LEVEL_T);return {hs:1.2*(1+.75*(L-1))*(1+.35*f),ds:1.15*(1+.35*(L-1))*(1+.15*f)}}
 function spawnEnemy(s){
   const d=ETYPE[s.type],{hs,ds}=diff(),bm=s.type==='boss'?(1+.25*G.bossN):1;
   const gn=s.type==='slime'?(s.gen||0):0,gr=[1,.66,.45][gn],gh=[1,.45,.2][gn],gs=[1,1.2,1.45][gn];
@@ -1236,7 +1238,7 @@ function chooseType(tt,L){const x=Math.random();
   return ['ghoul',ri(2,4)];}
 function spawnPack(type,n){const p=ringPos();let k=0;for(let i=0;i<n;i++){const q={x:clamp(p.x+rand(-40,40),EDGE+30,MAP-EDGE-30),y:clamp(p.y+rand(-40,40),EDGE+30,MAP-EDGE-30)};if(!blocked(q.x,q.y,14)){spawnEnemy({type,...q});k++}}return k}
 function defenseTick(dt){
-  if(G.waveState==='break'){G.waveT-=dt;if(G.waveT<=0){G.wave++;G.waveState='fight';G.toSpawn=Math.min(140,10+G.wave*4+(G.level-1)*10);G.spawnT=.5;
+  if(G.waveState==='break'){G.waveT-=dt;if(G.waveT<=0){G.wave++;G.waveState='fight';G.toSpawn=Math.min(160,Math.round((10+G.wave*4+(G.level-1)*10)*1.15));G.spawnT=.5;
       const bn=dif().cnt;toast(`<b style="color:var(--ember)">Vague ${G.wave}</b>`+(G.wave%5===0?(bn>1?` · ${bn} Gardiens l'accompagnent`:' · un Gardien l\'accompagne'):''));
       if(G.wave%5===0)spawnBosses(true)}return}
   if(G.toSpawn>0){G.spawnT-=dt;if(G.spawnT<=0){G.spawnT=Math.max(.3,.9-G.wave*.03);const [type,n]=chooseType(G.wave*18,G.level);const k=spawnPack(type,Math.min(n,G.toSpawn));G.toSpawn-=Math.max(1,k)}}
@@ -1254,8 +1256,8 @@ function spawner(dt){
   G.bossT-=dt;
   if(G.bossT<=0){G.bossT=bossIv();spawnBosses()}
   G.spawnT-=dt;if(G.spawnT>0)return;
-  G.spawnT=Math.max(.16,.85-.12*(L-1)-.4*f);
-  const target=Math.min(220,22+14*(L-1)+Math.floor(34*f));
+  G.spawnT=Math.max(.14,(.85-.12*(L-1)-.4*f)*.87);
+  const target=Math.min(250,Math.round((22+14*(L-1)+Math.floor(34*f))*1.15));
   if(G.en.length>=target)return;
   const [type,n]=chooseType(G.t,L);spawnPack(type,n);
 }
@@ -1331,7 +1333,7 @@ function hurt(d){
   const P=G.P;if(P.inv>0||P.dashT>0||GOD)return;
   d*=1-S.armor/100;if(P.hp<S.hp*.3)d*=1-S.lowArmor/100;if(P.spin>0)d*=.5;P.noHit=0;
   if(P.shield>0){const ab=Math.min(P.shield,d);P.shield-=ab;d-=ab;if(d<=0){P.inv=.35;ftext(P.x,P.y-P.r,'bloqué','#9fd0ff',13);return}}
-  P.hp-=d;P.flash=1;P.inv=.35;G.shake=Math.max(G.shake,6);
+  P.hp-=d;P.flash=1;P.inv=.35;G.hshake=Math.max(G.hshake||0,Math.min(12,4+d/S.hp*45));
   ftext(P.x,P.y-P.r,'-'+Math.round(d),'#ff5a5a',16);
   if(P.hp<=0){P.hp=0;gameOver()}
 }
@@ -1642,7 +1644,7 @@ function update(dt){
   for(const t of G.texts)t.t+=dt;compact(G.texts,t=>t.t<.8);
   for(const r of G.rings)r.t+=dt;compact(G.rings,r=>r.t<.45);
   for(const z of G.zaps)z.t+=dt;compact(G.zaps,z=>z.t<.25);
-  G.shake=Math.max(0,G.shake-dt*30);
+  G.shake=Math.max(0,G.shake-dt*30);G.hshake=Math.max(0,(G.hshake||0)-dt*28);
 }
 
 /* ---------- Rendu ---------- */
@@ -1744,7 +1746,7 @@ function drawDrop(d){
 const zoom=()=>clamp(Math.min(innerWidth,innerHeight)/620,.62,1.5);
 function render2D(){
   const z=zoom(),vw=innerWidth/z,vh=innerHeight/z;G.vw=vw;G.vh=vh;
-  const P=G.P,sx=G.shake?rand(-G.shake,G.shake):0,sy=G.shake?rand(-G.shake,G.shake):0;
+  const P=G.P,hs_=G.hshake||0,sx=hs_?rand(-hs_,hs_):0,sy=hs_?rand(-hs_,hs_):0;
   const ox=G.cam.x-vw/2+sx,oy=G.cam.y-vh/2+sy;
   ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#050307';ctx.fillRect(0,0,cv.width,cv.height);
   ctx.setTransform(dpr*z,0,0,dpr*z,-ox*dpr*z,-oy*dpr*z);
@@ -1965,7 +1967,7 @@ function arcLine(g,x,y,r,a0,a1){g.moveTo(x+Math.cos(a0)*r,y+Math.sin(a0)*r);g.ar
 function renderPixi(){
   const {R,world,top,dark,T,L,P:PP}=PX;
   const z=zoom(),vw=innerWidth/z,vh=innerHeight/z;G.vw=vw;G.vh=vh;
-  const P=G.P,sx=G.shake?rand(-G.shake,G.shake):0,sy=G.shake?rand(-G.shake,G.shake):0;
+  const P=G.P,hs_=G.hshake||0,sx=hs_?rand(-hs_,hs_):0,sy=hs_?rand(-hs_,hs_):0;
   const ox=G.cam.x-vw/2+sx,oy=G.cam.y-vh/2+sy;
   world.scale.set(z);world.position.set(-ox*z,-oy*z);top.scale.set(z);top.position.set(-ox*z,-oy*z);
   const vis=(x,y,m=80)=>x>ox-m&&x<ox+vw+m&&y>oy-m&&y<oy+vh+m;
@@ -2068,7 +2070,7 @@ function render(){
 
 /* ---------- Fiches partagées ---------- */
 function statRows(St){
-  const rows=[['Dégâts',Math.round(St.dmg)],['Attaques / s',St.aps.toFixed(2)],['Critique',Math.round(St.crit)+' %'],['Dégâts critiques',Math.round(St.critDmg)+' %'],['Puissance (DPS)',Math.round(dps(St))],['Vie',Math.round(St.hp)],['Réduction',Math.round(St.armor)+' %'],['Vitesse',Math.round(St.speed/2.2)+' %'],['Portée des compétences',Math.round(100+St.skillRad)+' %'],heroCls==='guerrier'?['Ondes par coup',St.waves]:['Projectiles par tir',(1+St.multi).toFixed(St.multi%1?2:0)],['Double attaque',St.echo+' %'],[CLS[heroCls].skill,Math.round(St.nova)]];
+  const rows=[['Dégâts',Math.round(St.dmg)],['Attaques / s',St.aps.toFixed(2)],['Critique',Math.round(St.crit)+' %'],['Dégâts critiques',Math.round(St.critDmg)+' %'],['Puissance (DPS)',Math.round(dps(St))],['Vie',Math.round(St.hp)],['Réduction',Math.round(St.armor)+' %'],['Vitesse',Math.round(St.speed/2.2)+' %'],['Portée des compétences',Math.round(100+St.skillRad)+' %'],...(heroCls==='magicien'?[['Rayon d\'explosion',Math.round(100+St.splash)+' %']]:[]),heroCls==='guerrier'?['Ondes par coup',St.waves]:['Projectiles par tir',(1+St.multi).toFixed(St.multi%1?2:0)],['Double attaque',St.echo+' %'],[CLS[heroCls].skill,Math.round(St.nova)]];
   return rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join('');
 }
 function slotsHtml(eq,click,selSlot){

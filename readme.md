@@ -83,9 +83,9 @@ Les ennemis apparaissent hors écran autour du héros ; ceux qui s'éloignent tr
 
 **Montée en difficulté** (niveau L, progression f de 0 à 1 dans la manche) :
 
-- Vie des ennemis × (1 + 0,75 × (L − 1)) × (1 + 0,35 × f)
-- Dégâts × (1 + 0,35 × (L − 1)) × (1 + 0,15 × f)
-- Nombre max d'ennemis : 22 + 14 × (L − 1) + 34 × f, plafond 220 (Défense : 10 + 4 × vague + 10 × (L − 1), plafond 140)
+- Vie des ennemis × 1,2 × (1 + 0,75 × (L − 1)) × (1 + 0,35 × f)
+- Dégâts × 1,15 × (1 + 0,35 × (L − 1)) × (1 + 0,15 × f)
+- Nombre max d'ennemis : 22 + 14 × (L − 1) + 34 × f, × 1,15, plafond 250, et apparitions 13 % plus rapprochées (Défense : (10 + 4 × vague + 10 × (L − 1)) × 1,15, plafond 160). L'écran ne tremble que quand le héros encaisse un coup, plus fort selon la part de vie perdue (4 à 12 px)
 - Chaque nouveau Gardien a +25 % de vie
 
 **Altérations et sources sacrées** : rester dans une zone toxique ajoute un cumul de **Poison** toutes les 0,6 s (5 au maximum, 8 s, environ 1 dégât par seconde et par cumul au niveau 1, régénération et potions moitié moins efficaces). Les flammes appliquent la **Brûlure** (5 s, environ 4 dégâts par seconde au niveau 1). Les effets continuent après la sortie de la zone ; les potions ne les retirent pas. Six **sources sacrées** sont réparties sur la carte, signalées par une flèche bleue vers la plus proche : y passer avec une altération la retire, puis la source se tarit et réapparaît 30 s plus tard ailleurs. En Défense, les zones blessent aussi le cryopode. Le mod de héros **Antidote** réduit la durée des altérations de 15 % par rang.
@@ -130,6 +130,8 @@ Chaque ennemi lâche un cristal d'expérience (goule et chauve-souris 1, archer 
 Un bonus arrivé à son rang maximum n'est plus proposé, ni un bonus dont la statistique est déjà au plafond : Précision à 75 % de critique, Concentration à 50 % de recharge, Réflexes à 60 %, Endurci à 60 %. Chaque carte affiche le rang actuel et le suivant (« rang 1 → 2 / 3 », « rang 5 / 5 · dernier ») ; dans la jauge, les cases pleines sont les rangs acquis et la case qui clignote le rang gagné. Le sac affiche « 2 / 3 » ou « max ». Quand il ne reste plus assez de bonus, le choix est complété par Soin (40 % de vie) ou Bourse (20 or × niveau).
 
 **Portée des compétences** : statistique affichée dans la fiche du héros (100 % de base). Elle vient du bonus Ampleur, du mod Étendue et d'une nouvelle propriété d'équipement (+8 à 16 %). Elle agrandit le Tourbillon, l'Onde de choc, la Nova de givre et le Sillage de givre, et allonge la portée des carreaux de la Volée.
+
+**Portée et rayon, sources** (plafond 300 % chacun, soit ×4) : affixe Portée des compétences 10–20 % + 0,5 × niveau d'objet ; mod Étendue +15 % par rang, 5 rangs (+75 %) ; bonus de niveau Ampleur +20 % × 5 (+100 %) ; prestige Envergure +3 % × 50 (+150 %). Rayon d'explosion du Magicien : mod Déflagration +20 % par rang, 5 rangs (+100 %) ; Onde arcanique +25 % × 5 (+125 %) ; prestige Déflagration +3 % × 50 (+150 %) ; affiché dans les statistiques du Magicien.
 
 **Ultime** (4e bouton au-dessus de la compétence, touche F) : se charge en abattant 60 ennemis, un Gardien compte pour 10 ; la réduction de recharge ne s'applique pas. Guerrier, **Colère du Titan** : onde de choc de 320 de rayon (dégâts de compétence ×3, recul) et 3 s d'invulnérabilité. Archer, **Pluie d'acier** : pendant 3 s, 4 flèches toutes les 0,12 s sur les ennemis à moins de 450 (×0,7). Magicien, **Pluie de météores** : 3 météores de 150 de rayon (×3), en priorité sur les Gardiens. La portée des compétences agrandit ces zones. Bonus de niveau : **Fureur** (−15 % d'ennemis à abattre, 3 fois) et **Apothéose** (+30 % de dégâts de l'ultime, 3 fois).
 
@@ -236,7 +238,7 @@ Le Camp compte 5 onglets : Héros (équipement, coffre, fragments), Armurerie (t
 
 Chaque niveau suivant coûte ×1,7 du précédent. Les talents coûtent 150, 300 et 500 or par classe.
 
-**Prestige du héros** (Forge) : se débloque quand les 8 améliorations permanentes sont au maximum. Il est propre à chaque héros et n'a pas de limite de niveau. Le niveau n+1 coûte 500 + 250 n or et 30 + 15 n essence et donne 1 point à placer, redistribuable gratuitement. Par point : Vitalité +2 % de vie, Puissance +2 % de dégâts, Vivacité +1 % de vitesse d'attaque, Acuité +0,5 % de critique (max 40 points), Brutalité +3 % de dégâts critiques, Arcanes +3 % de dégâts de compétence, Ténacité −0,5 % de dégâts subis (max 40), Sang-froid −0,5 % de recharge (max 30), Foulée +0,5 % de vitesse (max 30), Opulence +2 % d'or. Les plafonds généraux (critique 75 %, armure 60 %, recharge 50 %) s'appliquent toujours.
+**Prestige du héros** (Forge) : se débloque quand les 8 améliorations permanentes sont au maximum. Il est propre à chaque héros et n'a pas de limite de niveau. Le niveau n+1 coûte 500 + 250 n or et 30 + 15 n essence et donne 1 point à placer, redistribuable gratuitement. Par point : Vitalité +2 % de vie, Puissance +2 % de dégâts, Vivacité +1 % de vitesse d'attaque, Acuité +0,5 % de critique (max 40 points), Brutalité +3 % de dégâts critiques, Arcanes +3 % de dégâts de compétence, Ténacité −0,5 % de dégâts subis (max 40), Sang-froid −0,5 % de recharge (max 30), Foulée +0,5 % de vitesse (max 30), Opulence +2 % d'or, Envergure +3 % de portée des compétences (max 50 points), Déflagration +3 % de rayon d'explosion (max 50). Les plafonds généraux (critique 75 %, armure 60 %, recharge 50 %) s'appliquent toujours.
 
 ## Technique
 
