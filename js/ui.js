@@ -41,7 +41,7 @@ function card(it,mode){
       :`<div class="actions"><button class="btn" data-cact="unequip">Retirer au coffre</button><button class="btn" data-cact="lock">${it.lock?'Déverrouiller':'Verrouiller'}</button></div>`;
     extra+=upBlock(it);
   }
-  return `<div class="card"><div class="nm" style="color:${r.c}">${itemName(it)}${it.lock?`<span class="lockchip">${LOCK_SVG}Verrouillé</span>`:''}</div><div class="meta">${r.n} · ${SLOT[it.slot]}${it.wid?' · fabriquée':` · ${it.type} · niveau ${it.lvl}`}${mode==='worn'?' · équipé':''}</div>
+  return `<div class="card"><div class="nm" style="color:${r.c}">${itemName(it)}${it.lock?`<span class="lockchip">${LOCK_SVG}Verrouillé</span>`:''}</div><div class="meta">${r.n} · ${SLOT[it.slot]}${it.wid?' · fabriquée':` · ${it.type==='Sanguin'?'exclusif des reliques Sanguine':it.type} · niveau ${it.lvl}`}${mode==='worn'?' · équipé':''}</div>
     <ul><li>${baseTxtOf(it.slot,fmtN(it.base.v*upMul(it.up)))}</li>${Object.keys(it.aff).map(k=>`<li>${AFF[k].t(NOSCALE[k]?it.aff[k]:fmtN(it.aff[k]*upMul(it.up)))}</li>`).join('')}</ul>${extra}</div>`;
 }
 
@@ -247,10 +247,10 @@ function showOver(title,txt,earn,rel){$('overTitle').textContent=title;$('overTx
 function grantRelic(id,rad){
   const a=meta.relics[id];if(!a||a[rad?1:0]<=0)return null;
   a[rad?1:0]--;const r=rollRelic(id,rad),rar=RW_RAR[RELICS[id].rw.indexOf(r)];
-  const [k,v]=r.split(':');if(k==='ess')meta.essence+=+v;else if(k==='gold')meta.gold+=+v;else{const p=meta.parts[k]||(meta.parts[k]=[0,0,0]);p[+v]++}
+  const [k,v]=r.split(':');let si=null;if(k==='ess')meta.essence+=+v;else if(k==='gold')meta.gold+=+v;else if(k==='sang'){si=sangItem(v,sangLvl());meta.stash.push(si)}else{const p=meta.parts[k]||(meta.parts[k]=[0,0,0]);p[+v]++}
   relicQFix();
-  const frag=k!=='ess'&&k!=='gold';
-  return {rar,html:`<b style="color:${MOD_RAR[rar].c}">${rwLabel(r)}</b> (${['commun','peu commun','rare'][rar]})`+(frag?` · fragment ${fragStatus(k)} / 3 de ${bpdef(k).n}, à fabriquer à l'Armurerie`:'')};
+  const frag=k!=='ess'&&k!=='gold'&&k!=='sang';
+  return {rar,html:`<b style="color:${MOD_RAR[rar].c}">${rwLabel(r)}</b> (${['commun','peu commun','rare'][rar]})`+(frag?` · fragment ${fragStatus(k)} / 3 de ${bpdef(k).n}, à fabriquer à l'Armurerie`:'')+(si?` · <b style="color:${RAR[5].c}">${si.name}</b> niveau ${si.lvl} rejoint ton coffre (${Object.keys(si.aff).map(q=>AFF[q].t(si.aff[q])).join(', ')})`:'')};
 }
 function resolveRelic(){
   const out=[];

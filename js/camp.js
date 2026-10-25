@@ -20,12 +20,12 @@ function stashView(){
     ${pages>1?`<div class="pager"><button class="btn" data-cact="spage" data-arg="-1" ${stP===0?'disabled':''} aria-label="Page précédente">‹</button><span>Page ${stP+1} / ${pages}</span><button class="btn" data-cact="spage" data-arg="1" ${stP>=pages-1?'disabled':''} aria-label="Page suivante">›</button></div>`:''}`;
 }
 function campEquip(){
-  const eq=curEq(),St=stats(eq),rec=meta.stash.filter(i=>!(i.type==='Prime'||i.up||i.lock)),ess=rec.reduce((a,i)=>a+RAR[i.r].shard*2,0);
+  const eq=curEq(),St=stats(eq),rec=meta.stash.filter(i=>!(i.type==='Prime'||i.type==='Sanguin'||i.up||i.lock)),ess=rec.reduce((a,i)=>a+RAR[i.r].shard*2,0);
   let det='<p class="empty" style="font-size:13px">Touche un emplacement ou un objet du coffre. ▲ signale une amélioration, le cadenas un objet verrouillé.</p>';
   if(campSel&&campSel.slot){const it=eq[campSel.slot];det=it?card(it,'worn'):'<p class="empty">Emplacement vide. Équipe un objet depuis le coffre.</p>'}
   else if(campSel&&campSel.stash){const it=meta.stash.find(i=>i.id===campSel.stash);if(it)det=card(it,'stash')}
   const recBtn=!rec.length?'':recyConfirm
-    ?`<div class="card"><p class="empty" style="font-size:13px">Recycler ${rec.length} objet${rec.length>1?'s':''} du coffre contre ${ess} essence ? Les objets verrouillés, améliorés et Prime sont gardés.</p><div class="actions"><button class="btn danger" data-cact="recyall">Tout recycler</button><button class="btn" data-cact="recycancel">Annuler</button></div></div>`
+    ?`<div class="card"><p class="empty" style="font-size:13px">Recycler ${rec.length} objet${rec.length>1?'s':''} du coffre contre ${ess} essence ? Les objets verrouillés, améliorés, Prime et Sanguins sont gardés.</p><div class="actions"><button class="btn danger" data-cact="recyall">Tout recycler</button><button class="btn" data-cact="recycancel">Annuler</button></div></div>`
     :`<button class="btn danger" data-cact="recyask" style="align-self:flex-start">Tout recycler · ${rec.length} objet${rec.length>1?'s':''} · +${ess} essence</button>`;
   const plan=bestPlan(eq,meta.stash),pn=Object.keys(plan).length;
   return `${campMsg}<h3>${CLS[heroCls].n} · équipement</h3><div class="slots">${slotsHtml(eq,true,campSel&&campSel.slot)}</div>
@@ -116,7 +116,7 @@ function fusionSection(){
       h+=`<div class="ftgt"><span class="cx-hint" style="margin:0">Schéma visé :</span><div class="cx-chips">${L.map(id=>{const b=bpdef(id);return `<button class="cx-chip cx-chip--sm" data-cact="rftgt" data-arg="${id}" aria-pressed="${fuseTgt===id}">${b.n} <span class="n">${fragStatus(id)} / 3</span></button>`}).join('')||'<span class="cx-hint">Toutes les armes légendaires sont déjà fabriquées.</span>'}</div></div>`}}
   return h+'</div></section>'}
 const RELIC_SVG='<svg viewBox="0 0 24 24"><path d="M6 3h12l3 6-9 12L3 9z"/><path d="M3 9h18M9 3l3 6 3-6M12 9v12"/></svg>';
-function rwInfo(r){const [k,v]=r.split(':');if(k==='ess'||k==='gold')return {cur:true};const b=bpdef(k),pc=meta.parts[k]||[0,0,0],have=pc[+v]||0,n=fragStatus(k),built=b.kind==='arme'&&ownedW(k);
+function rwInfo(r){const [k,v]=r.split(':');if(k==='ess'||k==='gold')return {cur:true};if(k==='sang')return {sang:true};const b=bpdef(k),pc=meta.parts[k]||[0,0,0],have=pc[+v]||0,n=fragStatus(k),built=b.kind==='arme'&&ownedW(k);
   return {b,have,n,built,completes:!have&&n===2&&!built}}
 function campRelics(){
   relicQFix();const all=Object.keys(RELICS),own=all.filter(id=>{const a=meta.relics[id];return a&&(a[0]||a[1])}),Q=meta.relicQ;
@@ -143,7 +143,7 @@ function campRelics(){
     const ctl=(rad,lab)=>{const n=relicQN(id,rad),ow=a[rad?1:0];return `<div class="rctl"><span>${lab} · <b>${n} / ${ow}</b> équipée${n>1?'s':''}</span><span class="cx-stepper"><button type="button" data-cact="rqdel" data-arg="${id}|${rad?1:0}" ${n?'':'disabled'} aria-label="Retirer une ${lab.toLowerCase()}">−</button><button type="button" data-cact="rqadd" data-arg="${id}|${rad?1:0}" ${n<ow?'':'disabled'} aria-label="Équiper une ${lab.toLowerCase()}">+</button></span></div>`};
     h+=`<section class="cx-card rdet" style="--tc:${c}"><div class="cx-card__head"><span class="rgem big${a[1]?' rad':''}">${RELIC_SVG}</span><div><h4 class="cx-card__title" style="color:${c}">${R.n}</h4><div class="cx-card__meta">Relique ${RTIER[R.t].n} · intacte ×${a[0]} · éclatante ×${a[1]}</div></div></div>
       <ul class="rrw">${R.rw.map((r,i)=>{const rr=RW_RAR[i],inf=rwInfo(r),c0=CH[0][rr],c1=CH[1][rr];
-        const st=inf.cur?'<span class="rs cur">monnaie</span>':inf.built?'<span class="rs ok">arme fabriquée</span>':inf.completes?'<span class="rs comp">★ complète le schéma</span>':inf.have?`<span class="rs ok">✓ possédé ×${inf.have}</span>`:`<span class="rs miss">manquant · ${inf.n} / 3</span>`;
+        const st=inf.sang?'<span class="rs sang">exclusif</span>':inf.cur?'<span class="rs cur">monnaie</span>':inf.built?'<span class="rs ok">arme fabriquée</span>':inf.completes?'<span class="rs comp">★ complète le schéma</span>':inf.have?`<span class="rs ok">✓ possédé ×${inf.have}</span>`:`<span class="rs miss">manquant · ${inf.n} / 3</span>`;
         return `<li><div class="rrh"><span class="dot" style="background:${MOD_RAR[rr].c}"></span><span class="rl">${rwLabel(r)}</span>${st}</div>
           <div class="rbars"><span>Intacte</span><div class="rbar"><i style="width:${Math.min(100,c0*3.3)}%"></i></div><em>${fmtN(c0)} %</em><span>Éclatante</span><div class="rbar rad"><i style="width:${Math.min(100,c1*3.3)}%"></i></div><em>${fmtN(c1)} %</em></div></li>`}).join('')}</ul>
       <div class="cx-card__foot">${a[0]?ctl(false,'Intactes'):''}${a[1]?ctl(true,'Éclatantes'):''}
@@ -226,7 +226,7 @@ function affFinder(){
       return `<li><span><b style="color:${RARV[o.it.r]}">${esc(itemName(o.it))}</b> · ${o.w}<br><span class="afv2">${affShort(k,o.v)}</span>${i===0?' <span class="cx-tag cx-tag--heal">max</span>':''}</span>${same?'<span class="cx-hint" style="margin:0">c\'est ta cible</span>':`<button class="cx-btn cx-btn--sm" data-cact="afuse" data-arg="${k}|${o.key}" ${sel?'disabled':''}>${sel?'Choisi':'Prendre'}</button>`}</li>`}).join('')}${L.length>8?`<li class="cx-hint" style="margin:0">… et ${L.length-8} autres, plus faibles.</li>`:''}</ul></li>`}).join('')+'</ul></section>';
   return h;
 }
-const RARV=['var(--rar-common)','var(--rar-magic)','var(--rar-rare)','var(--rar-legend)','var(--rar-anc)'];
+const RARV=['var(--rar-common)','var(--rar-magic)','var(--rar-rare)','var(--rar-legend)','var(--rar-anc)','var(--rar-sang)'];
 function xfOk(key,it){if(!it)return false;if(xf.pick==='src')return key[0]!=='w'&&!it.lock&&Object.keys(it.aff).length>0;return key!==xf.src}
 const xfPin=key=>key===xf.src?'<span class="cx-pin cx-pin--src">Source</span>':key===xf.dst?'<span class="cx-pin cx-pin--dst">Cible</span>':'';
 const xfSt=key=>key===xf.src?' is-src':key===xf.dst?' is-dst':'';
@@ -358,7 +358,7 @@ $('campSheet').addEventListener('click',e=>{
     else if(a==='lock'){const it=campSel&&campSel.stash?meta.stash.find(i=>i.id===campSel.stash):campSel&&campSel.slot?meta.gear[campSel.slot]:null;if(it){it.lock=!it.lock;toast(it.lock?'Objet verrouillé':'Objet déverrouillé')}}
     else if(a==='recyask')recyConfirm=true;
     else if(a==='recycancel')recyConfirm=false;
-    else if(a==='recyall'){const rec=meta.stash.filter(i=>!(i.type==='Prime'||i.up||i.lock));let e=0;for(const it of rec)e+=RAR[it.r].shard*2;meta.stash=meta.stash.filter(i=>i.type==='Prime'||i.up||i.lock);meta.essence+=e;recyConfirm=false;campSel=null;toast(`${rec.length} objet${rec.length>1?'s':''} recyclé${rec.length>1?'s':''} · +${e} essence`)}
+    else if(a==='recyall'){const rec=meta.stash.filter(i=>!(i.type==='Prime'||i.type==='Sanguin'||i.up||i.lock));let e=0;for(const it of rec)e+=RAR[it.r].shard*2;meta.stash=meta.stash.filter(i=>i.type==='Prime'||i.type==='Sanguin'||i.up||i.lock);meta.essence+=e;recyConfirm=false;campSel=null;toast(`${rec.length} objet${rec.length>1?'s':''} recyclé${rec.length>1?'s':''} · +${e} essence`)}
     if(a==='bestall'){const plan=bestPlan(curEq(),meta.stash),names=[];for(const sl in plan){const it=plan[sl];meta.stash=meta.stash.filter(i=>i!==it);const old=meta.gear[sl];if(old)meta.stash.push(old);meta.gear[sl]=it;names.push(`<span style="color:${RAR[it.r].c}">${esc(itemName(it))}</span>`)}campSel=null;if(names.length)toast('Équipé : '+names.join(', '))}
     if(a==='equip'){const it=meta.stash.find(i=>i.id===campSel.stash);if(it){meta.stash=meta.stash.filter(i=>i!==it);const old=meta.gear[it.slot];if(old)meta.stash.push(old);meta.gear[it.slot]=it;campSel={slot:it.slot}}}
     else if(a==='recycle'){const it=meta.stash.find(i=>i.id===campSel.stash);if(it&&!it.lock){meta.stash=meta.stash.filter(i=>i!==it);const pb=primeBp(it);

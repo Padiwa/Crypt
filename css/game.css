@@ -292,7 +292,7 @@ body:has(#camp:not([hidden])) .toast,body:has(#bag:not([hidden])) .toast{top:aut
   --ember-hi:#f6b27a; --ember-lip:#8f4816; --ember-soft:#33201a; --ember-ink:#f0a062; --on-ember:#1b0f06;
   --blood-ink:#ef7b7e; --blood-soft:#2e1517; --blood-lip:#5e1619;
   --heal-soft:#18221b; --heal-line:#5a8a66; --gold-soft:#2a2312; --gold-line:#9a8330; --gold:#f0cf4a;
-  --rar-anc:#ff5a7a;--rar-common:#bdb6a8; --rar-magic:#7b95ff; --rar-rare:#f0cf4a; --rar-legend:#ff8a24;
+  --rar-anc:#ff5a7a;--rar-sang:#e8383f;--rar-common:#bdb6a8; --rar-magic:#7b95ff; --rar-rare:#f0cf4a; --rar-legend:#ff8a24;
   --scrim:rgba(8,6,10,.78);
   --font-display:'Grenze Gotisch','Palatino Linotype',Georgia,serif;
   --font-body:'Alegreya Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
@@ -745,3 +745,5 @@ body:has(#camp:not([hidden])) .banner,body:has(#bag:not([hidden])) .banner{displ
 .ftgt{display:flex;flex-direction:column;gap:6px;padding:0 2px}
 
 .stf{background:rgba(150,210,255,.18);color:#bfe6ff;border:1px solid rgba(150,210,255,.55)}
+
+.rs.sang{color:#fff;background:#b8222d}

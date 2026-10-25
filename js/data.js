@@ -8,7 +8,7 @@ const fmt=s=>{s=Math.max(0,Math.ceil(s));return `${Math.floor(s/60)}:${String(s%
 let dpr=1;
 
 /* ---------- Données ---------- */
-const RAR=[{n:'Commun',c:'#bdb6a8',aff:1,shard:1},{n:'Magique',c:'#7b95ff',aff:2,shard:2},{n:'Rare',c:'#f0cf4a',aff:3,shard:4},{n:'Légendaire',c:'#ff8a24',aff:4,shard:8},{n:'Ancestral',c:'#ff5a7a',aff:4,shard:16}];
+const RAR=[{n:'Commun',c:'#bdb6a8',aff:1,shard:1},{n:'Magique',c:'#7b95ff',aff:2,shard:2},{n:'Rare',c:'#f0cf4a',aff:3,shard:4},{n:'Légendaire',c:'#ff8a24',aff:4,shard:8},{n:'Ancestral',c:'#ff5a7a',aff:4,shard:16},{n:'Sanguin',c:'#e8383f',aff:4,shard:20}];
 const SLOT={arme:'Arme',armure:'Armure',amulette:'Amulette',bottes:'Bottes',anneau:'Anneau'};
 const BIOMES=[
   {id:'crypte',n:'Crypte des Cendres',d:'La crypte d\'origine : braseros, sang séché, monstres connus.',hp:1,dm:1,loot:1,
@@ -86,7 +86,7 @@ const RTIER=[{n:'Cendre',c:'#c9a46a'},{n:'Ossuaire',c:'#a9bccf'},{n:'Sanguine',c
 const RELICS_GIVRE={
   fA1:{t:0,n:"Éclat de givre",bio:1,rw:['y1:0','y2:0','ess:30','y3:0','y4:0','y1:1']},
   fB1:{t:1,n:"Larme gelée",bio:1,rw:['y2:1','y3:1','gold:200','y4:1','y1:2','y2:2']},
-  fC1:{t:2,n:"Cœur d'hiver",bio:1,rw:['y3:2','y4:2','ess:80','y1:1','y2:1','y3:1']},
+  fC1:{t:2,n:"Cœur d'hiver",bio:1,rw:['y3:2','y4:2','ess:80','y1:1','sang:s9','sang:s10']},
   fD1:{t:3,n:"Couronne du Blizzard",bio:1,rw:['y4:0','y1:0','ess:150','y2:2','y3:2','y4:2']},
 };
 const RELICS={
@@ -96,20 +96,39 @@ const RELICS={
   mA1:{t:1,n:"Phalange du Veilleur",rw:['g2:1','m2:1','ess:40','a3:0','g3:0','m3:0']},
   mB1:{t:1,n:"Crâne fêlé",rw:['a2:0','g2:2','m2:0','a3:1','m3:1','g3:1']},
   mC1:{t:1,n:"Côte du Roi-mendiant",rw:['a2:2','m2:2','gold:200','g3:2','m3:2','a3:2']},
-  nA1:{t:2,n:"Cœur noirci",rw:['a3:0','g3:0','m3:0','a4:0','x1:0','g4:0']},
-  nB1:{t:2,n:"Calice rouge",rw:['a3:1','g3:1','m3:1','m4:0','x2:0','a4:1']},
-  nC1:{t:2,n:"Veine de la Veuve",rw:['a3:2','g3:2','m3:2','g4:1','x3:0','m4:1']},
+  nA1:{t:2,n:"Cœur noirci",rw:['a3:0','g3:0','m3:0','sang:s1','sang:s2','sang:s3']},
+  nB1:{t:2,n:"Calice rouge",rw:['a3:1','g3:1','m3:1','sang:s4','sang:s5','sang:s6']},
+  nC1:{t:2,n:"Veine de la Veuve",rw:['a3:2','g3:2','m3:2','sang:s7','sang:s8','sang:s1']},
   xA1:{t:3,n:"Prunelle du Néant",rw:['x1:1','x2:1','ess:100','a4:2','x3:1','x1:2']},
   xB1:{t:3,n:"Couronne brisée",rw:['x4:0','x2:2','gold:400','g4:2','x4:1','x3:2']},
   xC1:{t:3,n:"Os du Premier Roi",rw:['x1:0','x3:0','ess:100','m4:2','a4:0','x4:2']},
-  nD1:{t:2,n:"Fiole d'ichor",rw:['x5:0','x6:0','ess:60','x5:1','x6:1','x5:2']},
+  nD1:{t:2,n:"Fiole d'ichor",rw:['x5:0','x6:0','ess:60','sang:s2','sang:s6','sang:s7']},
   xD1:{t:3,n:"Sablier noir",rw:['x6:1','x5:0','gold:300','x6:2','x5:2','x6:0']},
 };
 const RW_RAR=[0,0,0,1,1,2], CH=[[25.33,11,2],[16.67,20,10]], REACT_N=10;
 Object.assign(RELICS,RELICS_GIVRE);
 const relicName=id=>`${RELICS[id].n} (${RTIER[RELICS[id].t].n}${RELICS[id].bio?' · givre':''})`;
 function rollRelic(id,rad){const ch=CH[rad?1:0];let x=Math.random()*100;for(let i=0;i<6;i++){x-=ch[RW_RAR[i]];if(x<0)return RELICS[id].rw[i]}return RELICS[id].rw[0]}
-function rwLabel(r){const [k,v]=r.split(':');if(k==='ess')return `Essence ×${v}`;if(k==='gold')return `${v} or`;const b=bpdef(k);return `${b.n} · ${b.frag[+v]}`}
+const SANG={
+  s1:{n:'Cœur du Martyr',slot:'amulette',aff:['dmgPct','critDmg','crit','leech']},
+  s2:{n:'Cuirasse de la Veuve rouge',slot:'armure',aff:['hp','armor','regen','dmgPct']},
+  s3:{n:"Pas de l'Hémorragie",slot:'bottes',aff:['speed','apsPct','dmgPct','crit']},
+  s4:{n:'Anneau du Sang versé',slot:'anneau',aff:['crit','critDmg','apsPct','dmgPct']},
+  s5:{n:'Linceul écarlate',slot:'armure',aff:['hp','novaPct','skillRad','armor']},
+  s6:{n:'Œil du Calice',slot:'amulette',aff:['cdr','novaPct','skillRad','critDmg']},
+  s7:{n:'Grèves du Bourreau rouge',slot:'bottes',aff:['speed','hp','armor','cdr']},
+  s8:{n:"Sceau de l'Ichor",slot:'anneau',aff:['dmgPct','apsPct','leech','regen']},
+  s9:{n:'Cœur gelé du Martyr',slot:'amulette',aff:['cold','frz','critDmg','dmgPct']},
+  s10:{n:"Anneau de l'Hiver sanglant",slot:'anneau',aff:['shard','cold','crit','apsPct']},
+};
+const SANG_K=1.8;
+function sangItem(sid,l){const T=SANG[sid],slot=T.slot,bk=BASE_STAT[slot];
+  const bv=slot==='armure'?Math.round(20+l*7):slot==='bottes'?8+Math.floor(l/4):slot==='anneau'?10+Math.floor(l*.8):5;
+  const it={id:uid++,slot,r:5,lvl:l,base:{k:bk,v:Math.round(bv*1.4)},aff:{},name:T.n,type:'Sanguin',sang:sid};
+  for(const k of T.aff){const A=AFF[k];let v=A.r?A.r(l):({leech:2,reach:10,splash:15,multi:1,pierce:1,burn:5})[k]||5;it.aff[k]=Math.max(1,Math.round(v*SANG_K))}
+  return it}
+const sangLvl=()=>{const L=(typeof G!=='undefined'&&G&&G.level)||clamp(meta.start|0||1,1,50);return 1+(L-1)*4+20};
+function rwLabel(r){const [k,v]=r.split(':');if(k==='sang')return `${SANG[v].n} · objet exclusif`;if(k==='ess')return `Essence ×${v}`;if(k==='gold')return `${v} or`;const b=bpdef(k);return `${b.n} · ${b.frag[+v]}`}
 const MODES={
   survie:{n:'Survie',d:'Tiens face aux hordes. Toutes les 3 minutes, sors ou continue. Chaque manche terminée rapporte une relique.'},
   defense:{n:'Défense',d:'Protège le cryopode contre des vagues d\'ennemis. Toutes les 5 vagues : une relique et un équipement, puis sors ou continue.'},
