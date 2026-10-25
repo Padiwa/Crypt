@@ -102,7 +102,7 @@ function campArsenal2(){
 }
 let relSel=null,relTier='all';
 const FUSE_COST=[20,40,80,150];
-function relAvail(t){const out=[];for(const id in RELICS){if(RELICS[id].t!==t)continue;const a=meta.relics[id];if(!a)continue;
+function relAvail(t){const out=[];for(const id in RELICS){if(RELICS[id].t!==t||RELICS[id].fz)continue;const a=meta.relics[id];if(!a)continue;
   for(const rad of [false,true]){const own=Math.max(0,a[rad?1:0]|0),q=Math.min(own,relicQN(id,rad));for(let k=0;k<own;k++)out.push({id,rad,q:k>=own-q})}}
   return out.sort((x,y)=>(x.q-y.q)||(x.rad-y.rad)||((meta.relics[y.id][0]+meta.relics[y.id][1])-(meta.relics[x.id][0]+meta.relics[x.id][1])))}
 const legBps=()=>[...WPN[heroCls].filter(w=>w.r===3&&!ownedW(w.id)),...Object.keys(WPN).filter(c=>c!==heroCls).flatMap(c=>WPN[c].filter(w=>w.r===3&&!ownedW(w.id))),...GEAR_BP.filter(g=>g.r===3)].map(x=>x.id);
@@ -110,19 +110,20 @@ function chainPlan(t){const have=[0,1,2,3].map(i=>relAvail(i).length);let cost=0
   const ensure=(k,n)=>{const use=Math.min(n,have[k]);have[k]-=use;let r=n-use;if(!r)return true;if(k===0)return false;if(!ensure(k-1,3*r))return false;cost+=r*FUSE_COST[k-1];fus+=r;return true};
   if(!ensure(t,3))return null;return {cost:cost+FUSE_COST[t],fus}}
 function fuseOnce(t){const av=relAvail(t);if(av.length<3)return null;meta.essence-=FUSE_COST[t];for(const q of av.slice(0,3))meta.relics[q.id][q.rad?1:0]--;relicQFix();
-  if(t<3){const nid=pick(Object.keys(RELICS).filter(id=>RELICS[id].t===t+1&&!RELICS[id].bio));const a=meta.relics[nid]||(meta.relics[nid]=[0,0]);a[0]++;return nid}return true}
+  if(t<3){const nid=pick(Object.keys(RELICS).filter(id=>RELICS[id].t===t+1&&!RELICS[id].bio&&!RELICS[id].fz));const a=meta.relics[nid]||(meta.relics[nid]=[0,0]);a[0]++;return nid}return true}
 function ensureRel(t){while(relAvail(t).length<3){if(t===0)return false;if(!ensureRel(t-1))return false;fuseOnce(t-1)}return true}
 function fusionSection(){
-  let h=`<section class="cx-section"><h3 class="cx-section__label">Fusion de reliques</h3><p class="cx-hint" style="margin:0">Fusionne 3 reliques d'un même niveau. Celles hors de la file d'ouverture partent en premier, les intactes avant les éclatantes ; si besoin, des reliques de la file sont utilisées et en sont retirées. Trois reliques Abysse donnent un fragment de schéma légendaire de ton choix.</p><div class="fuse">`;
+  {const L=legBps();if(!fuseTgt||!L.includes(fuseTgt))fuseTgt=L[0]||null}
+  let h=`<section class="cx-section"><h3 class="cx-section__label">Fusion de reliques</h3><p class="cx-hint" style="margin:0">Fusionne 3 reliques d'un même niveau. Celles hors de la file d'ouverture partent en premier, les intactes avant les éclatantes ; si besoin, des reliques de la file sont utilisées et en sont retirées. Trois reliques Abysse donnent une relique forgée du schéma légendaire de ton choix : ouvre-la en mission pour recevoir à coup sûr un de ses fragments.</p><div class="fuse">`;
   for(let t=0;t<4;t++){const AV=relAvail(t),av=AV.length,qn=AV.slice(0,3).filter(q=>q.q).length,inQ=AV.filter(q=>q.q).length,cp=av<3&&t>0?chainPlan(t):null,cost=cp?cp.cost:FUSE_COST[t],ok=(av>=3||cp)&&meta.essence>=cost;
-    const res=t<3?`1 relique <b style="color:${RTIER[t+1].c}">${RTIER[t+1].n}</b>`:'<b style="color:var(--rar-legend)">1 fragment légendaire</b>';
+    const res=t<3?`1 relique <b style="color:${RTIER[t+1].c}">${RTIER[t+1].n}</b>`:`1 <b style="color:${RTIER[3].c}">relique forgée</b>`;
     h+=`<div class="frow"><span class="rgem" style="--tc:${RTIER[t].c}">${RELIC_SVG}</span><div class="fl"><b>3 × <span style="color:${RTIER[t].c}">${RTIER[t].n}</span> → ${res}</b><span>${av} possédée${av>1?'s':''}${inQ?` dont ${inQ} dans la file d'ouverture`:''}${av<3?(cp?` · les ${3-av} manquante${3-av>1?'s':''} seront créée${3-av>1?'s':''} avec tes reliques de niveau inférieur (${cp.fus} fusion${cp.fus>1?'s':''} en plus)`:` · il en faut ${3-av} de plus${t>0?`, ou ${3*(3-av)} ${RTIER[t-1].n} pour les créer`:''}`):''}${(av>=3||cp)&&meta.essence<cost?` · il manque ${cost-meta.essence} essence`:''}${ok&&qn?` · ${qn} ${qn>1?'seront retirées':'sera retirée'} de la file`:''}</span></div>
       <button class="btn buy" data-cact="rfuse" data-arg="${t}" ${ok&&(t<3||fuseTgt)?'':'disabled'}>${cp?'Fusionner en chaîne':'Fusionner'} · <span class="essi"></span>${cost}</button></div>`;
     if(t===3){const L=legBps();if(!fuseTgt||!L.includes(fuseTgt))fuseTgt=L[0]||null;
       h+=`<div class="ftgt"><span class="cx-hint" style="margin:0">Schéma visé :</span><div class="cx-chips">${L.map(id=>{const b=bpdef(id);return `<button class="cx-chip cx-chip--sm" data-cact="rftgt" data-arg="${id}" aria-pressed="${fuseTgt===id}">${b.n} <span class="n">${fragStatus(id)} / 3</span></button>`}).join('')||'<span class="cx-hint">Toutes les armes légendaires sont déjà fabriquées.</span>'}</div></div>`}}
   return h+'</div></section>'}
 const RELIC_SVG='<svg viewBox="0 0 24 24"><path d="M6 3h12l3 6-9 12L3 9z"/><path d="M3 9h18M9 3l3 6 3-6M12 9v12"/></svg>';
-function rwInfo(r){const [k,v]=r.split(':');if(k==='ess'||k==='gold')return {cur:true};if(k==='sang')return {sang:true};if(k==='aby')return {aby:true};const b=bpdef(k),pc=meta.parts[k]||[0,0,0],have=pc[+v]||0,n=fragStatus(k),built=b.kind==='arme'&&ownedW(k);
+function rwInfo(r){const [k,v]=r.split(':');if(k==='ess'||k==='gold')return {cur:true};if(k==='sang')return {sang:true};if(k==='aby')return {aby:true};const b=bpdef(k),pc=meta.parts[k]||[0,0,0],n=fragStatus(k),have=v==='*'?(n>=3?1:0):(pc[+v]||0),built=b.kind==='arme'&&ownedW(k);
   return {b,have,n,built,completes:!have&&n===2&&!built}}
 function campRelics(){
   relicQFix();const all=Object.keys(RELICS),own=all.filter(id=>{const a=meta.relics[id];return a&&(a[0]||a[1])}),Q=meta.relicQ;
@@ -148,12 +149,12 @@ function campRelics(){
   if(relSel){const id=relSel,R=RELICS[id],a=meta.relics[id],c=RTIER[R.t].c;
     const ctl=(rad,lab)=>{const n=relicQN(id,rad),ow=a[rad?1:0];return `<div class="rctl"><span>${lab} · <b>${n} / ${ow}</b> équipée${n>1?'s':''}</span><span class="cx-stepper"><button type="button" data-cact="rqdel" data-arg="${id}|${rad?1:0}" ${n?'':'disabled'} aria-label="Retirer une ${lab.toLowerCase()}">−</button><button type="button" data-cact="rqadd" data-arg="${id}|${rad?1:0}" ${n<ow?'':'disabled'} aria-label="Équiper une ${lab.toLowerCase()}">+</button></span></div>`};
     h+=`<section class="cx-card rdet" style="--tc:${c}"><div class="cx-card__head"><span class="rgem big${a[1]?' rad':''}">${RELIC_SVG}</span><div><h4 class="cx-card__title" style="color:${c}">${R.n}</h4><div class="cx-card__meta">Relique ${RTIER[R.t].n} · intacte ×${a[0]} · éclatante ×${a[1]}</div></div></div>
-      <ul class="rrw">${R.rw.map((r,i)=>{const rr=RW_RAR[i],inf=rwInfo(r),c0=CH[0][rr],c1=CH[1][rr];
+      <ul class="rrw">${(R.fz?[R.rw[0]]:R.rw).map((r,i)=>{const rr=R.fz?2:RW_RAR[i],inf=rwInfo(r),c0=R.fz?100:CH[0][rr],c1=R.fz?100:CH[1][rr];
         const st=inf.aby?'<span class="rs aby">abyssal</span>':inf.sang?'<span class="rs sang">exclusif</span>':inf.cur?'<span class="rs cur">monnaie</span>':inf.built?'<span class="rs ok">arme fabriquée</span>':inf.completes?'<span class="rs comp">★ complète le schéma</span>':inf.have?`<span class="rs ok">✓ possédé ×${inf.have}</span>`:`<span class="rs miss">manquant · ${inf.n} / 3</span>`;
         return `<li><div class="rrh"><span class="dot" style="background:${MOD_RAR[rr].c}"></span><span class="rl">${rwLabel(r)}</span>${st}</div>
           <div class="rbars"><span>Intacte</span><div class="rbar"><i style="width:${Math.min(100,c0*3.3)}%"></i></div><em>${fmtN(c0)} %</em><span>Éclatante</span><div class="rbar rad"><i style="width:${Math.min(100,c1*3.3)}%"></i></div><em>${fmtN(c1)} %</em></div></li>`}).join('')}</ul>
       <div class="cx-card__foot">${a[0]?ctl(false,'Intactes'):''}${a[1]?ctl(true,'Éclatantes'):''}
-        ${a[0]?`<button class="btn buy" data-cact="refine" data-arg="${id}" ${meta.essence<50||relicQN(id,false)>=a[0]?'disabled':''}>Raffiner en éclatante · <span class="essi"></span>50</button>`:''}</div></section>`}
+        ${a[0]&&!R.fz?`<button class="btn buy" data-cact="refine" data-arg="${id}" ${meta.essence<50||relicQN(id,false)>=a[0]?'disabled':''}>Raffiner en éclatante · <span class="essi"></span>50</button>`:''}</div></section>`}
   else h+='<p class="cx-hint" style="margin:0">Touche une relique pour voir ses récompenses, tes chances et ce qu\'il te manque. ★ : contient le dernier fragment d\'un schéma.</p>';
   return h+fusionSection()+qh;
 }
@@ -397,9 +398,9 @@ $('campSheet').addEventListener('click',e=>{
     else if(a==='rftgt'){fuseTgt=arg}
     else if(a==='rfuse'){const t=+arg,cp=relAvail(t).length<3&&t>0?chainPlan(t):null,cost=cp?cp.cost:FUSE_COST[t];if((relAvail(t).length>=3||cp)&&meta.essence>=cost&&(t<3||fuseTgt)&&ensureRel(t)){const av=relAvail(t);meta.essence-=FUSE_COST[t];
         for(const q of av.slice(0,3))meta.relics[q.id][q.rad?1:0]--;relicQFix();SND.play('relic');
-        if(t<3){const ids=Object.keys(RELICS).filter(id=>RELICS[id].t===t+1),nid=pick(ids);const a=meta.relics[nid]||(meta.relics[nid]=[0,0]);a[0]++;relSel=nid;
+        if(t<3){const ids=Object.keys(RELICS).filter(id=>RELICS[id].t===t+1&&!RELICS[id].fz),nid=pick(ids);const a=meta.relics[nid]||(meta.relics[nid]=[0,0]);a[0]++;relSel=nid;
           campMsg=`<div class="card" style="border-color:${RTIER[t+1].c}"><div class="meta">Fusion réussie</div><p style="margin:0;font-size:15px">Tu obtiens la relique <b style="color:${RTIER[t+1].c}">${relicName(nid)}</b>.</p></div>`}
-        else{const b=bpdef(fuseTgt),i=giveFrag(fuseTgt);campMsg=`<div class="card" style="border-color:var(--rar-legend)"><div class="meta">Fusion réussie</div><p style="margin:0;font-size:15px">Fragment <b style="color:var(--rar-legend)">${b.n} · ${b.frag[i]}</b> (${fragStatus(fuseTgt)} / 3). À fabriquer à l'Armurerie une fois complet.</p></div>`}}}
+        else{const fid='F_'+fuseTgt,a=meta.relics[fid]||(meta.relics[fid]=[0,0]);a[0]++;relSel=fid;campMsg=`<div class="card" style="border-color:${RTIER[3].c}"><div class="meta">Fusion réussie</div><p style="margin:0;font-size:15px">Tu obtiens la <b style="color:${RTIER[3].c}">${RELICS[fid].n}</b>. Équipe-la et ouvre-la en mission : elle donne à coup sûr un fragment de ce schéma (${fragStatus(fuseTgt)} / 3 aujourd'hui).</p></div>`}}}
     else if(a==='rsel'){relSel=relSel===arg?null:arg}
     else if(a==='rtier'){relTier=arg;relSel=null}
     else if(a==='rqadd'){const [id,rd]=arg.split('|'),rad=rd==='1',ow=(meta.relics[id]||[0,0])[rad?1:0];if(relicQN(id,rad)<ow)meta.relicQ.push({id,rad})}

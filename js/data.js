@@ -84,29 +84,33 @@ function bpdef(id){const w=wdef(id);if(w)return {...w,kind:'arme',frag:FRAG[w.cl
 /* ---------- Reliques ---------- */
 const RTIER=[{n:'Cendre',c:'#c9a46a'},{n:'Ossuaire',c:'#a9bccf'},{n:'Sanguine',c:'#e07a7a'},{n:'Abysse',c:'#f0cf4a'}];
 const RELICS_GIVRE={
-  fA1:{t:0,n:"Éclat de givre",bio:1,rw:['y1:0','y2:0','ess:30','y3:0','y4:0','y1:1']},
-  fB1:{t:1,n:"Larme gelée",bio:1,rw:['y2:1','y3:1','gold:200','y4:1','y1:2','y2:2']},
-  fC1:{t:2,n:"Cœur d'hiver",bio:1,rw:['y3:2','y4:2','ess:80','y1:1','sang:s9','sang:s10']},
-  fD1:{t:3,n:"Couronne du Blizzard",bio:1,rw:['y4:0','y1:0','ess:150','y2:2','aby:a9','aby:a10']},
+  fA1:{t:0,n:"Éclat de givre",bio:1,rw:['a1:*','g1:*','ess:30','m1:*','a2:*','g2:*']},
+  fB1:{t:1,n:"Larme gelée",bio:1,rw:['a2:*','g2:*','gold:200','m3:*','a3:*','g3:*']},
+  fC1:{t:2,n:"Cœur d'hiver",bio:1,rw:['a3:*','m3:*','ess:80','g3:*','sang:s9','sang:s10']},
+  fD1:{t:3,n:"Couronne du Blizzard",bio:1,rw:['y1:*','y2:*','y3:*','y4:*','aby:a9','aby:a10']},
 };
 const RELICS={
-  lA1:{t:0,n:"Dent du Pèlerin",rw:['a1:0','g1:0','ess:20','m1:1','a2:0','g2:2']},
-  lB1:{t:0,n:"Larme de suie",rw:['m1:0','a1:1','gold:80','g1:1','m2:0','a2:2']},
-  lC1:{t:0,n:"Clou du Bûcher",rw:['g1:2','m1:2','a1:2','g2:0','a2:1','m2:2']},
-  mA1:{t:1,n:"Phalange du Veilleur",rw:['g2:1','m2:1','ess:40','a3:0','g3:0','m3:0']},
-  mB1:{t:1,n:"Crâne fêlé",rw:['a2:0','g2:2','m2:0','a3:1','m3:1','g3:1']},
-  mC1:{t:1,n:"Côte du Roi-mendiant",rw:['a2:2','m2:2','gold:200','g3:2','m3:2','a3:2']},
-  nA1:{t:2,n:"Cœur noirci",rw:['a3:0','g3:0','m3:0','sang:s1','sang:s2','sang:s3']},
-  nB1:{t:2,n:"Calice rouge",rw:['a3:1','g3:1','m3:1','sang:s4','sang:s5','sang:s6']},
-  nC1:{t:2,n:"Veine de la Veuve",rw:['a3:2','g3:2','m3:2','sang:s7','sang:s8','sang:s1']},
-  xA1:{t:3,n:"Prunelle du Néant",rw:['x1:1','x2:1','ess:100','a4:2','aby:a1','aby:a2']},
-  xB1:{t:3,n:"Couronne brisée",rw:['x4:0','x2:2','gold:400','g4:2','aby:a3','aby:a4']},
-  xC1:{t:3,n:"Os du Premier Roi",rw:['x1:0','x3:0','ess:100','m4:2','aby:a5','aby:a6']},
-  nD1:{t:2,n:"Fiole d'ichor",rw:['x5:0','x6:0','ess:60','sang:s2','sang:s6','sang:s7']},
-  xD1:{t:3,n:"Sablier noir",rw:['x6:1','x5:0','gold:300','x6:2','aby:a7','aby:a8']},
+  lA1:{t:0,n:"Dent du Pèlerin",rw:['a1:*','g1:*','ess:20','m1:*','a2:*','g2:*']},
+  lB1:{t:0,n:"Larme de suie",rw:['m1:*','a1:*','gold:80','g1:*','m2:*','a2:*']},
+  lC1:{t:0,n:"Clou du Bûcher",rw:['g1:*','m1:*','a1:*','g2:*','a2:*','m2:*']},
+  mA1:{t:1,n:"Phalange du Veilleur",rw:['g2:*','m2:*','ess:40','a3:*','g3:*','m3:*']},
+  mB1:{t:1,n:"Crâne fêlé",rw:['a2:*','g2:*','m2:*','a3:*','m3:*','g3:*']},
+  mC1:{t:1,n:"Côte du Roi-mendiant",rw:['a2:*','m2:*','gold:200','g3:*','m3:*','a3:*']},
+  nA1:{t:2,n:"Cœur noirci",rw:['a3:*','g3:*','m3:*','sang:s1','sang:s2','sang:s3']},
+  nB1:{t:2,n:"Calice rouge",rw:['a3:*','g3:*','m3:*','sang:s4','sang:s5','sang:s6']},
+  nC1:{t:2,n:"Veine de la Veuve",rw:['a3:*','g3:*','m3:*','sang:s7','sang:s8','sang:s1']},
+  xA1:{t:3,n:"Prunelle du Néant",rw:['x1:*','x2:*','ess:100','a4:*','aby:a1','aby:a2']},
+  xB1:{t:3,n:"Couronne brisée",rw:['x3:*','x4:*','gold:400','g4:*','aby:a3','aby:a4']},
+  xC1:{t:3,n:"Os du Premier Roi",rw:['x5:*','x6:*','ess:100','m4:*','aby:a5','aby:a6']},
+  nD1:{t:2,n:"Fiole d'ichor",rw:['g3:*','m3:*','ess:60','sang:s2','sang:s6','sang:s7']},
+  xD1:{t:3,n:"Sablier noir",rw:['x2:*','x5:*','gold:300','x6:*','aby:a7','aby:a8']},
 };
 const RW_RAR=[0,0,0,1,1,2], CH=[[25.33,11,2],[16.67,20,10]], REACT_N=10;
 Object.assign(RELICS,RELICS_GIVRE);
+/* Reliques forgées : 3 Abysse fusionnées au Camp donnent une de ces reliques (une par schéma légendaire).
+   Elle s'ouvre en mission comme les autres et donne à coup sûr un fragment de son schéma, manquant en priorité. */
+for(const b of [...Object.values(WPN).flat().filter(w=>w.r===3),...GEAR_BP.filter(g=>g.r===3)])
+  RELICS['F_'+b.id]={t:3,fz:1,n:`Relique forgée · ${b.n}`,rw:Array(6).fill(b.id+':*')};
 /* Niveau de relique selon le niveau de mission : 1–10 Cendre, 11–25 Ossuaire, 26–40 Sanguine, 41+ Abysse ; 70 % ce niveau, 20 % celui du dessous, 10 % celui du dessus. */
 const REL_BAND=[10,25,40];
 const relicBase=L=>REL_BAND.filter(x=>L>x).length;
@@ -152,7 +156,7 @@ function abyItem(aid,l){const T=ABY[aid],slot=T.slot,bk=BASE_STAT[slot];
   for(const k of T.aff){const A=AFF[k];it.aff[k]=Math.max(1,Math.round(A.r(l)*ABY_K))}
   it.aff[T.pw]=AFF[T.pw].r(l);return it}
 const abyLvl=()=>sangLvl()+10;
-function rwLabel(r){const [k,v]=r.split(':');if(k==='aby')return `${ABY[v].n} · objet abyssal exclusif`;if(k==='sang')return `${SANG[v].n} · objet exclusif`;if(k==='ess')return `Essence ×${v}`;if(k==='gold')return `${v} or`;const b=bpdef(k);return `${b.n} · ${b.frag[+v]}`}
+function rwLabel(r){const [k,v]=r.split(':');if(k==='aby')return `${ABY[v].n} · objet abyssal exclusif`;if(k==='sang')return `${SANG[v].n} · objet exclusif`;if(k==='ess')return `Essence ×${v}`;if(k==='gold')return `${v} or`;const b=bpdef(k);return v==='*'?`${b.n} · fragment`:`${b.n} · ${b.frag[+v]}`}
 const MODES={
   survie:{n:'Survie',d:'Tiens face aux hordes. Toutes les 3 minutes, sors ou continue. Chaque manche terminée rapporte une relique.'},
   defense:{n:'Défense',d:'Protège le cryopode contre des vagues d\'ennemis. Toutes les 5 vagues : une relique et un équipement, puis sors ou continue.'},
@@ -392,7 +396,8 @@ function weaponItem(c,id){const w=(id&&wdef(id)&&ownedW(id))?wdef(id):wdef(WPN[c
   return {id:'w_'+w.id,wid:w.id,slot:'arme',r:w.r,lvl:1,base:{k:'dmg',v:w.dmg},aff:af,name:w.n,type:'Arme',up:meta.wlv[w.id]||0}}
 const curEq=()=>({arme:weaponItem(heroCls,meta.wpn[heroCls]),armure:meta.gear.armure||null,amulette:meta.gear.amulette||null,bottes:meta.gear.bottes||null,anneau:meta.gear.anneau||null});
 function rollPart(){
-  const L=G?G.level:1,ws=[...WPN[heroCls].slice(1),...GEAR_BP],wt=ws.map((w,i)=>i<4?Math.max(.5,4-i+(L-1)*i*.7):Math.max(.3,.2*L));
+  // En mission, seuls les schémas magiques et rares de l'arme du héros tombent ; légendaires et Prime : reliques Abysse uniquement.
+  const L=G?G.level:1,ws=WPN[heroCls].filter(w=>w.r>=1&&w.r<=2),wt=ws.map((w,i)=>Math.max(.5,3-i+(L-1)*i*.5));
   let x=Math.random()*wt.reduce((a,b)=>a+b,0),k=0;while(x>wt[k]){x-=wt[k];k++}
   return {w:ws[Math.min(k,ws.length-1)].id,p:ri(0,2)};
 }

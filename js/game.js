@@ -33,6 +33,7 @@ function newGame(){
   if(G.mode==='defense'){const m=1200*(1+.5*(L-1));G.pod={x:MAP/2,y:MAP/2,r:28,hp:m,max:m,flash:0};G.pillars.push(G.pod);G.P.y+=110;G.cam.y=G.P.y;G.wave=0;G.waveState='break';G.waveT=3;G.toSpawn=0}
   if(G.mode==='capture'){spawnTarget()}
   $('objBar').hidden=G.mode!=='defense';
+  if(PX&&glLost())dropPixi('contexte WebGL perdu au lancement');
   if(PX)try{buildStatic()}catch(err){dropPixi(err)}
   const ub=$('bUlt');ub.querySelector('svg').innerHTML=C.uicon;ub.setAttribute('aria-label',C.ult+', ultime');const nb=$('bNova');nb.querySelector('svg').innerHTML=C.icon;nb.setAttribute('aria-label',C.skill);nb.style.color=C.col;
   $('hintTxt').innerHTML=C.hint;$('bossBar').hidden=true;
@@ -54,7 +55,7 @@ function spawnTarget(){
     state:'walk',slow:0,timer:0,blink:4,shown:0,wob:rand(0,6),downed:false};
   G.en.push(G.target);
 }
-function relicDrop(){const t=relicTierRoll(G.level),frost=G.biome===1&&Math.random()<.5;return pick(Object.keys(RELICS).filter(id=>RELICS[id].t===t&&(frost?RELICS[id].bio===1:!RELICS[id].bio)))}
+function relicDrop(){const t=relicTierRoll(G.level),frost=G.biome===1&&Math.random()<.5;return pick(Object.keys(RELICS).filter(id=>!RELICS[id].fz&&RELICS[id].t===t&&(frost?RELICS[id].bio===1:!RELICS[id].bio)))}
 const LV_MAX=50;
 const lootMul=L=>1+.06*(L-1);
 const goldMul=L=>1+.15*(L-1);

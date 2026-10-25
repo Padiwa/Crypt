@@ -290,12 +290,12 @@ dialog button{position:absolute;top:8px;right:8px;width:40px;height:40px;border-
 <section id="butin"><div class="sec">
   <div class="txt">
     <h2><small>Ce que tu ramènes</small>Butin et raretés</h2>
-    <p>Les monstres lâchent de l'or, de l'équipement, des mods, des reliques, des fragments de schémas et des potions. Approche-toi pour les ramasser. Les objets ont 5 emplacements : arme, armure (vie), amulette (critique), bottes (vitesse) et anneau (dégâts), et de 1 à 4 propriétés appelées <b>affixes</b>.</p>
+    <p>Les monstres lâchent de l'or, de l'équipement (jusqu'à Légendaire, Ancestral en Tourment), des mods, des reliques, des potions, et parfois un fragment d'arme magique ou rare. Approche-toi pour les ramasser. Les objets ont 5 emplacements : arme, armure (vie), amulette (critique), bottes (vitesse) et anneau (dégâts), et de 1 à 4 propriétés appelées <b>affixes</b>.</p>
     <ul class="rar" aria-label="Raretés de la plus commune à la plus rare">
       <li style="--c:var(--r0)"><b>Commun</b><span>1 affixe.</span></li>
       <li style="--c:var(--r1)"><b>Magique</b><span>2 affixes.</span></li>
       <li style="--c:var(--r2)"><b>Rare</b><span>3 affixes.</span></li>
-      <li style="--c:var(--r3)"><b>Légendaire</b><span>4 affixes renforcées, nom unique.</span></li>
+      <li style="--c:var(--r3)"><b>Légendaire</b><span>4 affixes renforcées, nom unique. Les armes légendaires et les objets Prime se fabriquent avec les fragments des reliques Abysse.</span></li>
       <li style="--c:var(--r4)"><b>Ancestral</b><span>Uniquement en Tourment. Affixes encore plus fortes.</span></li>
       <li style="--c:var(--r5)"><b>Sanguin</b><span>Exclusif aux reliques Sanguine. Modèles fixes, affixes ×1,8.</span></li>
       <li style="--c:var(--r6)"><b>Abyssal</b><span>Exclusif aux reliques Abysse. Affixes ×2,1 et un pouvoir unique.</span></li>
@@ -332,10 +332,20 @@ dialog button{position:absolute;top:8px;right:8px;width:40px;height:40px;border-
 <section id="camp-arsenal"><div class="sec">
   <div class="txt">
     <h2><small>Camp · onglet 2</small>Armurerie</h2>
-    <p>Les armes et les objets <b>Prime</b> ne tombent pas tout faits : ils se fabriquent à partir d'un <b>schéma en 3 fragments</b> et d'un peu d'or. Les fragments viennent des reliques, et parfois des monstres dès le niveau 2.</p>
+    <p>Les armes et les objets <b>Prime</b> ne tombent pas tout faits : ils se fabriquent à partir d'un <b>schéma en 3 fragments</b> et d'un peu d'or. Plus l'objet est rare, plus la relique qui le contient est haute :</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Schémas</th><th>Où trouver les fragments</th></tr></thead>
+      <tbody>
+        <tr><td><b style="color:var(--r1)">Armes magiques</b></td><td>reliques Cendre, et parfois les monstres (dès le niveau 2)</td></tr>
+        <tr><td><b style="color:var(--r2)">Armes rares</b></td><td>reliques Cendre à Sanguine, et parfois les monstres</td></tr>
+        <tr><td><b style="color:var(--r3)">Armes légendaires</b></td><td>reliques Abysse et reliques forgées, ouvertes en mission</td></tr>
+        <tr><td><b style="color:var(--r3)">Objets Prime</b></td><td>reliques Abysse (Couronne du Blizzard pour ceux de givre) et reliques forgées, ouvertes en mission</td></tr>
+      </tbody>
+    </table></div>
+    <p>Une relique donne toujours un fragment qui te manque, s'il en reste un à trouver pour ce schéma.</p>
     <ul>
       <li>Chaque héros a 4 armes à fabriquer, de magique à légendaire, en plus de son arme de départ.</li>
-      <li>Les objets Prime (armures, amulettes, bottes, anneaux) servent à tous les héros. Ceux de givre viennent des Abîmes gelés.</li>
+      <li>Les objets Prime (armures, amulettes, bottes, anneaux) servent à tous les héros. Ceux de givre viennent de la Couronne du Blizzard, la relique Abysse des Abîmes gelés.</li>
       <li><b>Tout fabriquer</b> fabrique tout ce qui a ses 3 fragments tant que l'or suffit.</li>
       <li><b>Recycler</b> une arme fabriquée non équipée ou un objet Prime rend de l'essence et 1 fragment de son schéma. <b>Tout recycler</b> le fait pour tous.</li>
     </ul>
@@ -376,7 +386,7 @@ dialog button{position:absolute;top:8px;right:8px;width:40px;height:40px;border-
       <tbody><tr><td>Intacte</td><td class="n">25,33 %</td><td class="n">11 %</td><td class="n">2 %</td></tr><tr><td>Éclatante</td><td class="n">16,67 %</td><td class="n">20 %</td><td class="n">10 %</td></tr></tbody>
     </table></div>
     <h3>Fusion de reliques</h3>
-    <p>3 reliques d'un même niveau donnent 1 relique du niveau au-dessus (20, 40 puis 80 essence). S'il en manque, la <b>fusion en chaîne</b> les crée d'abord avec les niveaux inférieurs. 3 reliques Abysse donnent un fragment légendaire de ton choix.</p>
+    <p>3 reliques d'un même niveau donnent 1 relique du niveau au-dessus (20, 40 puis 80 essence). S'il en manque, la <b>fusion en chaîne</b> les crée d'abord avec les niveaux inférieurs. 3 reliques Abysse donnent une <b>relique forgée</b> du schéma légendaire de ton choix. Comme toute relique, elle s'ouvre en mission, et donne alors à coup sûr un fragment de ce schéma.</p>
     <h3>Objets exclusifs</h3>
     <p>Les reliques <b style="color:var(--r5)">Sanguine</b> peuvent donner des objets <b style="color:var(--r5)">Sanguins</b>, et les reliques <b style="color:var(--r2)">Abysse</b> des objets <b style="color:var(--r6)">Abyssaux</b>. On ne les trouve nulle part ailleurs. Chaque objet Abyssal porte un pouvoir unique, lié à l'objet, qui ne peut pas être transféré :</p>
     <div class="tbl"><table>
@@ -493,7 +503,7 @@ dialog button{position:absolute;top:8px;right:8px;width:40px;height:40px;border-
     <ol>
       <li><b>Sors souvent au début.</b> Un butin ramené vaut mieux qu'une manche de trop.</li>
       <li><b>Équipe pendant la partie</b> les objets importants : ils sont gardés même si tu meurs.</li>
-      <li><b>Garde toujours une relique équipée</b> : les réactifs sont gratuits, et c'est la seule source de fragments sûre.</li>
+      <li><b>Garde toujours une relique équipée</b> : les réactifs sont gratuits, et c'est la seule source des fragments légendaires et des objets exclusifs.</li>
       <li><b>Raffine</b> les reliques dont tu veux la récompense rare : ses chances passent de 2 % à 10 %.</li>
       <li><b>Monte la Forge</b> en priorité (Force, Vigueur, Célérité), puis le Catalyseur et le Réacteur pour les mods.</li>
       <li><b>Repère tes niveaux</b> : un équipement rare autour de +25 tient jusqu'aux niveaux 20 à 30, un légendaire autour de +60 ouvre le niveau 50 et les premiers paliers de Tourment.</li>
@@ -504,7 +514,7 @@ dialog button{position:absolute;top:8px;right:8px;width:40px;height:40px;border-
 
 </main>
 
-<footer class="wrap">Crypte des Cendres · guide à jour de la version 53 du jeu. <a href="../index.html">Retour au jeu</a></footer>
+<footer class="wrap">Crypte des Cendres · guide à jour de la version 57 du jeu. <a href="../index.html">Retour au jeu</a></footer>
 
 <dialog id="zoom" aria-label="Capture agrandie"><button type="button" id="zoomX" aria-label="Fermer">×</button><img id="zoomImg" alt=""></dialog>
 

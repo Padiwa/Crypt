@@ -3,12 +3,17 @@
 function resize(){dpr=Math.min(devicePixelRatio||1,2);if(PX){PX.R.resize(innerWidth,innerHeight);return}cv.width=Math.round(innerWidth*dpr);cv.height=Math.round(innerHeight*dpr)}
 addEventListener('resize',resize);resize();
 let last=performance.now(),acc=0;const STEP=1/60;
+let lastErr=null;
+function noteErr(where,err){const m=`${where} : ${(err&&err.message)||err}`;if(lastErr===m)return;lastErr=m;console.error(where,err);try{localStorage.setItem('crypte-err',new Date().toLocaleString('fr-FR')+' · '+m)}catch(e){}}
 function frame(now){
+  requestAnimationFrame(frame);
+  try{step(now)}catch(err){noteErr('boucle',err)}
+}
+function step(now){
   const dt=Math.min(.1,(now-last)/1000);last=now;
   if(started&&!paused&&!G.over){acc+=dt;let n=0;while(acc>=STEP&&n<6&&started&&!paused&&!G.over){update(STEP);acc-=STEP;n++}if(n>=6)acc=0}
   else{acc=0;if(G.over){for(const p of G.parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt}compact(G.parts,p=>p.life>0)}}
   render();hud();
-  requestAnimationFrame(frame);
 }
 function start(){
   let noGl=false;try{noGl=localStorage.getItem('crypte-nogl')==='1'}catch(e){}

@@ -35,4 +35,5 @@ const UPD={ok:false,ready:false,reg:null,ver:'',state:'',msg:''};
 function updSection(){
   const st={checking:'Recherche…',uptodate:'Le jeu est à jour.',ready:'Une nouvelle version est prête.',error:'Impossible de vérifier (hors connexion ?).',off:'Mises à jour gérées par la page (pas d\'application installée ici).'}[UPD.state]||'';
   return `<section class="cx-section"><h3 class="cx-section__label">Application</h3>
-    <div class="setrow"><div><b>Version ${UPD.ver?UPD.ver.replace('crypte-v',''):'—'}</b><span id="updSt">${st}</span></div>${UPD.ready?'<button class="cx-btn cx-btn--sm cx-btn--primary" id="setUpdGo">Mettre à jour</button>':UPD.ok?'<button class="cx-btn cx-btn--sm" id="setUpd">Rechercher</button>':''}</div></section>`}
+    <div class="setrow"><div><b>Version ${UPD.ver?UPD.ver.replace('crypte-v',''):'—'}</b><span id="updSt">${st}</span></div>${UPD.ready?'<button class="cx-btn cx-btn--sm cx-btn--primary" id="setUpdGo">Mettre à jour</button>':UPD.ok?'<button class="cx-btn cx-btn--sm" id="setUpd">Rechercher</button>':''}</div>
+    ${(()=>{let e='';try{e=localStorage.getItem('crypte-err')||''}catch(x){}return e?`<p class="cx-hint" style="margin:0;user-select:text">Dernier incident : ${e.replace(/[<>&]/g,'')}</p>`:''})()}</section>`}

@@ -258,6 +258,8 @@ function initPixi(){
   const view=R.view;view.id='pv';view.setAttribute('aria-hidden','true');
   Object.assign(view.style,{position:'fixed',left:'0',top:'0',width:'100%',height:'100%',display:'block'});
   cv.parentNode.insertBefore(view,cv);
+  view.addEventListener('webglcontextlost',e=>{e.preventDefault();if(!PX)return;PX.lost=true;noteErr('rendu','contexte WebGL perdu');clearTimeout(PX.lostT);PX.lostT=setTimeout(()=>{if(PX&&PX.lost)dropPixi('contexte WebGL non rétabli')},1500)},false);
+  view.addEventListener('webglcontextrestored',()=>{if(!PX)return;PX.lost=false;clearTimeout(PX.lostT);try{if(G)buildStatic()}catch(err){dropPixi(err)}},false);
   const C=()=>new PIXI.Container(),Gr=()=>new PIXI.Graphics();
   const stage=C(),world=C(),top=C(),ui=C();
   const T={};
@@ -430,12 +432,14 @@ function renderPixi(){
   R.render(PX.stage);
 }
 function dropPixi(err){
-  console.error('PixiJS désactivé',err);
-  try{PX.R.view.remove();PX.R.destroy()}catch(e){}
-  PX=null;toast('Rendu WebGL indisponible : retour au rendu standard.');
+  if(!PX)return;noteErr('WebGL désactivé',err);
+  try{clearTimeout(PX.lostT);PX.R.view.remove();PX.R.destroy()}catch(e){}
+  PX=null;floorPat=null;resize();toast('Rendu WebGL interrompu : le jeu passe au rendu standard (modifiable dans les réglages).');
 }
+const glLost=()=>{try{return !!(PX&&(PX.lost||(PX.R.gl&&PX.R.gl.isContextLost&&PX.R.gl.isContextLost())))}catch(e){return false}};
 function render(){
-  if(PX){try{renderPixi();return}catch(err){dropPixi(err)}}
+  if(PX&&!PX.lost&&glLost())dropPixi('contexte WebGL perdu');
+  if(PX){if(PX.lost)return;try{renderPixi();return}catch(err){dropPixi(err)}}
   render2D();
 }
 

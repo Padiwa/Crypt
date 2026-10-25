@@ -247,7 +247,7 @@ function showOver(title,txt,earn,rel){$('overTitle').textContent=title;$('overTx
 function grantRelic(id,rad){
   const a=meta.relics[id];if(!a||a[rad?1:0]<=0)return null;
   a[rad?1:0]--;const r=rollRelic(id,rad),rar=RW_RAR[RELICS[id].rw.indexOf(r)];
-  const [k,v]=r.split(':');let si=null;if(k==='ess')meta.essence+=+v;else if(k==='gold')meta.gold+=+v;else if(k==='sang'){si=sangItem(v,sangLvl());meta.stash.push(si)}else if(k==='aby'){si=abyItem(v,abyLvl());meta.stash.push(si)}else{const p=meta.parts[k]||(meta.parts[k]=[0,0,0]);p[+v]++}
+  const [k,v]=r.split(':');let si=null;if(k==='ess')meta.essence+=+v;else if(k==='gold')meta.gold+=+v;else if(k==='sang'){si=sangItem(v,sangLvl());meta.stash.push(si)}else if(k==='aby'){si=abyItem(v,abyLvl());meta.stash.push(si)}else if(v==='*')giveFrag(k);else{const p=meta.parts[k]||(meta.parts[k]=[0,0,0]);p[+v]++}
   relicQFix();
   const frag=k!=='ess'&&k!=='gold'&&k!=='sang'&&k!=='aby';
   return {rar,html:`<b style="color:${MOD_RAR[rar].c}">${rwLabel(r)}</b> (${['commun','peu commun','rare'][rar]})`+(frag?` · fragment ${fragStatus(k)} / 3 de ${bpdef(k).n}, à fabriquer à l'Armurerie`:'')+(si?` · <b style="color:${RAR[si.r].c}">${si.name}</b> niveau ${si.lvl} rejoint ton coffre (${Object.keys(si.aff).map(q=>AFF[q].t(si.aff[q])).join(', ')})`:'')};
