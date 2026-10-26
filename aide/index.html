@@ -353,7 +353,7 @@ details.more .tbl{margin:0 14px 14px}
     <p>« Plus d'actions » déplie le reste :</p>
     <ul>
       <li><b>Fusionner</b> (sous la comparaison) : si tu as un exemplaire identique de même rang, le bouton le sacrifie et fait monter l'objet d'un rang (+10 % de statistiques, rang 10 au maximum). Voir <a href="#camp-fusion">Fusion de rang</a>.</li>
-      <li><b>Verrouiller</b> : le cadenas protège un objet du recyclage et du transfert d'affixe.</li>
+      <li><b>Verrouiller</b> : le cadenas protège un objet du recyclage, des fusions et du transfert d'affixe (il ne peut plus être source).</li>
       <li><b>Prendre une affixe</b> / <b>Recevoir une affixe</b> : ouvre Forge › Affixes avec l'objet déjà en source (ou en cible) ; une puce <b>Retour à Héros</b> ramène exactement où tu étais.</li>
       <li><b>Recycler</b> : ouvre Armurerie › Recyclage avec l'objet déjà choisi (puce « Retour au Coffre » pour revenir). Le recyclage ne se fait que là. Verrouiller ou retirer un mod affichent un message « Annuler » pendant 5 s.</li>
       <li><b>Équiper le meilleur</b>, en bas de l'onglet, remplit chaque emplacement avec l'objet le plus fort du coffre.</li>
@@ -512,7 +512,7 @@ details.more .tbl{margin:0 14px 14px}
     <h3>Fusion</h3>
     <p>Si la cible a déjà cette affixe, les deux valeurs fusionnent : la plus forte + 50 % de la plus faible, 3 fois au maximum par affixe.</p>
     <h3>Chercher par affixe</h3>
-    <p>La liste regroupe toutes les affixes de tes objets, filtrables en Offensives, Défensives et Utilitaires, avec la meilleure valeur et l'objet qui la porte. Ouvre une affixe : chaque objet qui la porte (armes comprises) a deux boutons, <b>Source</b> (l'objet sera détruit et cette affixe prise) et <b>Cible</b> (l'objet reçoit l'affixe). Un objet verrouillé ou une arme ne peut être que cible. L'objet choisi affiche une pastille « − Source » ou « + Cible ».</p>
+    <p>La liste regroupe toutes les affixes de tes objets, filtrables en Offensives, Défensives et Utilitaires, avec la meilleure valeur et l'objet qui la porte. Ouvre une affixe : chaque objet qui la porte (armes comprises) a deux boutons, <b>Source</b> (l'objet sera détruit et cette affixe prise) et <b>Cible</b> (l'objet reçoit l'affixe). Tout objet peut être source, armes comprises, sauf les objets verrouillés et les armes de départ : ceux-là n'ont que le bouton Cible. Une arme détruite comme source est remplacée par un de ses doubles s'il y en a, sinon le héros reprend son arme de départ. L'objet choisi affiche une pastille « − Source » ou « + Cible ».</p>
     <h3>Alertes de butin</h3>
     <p>Coche les affixes que tu recherches : en mission, un flash t'avertira quand l'une tombe avec une meilleure valeur que ton équipement.</p>
     <h3>Sceaux légendaires</h3>
@@ -651,7 +651,7 @@ details.more .tbl{margin:0 14px 14px}
 
 </main>
 
-<footer class="wrap">Crypte des Cendres · guide à jour de la version 97 du jeu. <a href="../index.html">Retour au jeu</a></footer>
+<footer class="wrap">Crypte des Cendres · guide à jour de la version 99 du jeu. <a href="../index.html">Retour au jeu</a></footer>
 
 <dialog id="zoom" aria-label="Capture agrandie"><button type="button" id="zoomX" aria-label="Fermer">×</button><img id="zoomImg" alt=""></dialog>
 

@@ -123,7 +123,7 @@ function campDockHtml(){
   else{const p=fusePartner(it);if(p)fuse=btn(' cx-btn--block','fuse1',key,XSVG.up,`Fusionner avec un double · ${rkTxt(n)} → ${rkTxt(n+1)}`);else if(n<UP_MAX)fuse=`<p class="cx-hint" style="margin:0">${rkTxt(n)} · un exemplaire identique (${esc(it.rid?it.name:it.type)}, ${RAR[it.r].n.toLowerCase()}, ${rkTxt(n)}) le fait monter de rang.</p>`}
   more.push(btn('','lock',null,XSVG.lock,it.lock?'Déverrouiller':'Verrouiller'));
   if(worn&&it.slot!=='arme')more.push(btn('','unequip',null,XSVG.out,'Retirer au coffre'));
-  if(key[0]!=='w'&&Object.keys(it.aff).length)more.push(btn('','xftake',key,XSVG.take,'Prendre une affixe',it.lock));
+  if(xfSrcOk(key)&&Object.keys(it.aff).length)more.push(btn('','xftake',key,XSVG.take,'Prendre une affixe'));
   more.push(btn('','xfrecv',key,XSVG.take,'Recevoir une affixe'));
   if(!worn&&(!it.wid||(wb&&!wb.start)))more.push(btn('','gorecy1',key,XSVG.recy,'Recycler',it.lock));
   const sk=key;if(sk!==cmpKey){cmpKey=sk;cmpPage=0}
@@ -131,7 +131,7 @@ function campDockHtml(){
     <span class="cx-dock__meta">${r.n} · ${SLOT[it.slot]}${it.wid?' · fabriquée':` · niveau ${it.lvl}`}${` · ${rkTxt(n)}`}${worn?' · <b style="color:var(--heal)">Porté</b>':''}${idx>=0?` · ${idx+1} / ${list.length}`:''}</span>
     ${worn||other?affs:cmpObjet(eq,it)}${main}${fuse}
     <div class="cx-actions" style="gap:6px"><button class="cx-btn cx-btn--sm" data-cact="dmore" aria-expanded="${dockMore}">${dockMore?'Moins d\'actions':'Plus d\'actions'}</button>${worn?'':`<button class="cx-btn cx-btn--sm" data-cact="dall" aria-pressed="${dockAll}">${dockAll?'Masquer les statistiques':'Toutes les statistiques'}</button>`}</div>
-    ${dockMore?`<div class="cx-dock__more">${more.join('')}</div>`:''}${it.lock&&!worn?'<p class="cx-hint" style="margin:0">Verrouillé : ni recyclé, ni utilisé comme source d\'affixe.</p>':''}`;
+    ${dockMore?`<div class="cx-dock__more">${more.join('')}</div>`:''}${it.lock&&!worn?'<p class="cx-hint" style="margin:0">Verrouillé : ni recyclé, ni sacrifié par une fusion, ni utilisé comme source d\'affixe.</p>':''}`;
 }
 
 /* ---------- Parcours affixe : départ depuis la fiche, puce de retour ---------- */

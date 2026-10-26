@@ -226,13 +226,15 @@ function affFinder(){
   h+='<ul class="afind">'+keys.map(k=>{const L=by[k],b=L[0],open=afOpen===k,mine=d&&d.aff[k]!=null?affEff(d,k):null;
     const row=`<button class="afrow" data-cact="afopen" data-arg="${k}" aria-expanded="${open}"><span class="afn">${AFF_NAME[k]||k}</span><span class="afv">${affShort(k,b.v)}</span><span class="afs">max · <b style="color:${RARV[b.it.r]}">${esc(itemName(b.it))}</b> · ${b.w}${L.length>1?` · ${L.length} objets`:''}${mine!=null?` · ta cible : ${affShort(k,mine)}`:''}</span><span class="afc" aria-hidden="true">${open?'▴':'▾'}</span></button>`;
     if(!open)return `<li>${row}</li>`;
-    return `<li class="open">${row}<ul>${L.slice(0,10).map((o,i)=>{const isS=xf.src===o.key&&xf.k===k,isD=xf.dst===o.key,canS=o.key[0]!=='w'&&!o.it.lock&&!isD;
+    return `<li class="open">${row}<ul>${L.slice(0,10).map((o,i)=>{const isS=xf.src===o.key&&xf.k===k,isD=xf.dst===o.key,canS=xfSrcOk(o.key)&&!isD;
       return `<li><span><b style="color:${RARV[o.it.r]}">${esc(itemName(o.it))}</b>${o.it.lock?` <span class="li" aria-label="verrouillé">${LOCK_SVG}</span>`:''} · ${o.w}<br><span class="afv2">${affShort(k,o.v)}</span>${i===0?' <span class="cx-tag cx-tag--heal">max</span>':''}</span>
-        <span style="display:flex;gap:6px;flex-shrink:0">${isS?'<span class="cx-pin cx-pin--src" style="position:static">Source</span>':`<button class="cx-btn cx-btn--sm" data-cact="afuse" data-arg="${k}|${o.key}" ${!canS?'disabled':''} title="${o.key[0]==='w'?'Une arme ne peut pas être source':o.it.lock?'Verrouillé : ne peut pas être détruit':''}">Source</button>`}${isD?'<span class="cx-pin cx-pin--dst" style="position:static">Cible</span>':`<button class="cx-btn cx-btn--sm" data-cact="afdst" data-arg="${o.key}" ${xf.src===o.key?'disabled':''}>Cible</button>`}</span></li>`}).join('')}${L.length>10?`<li class="cx-hint" style="margin:0">… et ${L.length-10} autres, plus faibles.</li>`:''}</ul></li>`}).join('')+'</ul></section>';
+        <span style="display:flex;gap:6px;flex-shrink:0">${isS?'<span class="cx-pin cx-pin--src" style="position:static">Source</span>':!canS&&!isD?'':`<button class="cx-btn cx-btn--sm" data-cact="afuse" data-arg="${k}|${o.key}" ${!canS?'disabled':''} title="${canS?'':'Arme de départ : elle ne peut pas être détruite'}">Source</button>`}${isD?'<span class="cx-pin cx-pin--dst" style="position:static">Cible</span>':`<button class="cx-btn cx-btn--sm" data-cact="afdst" data-arg="${o.key}" ${xf.src===o.key?'disabled':''}>Cible</button>`}</span></li>`}).join('')}${L.length>10?`<li class="cx-hint" style="margin:0">… et ${L.length-10} autres, plus faibles.</li>`:''}</ul></li>`}).join('')+'</ul></section>';
   return h;
 }
 const RARV=['var(--rar-common)','var(--rar-magic)','var(--rar-rare)','var(--rar-legend)','var(--rar-anc)','var(--rar-sang)','var(--rar-aby)'];
-function xfOk(key,it){if(!it)return false;if(xf.pick==='src')return key[0]!=='w'&&!it.lock&&Object.keys(it.aff).length>0;return key!==xf.src}
+// Tout objet peut être source, sauf les objets verrouillés et les armes de départ (elles ne se détruisent pas).
+const xfSrcOk=key=>{if(!key||(key[0]==='w'&&(wdef(key.slice(2))||{}).start))return false;const it=xfGet(key);return !!it&&!it.lock};
+function xfOk(key,it){if(!it)return false;if(xf.pick==='src')return xfSrcOk(key)&&Object.keys(it.aff).length>0;return key!==xf.src}
 const xfPin=key=>key===xf.src?'<span class="cx-pin cx-pin--src">Source</span>':key===xf.dst?'<span class="cx-pin cx-pin--dst">Cible</span>':'';
 const xfSt=key=>key===xf.src?' is-src':key===xf.dst?' is-dst':'';
 function xfSlot(key,it,label,oth){if(!it)return `<div class="cx-slot cx-slot--empty"><span class="cx-slot__k">${label}</span><span class="cx-slot__v">Vide</span></div>`;
@@ -245,7 +247,7 @@ function xfDiffCard(kind,it,where,lines,gone){const src=kind==='src';
     <ul><li class="cx-line cx-line--base">${baseTxtOf(it.slot,fmtN(it.base.v*upMul(it.up)))}</li>${lines}</ul>`:`<span class="cx-diff__sub">${src?'Choisis l\'objet source.':'Choisis la cible.'}</span>`}</div>`}
 function campAffix(){
   if(!xf.pick)xf.pick=xf.src?'dst':'src';
-  let s=xfGet(xf.src);if(xf.src&&(!s||s.lock)){xf={src:'',k:'',dst:'',rep:'',pick:'src'};s=null}
+  let s=xfGet(xf.src);if(xf.src&&(!s||!xfSrcOk(xf.src))){xf={src:'',k:'',dst:'',rep:'',pick:'src'};s=null}
   if(s&&xf.k&&s.aff[xf.k]==null)xf.k='';
   const d=xfGet(xf.dst),wlab=k=>k[0]==='w'?'arme':k[0]==='g'?'équipé':'coffre';
   let h=backChip()+xfSteps();
@@ -284,12 +286,19 @@ function affixFoot(){const st=xfState(),s=xfGet(xf.src);
   return `${both?`<div class="cx-chips" role="radiogroup" aria-label="Mode" style="justify-content:center"><button class="cx-chip cx-chip--sm" role="radio" data-cact="xfop" data-arg="fuse" aria-checked="${st.mode==='fuse'}">Fusionner (additionner)</button><button class="cx-chip cx-chip--sm" role="radio" data-cact="xfop" data-arg="up" aria-checked="${st.mode==='up'}">Remplacer</button></div>`:''}<div class="row"><button class="cx-btn cx-btn--ghost" data-cact="xfcancel">Annuler</button><button class="cx-btn cx-btn--primary cx-btn--cost" data-cact="xfok" ${poor?'disabled':''}>${st.mode==='fuse'?'Fusionner':'Transférer'} <span class="cx-price"><i class="cx-ess"></i>${cost}</span></button></div>
     <p class="cx-hint">${poor?`Il te manque ${cost-meta.essence} essence.`:`${esc(itemName(s))} sera détruit.`}</p>`;
 }
-function xfDo(){const s=xfGet(xf.src),st=xfState();if(!s||s.lock||!st||!st.ok)return;const cost=st.cost||xfCost(s);if(meta.essence<cost)return;
+// Détruit une arme utilisée comme source : un double prend sa place s'il y en a ; sinon elle disparaît, et le héros reprend son arme de départ s'il la portait.
+function wDestroy(w){const sp=wSpares(w);
+  if(sp.length){const hi=Math.max(...sp);sp.splice(sp.indexOf(hi),1);meta.wlv[w]=hi;if(!sp.length)delete meta.wcp[w];return}
+  const c=wclsOf(w);delete meta.built[w];delete meta.wlv[w];if(meta.waff)delete meta.waff[w];if(meta.wfz)delete meta.wfz[w];if(meta.wlock)delete meta.wlock[w];
+  if(c&&meta.wpn[c]===w)meta.wpn[c]=WPN[c][0].id}
+function xfDo(){const s=xfGet(xf.src),st=xfState();if(!s||!xfSrcOk(xf.src)||!st||!st.ok)return;const cost=st.cost||xfCost(s);if(meta.essence<cost)return;
   const k=xf.k,v=st.nv;
   if(xf.dst[0]==='w'){const wid=xf.dst.slice(2),o=meta.waff[wid]||(meta.waff[wid]={});if(st.mode==='rep')o[xf.rep]=null;o[k]=v;
     if(st.mode==='fuse'){meta.wfz=meta.wfz||{};const f=meta.wfz[wid]||(meta.wfz[wid]={});f[k]=(f[k]||0)+1}}
   else{const d=xfGet(xf.dst);if(st.mode==='rep')delete d.aff[xf.rep];d.aff[k]=v;if(st.mode==='fuse'){d.fz=d.fz||{};d.fz[k]=(d.fz[k]||0)+1}else if(d.fz)delete d.fz[k]}
-  if(xf.src[0]==='s'){const i=meta.stash.findIndex(x=>String(x.id)===xf.src.slice(2));if(i>=0)meta.stash.splice(i,1)}else meta.gear[xf.src.slice(2)]=null;
+  if(xf.src[0]==='s'){const i=meta.stash.findIndex(x=>String(x.id)===xf.src.slice(2));if(i>=0)meta.stash.splice(i,1)}
+  else if(xf.src[0]==='w')wDestroy(xf.src.slice(2));
+  else meta.gear[xf.src.slice(2)]=null;
   meta.essence-=cost;const dn=itemName(xfGet(xf.dst)||{name:'la cible'});toast(`${st.mode==='fuse'?'Affixe fusionnée':'Affixe transférée'} : <b>${xfV(xfGet(xf.dst)||{},k,v)}</b> sur ${esc(dn)}. ${esc(itemName(s))} est détruit.`);
   xf={src:'',k:'',dst:'',rep:'',pick:'src'};campSel=null}
 function prestSection(){
@@ -470,7 +479,7 @@ function campClick(b){
     else if(a==='wishnone'){if(meta.wish)meta.wish.aff={}}
     else if(a==='afopen'){afOpen=afOpen===arg?'':arg}
     else if(a==='afdst'){const it=xfGet(arg);if(!it||arg===xf.src)return;xf.dst=arg;xf.rep='';xf.op='';xf.pick=xf.src?'dst':'src'}
-    else if(a==='afuse'){const [k,key]=arg.split('|'),it=xfGet(key);if(!it||it.lock||it.aff[k]==null||key===xf.dst)return;xf.src=key;xf.k=k;xf.rep='';xf.pick='dst'}
+    else if(a==='afuse'){const [k,key]=arg.split('|'),it=xfGet(key);if(!it||!xfSrcOk(key)||it.aff[k]==null||key===xf.dst)return;xf.src=key;xf.k=k;xf.rep='';xf.pick='dst'}
     else if(a==='afilter'){afF=arg;afP=0}
     else if(a==='apage'){afP+=+arg}
     else if(a==='xfsel'){const it=xfGet(arg);if(!xfOk(arg,it))return;
