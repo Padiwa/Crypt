@@ -7,7 +7,7 @@ const ETYPE={
   bat:{r:10,hp:6,spd:165,dmg:5,col:'#6a557c'},
   archer:{r:15,hp:13,spd:85,dmg:8,col:'#d8cfb8'},
   brute:{r:26,hp:70,spd:66,dmg:18,col:'#7a2f30'},
-  poison:{r:15,hp:22,spd:80,dmg:6,col:'#5f8f3e'},
+  poison:{r:15,hp:22,spd:80,dmg:6,col:'#8a3d7e'},
   pyro:{r:15,hp:24,spd:80,dmg:6,col:'#b5532a'},
   givrin:{r:15,hp:26,spd:108,dmg:7,col:'#9cc8e8'},
   slime:{r:22,hp:34,spd:72,dmg:8,col:'#3f9e8c'},
@@ -363,7 +363,6 @@ function update(dt){
   spawner(dt);twinTick(dt)}
   if(NET.on&&G.mates&&G.mates.length)matesSmooth(dt);
   petTick(dt);
-  petTick(dt);
   if(G.oshots){for(const s of G.oshots){s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt}G.oshots=G.oshots.filter(s=>s.life>0)}
   // joueur
   const iv=inputVec(), moving=iv.m>.15;
@@ -385,7 +384,7 @@ function update(dt){
   if(G.biome===1&&Math.random()<dt*16&&G.parts.length<420)G.parts.push({x:G.cam.x+rand(-G.vw/2,G.vw/2),y:G.cam.y+rand(-G.vh/2,G.vh/2),vx:rand(-12,12),vy:rand(18,42),life:2.4,max:2.4,col:'#e4f4ff',size:rand(1,2.2)});
   if(P.brnT>0){P.brnT-=dt;dotHurt(P.brnD*dt);if(Math.random()<dt*10)G.parts.push({x:P.x+rand(-8,8),y:P.y+rand(-6,6),vx:0,vy:-60,life:.5,max:.5,col:'#ff8a3a',size:3})}
   if(G.over)return;
-  if(NET.guest)for(const l of G.lobs)l.t+=dt;else for(const l of G.lobs){l.t+=dt;if(l.t>=l.T){l.done=true;const life=l.kind==='poison'?5:3;G.zones.push({id:++G.zid,x:l.tx,y:l.ty,r:l.r,life,max:life,kind:l.kind,dps:l.dps});burst(l.tx,l.ty,14,l.kind==='poison'?'#7fd36a':'#ff8a3a',140,3)}}
+  if(NET.guest)for(const l of G.lobs)l.t+=dt;else for(const l of G.lobs){l.t+=dt;if(l.t>=l.T){l.done=true;const life=l.kind==='poison'?5:3;G.zones.push({id:++G.zid,x:l.tx,y:l.ty,r:l.r,life,max:life,kind:l.kind,dps:l.dps});burst(l.tx,l.ty,14,l.kind==='poison'?'#e07ad6':'#ff8a3a',140,3)}}
   compact(G.lobs,l=>!l.done);
   for(const w of G.wells){if(!w.on){w.cd-=dt;if(w.cd<=0)placeWell(w)}
     else if((P.psnT>0||P.brnT>0||P.frzT>0)&&Math.hypot(P.x-w.x,P.y-w.y)<w.r+P.r){P.psn=0;P.psnT=0;P.psnD=0;P.brnT=0;P.frzT=0;w.on=false;w.cd=30;burst(w.x,w.y,24,'#bfeaff',160,3);toast('<b style="color:#9fdcff">Source sacrée</b> : altérations purifiées. Elle réapparaîtra ailleurs.')}}

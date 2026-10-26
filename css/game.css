@@ -159,7 +159,7 @@ body:has(#camp:not([hidden])) .toast,body:has(#bag:not([hidden])) .toast{top:aut
 .pager .btn{width:40px;height:36px;padding:0;font-size:20px}
 .sts{display:flex;gap:6px;margin-top:3px;flex-wrap:wrap}
 .sts span{font-size:11px;font-weight:700;border-radius:4px;padding:1px 6px;white-space:nowrap}
-.stp{background:rgba(110,200,80,.2);color:#9be36f;border:1px solid rgba(110,200,80,.5)}
+.stp{background:rgba(200,70,190,.2);color:#e07ad6;border:1px solid rgba(200,70,190,.5)}
 .stc{background:rgba(255,211,77,.18);color:#ffd34d;border:1px solid rgba(255,211,77,.55)}
 .stb{background:rgba(255,120,40,.2);color:#ffb04a;border:1px solid rgba(255,120,40,.5)}
 #lootFlash{position:fixed;inset:0;pointer-events:none;opacity:0;z-index:6;background:radial-gradient(circle at 50% 55%,rgba(255,236,170,.0) 25%,rgba(255,214,120,.38) 100%)}
@@ -168,7 +168,7 @@ body:has(#camp:not([hidden])) .toast,body:has(#bag:not([hidden])) .toast{top:aut
 @keyframes lflash{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
 @media (prefers-reduced-motion:reduce){#lootFlash.on{animation-duration:.4s}}
 #stVig{position:fixed;inset:0;pointer-events:none;opacity:0;transition:opacity .3s}
-#stVig.psn{opacity:1;box-shadow:inset 0 0 90px rgba(110,200,80,.45)}
+#stVig.psn{opacity:1;box-shadow:inset 0 0 90px rgba(200,70,190,.45)}
 #stVig.brn{opacity:1;box-shadow:inset 0 0 90px rgba(255,110,40,.5)}
 .relb{border-color:var(--tc);color:var(--tc);padding:6px 10px;font-size:13px;font-weight:700}
 .tab[aria-selected="true"]{background:var(--panel2);color:var(--ink);box-shadow:inset 0 -2px 0 var(--ember)}
@@ -846,3 +846,33 @@ li.sealp{color:#ffb3ea}
 .cx-tabs--icons .cx-tab{flex:1 1 auto;font-size:10.5px;letter-spacing:-.2px;padding:6px 0}
 .cx-tabs--icons .cx-tab span{text-overflow:clip}
 @media (max-width:380px){.cx-tabs--icons .cx-tab{font-size:9.5px}}
+
+/* boutons à gauche (Réglages › Écran) : disposition en miroir */
+body.lefty .skills{right:auto;left:0;padding:0 0 calc(env(safe-area-inset-bottom,0px) + 22px) max(18px,calc(env(safe-area-inset-left,0px) + 12px))}
+body.lefty .sk.nova{grid-column:1}
+body.lefty .sk.ult{grid-column:1}
+body.lefty .sk.dash,body.lefty .sk.potion{grid-column:2}
+body.lefty .sk.dash svg{transform:scaleX(-1)}
+body.lefty .hint{left:auto;right:max(16px,env(safe-area-inset-right,0px));text-align:right}
+
+/* objectif de mission (bandeau centré sous le HUD) */
+.objbox{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 58px);pointer-events:none;padding:5px 12px 6px;border:1px solid var(--line);border-radius:10px;background:rgba(15,12,18,.85);box-shadow:0 2px 10px rgba(0,0,0,.45);min-width:min(250px,80vw);max-width:92vw;box-sizing:border-box;z-index:5}
+.objrow{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.objk{font-size:11px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.objbox b{font-size:21px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink);line-height:1.05;white-space:nowrap}
+.objbar{display:block;width:100%;height:4px;border-radius:2px;background:#2a2430;overflow:hidden;margin-top:4px}
+.objbar i{display:block;height:100%;width:100%;background:var(--c,#f0cf4a);transform-origin:left;transform:scaleX(0);transition:transform .2s}
+.objbox.hot{border-color:var(--ember);animation:objhot 1s ease-in-out infinite}
+.objbox.hot b{color:var(--ember)}
+@keyframes objhot{50%{box-shadow:0 0 14px rgba(232,133,59,.55)}}
+@media (prefers-reduced-motion:reduce){.objbox.hot{animation:none}}
+.boss{top:calc(env(safe-area-inset-top,0px) + 112px)}
+.boss.obj{top:calc(env(safe-area-inset-top,0px) + 150px)}
+.toast{top:calc(env(safe-area-inset-top,0px) + 196px)}
+.banner{top:calc(env(safe-area-inset-top,0px) + 240px)}
+body:has(#camp:not([hidden])) .objbox,body:has(#bag:not([hidden])) .objbox,body:has(#extract:not([hidden])) .objbox{display:none}
+/* résumé de butin compact */
+.exsum div{align-items:baseline}
+.exsum b{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:2px 10px;text-align:right;min-width:0}
+.exsum .lc{color:var(--c);white-space:nowrap;font-weight:700}
+.exsum .lc::before{content:"◆ ";font-size:.8em}

@@ -107,9 +107,29 @@ function arsBar(){const cp=craftPlan(),rp=recyPlan(),nr=rp.ws.length+rp.pr.lengt
     h+=`<div class="card"><p style="margin:0;font-size:14px">Fabriquer ${cp.plan.length} objet${cp.plan.length>1?'s':''} pour <b><span class="coin"></span> ${cp.cost} or</b> : ${Object.keys(cnt).map(id=>`<b style="color:${RAR[bpdef(id).r].c}">${bpdef(id).n}</b>${cnt[id]>1?' ×'+cnt[id]:''}`).join(', ')}. L'arme de ton héros fabriquée est équipée tout de suite ; les objets Prime vont au coffre.</p><div class="actions"><button class="btn main" data-cact="craftall">Tout fabriquer</button><button class="btn" data-cact="arsno">Annuler</button></div></div>`}
   if(arsAsk==='recy'&&nr){h+=`<div class="card"><p style="margin:0;font-size:14px">Recycler ${nr} objet${nr>1?'s':''} fabriqué${nr>1?'s':''} : ${[...rp.ws.map(w=>`<b style="color:${RAR[w.r].c}">${w.n}</b>`),...rp.pr.map(it=>`<b style="color:${RAR[it.r].c}">${esc(itemName(it))}</b>`)].join(', ')}. Tu récupères <b>${rp.ess} essence</b> et 1 fragment de schéma par objet. Les armes équipées et les objets verrouillés sont gardés.</p><div class="actions"><button class="btn danger" data-cact="arecyall">Tout recycler</button><button class="btn" data-cact="arsno">Annuler</button></div></div>`}
   return h}
+let arsView='rec';
+// Armurerie › Mes armes : toutes les armes possédées, avec leurs valeurs réelles (amélioration et affixes ajoutées comprises).
+function myWeapons(){const order=[heroCls,...Object.keys(CLS).filter(c=>c!==heroCls)];
+  const all=order.flatMap(c=>WPN[c].filter(w=>ownedW(w.id)).map(w=>({c,w})));const tot=Object.values(WPN).flat().length;
+  const base=curEq(),dpsOf=id=>dps(stats({...base,arme:weaponItem(heroCls,id)})),cur=dpsOf(curWid());
+  let h=`<p class="cx-hint" style="margin:0">${all.length} arme${all.length>1?'s':''} possédée${all.length>1?'s':''} sur ${tot}. Valeurs avec amélioration et affixes ajoutées. Pour ton héros, la ligne DPS compare chaque arme à celle équipée, avec ton équipement actuel.</p>`;
+  for(const c of order){const L=all.filter(x=>x.c===c);if(!L.length)continue;
+    h+=`<h3>${CLS[c].n}${c===heroCls?' · ton héros':''} <span class="cx-hint" style="margin:0;font-weight:400">${L.length} / ${WPN[c].length}</span></h3>`;
+    h+=L.sort((a,b)=>b.w.r-a.w.r).map(({w})=>{const it=weaponItem(c,w.id),m=upMul(it.up),r=RAR[w.r],eq=curWid(c)===w.id,mine=c===heroCls;
+      const mods=(meta.wload[w.id]||[]).filter(Boolean).length,mt=(meta.wmast[w.id]||{r:0}).r;
+      const d=mine?dpsOf(w.id):0,diff=mine&&!eq&&cur?Math.round((d/cur-1)*100):0;
+      return `<div class="wpn${eq&&mine?' on':''}"><div class="nm" style="color:${r.c}">${w.n}${it.up?` <span style="color:var(--ink)">+${it.up}</span>`:''}</div>
+        <div class="meta">${r.n} · ${fmtN(w.dmg*m)} dégâts de base · maîtrise ${mt} / 10 · ${mods} mod${mods>1?'s':''}</div>
+        <ul>${Object.keys(it.aff).map(k=>`<li${AFF[k].aby?' class="abyp"':''}>${AFF[k].t(NOSCALE[k]?it.aff[k]:fmtN(it.aff[k]*m))}</li>`).join('')||'<li>Aucun bonus</li>'}</ul>
+        ${mine?`<div class="meta">DPS estimé <b style="color:var(--ink)">${fmtN(Math.round(d))}</b>${eq?'':` · <b style="color:${diff>=0?'var(--heal)':'var(--blood)'}">${diff>=0?'+':''}${diff} %</b> par rapport à l'arme équipée`}</div>`:''}
+        <div class="wfoot">${eq?`<span class="owned">Équipée${mine?'':' · '+CLS[c].n}</span>`:mine?`<button class="btn main" data-cact="wequip" data-arg="${w.id}">Équiper</button>`:`<span class="owned">${CLS[c].n}</span>`}</div></div>`}).join('')}
+  return h}
 function campArsenal2(){
   const order=[heroCls,...Object.keys(CLS).filter(c=>c!==heroCls)];
-  return `${campMsg}${arsBar()}<p class="empty" style="font-size:13px">Toutes les recettes. Chaque équipement se fabrique avec ses 3 fragments de schéma, trouvés dans les reliques. Équipe tes reliques ici ou à l'onglet Reliques : elles s'ouvrent en mission, une par une, tous les 10 réactifs (+25 essence chacune).</p>`
+  const nOwn=Object.values(WPN).flat().filter(w=>ownedW(w.id)).length;
+  const tabs=`<div class="cx-chips" role="tablist" aria-label="Armurerie"><button class="cx-chip" role="tab" data-cact="arsv" data-arg="rec" aria-pressed="${arsView==='rec'}">Recettes</button><button class="cx-chip" role="tab" data-cact="arsv" data-arg="mine" aria-pressed="${arsView==='mine'}">Mes armes <span class="n">${nOwn}</span></button></div>`;
+  if(arsView==='mine')return `${campMsg}${tabs}${myWeapons()}`;
+  return `${campMsg}${tabs}${arsBar()}<p class="empty" style="font-size:13px">Toutes les recettes. Chaque équipement se fabrique avec ses 3 fragments de schéma, trouvés dans les reliques. Équipe tes reliques ici ou à l'onglet Reliques : elles s'ouvrent en mission, une par une, tous les 10 réactifs (+25 essence chacune).</p>`
     +order.map(c=>`<h3>Armes · ${CLS[c].n}${c===heroCls?' · ton héros':''}</h3>`+WPN[c].filter((w,i)=>i>0||c===heroCls).map(w=>bpCard(bpdef(w.id))).join('')).join('')
     +`<h3>Équipement Prime · toutes classes</h3>`+GEAR_BP.map(g=>bpCard(bpdef(g.id))).join('');
 }
@@ -232,10 +252,10 @@ function xfCard(lab,it,where,lines,extra=''){
   return `<div class="xfc${extra}"><span class="lab">${lab}</span>${it?`<span class="nm" style="color:${RAR[it.r].c}">${esc(itemName(it))}</span><span class="sub">${RAR[it.r].n} · ${where}</span>
     <ul><li class="base">${baseTxtOf(it.slot,fmtN(it.base.v*upMul(it.up)))}</li>${lines}</ul>`:`<span class="sub">${lines}</span>`}</div>`}
 let afF='all',afP=0,afCat='all',afOpen='';
-const AFF_CAT={frz:'off',cold:'off',shard:'off',dmgPct:'off',apsPct:'off',crit:'off',critDmg:'off',novaPct:'off',skillRad:'off',burn:'off',multi:'off',pierce:'off',reach:'off',splash:'off',hp:'def',armor:'def',regen:'def',leech:'def',speed:'uti',cdr:'uti'};
-const AFF_NAME={frz:'Gel',cold:'Dégâts contre ralentis',shard:'Éclats de glace',dmgPct:'Dégâts',apsPct:'Vitesse d\'attaque',crit:'Chances de critique',critDmg:'Dégâts critiques',hp:'Points de vie',armor:'Réduction des dégâts',speed:'Vitesse de déplacement',regen:'Régénération',cdr:'Temps de recharge',skillRad:'Portée des compétences',novaPct:'Dégâts de compétence',burn:'Embrasement',multi:'Projectiles par tir',leech:'Vol de vie',reach:'Portée de frappe',splash:'Rayon d\'explosion',pierce:'Transpercement'};
+const AFF_CAT={frz:'off',cold:'off',shard:'off',dmgPct:'off',apsPct:'off',crit:'off',critDmg:'off',novaPct:'off',skillRad:'off',burn:'off',multi:'off',pierce:'off',reach:'off',splash:'off',hp:'def',armor:'def',regen:'def',leech:'def',speed:'uti',cdr:'uti',burnPct:'off',chill:'off',shock:'off',execute:'off',bossDmg:'off',lowDmg:'off',ultPct:'off',fury:'off',lowArmor:'def',potHeal:'def',antidote:'def',auraSlow:'def',skillDur:'uti',dashCd:'uti',magnetPct:'uti',goldPct:'uti',xpPct:'uti',lootPct:'uti'};
+const AFF_NAME={frz:'Gel',cold:'Dégâts contre ralentis',shard:'Éclats de glace',dmgPct:'Dégâts',apsPct:'Vitesse d\'attaque',crit:'Chances de critique',critDmg:'Dégâts critiques',hp:'Points de vie',armor:'Réduction des dégâts',speed:'Vitesse de déplacement',regen:'Régénération',cdr:'Temps de recharge',skillRad:'Portée des compétences',novaPct:'Dégâts de compétence',burn:'Embrasement',multi:'Projectiles par tir',leech:'Vol de vie',reach:'Portée de frappe',splash:'Rayon d\'explosion',pierce:'Transpercement',burnPct:'Embrasement (%)',chill:'Ralentissement',shock:'Éclair en chaîne',execute:'Exécution',bossDmg:'Dégâts contre Gardiens',lowDmg:'Dégâts sous 50 % de vie',ultPct:'Dégâts de l\'ultime',fury:'Charge de l\'ultime',lowArmor:'Protection sous 30 % de vie',potHeal:'Soin des potions',antidote:'Antidote',auraSlow:'Aura de lenteur',skillDur:'Durée des compétences',dashCd:'Recharge de l\'esquive',magnetPct:'Portée de ramassage',goldPct:'Or',xpPct:'Expérience',lootPct:'Chances de butin'};
 const AFF_CATN={off:'Offensives',def:'Défensives',uti:'Utilitaires'};
-const affShort=(k,v)=>{const pct=!['hp','regen','burn','multi','pierce'].includes(k),neg=k==='armor'||k==='cdr';return `${neg?'−':'+'}${fmtN(v)}${pct?' %':k==='regen'?' PV/s':k==='burn'?' /s':''}`};
+const affShort=(k,v)=>{const pct=!['hp','regen','burn','multi','pierce'].includes(k),neg=['armor','cdr','lowArmor','dashCd','antidote','fury'].includes(k);return `${neg?'−':'+'}${fmtN(v)}${pct?' %':k==='regen'?' PV/s':k==='burn'?' /s':''}`};
 const affEff=(it,k)=>NOSCALE[k]?it.aff[k]:it.aff[k]*upMul(it.up);
 function wishSection(){const W=meta.wish||(meta.wish={leg:true,aff:{}});W.aff=W.aff||{};
   const keys=Object.keys(AFF).filter(k=>!AFF[k].w),n=keys.filter(k=>W.aff[k]).length;
@@ -413,6 +433,7 @@ $('campSheet').addEventListener('click',e=>{
     else if(a==='unequip'){const s=campSel.slot,it=meta.gear[s];if(it){meta.stash.push(it);meta.gear[s]=null;campSel={stash:it.id}}}
     else if(a==='toarsenal'){campTab='arsenal';campSel=null}
     else if(a==='wequip'){if(ownedW(arg))meta.wpn[heroCls]=arg}
+    else if(a==='arsv'){arsView=arg}
     else if(a==='wrecy'){wRecy=arg}
     else if(a==='wrecyno'){wRecy=null}
     else if(a==='wrecyok'){const b=bpdef(arg);if(b&&ownedW(arg)&&b.bp>0&&(meta.wpn[b.cls]||WPN[b.cls][0].id)!==arg){const e=wRecyEss(b);delete meta.built[arg];delete meta.wlv[arg];if(meta.waff)delete meta.waff[arg];meta.essence+=e;const i=giveFrag(arg);

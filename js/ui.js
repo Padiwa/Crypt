@@ -23,7 +23,7 @@ function cmpBlock(e,it){const a=stats(e),b=stats({...e,[it.slot]:it}),cur=e[it.s
   const f=(v,dc)=>(Math.round(v*10**dc)/10**dc).toLocaleString('fr-FR',{minimumFractionDigits:dc,maximumFractionDigits:dc});
   const rows=R.filter(([l,x,y,dc])=>Math.abs(y-x)>=.5/10**dc).map(([l,x,y,dc,u=''])=>{const d=y-x,up=d>0;return `<div><span>${l}</span><b>${f(y,dc)}${u}</b><em class="${up?'g':'b'}">${up?'▲ +':'▼ −'}${f(Math.abs(d),dc)}</em></div>`}).join('');
   return `<div class="cmp2"><div class="cmph">Comparé à ${cur?`<b style="color:${RAR[cur.r].c}">${esc(itemName(cur))}</b>`:'un emplacement vide'}</div>${rows||'<p class="cx-hint" style="margin:0">Aucun changement de statistique.</p>'}</div>`}
-const itemScore=e=>{const x=stats(e);let d=dps(x)*(1+x.abSoul*.06)*(1+x.abExec*.015)*(1+x.crit/100*x.abRift/100*2.1)*(1+x.abHunt*.0025)+x.dmg*x.abPulse/100*.8;return d+(x.hp+x.abWard*8)*.3};
+const itemScore=e=>{const x=stats(e);let d=dps(x)*(1+x.abSoul*.06)*(1+x.abExec*.015)*(1+x.crit/100*x.abRift/100*2.1)*(1+x.abHunt*.0025)+x.dmg*x.abPulse/100*.8;d*=1+x.execute*.003+x.bossDmg*.0015+x.lowDmg*.001+x.shock*.01+x.chill*.003+x.ultPct*.001+x.fury*.002;return d+(x.hp+x.abWard*8)*.3*(1+x.armor/100+x.lowArmor*.003+x.potHeal*.001+x.antidote*.001+x.auraSlow*.003)};
 function bestPlan(e,pool){const cur={...e},pick={};
   for(let pass=0;pass<2;pass++)for(const sl of ['armure','amulette','bottes','anneau']){let best=cur[sl],bs=itemScore(cur);
     for(const it of pool){if(it.slot!==sl||Object.values(pick).includes(it)&&pick[sl]!==it)continue;const sc=itemScore({...cur,[sl]:it});if(sc>bs+1e-6){bs=sc;best=it}}
@@ -63,7 +63,7 @@ function drawBag(){
   $('runLoot').innerHTML=(L.items.length||L.parts.length||L.relics.length)
     ?(rpn?`<div class="actions" style="margin:0 0 8px"><button class="btn" id="bestRun">Équiper le meilleur butin · ${rpn}</button></div>`:'')+(L.items.length?`<div class="grid">${L.items.map(it=>cellHtml(it,'run',runSel===it.id,better(it))).join('')}</div>`:'')
       +(runSel&&L.items.some(i=>i.id===runSel)?card(L.items.find(i=>i.id===runSel),'run'):'')
-      +(L.relics.length?`<ul class="partlist">${L.relics.map(id=>`<li>Relique <b style="color:${RTIER[RELICS[id].t].c}">${relicName(id)}</b></li>`).join('')}</ul>`:'')
+      +(L.relics.length?(()=>{const g={};for(const id of L.relics)g[id]=(g[id]||0)+1;return `<ul class="partlist">${Object.keys(g).sort((a,b)=>RELICS[b].t-RELICS[a].t).map(id=>`<li>Relique <b style="color:${RTIER[RELICS[id].t].c}">${relicName(id)}</b>${g[id]>1?` ×${g[id]}`:''}</li>`).join('')}</ul>`})():'')
       +(L.parts.length?`<ul class="partlist">${L.parts.map(p=>`<li>${partLabel(p)}</li>`).join('')}</ul>`:'')
     :'<p class="empty">Rien pour l\'instant. Les monstres lâchent parfois des équipements et des reliques, les Gardiens toujours.</p>';
   $('runLoot').querySelectorAll('[data-run]').forEach(b=>b.onclick=()=>{runSel=+b.dataset.run;drawBag()});
@@ -236,8 +236,12 @@ function modsChanged(){if(started&&G&&!G.over){refreshStats();if(G.pet||petEq())
 /* ---------- Fin de niveau, extraction, mort ---------- */
 function lootSummary(){
   const L=G.loot,its=L.items.length,pts=L.parts.length;
-  return `<div><span>Or ramassé</span><b style="color:var(--r2)">${G.gold}</b></div><div><span>Équipements</span><b>${its?L.items.map(i=>`<span style="color:${RAR[i.r].c}">◆</span>`).join(''):'0'}</b></div>
-    <div><span>Reliques</span><b>${L.relics.length?L.relics.map(id=>`<span style="color:${RTIER[RELICS[id].t].c}">${relicName(id)}</span>`).join(', '):'0'}</b></div>
+  const byR={};for(const i of L.items)byR[i.r]=(byR[i.r]||0)+1;const byT={};for(const id of L.relics){const t=RELICS[id].t;byT[t]=(byT[t]||0)+1}
+  const lc=(c,n,lab)=>`<span class="lc" style="--c:${c}" title="${lab}">${n} ${lab}</span>`;
+  return `<div><span>Or ramassé</span><b style="color:var(--r2)">${G.gold}</b></div>
+    <div><span>Équipements</span><b>${its?`${its} · `+Object.keys(byR).sort((a,b)=>b-a).map(r=>lc(RAR[r].c,byR[r],RAR[r].n.toLowerCase()+(byR[r]>1?'s':''))).join(''):'0'}</b></div>
+    <div><span>Reliques</span><b>${L.relics.length?`${L.relics.length} · `+Object.keys(byT).sort((a,b)=>b-a).map(t=>lc(RTIER[t].c,byT[t],RTIER[t].n)).join(''):'0'}</b></div>
+    ${pts?`<div><span>Fragments de schéma</span><b>${pts}</b></div>`:''}
     ${G.relQ.length?`<div><span>Reliques ouvertes</span><b>${G.opened.length} / ${G.relQ.length}${G.relic?` · ${G.react} / ${REACT_N} réactifs`:''}</b></div>`:''}<div><span>Ennemis abattus</span><b>${G.kills}</b></div><div><span>Temps de survie</span><b>${fmt(G.t)}</b></div>`;
 }
 function roundDone(){
@@ -258,7 +262,6 @@ function bank(full){
   const gainM=(mt,label)=>{let up=0;if(mt.r<10){mt.xp+=G.kills;while(mt.r<10&&mt.xp>=mastNeed(mt.r)){mt.xp-=mastNeed(mt.r);mt.r++;up++}if(mt.r>=10)mt.xp=0}
     return `Maîtrise ${label} : rang ${mt.r} / 10`+(mt.r<10?` (${mt.xp} / ${mastNeed(mt.r)})`:'')+(up?` · +${up} de capacité`:'')};
   G.mastMsg=gainM(mastOf(G.cls),deCls(G.cls))+'<br>'+gainM(mstOf(meta.wmast,G.wid),deW(wdef(G.wid).n));
-  {const pm=petBank(G.kills);if(pm)G.mastMsg+='<br>'+pm}
   {const pm=petBank(G.kills);if(pm)G.mastMsg+='<br>'+pm}
   if(full){
     for(const it of G.loot.items)meta.stash.push(it)
