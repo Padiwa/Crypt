@@ -26,7 +26,7 @@ const SND=(()=>{
     hit:()=>noise({f:2600,ft:'bandpass',q:2,d:.04,v:.05}),
     crit:()=>{tone({f:1500,f2:900,type:'square',d:.07,v:.05,lp:4000});noise({f:5000,ft:'highpass',d:.05,v:.05})},
     hurt:()=>{tone({f:150,f2:60,type:'sine',d:.18,v:.45});noise({f:700,d:.12,v:.22})},
-    gold:()=>tone({f:1900+Math.random()*300,type:'triangle',d:.06,v:.05}),
+    gold:()=>tone({f:1900+Math.random()*300,type:'triangle',d:.05,v:.035}),
     pick:()=>arp([660,990],.04,{type:'triangle',d:.12,v:.08}),
     pick2:()=>arp([660,880,1320],.045,{type:'triangle',d:.16,v:.1}),
     pick3:()=>arp([523,784,1046,1568],.05,{type:'triangle',d:.22,v:.12}),
@@ -50,8 +50,10 @@ const SND=(()=>{
     lose:()=>arp([392,330,262,196],.16,{type:'sawtooth',d:.5,v:.08,lp:900}),
     wave:()=>{tone({f:147,type:'sawtooth',a:.05,d:.6,v:.12,lp:700})},
   };
-  const GAP={hit:.045,crit:.07,gold:.05,rain:.06,hurt:.08,boom:.08,pick:.06,ui:.03};
-  function play(k){if(!ac||!unlocked||SET.sfx<=0||!LIB[k])return;const t=ac.currentTime,g=GAP[k]||.02;if(last[k]&&t-last[k]<g)return;last[k]=t;try{LIB[k]()}catch(e){}}
+  const GAP={hit:.045,crit:.07,gold:.22,rain:.06,hurt:.08,boom:.08,pick:.2,pick2:.15,pick3:.12,ui:.03};
+  // Sons de ramassage (Réglages) : 'all' = tout, 'imp' = seulement rare et mieux, mods, reliques, fragments, sceaux ; 'off' = aucun
+  const PICK={gold:'low',pick:'low',pick2:'imp',pick3:'imp'};
+  function play(k){if(!ac||!unlocked||SET.sfx<=0||!LIB[k])return;const pk=PICK[k],pm=SET.pickSnd||'imp';if(pk&&(pm==='off'||(pm==='imp'&&pk==='low')))return;const t=ac.currentTime,g=GAP[k]||.02;if(last[k]&&t-last[k]<g)return;last[k]=t;try{LIB[k]()}catch(e){}}
   // Musique d'ambiance : bourdon grave filtré + cloches rares en mode mineur
   function music(){if(musOn||!ac)return;musOn=true;
     const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=380;f.Q.value=3;const g=ac.createGain();g.gain.value=.16;f.connect(g);g.connect(mus);
