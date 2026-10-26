@@ -424,6 +424,8 @@ function campClick(b){
     else if(a==='fsub'){forgeSub=arg;campSel=null}
     else if(a==='gorecy'){campTab='arsenal';arsView='recy';campSel=null}
     else if(a==='slotopen'){const u=SLOT_U.find(x=>x.k===arg);if(u&&!slotOpen(u.k)&&(!u.need||slotOpen(u.need))&&(meta.hfrag|0)>=u.hf&&meta.gold>=u.gold){meta.hfrag-=u.hf;meta.gold-=u.gold;meta.slotU[u.k]=true;meta.gear[u.k]=null;SND.play('leg');toast(`Emplacement <b>${u.n}</b> débloqué`)}}
+    else if(a==='tutoff'){meta.tutOff=true;toast('Parcours masqué : « Réafficher le parcours » en bas de l\'onglet Héros.')}
+    else if(a==='tuton'){meta.tutOff=false}
     else if(a==='gocoffre'){campTab='arsenal';arsView='coffre';campSel=null}
     else if(a==='gorecy1'){const B={tab:campTab,sel:campSel,scroll:$('campBody').parentElement.scrollTop,label:campTab==='arsenal'?'Coffre':'Héros'};recySel=new Set([arg]);recyAsk=false;campBack=B;campTab='arsenal';arsView='recy';campSel=null}
     else if(a==='rcsel'){if(recySel.has(arg))recySel.delete(arg);else recySel.add(arg);recyAsk=false}

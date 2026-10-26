@@ -1107,3 +1107,6 @@ body:has(#camp:not([hidden])) .toast,body:has(#bag:not([hidden])) .toast{top:cal
 .cx-cmp__row{grid-template-columns:minmax(0,1fr) 50px 54px 72px}
 .cx-tabs:not(.cx-tabs--icons)>.cx-tab{flex:1 0 auto;min-width:auto;padding-left:7px;padding-right:7px;font-size:13.5px;white-space:nowrap}
 .slot.locked{border-style:dashed;opacity:.6}
+
+.tutc{display:flex;flex-direction:column;gap:8px}.tutl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:14px}.tutl li{display:flex;gap:8px;align-items:baseline}.tutl li span{width:1.1em;color:var(--muted)}.tutl li.ok{color:var(--muted);text-decoration:line-through}.tutl li.ok span{color:var(--heal);text-decoration:none}
+.tutl li::before{display:none!important;content:none!important}.tutl li{padding-left:0!important}.tutc .cx-card__title{font-size:19px;line-height:1.2}

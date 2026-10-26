@@ -256,7 +256,7 @@ function bank(full){
     return `Maîtrise ${label} : rang ${mt.r} / 10`+(mt.r<10?` (${mt.xp} / ${mastNeed(mt.r)})`:'')+(up?` · +${up} de capacité`:'')};
   G.mastMsg=gainM(mastOf(G.cls),deCls(G.cls))+'<br>'+gainM(mstOf(meta.wmast,G.wid),deW(wdef(G.wid).n));
   {const pm=petBank(G.kills);if(pm)G.mastMsg+='<br>'+pm}
-  if(full){
+  if(full){tutWin();
     for(const it of G.loot.items)meta.stash.push(it)
     for(const p of G.loot.parts){if(p.hf)meta.hfrag=(meta.hfrag|0)+1;else if(p.full)gainWeapon(p.w);else if(meta.built[p.w])meta.essence+=6;else{const a=meta.parts[p.w]||(meta.parts[p.w]=[0,0,0]);a[p.p]++}}
     meta.maxL=Math.max(meta.maxL|0,G.level);
@@ -282,6 +282,7 @@ function resolveRelic(){
     for(const f of g.got){S.frag++;S.fragN[f.bid]=1;if(fragStatus(f.bid)>=3)S.ready.add(f.bid)}
     const egg=eggFromRelic(r.id);if(egg)S.eggs++;
     out.push(`${relicName(r.id)}${r.rad?' éclatante':''} : ${g.html}.`+(egg?' <b style="color:#f0cf4a">Œuf de familier.</b>':''))}
+  meta.relOpened=(meta.relOpened|0)+S.n;
   const left=G.relQ.length-G.opened.length;
   if(!S.n&&!left)return '';
   const lc=(c,n,lab)=>`<span class="lc" style="--c:${c}">${n} ${lab}</span>`;

@@ -35,12 +35,12 @@ const isCoffre=()=>campTab==='arsenal'&&arsView==='coffre',isRecy=()=>campTab===
 const stashN=()=>meta.stash.length+invWeapons().length;
 function campEquip(){
   const eq=curEq(),St=stats(eq),pn=Object.keys(bestPlan(eq,meta.stash)).length,n=stashN();
-  return `${campMsg}<section class="cx-section"><h3 class="cx-section__label">${CLS[heroCls].n} · équipement</h3><div class="slots">${slotsHtml(eq,true,campSel&&campSel.slot)}</div>
+  return `${campMsg}${tutCard()}<section class="cx-section"><h3 class="cx-section__label">${CLS[heroCls].n} · équipement</h3><div class="slots">${slotsHtml(eq,true,campSel&&campSel.slot)}</div>
     ${pn?'':'<p class="cx-hint" style="margin:0">Ton équipement est déjà le meilleur que tu possèdes.</p>'}
     <div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-cact="gocoffre">Ouvrir le coffre · ${n} objet${n>1?'s':''}</button></div></section>
     ${slotUnlockHtml()}
     ${keyStats(St)}${cxMore('equip_stats','Toutes les statistiques',`<div class="statgrid">${statRows(St)}</div>`,'Afficher')}
-    <section class="cx-section"><h3 class="cx-section__label">Fragments des reliques</h3>${fragInv()}</section>`;
+    <section class="cx-section"><h3 class="cx-section__label">Fragments des reliques</h3>${fragInv()}</section>${meta.tutOff&&tutStep()>=0?'<div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm cx-btn--ghost" data-cact="tuton">Réafficher le parcours</button></div>':''}`;
 }
 // Héros › Emplacements à débloquer (fragments de harnais, lâchés par les Gardiens).
 function slotUnlockHtml(){const next=SLOT_U.filter(u=>!slotOpen(u.k));if(!next.length)return '';const hf=meta.hfrag|0;
