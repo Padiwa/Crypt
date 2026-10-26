@@ -1,5 +1,5 @@
 // Crypte des Cendres — cache hors ligne. Change VERSION à chaque mise à jour du jeu.
-const VERSION = 'crypte-v103';
+const VERSION = 'crypte-v104';
 const CORE = ['./', './index.html', './manifest.webmanifest', './css/game.css', './js/data.js', './js/game.js', './js/render.js', './js/ui.js', './js/camp.js', './js/inv.js', './js/fuse.js', './js/seal.js', './js/pet.js', './js/tut.js', './js/settings.js', './js/audio.js', './js/net.js', './js/main.js', './js/update.js', './js/nav.js', './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png'];
 const EXTERNAL = ['https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.js'];
 

@@ -156,6 +156,7 @@ function critTick(){const P=G.P;if(!P||G.over)return;G.crits=(G.crits||[]).filte
     G.rings.push({x:P.x,y:P.y,t:0,max:120,col:'255,211,77'});burst(P.x,P.y,24,'#ffd34d',200,3);G.hshake=Math.max(G.hshake||0,3);
     SND.play('frenzy');banner(`Frénésie critique · <span style="font-weight:500">${CB_TXT[G.cls]}</span>`,'#ffd34d',1)}}
 function dmgEnemy(e,d,crit,dot){
+  if(e.downed)return; // Capture : la cible à terre n'est plus touchée
   if(!dot&&S.lowDmg&&G.P.hp<S.hp*.5)d*=1+S.lowDmg/100;
   if(!dot&&S.execute&&e.hp<e.max*.3)d*=1+S.execute/100;
   if(S.bossDmg&&e.type==='boss')d*=1+S.bossDmg/100;
@@ -252,7 +253,7 @@ function gainMod(id){
   saveMeta();
 }
 function chain(src,d){
-  const t=G.en.filter(o=>o!==src&&!o.dead).map(o=>[o,Math.hypot(o.x-src.x,o.y-src.y)]).filter(a=>a[1]<240).sort((a,b)=>a[1]-b[1]).slice(0,3);
+  const t=G.en.filter(o=>o!==src&&!o.dead&&!o.downed).map(o=>[o,Math.hypot(o.x-src.x,o.y-src.y)]).filter(a=>a[1]<240).sort((a,b)=>a[1]-b[1]).slice(0,3);
   let px=src.x,py=src.y;for(const [o] of t){G.zaps.push({x1:px,y1:py,x2:o.x,y2:o.y,t:0});px=o.x;py=o.y;dmgEnemy(o,d,false)}
 }
 function explode(s,primary,frost){
@@ -346,7 +347,7 @@ function ultTick(dt){const P=G.P;
   if(P.rain>0){P.rain-=dt;P.rainT-=dt;if(P.rainT<=0){P.rainT=.12;const R=450*(1+S.skillRad/100),m=1+(S.ultPct||0)/100,c=[];
       for(const e of G.en)if(!e.dead&&Math.hypot(e.x-P.x,e.y-P.y)<R)c.push(e);
       for(let i=0;i<4&&c.length;i++){const e=c.splice(Math.floor(Math.random()*c.length),1)[0];G.rings.push({x:e.x,y:e.y,t:.2,max:30,col:'255,212,90'});G.hshake=Math.max(G.hshake||0,1.5);SND.play('rain');burst(e.x,e.y,6,'#ffd45a',160,2);dmgEnemy(e,S.nova*.7*m,Math.random()*100<S.crit)}}}
-  if(P.meteors>0){P.meteorT-=dt;if(P.meteorT<=0){P.meteors--;P.meteorT=.35;const m=1+(S.ultPct||0)/100,R=150*(1+S.skillRad/100),c=G.en.filter(e=>!e.dead&&Math.hypot(e.x-P.x,e.y-P.y)<520);
+  if(P.meteors>0){P.meteorT-=dt;if(P.meteorT<=0){P.meteors--;P.meteorT=.35;const m=1+(S.ultPct||0)/100,R=150*(1+S.skillRad/100),c=G.en.filter(e=>!e.dead&&!e.downed&&Math.hypot(e.x-P.x,e.y-P.y)<520);
       const tg=c.find(e=>e.type==='boss')||c[Math.floor(Math.random()*c.length)],x=tg?tg.x:P.x+rand(-150,150),y=tg?tg.y:P.y+rand(-150,150);
       G.rings.push({x,y,t:0,max:R,col:'255,140,60'});G.rings.push({x,y,t:.15,max:R*.5,col:'255,220,140'});burst(x,y,40,'#ff8a3a',300,4);G.shake=Math.max(G.shake,10);G.hshake=Math.max(G.hshake||0,6);SND.play('boom');
       for(const e of G.en){if(!e.dead&&Math.hypot(e.x-x,e.y-y)<R+e.r)dmgEnemy(e,S.nova*3*m,Math.random()*100<S.crit)}}}
@@ -359,7 +360,7 @@ function doPotion(){
 /* ---------- Grille spatiale ---------- */
 const CELL=64,GW=Math.ceil(MAP/CELL);let gHead=new Int32Array(GW*GW),gNext=new Int32Array(512);
 function gridBuild(){gHead.fill(-1);const L=G.en;if(gNext.length<L.length)gNext=new Int32Array(L.length*2);
-  for(let i=0;i<L.length;i++){const e=L[i],cx=clamp(e.x/CELL|0,0,GW-1),cy=clamp(e.y/CELL|0,0,GW-1),c=cy*GW+cx;gNext[i]=gHead[c];gHead[c]=i}}
+  for(let i=0;i<L.length;i++){const e=L[i];if(e.downed)continue;const cx=clamp(e.x/CELL|0,0,GW-1),cy=clamp(e.y/CELL|0,0,GW-1),c=cy*GW+cx;gNext[i]=gHead[c];gHead[c]=i}}
 function gridEach(x,y,r,fn){const x0=clamp((x-r)/CELL|0,0,GW-1),x1=clamp((x+r)/CELL|0,0,GW-1),y0=clamp((y-r)/CELL|0,0,GW-1),y1=clamp((y+r)/CELL|0,0,GW-1);
   for(let cy=y0;cy<=y1;cy++)for(let cx=x0;cx<=x1;cx++)for(let i=gHead[cy*GW+cx];i>=0;i=gNext[i]){const e=G.en[i];if(e&&fn(e,i)===false)return}}
 function compact(arr,alive){let j=0;for(let i=0;i<arr.length;i++){const o=arr[i];if(alive(o))arr[j++]=o}arr.length=j}
@@ -426,7 +427,7 @@ function update(dt){
   if(P.spin>0){P.spin-=dt;P.spinTick-=dt;P.face+=dt*18;
     if(P.spinTick<=0){P.spinTick=.2;const R=130*(1+S.reach/100)*(1+S.skillRad/100);
       for(const e of G.en){const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy)||1;if(d<R+e.r){const crit=Math.random()*100<S.crit,dd=S.nova*.22*(crit?S.critDmg/100:1);dmgEnemy(e,dd,crit);if(S.leech)heal(dd*S.leech/100);const k=e.type==='boss'?10:90;e.kx+=dx/d*k;e.ky+=dy/d*k}}}}
-  let tgt=null,td=1e9;if(!P.down)for(const e of G.en){const d=Math.hypot(e.x-P.x,e.y-P.y);if(d<td){td=d;tgt=e}}
+  let tgt=null,td=1e9;if(!P.down)for(const e of G.en){if(e.downed)continue;const d=Math.hypot(e.x-P.x,e.y-P.y);if(d<td){td=d;tgt=e}}
   if(G.cls==='guerrier'){
     const R=(78+P.r)*(1+S.reach/100);
     if(tgt&&P.dashT<=0&&P.spin<=0){
@@ -470,7 +471,7 @@ function update(dt){
       s.hit.add(e);if(s.kind==='orb'){explode(s,e);if(G.cls==='magicien'&&hasTal('m_chain')&&Math.random()<.25)chain(e,s.d*.8);s.life=0;return false}
       if(s.pierce>0){s.pierce--;return}
       if(G.cls==='archer'&&hasTal('a_rico')&&!s.bounced){s.bounced=true;let nt=null,nd=280;
-        for(const o of G.en){if(o.dead||s.hit.has(o))continue;const dd=Math.hypot(o.x-s.x,o.y-s.y);if(dd<nd){nd=dd;nt=o}}
+        for(const o of G.en){if(o.dead||o.downed||s.hit.has(o))continue;const dd=Math.hypot(o.x-s.x,o.y-s.y);if(dd<nd){nd=dd;nt=o}}
         if(nt){const a=Math.atan2(nt.y-s.y,nt.x-s.x);s.a=a;s.vx=Math.cos(a)*640;s.vy=Math.sin(a)*640;s.life=.8}else s.life=0;return false}
       s.life=0;return false});
   }
