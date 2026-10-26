@@ -1110,3 +1110,4 @@ body:has(#camp:not([hidden])) .toast,body:has(#bag:not([hidden])) .toast{top:cal
 
 .tutc{display:flex;flex-direction:column;gap:8px}.tutl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:14px}.tutl li{display:flex;gap:8px;align-items:baseline}.tutl li span{width:1.1em;color:var(--muted)}.tutl li.ok{color:var(--muted);text-decoration:line-through}.tutl li.ok span{color:var(--heal);text-decoration:none}
 .tutl li::before{display:none!important;content:none!important}.tutl li{padding-left:0!important}.tutc .cx-card__title{font-size:19px;line-height:1.2}
+@media (pointer:fine){#cv{cursor:crosshair}}

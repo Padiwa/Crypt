@@ -287,7 +287,17 @@ addEventListener('keydown',e=>{
   if(k===' '){e.preventDefault();doDash()} else if(k==='e')doNova(); else if(k==='r')doPotion(); else if(k==='f')doUlt();
 });
 addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});
-cv.addEventListener('pointerdown',e=>{if(joy.id!==null||paused)return;joy.id=e.pointerId;joy.ox=joy.x=e.clientX;joy.oy=joy.y=e.clientY;joy.vx=joy.vy=0;try{cv.setPointerCapture(e.pointerId)}catch(_){}});
+// Souris (ordinateur) : le héros va vers le pointeur ; clic gauche maintenu = il reste immobile. « Joystick » garde l'ancien glisser.
+const mouse={x:0,y:0,in:false,down:false};
+const mouseMode=()=>(typeof SET!=='undefined'&&SET.mouse==='joy')?'joy':'follow';
+cv.addEventListener('pointermove',e=>{if(e.pointerType!=='mouse')return;mouse.x=e.clientX;mouse.y=e.clientY;mouse.in=true});
+cv.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'){mouse.in=false;mouse.down=false}});
+cv.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&mouseMode()!=='joy'){mouse.down=true;mouse.btn=e.button;mouse.x=e.clientX;mouse.y=e.clientY;mouse.in=true}},true);
+addEventListener('pointerup',e=>{if(e.pointerType==='mouse')mouse.down=false});
+function mouseVec(){const mm=mouseMode();if(mm==='joy'||!mouse.in||!G||!G.P)return null;if(mouse.down&&(mouse.btn|0)===0)return {x:0,y:0};
+  const z=zoom(),hx=(G.P.x-G.cam.x)*z+innerWidth/2,hy=(G.P.y-G.cam.y)*z+innerHeight/2,dx=mouse.x-hx,dy=mouse.y-hy,d=Math.hypot(dx,dy),DZ=26;
+  if(d<=DZ)return {x:0,y:0};const m=Math.min(1,(d-DZ)/90);return {x:dx/d*m,y:dy/d*m}}
+cv.addEventListener('pointerdown',e=>{if(joy.id!==null||paused)return;if(e.pointerType==='mouse'&&mouseMode()!=='joy')return;joy.id=e.pointerId;joy.ox=joy.x=e.clientX;joy.oy=joy.y=e.clientY;joy.vx=joy.vy=0;try{cv.setPointerCapture(e.pointerId)}catch(_){}});
 cv.addEventListener('pointermove',e=>{
   if(e.pointerId!==joy.id)return;const M=56;let dx=e.clientX-joy.ox,dy=e.clientY-joy.oy,d=Math.hypot(dx,dy);
   if(d>M){joy.ox+=dx/d*(d-M);joy.oy+=dy/d*(d-M);dx=e.clientX-joy.ox;dy=e.clientY-joy.oy;d=M}
@@ -298,10 +308,10 @@ cv.addEventListener('pointerup',endJoy);cv.addEventListener('pointercancel',endJ
 const tap=(id,fn)=>$(id).addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();if(started&&!paused&&!G.over)fn()});
 tap('bDash',doDash);tap('bNova',doNova);tap('bPot',doPotion);tap('bUlt',doUlt);
 ['bDash','bNova','bPot','bUlt'].forEach(id=>$(id).addEventListener('click',e=>e.preventDefault()));
-const resetJoy=()=>{joy.id=null;joy.vx=joy.vy=0;for(const k in keys)keys[k]=false};
+const resetJoy=()=>{joy.id=null;joy.vx=joy.vy=0;mouse.down=false;for(const k in keys)keys[k]=false};
 
 function inputVec(){
-  let x=joy.vx,y=joy.vy;
+  let x=joy.vx,y=joy.vy;{const mv=mouseVec();if(mv&&joy.id===null){x+=mv.x;y+=mv.y}}
   if(keys.q||keys.a||keys.arrowleft)x-=1; if(keys.d||keys.arrowright)x+=1;
   if(keys.z||keys.w||keys.arrowup)y-=1; if(keys.s||keys.arrowdown)y+=1;
   const m=Math.hypot(x,y);if(m>1){x/=m;y/=m}
