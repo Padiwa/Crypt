@@ -40,7 +40,7 @@
 <div class="toast" id="toast"></div>
 <div class="banner" id="banner" role="status" aria-live="polite" hidden></div>
 
-<div class="hint" id="hint"><span id="hintTxt"></span><br><span id="keys">Clavier : <kbd>ZQSD</kbd> <kbd>Espace</kbd> esquive, <kbd>E</kbd> compétence, <kbd>R</kbd> potion, <kbd>F</kbd> ultime, <kbd>I</kbd> pause</span></div>
+<div class="hint"><span id="hintTxt"></span><br><span id="keys">Clavier : <kbd>ZQSD</kbd> <kbd>Espace</kbd> esquive, <kbd>E</kbd> compétence, <kbd>R</kbd> potion, <kbd>F</kbd> ultime, <kbd>I</kbd> pause</span></div>
 
 <div class="skills">
   <button class="sk dash" id="bDash" aria-label="Esquive"><svg viewBox="0 0 24 24"><path d="M4 12h11M11 6l6 6-6 6M19 5v14"/></svg></button>
@@ -53,7 +53,7 @@
   <section class="cx-sheet" role="dialog" aria-label="Pause">
     <div class="cx-sheet__grip"></div>
     <header class="cx-sheet__head"><h2 class="cx-sheet__title">Pause</h2><div class="cx-sheet__aside"><a class="cx-icon-btn cx-icon-btn--ghost" id="guideBtnBag" href="aide/index.html#partie" target="_blank" rel="noopener" aria-label="Guide"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.2-2.5 3.9"/><path d="M12 17h.01"/></svg></a><button class="cx-icon-btn cx-icon-btn--ghost" id="setBtnBag" aria-label="Réglages"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></button><button class="cx-icon-btn cx-icon-btn--ghost" id="closeBagX" aria-label="Reprendre la partie"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></header>
-    <div class="cx-sheet__body" id="bagBody" style="gap:var(--space-4)">
+    <div class="cx-sheet__body" style="gap:var(--space-4)">
       <section class="cx-section"><h3 class="cx-section__label" id="lootTitle">Butin de la partie</h3><div class="col" id="runLoot"></div></section>
       <section class="cx-section"><h3 class="cx-section__label" id="runUpsTitle">Bonus de la partie</h3><div class="runups" id="runUps"></div></section>
       <section class="cx-section"><h3 class="cx-section__label">Équipement</h3><div class="slots" id="slots"></div></section>

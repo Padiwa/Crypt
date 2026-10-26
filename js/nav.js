@@ -1,7 +1,7 @@
 // Crypte des Cendres — nav.js : retour arrière un niveau à la fois (bouton Retour d'Android, Échap) et raccourcis du Camp.
 // Niveaux : 4 fiche ancrée · 3 feuille de choix, Réglages, Coop · 2 Camp ou Pause · 1 accueil ou partie (rien à fermer).
 let navDepth=0,navWas={};
-function navPush(k){try{history.pushState({crypte:++navDepth,k},'')}catch(e){}}
+function navPush(k){try{history.pushState({crypte:++navDepth,k},'')}catch{}}
 const shown=id=>{const el=$(id);return !!el&&!el.hidden};
 // Ferme le niveau le plus haut ouvert ; renvoie false s'il n'y avait rien à fermer.
 function navClose(){
@@ -16,9 +16,9 @@ function navClose(){
   return false}
 addEventListener('popstate',()=>{navDepth=Math.max(0,navDepth-1);
   if(navClose())return;
-  if(navDepth>0){try{history.back()}catch(e){}return}
+  if(navDepth>0){try{history.back()}catch{}return}
   // racine : on reste dans l'appli, un second Retour quitte
-  const now=Date.now();if(now-(navRootT||0)<3000){try{history.back()}catch(e){}return}
+  const now=Date.now();if(now-(navRootT||0)<3000){try{history.back()}catch{}return}
   navRootT=now;navPush('root');if(typeof cxUndo==='function')cxUndo('Touche encore Retour pour quitter le jeu.',null)});
 let navRootT=0;
 // Pousse une entrée d'historique quand un niveau s'ouvre (observé à chaque image légère).

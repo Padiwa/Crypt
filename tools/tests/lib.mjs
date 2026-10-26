@@ -21,7 +21,7 @@ export async function newPage(browser, { hash = '#test2d', w = 390, h = 844, dow
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, acceptDownloads: downloads });
   const p = await ctx.newPage();
   p.errs = [];
-  p.on('pageerror', (e) => p.errs.push(e.message));
+  p.on('pageerror', (e) => p.errs.push(e.message + ' @ ' + (e.stack || '').split('\n').slice(1, 4).join(' | ')));
   // pas de réseau en test : polices et CDN coupés
   await p.route(/fonts\.googleapis|fonts\.gstatic|cdn\.jsdelivr|cdnjs/, (r) => r.abort());
   await p.goto(GAME + hash);

@@ -227,16 +227,16 @@ const MODES={
 let meta={gold:0,up:{},tal:{},cp:1,start:1,essence:0,mods:{ferocite:0},
   load:{guerrier:['ferocite',null,null,null],archer:['ferocite',null,null,null],magicien:['ferocite',null,null,null]},
   gear:{armure:null,amulette:null,bottes:null,anneau:null},stash:[],wpn:{guerrier:'g0',archer:'a0',magicien:'m0'},bp:{},built:{},parts:{},relics:{},mode:'survie',relicSel:null,relicQ:[],diff:0,waff:{},prest:{},wish:{leg:true,aff:{}},pol:{},mast:{},align:{},wlv:{},wload:{},wpol:{},wmast:{},walign:{},hload:{},hslots:{},aura:{}};
-try{const m=JSON.parse(localStorage.getItem('crypte-meta')||'null');if(m)meta=Object.assign(meta,m)}catch(e){}
+try{const m=JSON.parse(localStorage.getItem('crypte-meta')||'null');if(m)meta=Object.assign(meta,m)}catch{}
 if(!meta.v2){meta.cp=1;meta.start=1;meta.v2=1}
 meta.modSt=meta.modSt||{};meta.modCp=meta.modCp||{};
 if(!meta.v3){for(const id in meta.bp||{}){const w=wdef(id);if(w&&!meta.built[id])meta.gold+=w.bp||0}meta.bp={};meta.v3=1;meta.relics={lA1:[1,0],...(meta.relics||{})}}
 if(!MODES[meta.mode]||meta.mode==='breche')meta.mode='survie'; // la Brèche se choisit une fois la coopération connectée
 if(!Array.isArray(meta.relicQ))meta.relicQ=[];if(meta.relicSel){if(!meta.relicQ.length)meta.relicQ=[meta.relicSel];meta.relicSel=null}
-const saveMeta=()=>{try{localStorage.setItem('crypte-meta',JSON.stringify(meta))}catch(e){}};
+const saveMeta=()=>{try{localStorage.setItem('crypte-meta',JSON.stringify(meta))}catch{}};
 // Compte : un identifiant unique tiré une fois (gardé dans la sauvegarde) et un nom choisi dans Réglages › Compte.
 // En coopération, chaque joueur apparaît sous ce nom, précédé du niveau de prestige du héros qu'il joue.
-if(!meta.pid||!/^[A-Z2-9]{5}$/.test(meta.pid)){const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',r=new Uint8Array(5);try{crypto.getRandomValues(r)}catch(e){for(let i=0;i<5;i++)r[i]=Math.random()*256}
+if(!meta.pid||!/^[A-Z2-9]{5}$/.test(meta.pid)){const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',r=new Uint8Array(5);try{crypto.getRandomValues(r)}catch{for(let i=0;i<5;i++)r[i]=Math.random()*256}
   meta.pid=[...r].map(x=>A[x%A.length]).join('');saveMeta()}
 const NAME_MAX=16;
 const cleanName=s=>String(s||'').normalize('NFC').replace(/[^\p{L}\p{N} _\-'.]/gu,'').replace(/\s+/g,' ').trim().slice(0,NAME_MAX);
@@ -539,13 +539,13 @@ if(!meta.v5){
   const map=id=>RELICS[id]?id:/^F_/.test(id)?'ab':/^(l|m|fA|fB)/.test(id)?'os':/^(n|fC)/.test(id)?'sa':'ab';
   const nr={};for(const id in (meta.relics||{})){const a=meta.relics[id]||[0,0],n=map(id),b=nr[n]||(nr[n]=[0,0]);b[0]+=a[0]|0;b[1]+=a[1]|0}meta.relics=nr;
   meta.relicQ=(meta.relicQ||[]).map(q=>({id:map(q.id),rad:!!q.rad}));
-  meta.essence=(meta.essence|0)+ess;meta.maxL=Math.max(meta.maxL|0,meta.start|0,meta.cp|0,1);meta.wcp=meta.wcp||{};meta.v5=1;if(ess)meta.v5ess=ess;saveMeta();
+  meta.essence=(meta.essence|0)+ess;meta.maxL=Math.max(meta.maxL|0,meta.start|0,meta.cp|0,1);meta.wcp=meta.wcp||{};meta.v5=1;saveMeta();
 }
 meta.wcp=meta.wcp||{};meta.slotU=meta.slotU||{};meta.hfrag=meta.hfrag|0;
 /* ---------- v106 : chaque héros a son équipement ----------
    meta.gearBy[classe] = ses emplacements ; meta.gear désigne toujours celui du héros choisi (propriété calculée, non sauvegardée).
    Une ancienne sauvegarde donne son équipement au dernier héros joué. Un objet n'est porté que par un héros à la fois. */
-const curCls=()=>{try{if(typeof heroCls!=='undefined'&&CLS[heroCls])return heroCls}catch(e){}let c=null;try{c=localStorage.getItem('crypte-cls')}catch(e){}return CLS[c]?c:'archer'};
+const curCls=()=>{try{if(typeof heroCls!=='undefined'&&CLS[heroCls])return heroCls}catch{}let c=null;try{c=localStorage.getItem('crypte-cls')}catch{}return CLS[c]?c:'archer'};
 function defGear(m){
   if(!m.gearBy){const d=Object.getOwnPropertyDescriptor(m,'gear'),old=d&&'value' in d?d.value:null;m.gearBy={[curCls()]:old||{}}}
   for(const c in CLS)m.gearBy[c]=m.gearBy[c]||{};

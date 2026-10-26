@@ -152,13 +152,13 @@ const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
 // Fichier de sauvegarde prêt à réimporter (bouton « Depuis un fichier » de l'import).
 const saveName=()=>`crypte-sauvegarde-${new Date().toISOString().slice(0,10)}.json`;
 function saveBlob(){return new Blob([exportCode()],{type:'application/json'})}
-function downloadSave(){try{const url=URL.createObjectURL(saveBlob()),a=document.createElement('a');a.href=url;a.download=saveName();a.rel='noopener';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);saveMsgOk=`Fichier « ${saveName()} » enregistré dans tes téléchargements.`;return true}catch(e){saveMsgOk='';saveMsg='Le téléchargement a échoué : utilise Partager ou Copier le JSON.';return false}}
-const canShareFile=()=>{try{return !!(navigator.canShare&&navigator.canShare({files:[new File(['{}'],'t.json',{type:'application/json'})]}))}catch(e){return false}};
+function downloadSave(){try{const url=URL.createObjectURL(saveBlob()),a=document.createElement('a');a.href=url;a.download=saveName();a.rel='noopener';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);saveMsgOk=`Fichier « ${saveName()} » enregistré dans tes téléchargements.`;return true}catch{saveMsgOk='';saveMsg='Le téléchargement a échoué : utilise Partager ou Copier le JSON.';return false}}
+const canShareFile=()=>{try{return !!(navigator.canShare&&navigator.canShare({files:[new File(['{}'],'t.json',{type:'application/json'})]}))}catch{return false}};
 async function shareSave(){try{await navigator.share({files:[new File([saveBlob()],saveName(),{type:'application/json'})],title:'Sauvegarde Crypte des Cendres'});saveMsgOk='Fichier partagé.'}catch(e){if(e&&e.name!=='AbortError'){saveMsg='Le partage a échoué : utilise Télécharger ou Copier le JSON.'}}drawCamp()}
 let saveMsgOk='';
 function exportCode(){const data={v:1,meta,cls:heroCls,best,at:new Date().toISOString().slice(0,10)};return JSON.stringify({jeu:'Crypte des Cendres',...data},null,2)}
 function parseCode(t){t=(t||'').trim();if(t.startsWith('CRYPTE1:'))t=t.slice(8);let d=null;
-  try{d=JSON.parse(decodeURIComponent(escape(atob(t.replace(/\s+/g,'')))))}catch(e){try{d=JSON.parse(t)}catch(e2){return null}}
+  try{d=JSON.parse(decodeURIComponent(escape(atob(t.replace(/\s+/g,'')))))}catch{try{d=JSON.parse(t)}catch{return null}}
   if(!d||typeof d!=='object'||!d.meta||typeof d.meta.gold!=='number')return null;return d}
 const sumOf=m=>`${m.gold} or, ${m.essence||0} essence, ${Object.keys(m.mods||{}).length} mods, ${Object.values(m.relics||{}).reduce((a,r)=>a+(r[0]||0)+(r[1]||0),0)} reliques`;
 function saveSection(){
@@ -198,13 +198,15 @@ function xfState(){const s=xfGet(xf.src),d=xfGet(xf.dst);if(!s||!d||!xf.k||s.aff
   if(xf.rep&&d.aff[xf.rep]!=null)return r({ok:true,mode:'rep',msg:`Remplace ${xfV(d,xf.rep,d.aff[xf.rep])} par ${T(v)} sur ${esc(itemName(d))}.`});
   return r({ok:false,full:true,msg:`${esc(itemName(d))} a déjà ${cap} affixe${cap>1?'s':''} : choisis celle à remplacer.`})}
 const xfV=(it,k,v)=>AFF[k].t(NOSCALE[k]?v:fmtN(v*upMul(it.up)));
-let afF='all',afP=0,afCat='all',afOpen='';
+let afCat='all',afOpen='';
 const AFF_CAT={frz:'off',cold:'off',shard:'off',dmgPct:'off',apsPct:'off',crit:'off',critDmg:'off',novaPct:'off',skillRad:'off',burn:'off',multi:'off',pierce:'off',reach:'off',splash:'off',hp:'def',armor:'def',regen:'def',leech:'def',speed:'uti',cdr:'uti',burnPct:'off',chill:'off',shock:'off',execute:'off',bossDmg:'off',lowDmg:'off',ultPct:'off',fury:'off',lowArmor:'def',potHeal:'def',antidote:'def',auraSlow:'def',skillDur:'uti',dashCd:'uti',magnetPct:'uti',goldPct:'uti',xpPct:'uti',lootPct:'uti'};
 const AFF_NAME={frz:'Gel',cold:'Dégâts contre ralentis',shard:'Éclats de glace',dmgPct:'Dégâts',apsPct:'Vitesse d\'attaque',crit:'Chances de critique',critDmg:'Dégâts critiques',hp:'Points de vie',armor:'Réduction des dégâts',speed:'Vitesse de déplacement',regen:'Régénération',cdr:'Temps de recharge',skillRad:'Portée des compétences',novaPct:'Dégâts de compétence',burn:'Embrasement',multi:'Projectiles par tir',leech:'Vol de vie',reach:'Portée de frappe',splash:'Rayon d\'explosion',pierce:'Transpercement',burnPct:'Embrasement (%)',chill:'Ralentissement',shock:'Éclair en chaîne',execute:'Exécution',bossDmg:'Dégâts contre Gardiens',lowDmg:'Dégâts sous 50 % de vie',ultPct:'Dégâts de l\'ultime',fury:'Charge de l\'ultime',lowArmor:'Protection sous 30 % de vie',potHeal:'Soin des potions',antidote:'Antidote',auraSlow:'Aura de lenteur',skillDur:'Durée des compétences',dashCd:'Recharge de l\'esquive',magnetPct:'Portée de ramassage',goldPct:'Or',xpPct:'Expérience',lootPct:'Chances de butin'};
 const AFF_CATN={off:'Offensives',def:'Défensives',uti:'Utilitaires'};
 const affShort=(k,v)=>{const pct=!['hp','regen','burn','multi','pierce'].includes(k),neg=['armor','cdr','lowArmor','dashCd','antidote','fury'].includes(k);return `${neg?'−':'+'}${fmtN(v)}${pct?' %':k==='regen'?' PV/s':k==='burn'?' /s':''}`};
 const affEff=(it,k)=>NOSCALE[k]?it.aff[k]:it.aff[k]*upMul(it.up);
-function wishSection(){const W=meta.wish||(meta.wish={leg:true,aff:{}});W.aff=W.aff||{};
+// Liste de souhaits (affixes recherchées, légendaires) : créée au premier besoin.
+const wishOf=()=>{const W=meta.wish||(meta.wish={leg:true,aff:{}});W.aff=W.aff||{};return W};
+function wishSection(){const W=wishOf();
   const keys=Object.keys(AFF).filter(k=>!AFF[k].w),n=keys.filter(k=>W.aff[k]).length;
   const chip=k=>`<button class="cx-chip cx-chip--sm" data-cact="wish" data-arg="${k}" aria-pressed="${!!W.aff[k]}">${AFF_NAME[k]||k}</button>`;
   const grp=c=>{const ks=keys.filter(k=>(AFF_CAT[k]||'uti')===c);return ks.length?`<span class="cx-hint" style="margin:0">${AFF_CATN[c]}</span><div class="cx-chips">${ks.map(chip).join('')}</div>`:''};
@@ -242,7 +244,7 @@ function xfSlot(key,it,label,oth){if(!it)return `<div class="cx-slot cx-slot--em
   const ok=xfOk(key,it);
   return `<button class="cx-slot${oth?'':' is-equipped'}${xfSt(key)}" data-cact="xfsel" data-arg="${key}" ${ok?'':'aria-disabled="true"'} aria-label="${esc(itemName(it))}, ${label}${oth?'':', équipé'}${key===xf.src?', source':key===xf.dst?', cible':''}"><span class="cx-slot__k">${label}${oth?'':' · équipé'}</span><span class="cx-slot__v" style="color:${RARV[it.r]}">${esc(itemName(it))}${it.lock?`<span class="li" aria-hidden="true">${LOCK_SVG}</span>`:''}</span>${xfPin(key)}</button>`}
 function xfCell(key,it){const ok=xfOk(key,it);
-  return `<button class="cx-cell${xfSt(key)}" data-cact="xfsel" data-arg="${key}" ${ok?'':'aria-disabled="true"'} style="--rar:${RARV[it.r]}" aria-label="${esc(itemName(it))}${it.lock?', verrouillé':''}${key===xf.src?', source':key===xf.dst?', cible':''}">${it.lock?`<span class="cx-cell__lock">${LOCK_SVG}</span>`:''}${GLYPH[it.slot]}${it.up?`<span class="cx-cell__up">R${it.up+1}</span>`:''}${xfPin(key)}</button>`}
+  return `<button class="cx-cell${xfSt(key)}" data-cact="xfsel" data-arg="${key}" ${ok?'':'aria-disabled="true"'} style="--rar:${RARV[it.r]}" aria-label="${esc(itemName(it))}${it.lock?', verrouillé':''}${key===xf.src?', source':key===xf.dst?', cible':''}">${cellIn(it)}${xfPin(key)}</button>`}
 function xfDiffCard(kind,it,where,lines,gone){const src=kind==='src';
   return `<div class="cx-diff__card cx-diff__card--${kind}${gone&&src?' is-gone':''}"><span class="cx-diff__lab">${src?'− Source · détruite':gone?'+ Cible · aperçu':'+ Cible'}</span>${it?`<span class="cx-diff__nm" style="color:${RARV[it.r]}">${esc(itemName(it))}</span><span class="cx-diff__sub">${RAR[it.r].n} · ${where}</span>
     <ul><li class="cx-line cx-line--base">${baseTxtOf(it.slot,fmtN(it.base.v*upMul(it.up)))}</li>${lines}</ul>`:`<span class="cx-diff__sub">${src?'Choisis l\'objet source.':'Choisis la cible.'}</span>`}</div>`}
@@ -348,7 +350,7 @@ function tabBadges(){
   const ups=UPG.filter(u=>lv(u.k)<u.max&&meta.gold>=upCost(u)).length+(TAL[heroCls]||[]).filter(t=>!hasTal(t.k)&&meta.gold>=t.cost).length;
   const pr=(prOpen()||prOf().lv)?prFree():0,prBuy=(prOpen()||prOf().lv)&&meta.gold>=prCost(prOf().lv).gold&&meta.essence>=prCost(prOf().lv).ess?1:0;
   const best=Object.keys(bestPlan(curEq(),meta.stash.slice(0,300),true)).length;
-  const su=SLOT_U.filter(u=>!slotOpen(u.k)&&(!u.need||slotOpen(u.need))&&(meta.hfrag|0)>=u.hf&&meta.gold>=u.gold).length;
+  const su=SLOT_U.filter(slotCan).length;
   const B={equip:best||su?{n:best+su,t:su?`${su} emplacement${su>1?'s':''} à débloquer`:`${best} amélioration${best>1?'s':''} d'équipement`}:null,arsenal:craft?{n:craft,t:`${craft} objet${craft>1?'s':''} à fabriquer`}:null,
     relics:relFree&&!meta.relicQ.length?{n:relFree,t:`${relFree} relique${relFree>1?'s':''} non équipée${relFree>1?'s':''}`}:null,
     pets:meta.eggs>0?{n:meta.eggs,t:`${meta.eggs} œuf${meta.eggs>1?'s':''} à faire éclore`}:null,
@@ -360,9 +362,9 @@ function tabBadges(){
   document.querySelectorAll('.tab').forEach(t=>{let el=t.querySelector('.cx-tab__badge');const b=B[t.dataset.tab];
     if(!b){if(el)el.remove();return}if(!el){el=document.createElement('span');el.className='cx-tab__badge';t.appendChild(el)}el.textContent=b.n>9?'9+':b.n;el.title=b.t;el.setAttribute('aria-label',b.t)})}
 // Texte repliable (Disclosure) : une phrase, le détail derrière « En savoir plus ». L'état ouvert est retenu par clé.
-let moreOpen={};try{moreOpen=JSON.parse(localStorage.getItem('crypte-more')||'{}')}catch(e){}
+let moreOpen={};try{moreOpen=JSON.parse(localStorage.getItem('crypte-more')||'{}')}catch{}
 function cxMore(key,sentence,body,lab='En savoir plus'){return `<details class="cx-more" data-more="${key}"${moreOpen[key]?' open':''}><summary><span>${sentence}</span><span class="cx-more__toggle"><span class="o">${lab}</span><span class="c">Masquer</span></span></summary><div class="cx-more__body">${body}</div></details>`}
-document.addEventListener('toggle',e=>{const d=e.target;if(!d.matches||!d.matches('details[data-more]'))return;moreOpen[d.dataset.more]=d.open;try{localStorage.setItem('crypte-more',JSON.stringify(moreOpen))}catch(err){}},true);
+document.addEventListener('toggle',e=>{const d=e.target;if(!d.matches||!d.matches('details[data-more]'))return;moreOpen[d.dataset.more]=d.open;try{localStorage.setItem('crypte-more',JSON.stringify(moreOpen))}catch{}},true);
 const subTabs=(items,cur,act)=>`<div class="cx-tabs" role="tablist">${items.map(([k,l,n])=>`<button class="cx-tab" role="tab" data-cact="${act}" data-arg="${k}" aria-selected="${cur===k}">${l}${n?`<span class="cx-tab__badge">${n}</span>`:''}</button>`).join('')}</div>`;
 const CAMP_MORE={
   ars_heros:['Ce que porte chaque héros. Touche un objet pour voir sa fiche.','<p>Le héros joué vient en premier. Touche un objet porté par un autre héros pour le lui reprendre et l\'équiper sur le héros joué (« Équiper sur… »). Pour équiper un autre héros, choisis-le sur l\'écran d\'accueil. Un objet n\'est porté que par un héros à la fois.</p>'],
@@ -436,17 +438,17 @@ function campClick(b){
     else if(a==='saveshare'){saveMsg='';shareSave();return}
     else if(a==='impopen'){saveMode=saveMode==='imp'?null:'imp';saveMsg='';savePending=null}
     else if(a==='copy'){const code=exportCode(),ta=$('saveOut'),sel=()=>{if(ta){ta.focus();ta.select()}};
-      try{navigator.clipboard.writeText(code).then(()=>toast('JSON copié'),()=>{sel();toast('Copie refusée : le JSON est sélectionné, copie-le à la main.')})}catch(err){sel();toast('Le JSON est sélectionné, copie-le à la main.')}return}
+      try{navigator.clipboard.writeText(code).then(()=>toast('JSON copié'),()=>{sel();toast('Copie refusée : le JSON est sélectionné, copie-le à la main.')})}catch{sel();toast('Le JSON est sélectionné, copie-le à la main.')}return}
     else if(a==='imp'){const v=($('saveIn')||{}).value||saveDraft;saveDraft=v;const dd=parseCode(v);if(!dd)saveMsg='Ce JSON n\'est pas une sauvegarde valide. Vérifie qu\'il est complet, de la première accolade à la dernière.';else{savePending=dd;saveMsg=''}}
     else if(a==='impcancel'){savePending=null}
-    else if(a==='impok'){const dd=savePending;try{localStorage.setItem('crypte-meta',JSON.stringify(dd.meta));if(dd.cls)localStorage.setItem('crypte-cls',dd.cls);if(dd.best)localStorage.setItem('crypte-best2',String(dd.best));location.reload();return}catch(err){saveMsg='Impossible d\'écrire la sauvegarde : le stockage de ce navigateur est bloqué.'}}
+    else if(a==='impok'){const dd=savePending;try{localStorage.setItem('crypte-meta',JSON.stringify(dd.meta));if(dd.cls)localStorage.setItem('crypte-cls',dd.cls);if(dd.best)localStorage.setItem('crypte-best2',String(dd.best));location.reload();return}catch{saveMsg='Impossible d\'écrire la sauvegarde : le stockage de ce navigateur est bloqué.'}}
     else if(a==='sfilter'){stF=arg}
     else if(a==='lock'&&campSel&&(campSel.wpn||campSel.slot==='arme')){const wid=campSel.wpn||curWid();meta.wlock=meta.wlock||{};meta.wlock[wid]=!meta.wlock[wid];const on=meta.wlock[wid];cxUndo(`${esc(wdef(wid).n)} ${on?'verrouillée':'déverrouillée'}`,()=>{meta.wlock[wid]=!on})}
     else if(a==='lock'){const it=campSel&&campSel.stash?meta.stash.find(i=>i.id===campSel.stash):campSel&&campSel.slot?meta.gear[campSel.slot]:campSel&&campSel.oth?(meta.gearBy[campSel.oth.split('|')[0]]||{})[campSel.oth.split('|')[1]]:null;if(it){it.lock=!it.lock;cxUndo(`${esc(itemName(it))} ${it.lock?'verrouillé':'déverrouillé'}`,()=>{it.lock=!it.lock})}}
     if(a==='bestall'){const plan=bestPlan(curEq(),meta.stash,true),names=[];for(const sl in plan){const it=plan[sl];
-      if(sl==='arme'){meta.wpn[heroCls]=it.wid;names.push(`<span style="color:${RAR[it.r].c}">${esc(wdef(it.wid).n)}</span>`);continue}meta.stash=meta.stash.filter(i=>i!==it);const old=meta.gear[sl];if(old)meta.stash.push(old);meta.gear[sl]=it;names.push(`<span style="color:${RAR[it.r].c}">${esc(itemName(it))}</span>`)}campSel=null;if(names.length)toast('Équipé : '+names.join(', '))}
-    if(a==='equip'){const it=meta.stash.find(i=>i.id===campSel.stash),k=it&&tgtKey(curEq(),it);if(it&&k){meta.stash=meta.stash.filter(i=>i!==it);const old=meta.gear[k];if(old)meta.stash.push(old);meta.gear[k]=it;campSel={slot:k}}}
-    else if(a==='equipoth'&&campSel&&campSel.oth){const [c,k]=campSel.oth.split('|'),it=(meta.gearBy[c]||{})[k],t=it&&tgtKey(curEq(),it);if(it&&t){meta.gearBy[c][k]=null;const old=meta.gear[t];if(old)meta.stash.push(old);meta.gear[t]=it;campSel={slot:t};toast(`<span style="color:${RAR[it.r].c}">${esc(itemName(it))}</span> équipé sur ${esc(CLS[heroCls].n)}, retiré ${parCls(c).replace('par ','à ').replace("à le ","au ")}`)}}
+      if(sl==='arme'){meta.wpn[heroCls]=it.wid;names.push(`<span style="color:${RAR[it.r].c}">${esc(wdef(it.wid).n)}</span>`);continue}meta.stash=meta.stash.filter(i=>i!==it);wearGear(sl,it);names.push(`<span style="color:${RAR[it.r].c}">${esc(itemName(it))}</span>`)}campSel=null;if(names.length)toast('Équipé : '+names.join(', '))}
+    if(a==='equip'){const it=meta.stash.find(i=>i.id===campSel.stash),k=it&&tgtKey(curEq(),it);if(it&&k){meta.stash=meta.stash.filter(i=>i!==it);wearGear(k,it);campSel={slot:k}}}
+    else if(a==='equipoth'&&campSel&&campSel.oth){const [c,k]=campSel.oth.split('|'),it=(meta.gearBy[c]||{})[k],t=it&&tgtKey(curEq(),it);if(it&&t){meta.gearBy[c][k]=null;wearGear(t,it);campSel={slot:t};toast(`<span style="color:${RAR[it.r].c}">${esc(itemName(it))}</span> équipé sur ${esc(CLS[heroCls].n)}, retiré ${parCls(c).replace('par ','à ').replace("à le ","au ")}`)}}
     else if(a==='setsave'){const i=arg===''||arg==null?-1:+arg;if(i<0&&setsOf().length>=SET_MAX)return;const s=setSave(i<0?setsOf().length:i);toast(`<b>${esc(s.n)}</b> enregistré`)}
     else if(a==='setwear'){const r=setWear(+arg),s=setsOf()[+arg];if(r){campSel=null;toast(`<b>${esc(s.n)}</b> porté`+(r.from.length?` · pris ${r.from.map(c=>parCls(c).replace('par ','à ').replace("à le ","au ")).join(' et ')}`:'')+(r.miss?` · ${r.miss} objet${r.miss>1?'s':''} introuvable${r.miss>1?'s':''} (recyclé ou fusionné)`:''))}}
     else if(a==='setdel'){const L=setsOf(),i=+arg,s=L[i];if(s){L.splice(i,1);cxUndo(`<b>${esc(s.n)}</b> supprimé`,()=>{setsOf().splice(i,0,s)})}}
@@ -456,7 +458,7 @@ function campClick(b){
     else if(a==='unlok'){meta.unlNew=meta.unlNew.filter(k=>k!==arg)}
     else if(a==='arsv'){arsView=arg;campSel=null;campBack=null}
     else if(a==='fsub'){forgeSub=arg;campSel=null}
-    else if(a==='slotopen'){const u=SLOT_U.find(x=>x.k===arg);if(u&&!slotOpen(u.k)&&(!u.need||slotOpen(u.need))&&(meta.hfrag|0)>=u.hf&&meta.gold>=u.gold){meta.hfrag-=u.hf;meta.gold-=u.gold;meta.slotU[u.k]=true;meta.gear[u.k]=null;SND.play('leg');toast(`Emplacement <b>${u.n}</b> débloqué`)}}
+    else if(a==='slotopen'){const u=SLOT_U.find(x=>x.k===arg);if(u&&slotCan(u)){meta.hfrag-=u.hf;meta.gold-=u.gold;meta.slotU[u.k]=true;meta.gear[u.k]=null;SND.play('leg');toast(`Emplacement <b>${u.n}</b> débloqué`)}}
     else if(a==='tutoff'){meta.tutOff=true;toast('Parcours masqué : « Réafficher le parcours » en bas de l\'onglet Héros.')}
     else if(a==='tuton'){meta.tutOff=false}
     else if(a==='gocoffre'){campTab='arsenal';arsView='coffre';campSel=null}
@@ -511,14 +513,12 @@ function campClick(b){
     else if(a==='xfpick'){xf.pick=arg}
     else if(a==='xfop'){xf.op=arg}
     else if(a==='afcat'){afCat=arg;afOpen=''}
-    else if(a==='wish'){const W=meta.wish||(meta.wish={leg:true,aff:{}});W.aff=W.aff||{};if(W.aff[arg])delete W.aff[arg];else W.aff[arg]=true}
+    else if(a==='wish'){const W=wishOf();if(W.aff[arg])delete W.aff[arg];else W.aff[arg]=true}
     else if(a==='wishleg'){const W=meta.wish||(meta.wish={leg:true,aff:{}});W.leg=!W.leg}
     else if(a==='wishnone'){if(meta.wish)meta.wish.aff={}}
     else if(a==='afopen'){afOpen=afOpen===arg?'':arg}
     else if(a==='afdst'){const it=xfGet(arg);if(!it||arg===xf.src)return;xf.dst=arg;xf.rep='';xf.op='';xf.pick=xf.src?'dst':'src'}
     else if(a==='afuse'){const [k,key]=arg.split('|'),it=xfGet(key);if(!it||!xfSrcOk(key)||it.aff[k]==null||key===xf.dst)return;xf.src=key;xf.k=k;xf.rep='';xf.pick='dst'}
-    else if(a==='afilter'){afF=arg;afP=0}
-    else if(a==='apage'){afP+=+arg}
     else if(a==='xfsel'){const it=xfGet(arg);if(!xfOk(arg,it))return;
       if(xf.pick==='src'){if(arg===xf.src){xf.src='';xf.k=''}else{xf.src=arg;xf.k='';if(xf.dst===arg)xf.dst=''}xf.rep='';if(xf.src&&!xf.dst)xf.pick='dst'}
       else{if(arg===xf.dst)xf.dst='';else xf.dst=arg;xf.rep='';if(xf.dst&&!xf.src)xf.pick='src'}}
@@ -535,15 +535,12 @@ function campClick(b){
   }
   drawCamp();if(!$('settings').hidden)drawSettings();
 }
-$('campBody').addEventListener('input',e=>{if(e.target.id==='saveIn')saveDraft=e.target.value;
-  const i=e.target.dataset.look;if(i!=null){lookSet(lookC(),+i,e.target.value);const l=e.target.parentElement;l.style.setProperty('--sw',e.target.value);l.classList.add('is-on');lookPaint()}});
+$('campBody').addEventListener('input',e=>{const i=e.target.dataset.look;if(i!=null){lookSet(lookC(),+i,e.target.value);const l=e.target.parentElement;l.style.setProperty('--sw',e.target.value);l.classList.add('is-on');lookPaint()}});
 // couleur libre : enregistrée et envoyée aux autres joueurs quand le choix est fait
 $('campBody').addEventListener('change',e=>{if(e.target.dataset.look==null)return;lookSet(lookC(),+e.target.dataset.look,e.target.value);saveMeta();if(typeof netMe==='function')netMe();drawCamp()});
 $('campBody').addEventListener('change',e=>{if(e.target.id==='xfSrc'){xf={src:e.target.value,k:'',dst:xf.dst===e.target.value?'':xf.dst,rep:''};drawCamp()}else if(e.target.id==='xfDst'){xf.dst=e.target.value;xf.rep='';drawCamp()}});
 // Héros › Équipements enregistrés : renommer
 $('campBody').addEventListener('change',e=>{const i=e.target.dataset.setname;if(i==null)return;const s=setsOf()[+i];if(s){s.n=e.target.value.trim().slice(0,24)||s.n;saveMeta()}});
-$('campBody').addEventListener('change',e=>{if(e.target.id!=='saveFile'||!e.target.files[0])return;const r=new FileReader();
-  r.onload=()=>{saveDraft=String(r.result);const dd=parseCode(saveDraft);if(dd){savePending=dd;saveMsg=''}else saveMsg='Ce fichier ne contient pas de sauvegarde JSON valide.';drawCamp()};r.readAsText(e.target.files[0])});
 function openCamp(){$('camp').hidden=false;campSel=null;campMsg='';drawCamp()}
 function closeCamp(){$('camp').hidden=true;if(!started)newGame();refreshMenus()}
 // Accueil : lignes résumées (Biome, Niveau, Difficulté, Reliques) ; Lancer et le Camp restent en bas.
@@ -552,7 +549,7 @@ function diffLine(i){const D=i===3?dif3():DIFF[i],iv=Math.round(D.iv*(meta.mode=
 const dif3=()=>{const sv=meta.diff;meta.diff=3;const D=dif();meta.diff=sv;return D};
 function refreshMenus(){
   $('introGold').textContent=meta.gold;
-  {let n=0;try{tabBadges();document.querySelectorAll('#camp .cx-tab__badge').forEach(b=>{n+=parseInt(b.textContent)||0})}catch(e){}const cb=$('campBadge');if(cb){cb.hidden=!n;cb.textContent=n>9?'9+':n;cb.setAttribute('aria-label',`${n} à voir`)}}
+  {let n=0;try{tabBadges();document.querySelectorAll('#camp .cx-tab__badge').forEach(b=>{n+=parseInt(b.textContent)||0})}catch{}const cb=$('campBadge');if(cb){cb.hidden=!n;cb.textContent=n>9?'9+':n;cb.setAttribute('aria-label',`${n} à voir`)}}
   const st=clamp(meta.start|0||1,1,LV_MAX);$('startBtn').textContent=`Lancer · ${MODES[meta.mode].n} · niveau ${st}`;
   if(document.activeElement!==$('lvIn'))$('lvIn').value=st;$('lvMinus').disabled=st<=1;$('lvPlus').disabled=st>=LV_MAX;
   const lm=lootMul(st);$('lvDesc').textContent=st===1?'Plus haut : plus de butin, monstres plus forts':`Butin ×${lm.toFixed(2).replace(/\.?0+$/,'').replace('.',',')} · or ×${goldMul(st).toFixed(1).replace('.',',')} · monstres plus forts`;
@@ -568,7 +565,7 @@ function refreshMenus(){
   if(!started)unlockHomeSeen();
   if(typeof NET!=='undefined'&&NET.host&&NET.on)sendRoster();
   {const bi=Math.max(0,Math.min(BIOMES.length-1,meta.biome|0));$('bioVal').textContent=(bi?'❄ ':'')+BIOMES[bi].n}
-  relicQFix();const rn=meta.relicQ.length,rt=Object.values(meta.relics).reduce((n,a)=>n+(a[0]||0)+(a[1]||0),0);
+  relicQFix();const rn=meta.relicQ.length;
   $('relicVal').textContent=rn?`${rn} équipée${rn>1?'s':''}`:'Aucune';$('relicVal').style.color=rn?'':'var(--muted)';
   const D=dif(),di=Math.max(0,Math.min(3,meta.diff|0));
   $('diffVal').textContent=D.n;$('diffVal').style.color=di?DIFF[di].c:'';

@@ -1,8 +1,9 @@
 // Crypte des Cendres — net.js : coopération jusqu'à 4 joueurs en pair à pair (WebRTC), sans serveur.
 // L'hôte fait tourner les monstres et relie chaque invité (connexion en étoile) ; chacun simule son propre héros,
 // ses tirs et son butin (instancié). Les invités ne se connectent qu'à l'hôte, qui relaie les héros des autres.
-const NET={on:false,host:false,guest:false,pc:null,dc:null,state:'idle',code:'',err:'',hits:[],ebUsed:new Set(),snap:null,tick:null,
-  peers:[],slot:0,roster:[],hostCls:null,hostName:'',hostPr:0,hostLook:null,via:'',hostBgAt:0,ready:false};
+// État de la coopération hors partie (au chargement et après chaque fin de connexion).
+const netFresh=()=>({on:false,host:false,guest:false,pc:null,dc:null,state:'idle',code:'',err:'',hits:[],snap:null,tick:null,peers:[],slot:0,roster:[],hostCls:null,hostName:'',hostPr:0,hostLook:null,via:'',hostBgAt:0,ready:false,ebUsed:new Set(),fdc:null,hq:0,sq:0,hT:0,hostMode:null});
+const NET=netFresh();
 const NET_MAX=4; // joueurs, hôte compris
 const NET_V=9;
 const NET_TIMEOUT=20000; // silence toléré en mission (une notification ou un écran qui s'éteint ne doit pas couper la partie)   // version du protocole : deux appareils de versions différentes refusent de jouer ensemble
@@ -10,7 +11,7 @@ const ICE=[{urls:'stun:stun.l.google.com:19302'}];
 // Relais du jeu (Cloudflare) : le mode par défaut, même si js/relais.js manque ou est vide (page en cache ancienne).
 // js/relais.js peut le remplacer (une autre adresse, ou « off » pour les QR codes seulement) ; pour les tests, localStorage « crypte-relay » aussi.
 const RELAY_CF='wss://crypte-relais.cryptcendre.workers.dev';
-const RELAY_URL=(()=>{let v=null;try{v=localStorage.getItem('crypte-relay')}catch(e){}if(!v&&typeof RELAY_DEFAULT==='string')v=RELAY_DEFAULT;v=String(v||RELAY_CF).trim();return v==='off'?'':v.replace(/\/+$/,'')})();
+const RELAY_URL=(()=>{let v=null;try{v=localStorage.getItem('crypte-relay')}catch{}if(!v&&typeof RELAY_DEFAULT==='string')v=RELAY_DEFAULT;v=String(v||RELAY_CF).trim();return v==='off'?'':v.replace(/\/+$/,'')})();
 const SLOT_C=['#e8853b','#8fd3e0','#b9a6f0','#f0cf4a'];
 // Nombre de joueurs dans la partie (hôte compris) : sert à la difficulté.
 const coopN=()=>NET.host?1+NET.peers.filter(p=>p.state==='open').length:NET.guest&&NET.on?Math.max(2,NET.roster.length):1;
@@ -31,15 +32,14 @@ const iceDone=pc=>new Promise(res=>{if(pc.iceGatheringState==='complete')return 
 
 /* ---------- Connexion ---------- */
 // Écran allumé tant que la coopération est active : un téléphone qui se met en veille coupe sa connexion.
-let wakeL=null;async function wakeOn(){if(wakeL||!navigator.wakeLock)return;try{wakeL=await navigator.wakeLock.request('screen');wakeL.addEventListener('release',()=>{wakeL=null})}catch(e){wakeL=null}}
-function wakeOff(){try{wakeL&&wakeL.release()}catch(e){}wakeL=null}
+let wakeL=null;async function wakeOn(){if(wakeL||!navigator.wakeLock)return;try{wakeL=await navigator.wakeLock.request('screen');wakeL.addEventListener('release',()=>{wakeL=null})}catch{wakeL=null}}
+function wakeOff(){try{wakeL&&wakeL.release()}catch{}wakeL=null}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&NET.on)wakeOn()});
 // Battement de cœur hors mission, pour que le silence du salon ne passe pas pour une déconnexion.
 function pingOn(){wakeOn();if(NET.pingT)return;NET.pingT=setInterval(()=>{if(NET.on&&(!started||!G||G.over||G.hold))netSend({t:'ping'})},2000)}
-function closePeer(p){try{p.dc&&p.dc.close()}catch(e){}try{p.pc&&p.pc.close()}catch(e){}}
-function netReset(){relayClose();RL.code='';NET.relay=null;for(const p of NET.peers)closePeer(p);try{NET.dc&&NET.dc.close()}catch(e){}try{NET.pc&&NET.pc.close()}catch(e){}clearInterval(NET.tick);clearInterval(NET.htick);clearInterval(NET.pingT);NET.pingT=null;wakeOff();
-  Object.assign(NET,{on:false,host:false,guest:false,pc:null,dc:null,state:'idle',code:'',err:'',hits:[],snap:null,tick:null,peers:[],slot:0,roster:[],hostCls:null,hostName:'',hostPr:0,hostLook:null,via:'',hostBgAt:0,ready:false});
-  NET.ebUsed=new Set();NET.fdc=null;NET.hq=0;NET.sq=0;NET.hT=0;NET.hostMode=null;if(G)G.mates=[];if(meta.mode==='breche'){meta.mode='survie';saveMeta()}refreshCoopUi();if(typeof refreshMenus==='function'&&!started)refreshMenus()}
+function closePeer(p){try{p.dc&&p.dc.close()}catch{}try{p.pc&&p.pc.close()}catch{}}
+function netReset(){relayClose();RL.code='';NET.relay=null;for(const p of NET.peers)closePeer(p);try{NET.dc&&NET.dc.close()}catch{}try{NET.pc&&NET.pc.close()}catch{}clearInterval(NET.tick);clearInterval(NET.htick);clearInterval(NET.pingT);NET.pingT=null;wakeOff();
+  Object.assign(NET,netFresh());if(G)G.mates=[];if(meta.mode==='breche'){meta.mode='survie';saveMeta()}refreshCoopUi();if(typeof refreshMenus==='function'&&!started)refreshMenus()}
 const myRelic=()=>!!(meta.relicQ&&meta.relicQ.length);
 function rosterList(){return [{slot:0,cls:heroCls,name:myName(),pr:myPr(),look:myLook(heroCls)},...NET.peers.filter(p=>p.state==='open'&&p.cls).map(p=>({slot:p.slot,cls:p.cls,name:p.name,pr:p.pr|0,look:p.look||null}))]}
 // Présentation : héros, nom, prestige et couleurs du héros joué, renvoyés à chaque changement.
@@ -62,12 +62,12 @@ function wireDc(dc,peer){
   dc.onopen=()=>{
     if(peer){peer.state='open';peer.lastRx=performance.now();NET.on=true;NET.state='lobby';netSendTo(peer,{...helloMsg(),slot:peer.slot});sendRoster();
       // Mission déjà lancée (l'hôte a touché Lancer pendant la connexion) : le joueur rejoint en cours de route.
-      if(started&&G&&!G.over){netStartFor(peer);if(!NET.tick){clearInterval(NET.tick);NET.tick=setInterval(netTick,50);clearInterval(NET.htick);NET.htick=setInterval(netHeroTick,33)}toast(`${whoHtml(peer.slot)} rejoint la mission.`)}}
+      if(started&&G&&!G.over){netStartFor(peer);if(!NET.tick)netTicks();toast(`${whoHtml(peer.slot)} rejoint la mission.`)}}
     else{relayClose();NET.on=true;NET.lastRx=performance.now();NET.state='connected';NET.via=RL.code||'';netSend(helloMsg());
       if(NET.retry){NET.retry=null;toast('<b style="color:#8fd3e0">Reconnecté à la partie.</b>',true)}coopSave()}
     pingOn();SND.play('relic');toast('<b style="color:#8fd3e0">Coopération connectée.</b>',true);refreshCoopUi();drawCoop()};
   dc.onclose=()=>peer?netPeerLost(peer,false,'close'):netLost('close');dc.onerror=()=>{};
-  dc.onmessage=e=>{if(peer)peer.lastRx=performance.now();else NET.lastRx=performance.now();let m;try{m=JSON.parse(e.data)}catch(x){return}
+  dc.onmessage=e=>{if(peer)peer.lastRx=performance.now();else NET.lastRx=performance.now();let m;try{m=JSON.parse(e.data)}catch{return}
     try{peer?netRecvHost(peer,m):netRecvGuest(m)}catch(err){typeof noteErr==='function'&&noteErr('coop',err)}}}
 // Hôte : une place de plus, avec son offre de connexion (code SDP). rid : identifiant de l'invité au relais (absent en mode manuel).
 async function newPeer(rid){const used=new Set(NET.peers.map(p=>p.slot));let slot=1;while(used.has(slot))slot++;
@@ -99,15 +99,15 @@ async function netJoin(code){netReset();NET.guest=true;NET.state='answer';drawCo
    Le relais fait passer l'offre de l'hôte et la réponse de l'invité (les mêmes codes qu'en mode manuel), puis la partie passe
    directement d'un appareil à l'autre. L'hôte garde la salle ouverte tant que sa partie existe, pour qu'un joueur puisse encore arriver. */
 const RL={ws:null,code:'',key:'',tries:0,pingT:null,joinT:null};
-const rnd4=()=>{const a=new Uint32Array(1);try{crypto.getRandomValues(a)}catch(e){a[0]=Math.random()*1e9}return String(a[0]%10000).padStart(4,'0')};
-function relayClose(){const w=RL.ws;RL.ws=null;clearInterval(RL.pingT);RL.pingT=null;clearTimeout(RL.joinT);if(w){w.onclose=w.onmessage=w.onerror=null;try{w.close()}catch(e){}}}
-function relayOpen(code,role,onMsg,onEnd){relayClose();let ws;try{ws=new WebSocket(`${RELAY_URL}/r/${code}?role=${role}${role==='h'?'&k='+RL.key:''}`)}catch(e){setTimeout(()=>onEnd('err'),0);return}
+const rnd4=()=>{const a=new Uint32Array(1);try{crypto.getRandomValues(a)}catch{a[0]=Math.random()*1e9}return String(a[0]%10000).padStart(4,'0')};
+function relayClose(){const w=RL.ws;RL.ws=null;clearInterval(RL.pingT);RL.pingT=null;clearTimeout(RL.joinT);if(w){w.onclose=w.onmessage=w.onerror=null;try{w.close()}catch{}}}
+function relayOpen(code,role,onMsg,onEnd){relayClose();let ws;try{ws=new WebSocket(`${RELAY_URL}/r/${code}?role=${role}${role==='h'?'&k='+RL.key:''}`)}catch{setTimeout(()=>onEnd('err'),0);return}
   RL.ws=ws;let opened=false;
-  ws.onopen=()=>{opened=true;try{ws.send('{"t":"hi"}')}catch(e){}RL.pingT=setInterval(()=>{try{ws.send('ping')}catch(e){}},25000)};
-  ws.onmessage=e=>{if(e.data==='pong')return;let m;try{m=JSON.parse(e.data)}catch(x){return}try{onMsg(m)}catch(err){typeof noteErr==='function'&&noteErr('relais',err)}};
+  ws.onopen=()=>{opened=true;try{ws.send('{"t":"hi"}')}catch{}RL.pingT=setInterval(()=>{try{ws.send('ping')}catch{}},25000)};
+  ws.onmessage=e=>{if(e.data==='pong')return;let m;try{m=JSON.parse(e.data)}catch{return}try{onMsg(m)}catch(err){typeof noteErr==='function'&&noteErr('relais',err)}};
   ws.onerror=()=>{};
   ws.onclose=()=>{if(RL.ws!==ws)return;RL.ws=null;clearInterval(RL.pingT);RL.pingT=null;onEnd(opened?'closed':'err')}}
-const relaySend=m=>{try{if(RL.ws&&RL.ws.readyState===1)RL.ws.send(JSON.stringify(m))}catch(e){}};
+const relaySend=m=>{try{if(RL.ws&&RL.ws.readyState===1)RL.ws.send(JSON.stringify(m))}catch{}};
 // Hôte : « Créer une partie ».
 function netHostCode(code,key){netReset();NET.host=true;NET.state='lobby';if(code&&key){relayClose();NET.relay='wait';RL.key=key;RL.tries=0;relayHost(code);refreshCoopUi();drawCoop()}else relayNewCode()}
 // Nouveau code (salle neuve, nouveau secret) : les joueurs déjà connectés restent ; l'ancien code ne mène plus nulle part.
@@ -159,14 +159,14 @@ function netFail(msg){NET.err=msg;NET.state='idle';drawCoop()}
 // Canal rapide (non fiable, sans ordre) : positions des héros et instantanés du monde. Un paquet perdu est remplacé 33 à 50 ms plus tard,
 // sans bloquer les suivants ; les messages importants (coups, morts, départ, fin) restent sur le canal fiable.
 function wireFast(dc,peer){if(peer)peer.fdc=dc;else NET.fdc=dc;
-  dc.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(x){return}if(peer)peer.lastRx=performance.now();else NET.lastRx=performance.now();
+  dc.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch{return}if(peer)peer.lastRx=performance.now();else NET.lastRx=performance.now();
     try{peer?netRecvHost(peer,m):netRecvGuest(m)}catch(err){typeof noteErr==='function'&&noteErr('coop',err)}}}
-function fastTo(p,str){const d=p&&p.fdc;if(d&&d.readyState==='open'){try{d.send(str);return}catch(e){}}netSendTo(p,str)}
+function fastTo(p,str){const d=p&&p.fdc;if(d&&d.readyState==='open'){try{d.send(str);return}catch{}}netSendTo(p,str)}
 function sendFast(m){const str=JSON.stringify(m);if(NET.host){for(const p of NET.peers)if(p.state==='open')fastTo(p,str)}
-  else{const d=NET.fdc;if(d&&d.readyState==='open'){try{d.send(str);return}catch(e){}}netSend(m)}}
-function netSendTo(p,m){if(p&&p.dc&&p.dc.readyState==='open')try{p.dc.send(typeof m==='string'?m:JSON.stringify(m))}catch(e){}}
+  else{const d=NET.fdc;if(d&&d.readyState==='open'){try{d.send(str);return}catch{}}netSend(m)}}
+function netSendTo(p,m){if(p&&p.dc&&p.dc.readyState==='open')try{p.dc.send(typeof m==='string'?m:JSON.stringify(m))}catch{}}
 function netSend(m){if(NET.host){const s=JSON.stringify(m);for(const p of NET.peers)if(p.state==='open')netSendTo(p,s)}
-  else if(NET.dc&&NET.dc.readyState==='open')try{NET.dc.send(JSON.stringify(m))}catch(e){}}
+  else if(NET.dc&&NET.dc.readyState==='open')try{NET.dc.send(JSON.stringify(m))}catch{}}
 /* ---------- Déconnexions : la raison, et la reconnexion automatique ----------
    why : 'bye' (l'autre a fermé ou rechargé le jeu), 'close' / 'failed' (liaison coupée), 'timeout' (plus de nouvelles depuis 20 s).
    Chaque appareil prévient les autres quand il passe en arrière-plan (« bg ») : une coupure juste après s'explique (écran en veille, autre appli). */
@@ -200,8 +200,8 @@ function rejoinSoon(code,n=0){clearTimeout(RL.reT);NET.retry={code,n};drawCoop()
 // Après un rechargement (mise à jour, page fermée par erreur) : la partie en cours, gardée pour l'onglet pendant 10 minutes.
 const COOP_SS='crypte-coop';
 function coopSave(){try{if(NET.host&&NET.relay&&RL.code&&RL.key)sessionStorage.setItem(COOP_SS,JSON.stringify({r:'h',code:RL.code,key:RL.key,at:Date.now()}));
-  else if(NET.guest&&NET.on&&NET.via)sessionStorage.setItem(COOP_SS,JSON.stringify({r:'g',code:NET.via,at:Date.now()}));else sessionStorage.removeItem(COOP_SS)}catch(e){}}
-function coopForget(){try{sessionStorage.removeItem(COOP_SS)}catch(e){}}
+  else if(NET.guest&&NET.on&&NET.via)sessionStorage.setItem(COOP_SS,JSON.stringify({r:'g',code:NET.via,at:Date.now()}));else sessionStorage.removeItem(COOP_SS)}catch{}}
+function coopForget(){try{sessionStorage.removeItem(COOP_SS)}catch{}}
 
 /* ---------- Démarrage de la mission ---------- */
 const SPAWN_OFF=[[0,0],[80,0],[-80,0],[0,80]];
@@ -211,7 +211,7 @@ function netStartHost(){ // appelé par l'hôte au lancement (main.js)
   const open=NET.peers.filter(p=>p.state==='open'),now=performance.now();for(const p of open)p.lastRx=now;
   G.breche=meta.mode==='breche'&&open.length>0;for(const p of open)p.left=false;
   G.mates=open.map(p=>{const o=SPAWN_OFF[p.slot]||[40,0],q=mateNew(p.slot,p.cls,G.P.x+o[0],G.P.y+o[1]);p.Q=q;p.sh=[];return q});
-  netSend(startMsg());clearInterval(NET.tick);NET.tick=setInterval(netTick,50);clearInterval(NET.htick);NET.htick=setInterval(netHeroTick,33)}
+  netSend(startMsg());netTicks()}
 // Un joueur arrive alors que la mission tourne déjà : on ne lance que lui, près de l'hôte.
 function netStartFor(peer){peer.lastRx=performance.now();peer.left=false;const o=SPAWN_OFF[peer.slot]||[40,0],q=mateNew(peer.slot,peer.cls,G.P.x+o[0],G.P.y+o[1]);peer.Q=q;peer.sh=[];
   G.mates=(G.mates||[]).filter(x=>x.slot!==peer.slot);G.mates.push(q);netSendTo(peer,startMsg())}
@@ -221,7 +221,7 @@ function netStartGuest(m){const sv=meta.mode;meta.mode=MODES[m.mode]?m.mode:'sur
   {const o=SPAWN_OFF[NET.slot]||[40,0];G.P.x=m.x+o[0];G.P.y=m.y+o[1];resolve(G.P)}G.cam.x=G.P.x;G.cam.y=G.P.y;G.en=[];G.mates=[];
   if(PX)try{buildStatic()}catch(err){dropPixi(err)}
   ['over','extract','lvlup','camp','bag','coop','settings'].forEach(id=>{const el=$(id);if(el)el.hidden=true});$('intro').hidden=true;
-  NET.lastRx=performance.now();window.goRun&&window.goRun();clearInterval(NET.tick);NET.tick=setInterval(netTick,50);clearInterval(NET.htick);NET.htick=setInterval(netHeroTick,33)}
+  NET.lastRx=performance.now();window.goRun&&window.goRun();netTicks()}
 
 /* ---------- Échanges en partie ---------- */
 const r1=v=>Math.round(v*10)/10;
@@ -234,7 +234,15 @@ function heroUnpack(a,Q){Q=Q||{r:17};const now=performance.now();
   Q.tx=a[0];Q.ty=a[1];Q.rt=now;Object.assign(Q,{face:a[2],hp:a[3],max:a[4],cls:a[5],down:!!(a[6]&1),dashT:a[6]&2?.1:0,spin:a[6]&4?1:0,flash:a[6]&8?1:0,inv:a[6]&16?.1:0,shield:a[7]||0,aur:a[8]|0,r:17});
   if(a[9]){const t=PET_IDS[a[9]-1];if(!Q.pet||Q.pet.t!==t)Q.pet={t,x:a[10],y:a[11],flap:0,r:10};Q.pet.tx=a[10];Q.pet.ty=a[11];Q.pet.taunt=a[12]?1:0}else Q.pet=null;return Q}
 // Lissage des partenaires à chaque image : on prolonge leur dernier mouvement connu et on rattrape en douceur.
-function matesSmooth(dt){const now=performance.now();for(const q of G.mates||[]){if(q.pet){const p=q.pet,k=Math.min(1,dt*12);if(Math.hypot(p.tx-p.x,p.ty-p.y)>400){p.x=p.tx;p.y=p.ty}p.x+=(p.tx-p.x)*k;p.y+=(p.ty-p.y)*k;p.flap+=dt*10}if(q.pet){const p=q.pet,k=Math.min(1,dt*12);if(Math.hypot(p.tx-p.x,p.ty-p.y)>400){p.x=p.tx;p.y=p.ty}p.x+=(p.tx-p.x)*k;p.y+=(p.ty-p.y)*k;p.flap+=dt*10}if(q.tx==null)continue;const age=Math.min(.2,(now-q.rt)/1000),px=q.tx+(q.vx||0)*age,py=q.ty+(q.vy||0)*age;
+// Reliques partagées : quand un joueur ouvre une relique, chacun des autres joueurs de la mission reçoit l'ouverture
+// d'une relique du même type, tirée pour son propre héros (fragments de sa classe, essence, chance d'œuf), à la réussite de la mission.
+// Personne ne dépense de relique pour un partage. Une relique forgée se partage comme une relique ordinaire de sa rareté.
+function relShare(r){const R=NET.on&&RELICS[r.id];if(!R)return;netSend({t:'relo',id:r.id,tt:R.t,rad:r.rad?1:0,from:NET.host?0:NET.slot})}
+function relRecv(m){if(!G||!started||G.over)return;const R=RELICS[m.id],id=R&&!R.fz?m.id:['os','an','sa','ab'][Math.max(0,Math.min(3,m.tt|0))];
+  G.shared.push({id,rad:!!m.rad,from:m.from|0})}
+// Minuteries de la partie en coopération : état du monde (20 par seconde) et héros (30 par seconde).
+function netTicks(){clearInterval(NET.tick);NET.tick=setInterval(netTick,50);clearInterval(NET.htick);NET.htick=setInterval(netHeroTick,33)}
+function matesSmooth(dt){const now=performance.now();for(const q of G.mates||[]){if(q.pet){const p=q.pet,k=Math.min(1,dt*12);if(Math.hypot(p.tx-p.x,p.ty-p.y)>400){p.x=p.tx;p.y=p.ty}p.x+=(p.tx-p.x)*k;p.y+=(p.ty-p.y)*k;p.flap+=dt*10}if(q.tx==null)continue;const age=Math.min(.2,(now-q.rt)/1000),px=q.tx+(q.vx||0)*age,py=q.ty+(q.vy||0)*age;
   const k=Math.min(1,dt*20);q.x+=(px-q.x)*k;q.y+=(py-q.y)*k}}
 // Flux rapide des héros, 30 fois par seconde.
 let hSeq=0;
@@ -276,12 +284,13 @@ function netRecvHost(peer,m){
     if(first&&!(started&&G&&!G.over)){peer.pr=Math.max(0,m.pr|0);toast(`${whoHtml(peer.slot)} a rejoint la partie.`,true)}peer.pr=Math.max(0,m.pr|0);if(peer.Q)peer.Q.cls=peer.cls;sendRoster();drawCoop();return}
   if(!G)return;
   if(m.t==='fx'){fxApply(m);for(const p of NET.peers)if(p!==peer&&p.state==='open')netSendTo(p,m);return}
+  if(m.t==='relo'){const f={...m,from:peer.slot};relRecv(f);for(const p of NET.peers)if(p!==peer&&p.state==='open')netSendTo(p,f);return}
   if(m.t==='h'){if(!peer.Q||!m.p)return;if(m.q<=(peer.hq||0)&&peer.hq-m.q<1000)return;peer.hq=m.q;peer.hT=performance.now();heroUnpack(m.p,peer.Q);peer.Q.slot=peer.slot;return}
   if(m.t==='g'){if(peer.left||!started||G.over)return;if(!peer.Q){peer.Q=mateNew(peer.slot,peer.cls,G.P.x,G.P.y);if(G.mates&&!G.mates.includes(peer.Q))G.mates.push(peer.Q)}
     if(!peer.hT||performance.now()-peer.hT>400){heroUnpack(m.p,peer.Q);peer.Q.slot=peer.slot}peer.shRaw=m.sh;peer.sh=m.sh.map(shotObj);peer.relic=m.rel;
     G.oshots=NET.peers.flatMap(p=>p.state==='open'?p.sh||[]:[]);
     if(m.h.length||m.st.length){const by=new Map();for(const e of G.en)by.set(e.id,e);
-      for(const [id,d,crit] of m.h){const e=by.get(id);if(!e||e.dead)continue;let dd=d;if(e.elite==='bouclier'&&e.hp>e.max*.5)dd*=.5;e.hp-=dd;e.flash=1;e.shown=2;if(e.hp<=0&&!e.dead)kill(e)}
+      for(const [id,d] of m.h){const e=by.get(id);if(!e||e.dead)continue;let dd=d;if(e.elite==='bouclier'&&e.hp>e.max*.5)dd*=.5;e.hp-=dd;e.flash=1;e.shown=2;if(e.hp<=0&&!e.dead)kill(e)}
       for(const [id,slow,frz,bt,bd,kx,ky] of m.st){const e=by.get(id);if(!e||e.dead)continue;if(slow>e.slow)e.slow=slow;if(frz>(e.frz||0))e.frz=frz;if(bt>e.burnT){e.burnT=bt;e.burnDps=Math.max(e.burnDps||0,bd)}if(e.type!=='boss'){e.kx+=kx;e.ky+=ky}}}
     coopCheckFail();return}
 }
@@ -297,6 +306,7 @@ function netRecvGuest(m){
   // hors mission (retour au Camp, fin de partie) : on ignore le flux de la mission de l'hôte
   if(!G||!started||G.over)return;
   if(m.t==='cap'){capReward();return}
+  if(m.t==='relo'){relRecv(m);return}
   if(m.t==='fx'){fxApply(m);return}
   if(m.t==='s'){if(m.sq&&NET.sq&&m.sq<=NET.sq&&NET.sq-m.sq<1000)return;NET.sq=m.sq;NET.snap=m;return}
   if(m.t==='h'){if(m.q<=(NET.hq||0)&&NET.hq-m.q<1000)return;NET.hq=m.q;NET.hT=performance.now();matesFrom(m.ps);return}
@@ -348,7 +358,7 @@ function coopWait(on){const el=$('exitBtn'),c=$('contBtn');if(!el)return;el.disa
 
 /* ---------- Écran de connexion ---------- */
 function loadQr(){return new Promise(res=>{if(window.qrcode)return res(true);const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';s.onload=()=>res(!!window.qrcode);s.onerror=()=>res(false);document.head.appendChild(s)})}
-function qrSvg(text){try{const q=qrcode(0,'L');q.addData(text);q.make();return q.createSvgTag({cellSize:3,margin:2,scalable:true})}catch(e){return ''}}
+function qrSvg(text){try{const q=qrcode(0,'L');q.addData(text);q.make();return q.createSvgTag({cellSize:3,margin:2,scalable:true})}catch{return ''}}
 function refreshCoopUi(){const b=$('coopBtn'),n=coopN();if(b)b.innerHTML=NET.on?`<span class="cx-dot"></span>Coop · ${n}`:NET.host&&NET.relay==='on'&&RL.code?`<span class="cx-dot"></span>Coop · ${RL.code}`:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.2A5 5 0 0 1 21 19"/></svg>Coop';
   const sb=$('startBtn');if(sb&&NET.guest&&NET.on){sb.disabled=true;sb.textContent=`En attente de l'hôte${NET.hostMode?' · '+(MODES[NET.hostMode.mode]||MODES.survie).n:''}…`}else if(sb&&sb.disabled&&!NET.guest){sb.disabled=false;refreshMenus()}}
 function codeBox(lab,code,share){return `<div class="coopcode"><span class="cx-hint" style="margin:0">${lab}</span><div class="qr" id="coopQr"></div>
@@ -362,7 +372,7 @@ const missionTxt=o=>`${MODES[o.mode]?MODES[o.mode].n:'Survie'} · niveau ${o.lv}
 const rosterHtml=list=>`<ul class="coopros">${list.map(r=>{const w=who(r.slot),me=r.slot===(NET.host?0:NET.slot),c=w.cls||r.cls;return `<li><span class="dotc" style="background:${SLOT_C[r.slot]||'#888'}"></span>${prBadge(w.pr)}<b class="coopname">${esc(w.name)}</b><span class="cooptag">${[r.slot===0?'hôte':'',me?'toi':''].filter(Boolean).join(' · ')}</span><span class="cx-hint" style="margin:0">${c&&CLS[c]?CLS[c].n:'…'}</span>${NET.host&&r.slot&&!started?`<button class="cx-btn cx-btn--sm cx-btn--ghost kickb" data-coop="kick" data-arg="${r.slot}" aria-label="Retirer ${esc(w.name)} de la partie">Retirer</button>`:''}</li>`}).join('')}</ul>`;
 const RULES=`<p class="cx-hint" style="margin:0">Jusqu'à ${NET_MAX} joueurs. Chacun garde son équipement et son butin, qui tombe séparément pour chaque joueur. Par joueur en plus, les monstres ont 50 % de vie en plus et sont 40 % plus nombreux. Un héros à terre se relève 8 s plus tard près d'un partenaire debout ; si tout le monde tombe, la mission échoue.</p>`;
 // Lien d'invitation du QR code : la page du jeu avec #coop=1234 (ouvert, il rejoint tout seul), sinon le code seul (lu par le scanner du jeu).
-const coopLink=code=>{try{if(/^https?:$/.test(location.protocol)&&window.top===window)return `${location.origin}${location.pathname}#coop=${code}`}catch(e){}return 'CRYPTE:'+code};
+const coopLink=code=>{try{if(/^https?:$/.test(location.protocol)&&window.top===window)return `${location.origin}${location.pathname}#coop=${code}`}catch{}return 'CRYPTE:'+code};
 function drawCoop(){const body=$('coopBody');if(!body||$('coop').hidden)return;camStop();let h='';
   const steps=`<ol class="coopsteps"><li>Tous les appareils sont sur le <b>même wifi</b> (ou la même box).</li><li>Un joueur <b>héberge</b> et affiche un QR code d'invitation ; un autre le <b>scanne avec sa caméra</b> (ou colle le code).</li><li>Celui qui rejoint affiche son QR code de réponse : l'hôte le <b>scanne avec sa caméra ou sa webcam</b>, la connexion se valide toute seule.</li><li>L'hôte ajoute ainsi jusqu'à ${NET_MAX-1} joueurs, un par un, puis lance la mission.</li></ol>`;
   const manual=`<div class="actions" style="margin:0"><button class="cx-btn${RELAY_URL?'':' cx-btn--primary'}" data-coop="host">Héberger${RELAY_URL?' par QR codes':' une partie'}</button><button class="cx-btn" data-coop="join">Rejoindre${RELAY_URL?' par QR code':''}</button></div>${NET.state==='joinIn'?pasteBox('Colle ou scanne le code de l\'hôte','Rejoindre','joingo'):''}`;
@@ -405,20 +415,20 @@ function loadJsQr(){return new Promise(res=>{if(window.jsQR)return res(true);con
 let camStream=null;
 function camStop(){if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null}const w=$('coopCamWrap');if(w)w.hidden=true;const v=$('coopCam');if(v)v.srcObject=null}
 async function qrReader(){
-  if('BarcodeDetector' in window){try{const f=await BarcodeDetector.getSupportedFormats();if(f.includes('qr_code')){const det=new BarcodeDetector({formats:['qr_code']});return async v=>{const r=await det.detect(v);return r.length?r[0].rawValue:null}}}catch(e){}}
+  if('BarcodeDetector' in window){try{const f=await BarcodeDetector.getSupportedFormats();if(f.includes('qr_code')){const det=new BarcodeDetector({formats:['qr_code']});return async v=>{const r=await det.detect(v);return r.length?r[0].rawValue:null}}}catch{}}
   if(!await loadJsQr())return null;
   const c=document.createElement('canvas'),g=c.getContext('2d',{willReadFrequently:true});
   return async v=>{const w=v.videoWidth,h=v.videoHeight;if(!w||!h)return null;const k=Math.min(1,960/Math.max(w,h));c.width=Math.round(w*k);c.height=Math.round(h*k);
     g.drawImage(v,0,0,c.width,c.height);const d=g.getImageData(0,0,c.width,c.height),r=jsQR(d.data,c.width,c.height,{inversionAttempts:'attemptBoth'});return r&&r.data?r.data:null}}
 async function coopScan(then){const v=$('coopCam'),w=$('coopCamWrap');if(!v||!w)return;camStop();
   try{camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false})}
-  catch(err){NET.err='Caméra indisponible ou refusée : autorise la caméra pour ce site, ou colle le code à la place.';drawCoop();return}
-  v.srcObject=camStream;w.hidden=false;try{await v.play()}catch(e){}
+  catch{NET.err='Caméra indisponible ou refusée : autorise la caméra pour ce site, ou colle le code à la place.';drawCoop();return}
+  v.srcObject=camStream;w.hidden=false;try{await v.play()}catch{}
   const read=await qrReader();if(!read){camStop();NET.err='Lecteur de QR code indisponible (hors connexion ?) : colle le code à la place.';drawCoop();return}
   let busy=false;const tick=async()=>{if(!camStream||w.hidden)return;if(!busy){busy=true;try{const code=await read(v);const c4=code&&RELAY_URL?((code.match(/(?:#coop=|^CRYPTE:)(\d{4})(?!\d)/)||code.trim().match(/^(\d{4})$/)||[])[1]):null;
         if(c4){camStop();SND.play('pick2');netJoinCode(c4);return}
         if(code&&/^[ZP][A-Za-z0-9_-]{40,}$/.test(code.trim())){camStop();SND.play('pick2');const box=$('coopIn');if(box)box.value=code.trim();
-        if(then==='answer')netAnswerIn(code.trim());else if(then==='joingo')netJoin(code.trim());return}}catch(e){}busy=false}setTimeout(tick,120)};tick()}
+        if(then==='answer')netAnswerIn(code.trim());else if(then==='joingo')netJoin(code.trim());return}}catch{}busy=false}setTimeout(tick,120)};tick()}
 function openCoop(){$('coop').hidden=false;NET.err='';drawCoop()}
 addEventListener('pagehide',()=>{if(NET.on)netSend({t:'bye'})});
 (function wireCoop(){
@@ -431,14 +441,14 @@ addEventListener('pagehide',()=>{if(NET.on)netSend({t:'bye'})});
     if(!('RTCPeerConnection' in window)){NET.err='Ce navigateur ne permet pas la coopération.';drawCoop();return}
     if(a==='create')netHostCode();else if(a==='joincode')netJoinCode(($('coopCode')||{}).value);
     else if(a==='newcode')relayNewCode();else if(a==='shut')relayShut();else if(a==='kick')netKick(+b.dataset.arg);
-    else if(a==='share4'){try{await navigator.share({title:'Crypte des Cendres',text:`Rejoins ma partie de Crypte des Cendres : code ${RL.code}`,...(/^CRYPTE:/.test(coopLink(RL.code))?{}:{url:coopLink(RL.code)})})}catch(x){}}
+    else if(a==='share4'){try{await navigator.share({title:'Crypte des Cendres',text:`Rejoins ma partie de Crypte des Cendres : code ${RL.code}`,...(/^CRYPTE:/.test(coopLink(RL.code))?{}:{url:coopLink(RL.code)})})}catch{}}
     else if(a==='host')netHost();else if(a==='add')netAddPeer();else if(a==='cancel')netCancelPending();
     else if(a==='join'){NET.state='joinIn';drawCoop()}
     else if(a==='joingo'){const c=$('coopIn').value;if(c.trim())netJoin(c)}
     else if(a==='answer'){const c=$('coopIn').value;if(c.trim())netAnswerIn(c)}
-    else if(a==='copy'){const t=$('coopOut');try{await navigator.clipboard.writeText(t.value);b.textContent='Copié'}catch(x){t.select()}}
-    else if(a==='share'){try{await navigator.share({text:$('coopOut').value})}catch(x){}}
-    else if(a==='paste'){try{$('coopIn').value=await navigator.clipboard.readText()}catch(x){$('coopIn').focus()}}
+    else if(a==='copy'){const t=$('coopOut');try{await navigator.clipboard.writeText(t.value);b.textContent='Copié'}catch{t.select()}}
+    else if(a==='share'){try{await navigator.share({text:$('coopOut').value})}catch{}}
+    else if(a==='paste'){try{$('coopIn').value=await navigator.clipboard.readText()}catch{$('coopIn').focus()}}
     else if(a==='scan')coopScan(b.dataset.then);
     else if(a==='scanstop')camStop();
     else if(a==='quit'){if(NET.on)netSend({t:'bye',end:1});netReset();NET.retry=null;NET.drop=null;clearTimeout(RL.reT);coopForget();refreshCoopUi();drawCoop()}});
@@ -446,11 +456,11 @@ addEventListener('pagehide',()=>{if(NET.on)netSend({t:'bye'})});
   $('coopBody').addEventListener('keydown',e=>{if(e.target.id==='coopCode'&&e.key==='Enter')netJoinCode(e.target.value)});
   // Lien d'invitation (#coop=1234) : la page ouvre la coopération et rejoint la partie toute seule.
   // (à l'ouverture de la page, ou si le lien est ouvert dans l'onglet où le jeu tourne déjà)
-  const coopHash=delay=>{const m=location.hash.match(/^#coop=(\d{4})$/);if(!m||!RELAY_URL)return;try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
+  const coopHash=delay=>{const m=location.hash.match(/^#coop=(\d{4})$/);if(!m||!RELAY_URL)return;try{history.replaceState(null,'',location.pathname+location.search)}catch{}
     const go=()=>{if(started||(NET.on&&NET.guest))return;openCoop();netJoinCode(m[1])};delay?addEventListener('load',()=>setTimeout(go,delay)):go()};
   coopHash(300);addEventListener('hashchange',()=>coopHash(0));
   // Rechargement pendant une partie à code (mise à jour, page rechargée) : l'hôte rouvre sa salle sous le même code, l'invité la rejoint.
-  {let c=null;try{c=JSON.parse(sessionStorage.getItem(COOP_SS)||'null')}catch(e){}
+  {let c=null;try{c=JSON.parse(sessionStorage.getItem(COOP_SS)||'null')}catch{}
     if(c&&RELAY_URL&&Date.now()-(c.at||0)<10*60*1000&&!/^#coop=/.test(location.hash))addEventListener('load',()=>setTimeout(()=>{if(NET.on||NET.host||NET.guest||started)return;
       if(c.r==='h'&&c.code&&c.key){netHostCode(c.code,c.key);toast('Partie rouverte sous le code '+c.code+'.',true)}else if(c.r==='g'&&c.code){NET.retry={code:c.code,n:0};netJoinCode(c.code,true)}},500))}
   const btn=document.createElement('button');btn.className='cx-btn cx-btn--sm cx-btn--ghost';btn.style.margin='0';btn.id='coopBtn';btn.innerHTML='Coop';btn.onclick=openCoop;

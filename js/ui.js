@@ -43,7 +43,7 @@ function abandonRun(){if(!G||G.over)return;
   q.addEventListener('click',()=>{quitAsk=true;drawBag()})}
 $('bagBtn').addEventListener('click',()=>{if(started&&!G.over&&$('extract').hidden&&$('lvlup').hidden)$('bag').hidden?openBag():closeBag()});
 $('closeBag').addEventListener('click',closeBag);$('closeBagX').addEventListener('click',closeBag);
-$('rendBtn').addEventListener('click',()=>{if(PX){dropPixi('choix du joueur');try{localStorage.setItem('crypte-nogl','1')}catch(e){}}else{try{localStorage.removeItem('crypte-nogl')}catch(e){}location.reload()}});
+$('rendBtn').addEventListener('click',()=>{if(PX){dropPixi('choix du joueur');try{localStorage.setItem('crypte-nogl','1')}catch{}}else{try{localStorage.removeItem('crypte-nogl')}catch{}location.reload()}});
 function drawBag(){
   $('slots').innerHTML=slotsHtml(G.eq,false);
   $('statgrid').innerHTML=statRows(S);
@@ -61,10 +61,10 @@ function drawBag(){
       +(L.parts.length?`<ul class="partlist">${L.parts.map(p=>`<li>${partLabel(p)}</li>`).join('')}</ul>`:'')
     :'<p class="cx-hint" style="margin:0">Rien pour l\'instant. Les monstres lâchent parfois des équipements et des reliques, les Gardiens toujours.</p>';
   $('runLoot').querySelectorAll('[data-run]').forEach(b=>b.onclick=()=>{const id=+b.dataset.run;runSel=runSel===id?null:id;modSel=null;drawBag()});
-  if($('bestRun'))$('bestRun').onclick=()=>{const plan=bestPlan(G.eq,G.loot.items);for(const sl in plan){const it=plan[sl];G.loot.items=G.loot.items.filter(i=>i!==it);const old=meta.gear[sl];if(old)meta.stash.push(old);meta.gear[sl]=it;G.eq[sl]=it}saveMeta();refreshStats();runSel=null;toast(`${Object.keys(plan).length} objet${Object.keys(plan).length>1?'s':''} équipé${Object.keys(plan).length>1?'s':''}`);drawBag()};
+  if($('bestRun'))$('bestRun').onclick=()=>{const plan=bestPlan(G.eq,G.loot.items);for(const sl in plan){const it=plan[sl];G.loot.items=G.loot.items.filter(i=>i!==it);wearGear(sl,it);G.eq[sl]=it}saveMeta();refreshStats();runSel=null;toast(`${Object.keys(plan).length} objet${Object.keys(plan).length>1?'s':''} équipé${Object.keys(plan).length>1?'s':''}`);drawBag()};
   if(modTab==='p'&&!petEq())modTab='h';
   {const d=$('bagModsT').closest('details');if(d)d.hidden=!isUnl('mods')}
-  const bb=build(modTab==='p'?'h':modTab);$('bagModsT').textContent=`Mods · ${bActive(build('w')).length+bActive(build('h')).length} actifs`;
+  $('bagModsT').textContent=`Mods · ${bActive(build('w')).length+bActive(build('h')).length} actifs`;
   renderMods('modsBag');
   // fiche ancrée : objet du butin choisi (prioritaire sur le détail d'un mod)
   if(quitAsk){runSel=null;modSel=null}
@@ -129,7 +129,7 @@ function refreshStats(){if(!G)return;const ratio=G.P.hp/S.hp;S=stats(G.eq);G.P.h
 let modSel=null,alSel=null,modTab='h',modPF='all',modSF=null;
 const AURA_C='#f0cf4a';
 function modDetail(id){
-  const m=MODS[id],rk=meta.mods[id],c=MOD_RAR[m.r].c,k=modKind(id),isA=k==='a',b=build(bKind(id)),ok=modOk(id,heroCls);
+  const m=MODS[id],rk=meta.mods[id],k=modKind(id),isA=k==='a',b=build(bKind(id)),ok=modOk(id,heroCls);
   const slot=isA?(b.aura===id?0:-1):b.load.indexOf(id),eq=slot>=0,u=bUsed(b),cap=bCap(b),fc=fuseCost(id,rk),maxed=rk>=m.max;
   let act='',why='',fuseBlocked=false,costLine;
   const where=k==='w'?`l'arme (${b.name})`:k==='p'?'le familier':'le héros';
@@ -254,7 +254,7 @@ function modsChanged(){if(started&&G&&!G.over){refreshStats();if(G.pet||petEq())
 
 /* ---------- Fin de niveau, extraction, mort ---------- */
 function lootSummary(end){
-  const L=G.loot,its=L.items.length,pts=L.parts.length;
+  const L=G.loot,its=L.items.length;
   const byR={};for(const i of L.items)byR[i.r]=(byR[i.r]||0)+1;const byT={};for(const id of L.relics){const t=RELICS[id].t;byT[t]=(byT[t]||0)+1}
   const lc=(c,n,lab)=>`<span class="lc" style="--c:${c}" title="${lab}">${n} ${lab}</span>`;
   return `<div><span>Or ramassé</span><b style="color:var(--r2)">${G.gold}</b></div>
@@ -262,7 +262,7 @@ function lootSummary(end){
     <div><span>Reliques</span><b>${L.relics.length?`${L.relics.length} · `+Object.keys(byT).sort((a,b)=>b-a).map(t=>lc(RTIER[t].c,byT[t],RTIER[t].n)).join(''):'0'}</b></div>
     ${(()=>{const W=L.parts.filter(p=>!p.hf),H=L.parts.length-W.length,b={};for(const p of W){const r=wdef(p.w).r;b[r]=(b[r]||0)+1}
       return (W.length?`<div><span>Armes</span><b>${W.length} · `+Object.keys(b).sort((x,y)=>y-x).map(r=>lc(RAR[r].c,b[r],RAR[r].n.toLowerCase()+(b[r]>1?'s':''))).join('')+`</b></div>`:'')+(H?`<div><span>Fragments de harnais</span><b style="color:var(--rar-aby)">${H}</b></div>`:'')})()}
-    ${G.relQ.length&&!end?`<div><span>Reliques ouvertes</span><b>${G.opened.length} / ${G.relQ.length}${G.relic?` · ${G.react} / ${reactNeed()} réactifs`:''}</b></div>`:''}<div><span>Ennemis abattus</span><b>${G.kills}</b></div><div><span>${end?'Durée de la mission':'Temps de survie'}</span><b>${fmt(G.t)}</b></div>`;
+    ${G.relQ.length&&!end?`<div><span>Reliques ouvertes</span><b>${G.opened.length} / ${G.relQ.length}${G.relic?` · ${G.react} / ${reactNeed()} réactifs`:''}</b></div>`:''}${(G.shared||[]).length&&!end?`<div><span>Partagées par les partenaires</span><b>${G.shared.length}</b></div>`:''}<div><span>Ennemis abattus</span><b>${G.kills}</b></div><div><span>${end?'Durée de la mission':'Temps de survie'}</span><b>${fmt(G.t)}</b></div>`;
 }
 function roundDone(){
   if(NET.on){G.hold=true;if(NET.host)netSend({t:'round'})}
@@ -292,12 +292,13 @@ function bank(full){
   }
   sealBank(full);saveMeta();return g;
 }
-function recordBest(){if(G.t>best){best=G.t;try{localStorage.setItem('crypte-best2',String(best))}catch(e){}}}
+function recordBest(){if(G.t>best){best=G.t;try{localStorage.setItem('crypte-best2',String(best))}catch{}}}
 function showOver(title,txt,earn,rel){$('overTitle').textContent=title;$('overTxt').textContent=txt;$('earnTxt').innerHTML=earn;$('relicTxt').innerHTML=[rel,G&&G.mastMsg?`<p class="lead" style="font-size:13px;margin:6px 0 0">${G.mastMsg}</p>`:'',typeof unlockOverHtml==='function'?unlockOverHtml():''].filter(Boolean).join('');refreshMenus();$('over').hidden=false}
 // Ouvre une relique : un fragment d'un objet de sa rareté (deux si éclatante ; la relique forgée vise son objet).
-function grantRelic(id,rad){
-  const a=meta.relics[id],R=RELICS[id];if(!R||!a||a[rad?1:0]<=0)return null;
-  a[rad?1:0]--;const n=rad?2:1,got=[];
+// Ouvre une relique : fragments de sa rareté pour le héros joué. free : relique partagée par un autre joueur, rien n'est dépensé.
+function grantRelic(id,rad,free){
+  const a=meta.relics[id],R=RELICS[id];if(!R||(!free&&(!a||a[rad?1:0]<=0)))return null;
+  if(!free)a[rad?1:0]--;const n=rad?2:1,got=[];
   for(let i=0;i<n;i++){const pool=R.fz?[R.tgt]:relPool(R.t);if(!pool.length)break;
     // les fragments manquants d'un objet presque complet passent un peu avant
     const w=pool.map(x=>1+fragStatus(x)*.5),tot=w.reduce((p,q)=>p+q,0);let x=Math.random()*tot,k=0;while(x>w[k]&&k<pool.length-1){x-=w[k];k++}
@@ -305,17 +306,21 @@ function grantRelic(id,rad){
   relicQFix();
   return {got,html:got.map(g=>{const b=bpdef(g.bid),st=fragStatus(g.bid);return `<b style="color:${RAR[b.r].c}">${esc(b.n)}</b> · fragment ${b.frag[g.fi]} (${st} / 3${st>=3?', prêt à fabriquer':''})`}).join(' et ')}}
 function resolveRelic(){
-  const out=[],S={n:0,ess:0,frag:0,fragN:{},ready:new Set(),eggs:0,byT:{}};
-  for(const r of G.opened){const g=grantRelic(r.id,r.rad);if(!g)continue;meta.essence+=25;S.n++;S.ess+=25;const t=RELICS[r.id].t;S.byT[t]=(S.byT[t]||0)+1;
+  const out=[],S={n:0,ess:0,frag:0,fragN:{},ready:new Set(),eggs:0,byT:{},sh:0,shT:{}};
+  const one=(r,free)=>{const g=grantRelic(r.id,r.rad,free);if(!g)return;meta.essence+=25;S.ess+=25;const t=RELICS[r.id].t;
+    if(free){S.sh++;S.shT[t]=(S.shT[t]||0)+1}else{S.n++;S.byT[t]=(S.byT[t]||0)+1}
     for(const f of g.got){S.frag++;S.fragN[f.bid]=1;if(fragStatus(f.bid)>=3)S.ready.add(f.bid)}
     const egg=eggFromRelic(r.id);if(egg)S.eggs++;
-    out.push(`${relicName(r.id)}${r.rad?' éclatante':''} : ${g.html}.`+(egg?' <b style="color:#f0cf4a">Œuf de familier.</b>':''))}
+    out.push(`${relicName(r.id)}${r.rad?' éclatante':''}${free?`, ouverte par ${esc(typeof who==='function'?who(r.from).name:'un partenaire')}`:''} : ${g.html}.`+(egg?' <b style="color:#f0cf4a">Œuf de familier.</b>':''))};
+  for(const r of G.opened)one(r,false);
+  for(const r of G.shared||[])one(r,true);
   meta.relOpened=(meta.relOpened|0)+S.n;
   const left=G.relQ.length-G.opened.length;
-  if(!S.n&&!left)return '';
+  if(!S.n&&!S.sh&&!left)return '';
   const lc=(c,n,lab)=>`<span class="lc" style="--c:${c}">${n} ${lab}</span>`;
   let h=`<div class="exsum" style="margin-top:4px">`;
   if(S.n)h+=`<div><span>Reliques ouvertes</span><b>${S.n} · ${Object.keys(S.byT).sort((a,b)=>b-a).map(t=>lc(RTIER[t].c,S.byT[t],RTIER[t].n)).join('')}</b></div>`;
+  if(S.sh)h+=`<div><span>Partagées par les partenaires</span><b>${S.sh} · ${Object.keys(S.shT).sort((a,b)=>b-a).map(t=>lc(RTIER[t].c,S.shT[t],RTIER[t].n)).join('')}</b></div>`;
   if(S.ess)h+=`<div><span>Essence</span><b style="color:var(--ess)">+${S.ess}</b></div>`;
   if(S.frag)h+=`<div><span>Fragments</span><b>${S.frag} · ${Object.keys(S.fragN).length} objet${Object.keys(S.fragN).length>1?'s':''}</b></div>`;
   if(S.ready.size)h+=`<div><span>Prêts à fabriquer</span><b>${[...S.ready].map(id=>{const b=bpdef(id);return `<span class="lc" style="--c:${RAR[b.r].c}">${esc(b.n)}</span>`}).join('')}</b></div>`;
@@ -342,6 +347,4 @@ function contRun(){$('extract').hidden=true;G.level++;G.hold=false;
   if(G.mode==='survie')G.tl=0;else{G.waveState='break';G.waveT=5;G.pod.hp=Math.min(G.pod.max,G.pod.hp+G.pod.max*.3)}
   paused=false;last=performance.now();toast(`<b style="color:var(--ember)">Niveau ${G.level}.</b> Les monstres se renforcent.`)}
 $('contBtn').onclick=()=>{if(NET.guest)return;if(NET.host)netSend({t:'cont'});contRun()};
-function missionToast(){if(G.breche){toast(`<b style="color:${SEAL_C}">Brèche.</b> Les Gardiens viennent par paires : abattez les deux jumeaux en moins de 8 s. Sceaux légendaires et éclats sur les Gardiens et les élites.`);return}toast(G.mode==='defense'?'<b>Défense.</b> Protège le cryopode.':G.mode==='capture'?'<b>Capture.</b> Suis la flèche dorée jusqu\'à la cible.':'<b>Survie.</b> Le portail s\'ouvre dans 2 minutes.');
-  if(G.relic)setTimeout(()=>toast(`Fissure : ${G.relQ.length} relique${G.relQ.length>1?'s':''} équipée${G.relQ.length>1?'s':''}. Abats les ennemis au halo doré : ${reactNeed()} réactifs ouvrent ${relicName(G.relic.id)}${G.relic.rad?' éclatante':''}, puis la suivante.`),900)}
 

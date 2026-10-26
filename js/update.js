@@ -19,7 +19,7 @@ const UPD={ok:false,ready:false,reg:null,ver:'',state:'',msg:''};
   const found=()=>{UPD.ready=true;UPD.state='ready';refreshSet()};
   UPD.check=async()=>{if(!UPD.reg){UPD.state='off';refreshSet();return}
     UPD.state='checking';refreshSet();
-    try{await UPD.reg.update()}catch(e){UPD.state='error';refreshSet();return}
+    try{await UPD.reg.update()}catch{UPD.state='error';refreshSet();return}
     setTimeout(()=>{if(!UPD.ready){UPD.state='uptodate';refreshSet()}},2500)};
   if(!('serviceWorker' in navigator)||!(location.protocol==='https:'||location.hostname==='localhost')||/claude/.test(location.host)){UPD.state='off';return}
   UPD.ok=true;
@@ -38,4 +38,4 @@ function updSection(){
   return `<section class="cx-section"><h3 class="cx-section__label">Application</h3>
     <div class="setrow"><div><b>Version ${UPD.ver?UPD.ver.replace('crypte-v',''):'—'}</b><span id="updSt">${st}</span></div>${UPD.ready?'<button class="cx-btn cx-btn--sm cx-btn--primary" id="setUpdGo">Mettre à jour</button>':UPD.ok?'<button class="cx-btn cx-btn--sm" id="setUpd">Rechercher</button>':''}</div>
     ${UPD.ready&&typeof NET!=='undefined'&&NET.on?'<p class="cx-hint" style="margin:0">La mise à jour recharge le jeu et coupe la coopération en cours : fais-la après la partie, sur tous les appareils.</p>':''}
-    ${(()=>{let e='';try{e=localStorage.getItem('crypte-err')||''}catch(x){}return e?`<p class="cx-hint" style="margin:0;user-select:text">Dernier incident : ${e.replace(/[<>&]/g,'')}</p>`:''})()}</section>`}
+    ${(()=>{let e='';try{e=localStorage.getItem('crypte-err')||''}catch{}return e?`<p class="cx-hint" style="margin:0;user-select:text">Dernier incident : ${e.replace(/[<>&]/g,'')}</p>`:''})()}</section>`}

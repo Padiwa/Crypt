@@ -49,6 +49,8 @@ function herosView(){const order=[heroCls,...Object.keys(CLS).filter(c=>c!==hero
     return `<section class="cx-section hgear"><h3 class="cx-section__label"><span class="cwho" style="--wc:${CLS[c].col}" aria-hidden="true">${CLS[c].n[0]}</span>${CLS[c].n}${me?' · héros joué':''} · ${n} objet${n>1?'s':''}</h3><div class="slots">${cells.join('')}</div>
       ${n?'':`<p class="cx-hint" style="margin:0">${me?'Rien de porté : touche « Équiper le meilleur » dans l\'onglet Héros.':`Rien de porté : choisis le ${CLS[c].n} sur l'écran d'accueil, puis « Équiper le meilleur » dans l'onglet Héros.`}</p>`}</section>`}).join('')}
 const stashN=()=>meta.stash.length+allWorn().length+invWeapons(true).length;
+// Porter un objet dans un emplacement : l'objet qu'il remplace retourne au coffre.
+const wearGear=(sl,it)=>{const old=meta.gear[sl];if(old)meta.stash.push(old);meta.gear[sl]=it};
 function campEquip(){
   const eq=curEq(),St=stats(eq),pn=Object.keys(bestPlan(eq,meta.stash,true)).length,n=stashN();
   return `${campMsg}${tutCard()}<section class="cx-section"><h3 class="cx-section__label">${CLS[heroCls].n} · équipement</h3><div class="slots">${slotsHtml(eq,true,campSel&&campSel.slot)}</div>
@@ -69,6 +71,7 @@ function setsHtml(){if(!isUnl('sets'))return '';const L=setsOf(),eq=curEq();
     <div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-cact="setsave" data-arg="" ${L.length>=SET_MAX?'disabled':''}>Enregistrer l'équipement porté</button></div>
     <p class="cx-hint" style="margin:0">${L.length?'Chaque héros a ses équipements. « Porter » prend les objets dans le coffre ou sur un autre héros ; touche le nom pour le changer.':'Enregistre l\'arme et les objets portés pour les remettre plus tard en un geste. Chaque héros a ses équipements.'}</p></section>`}
 // Héros › Emplacements à débloquer (fragments de harnais, lâchés par les Gardiens).
+const slotCan=u=>!slotOpen(u.k)&&(!u.need||slotOpen(u.need))&&(meta.hfrag|0)>=u.hf&&meta.gold>=u.gold;
 function slotUnlockHtml(){if(!isUnl('slots'))return '';const next=SLOT_U.filter(u=>!slotOpen(u.k));if(!next.length)return '';const hf=meta.hfrag|0;
   return `<section class="cx-section"><h3 class="cx-section__label">Emplacements · ${hf} fragment${hf>1?'s':''} de harnais</h3><div class="cx-rows">${next.map(u=>{const ok=!u.need||slotOpen(u.need),can=ok&&hf>=u.hf&&meta.gold>=u.gold;
     return `<div class="cx-row"><span class="cx-row__k" style="color:var(--ink)">${u.n}<small>${ok?`${u.hf} fragments de harnais et ${u.gold} or · tu as ${hf} fragment${hf>1?'s':''}`:`Après l'${SLOT_U.find(x=>x.k===u.need).n}`}</small></span><button class="cx-btn cx-btn--sm${can?' cx-btn--primary':''}" data-cact="slotopen" data-arg="${u.k}" style="margin:0" ${can?'':'disabled'}>Débloquer</button></div>`}).join('')}</div>
@@ -83,9 +86,11 @@ const XSVG={x:'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',
   up:'<svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',lock:'<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
   take:'<svg viewBox="0 0 24 24"><path d="M4 8h14l-4-4M20 16H6l4 4"/></svg>',recy:'<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',out:'<svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>'};
 const recyGain=it=>RAR[it.r].shard*2*2**(it.up|0);
+// Statistiques du héros comparées (avant, après) : [libellé, avant, après, décimales, unité] ; les trois premières dans la fiche.
+const statPairs=(a,b)=>[['Puissance',dps(a),dps(b),0,''],['Vie',a.hp,b.hp,0,''],['Réduction',a.armor,b.armor,1,' %'],['Dégâts',a.dmg,b.dmg,1,''],['Critique',a.crit,b.crit,1,' %'],['Attaques / s',a.aps,b.aps,2,''],['Vitesse',a.speed/2.2,b.speed/2.2,0,' %'],['Recharge',a.cdr,b.cdr,1,' %']];
+const fmtDc=(v,dc)=>(Math.round(v*10**dc)/10**dc).toLocaleString('fr-FR',{maximumFractionDigits:dc});
 function cmpRows(e,it){const tk=tgtKey(e,it)||it.slot,a=stats(e),b=stats({...e,[tk]:it});
-  const R=[['Puissance',dps(a),dps(b),0,''],['Vie',a.hp,b.hp,0,''],['Réduction',a.armor,b.armor,1,' %'],['Dégâts',a.dmg,b.dmg,1,''],['Critique',a.crit,b.crit,1,' %'],['Attaques / s',a.aps,b.aps,2,''],['Vitesse',a.speed/2.2,b.speed/2.2,0,' %'],['Recharge',a.cdr,b.cdr,1,' %']];
-  const f=(v,dc)=>(Math.round(v*10**dc)/10**dc).toLocaleString('fr-FR',{maximumFractionDigits:dc});
+  const R=statPairs(a,b),f=fmtDc;
   const rows=R.filter(([,x,y,dc])=>Math.abs(y-x)>=.5/10**dc).slice(0,6).map(([l,x,y,dc,u])=>{const d=y-x,up=d>0;return `<div><span>${l}</span><b style="color:${up?'var(--heal)':'var(--blood-ink)'}">${up?'▲ +':'▼ −'}${f(Math.abs(d),dc)}${u}</b></div>`}).join('');
   return rows?`<div class="cx-stats">${rows}</div>`:'<p class="cx-hint" style="margin:0">Aucun changement de statistique.</p>'}
 
@@ -117,8 +122,7 @@ function cmpObjet(eq,it,heroRows=true){
     <div class="cx-cmp__rows"><div class="cx-cmp__row is-head"><span>Affixes</span><span>Porté</span><span>Choisi</span><span>Écart</span></div>${base}${vis.map(r=>r.h).join('')}${pager}</div>`;
   if(heroRows){const a=stats(eq),b=stats({...eq,[tk]:it});
     const rd=(v,dc)=>Math.round(v*10**dc)/10**dc;
-    const H=[['Puissance',dps(a),dps(b),0,''],['Vie',a.hp,b.hp,0,''],['Réduction',a.armor,b.armor,1,' %']].map(([l,x,y,dc,u])=>[l,rd(x,dc),rd(y,dc),dc,u]).filter(([,x,y])=>x!==y);
-    const f=(v,dc)=>(Math.round(v*10**dc)/10**dc).toLocaleString('fr-FR',{maximumFractionDigits:dc});
+    const H=statPairs(a,b).slice(0,3).map(([l,x,y,dc,u])=>[l,rd(x,dc),rd(y,dc),dc,u]).filter(([,x,y])=>x!==y),f=fmtDc;
     if(H.length)h+=`<div class="cx-cmp__rows"><div class="cx-cmp__row is-head"><span>Ton héros</span><span>Porté</span><span>Choisi</span><span>Écart</span></div>${H.map(([l,x,y,dc,u])=>{const d=y-x;return `<div class="cx-cmp__row"><span class="k">${l}</span><span class="o">${f(x,dc)}${u}</span><span class="n">${f(y,dc)}${u}</span><span class="d ${d>0?'up':'dn'}">${d>0?'▲ +':'▼ −'}${f(Math.abs(d),dc)}${u}</span></div>`}).join('')}</div>`;
     if(dockAll)h+=cmpRows(eq,it)}
   return h+'</div>'}
@@ -191,7 +195,9 @@ const recyEss=it=>it.wid?wRecyEss(bpdef(it.wid)):recyGain(it);
 function recyAll(){return invList('recy').filter(it=>!wornBy(it)&&(!it.wid||!wdef(it.wid).start))}
 function recyList(){return recyAll().filter(it=>!recyR.size||recyR.has(it.r))}
 function recyPicked(){const all=recyAll();return [...recySel].map(k=>all.find(it=>recyKey(it)===k)).filter(it=>it&&!it.lock)}
-function recyCell(it){const k=recyKey(it),on=recySel.has(k);return `<button class="cx-cell${on?' is-src':''}" data-cact="rcsel" data-arg="${k}" ${it.lock?'aria-disabled="true"':''} style="--rar:${RARV[it.r]}" aria-pressed="${on}" aria-label="${esc(itemName(it))}${it.lock?', verrouillé':''}${on?', choisi':''}">${it.lock?`<span class="cx-cell__lock">${LOCK_SVG}</span>`:''}${GLYPH[it.slot]}${it.up?`<span class="cx-cell__up">R${it.up+1}</span>`:''}${on?'<span class="cx-pin cx-pin--src">−</span>':''}</button>`}
+// Contenu d'une case d'objet : cadenas s'il est verrouillé, glyphe de l'emplacement, rang s'il a été fusionné.
+const cellIn=it=>`${it.lock?`<span class="cx-cell__lock">${LOCK_SVG}</span>`:''}${GLYPH[it.slot]}${it.up?`<span class="cx-cell__up">R${it.up+1}</span>`:''}`;
+function recyCell(it){const k=recyKey(it),on=recySel.has(k);return `<button class="cx-cell${on?' is-src':''}" data-cact="rcsel" data-arg="${k}" ${it.lock?'aria-disabled="true"':''} style="--rar:${RARV[it.r]}" aria-pressed="${on}" aria-label="${esc(itemName(it))}${it.lock?', verrouillé':''}${on?', choisi':''}">${cellIn(it)}${on?'<span class="cx-pin cx-pin--src">−</span>':''}</button>`}
 function recyCells(){const all=recyAll(),list=recyList();return list.length?`<div class="cx-cells">${list.map(recyCell).join('')}</div>`:`<p class="cx-hint" style="margin:0">${all.length?'Aucun objet pour ce filtre.':'Rien à recycler : ton coffre est vide.'}</p>`}
 function campRecycle(){const all=recyAll(),list=recyList();for(const k of [...recySel])if(!all.some(it=>recyKey(it)===k&&!it.lock))recySel.delete(k);
   const rs=[...new Set(all.map(it=>it.r))].sort((a,b)=>a-b),cnt={};for(const it of all)cnt[it.r]=(cnt[it.r]||0)+1;
@@ -208,10 +214,7 @@ function recyFoot(){const P=recyPicked();if(!P.length)return '<p class="cx-hint"
   return `<button class="cx-btn cx-btn--danger cx-btn--cost" data-cact="${P.length>1?'rcask':'rcok'}">Recycler · ${P.length} <span class="cx-price ess"><i class="cx-ess"></i>+${e}</span></button>`}
 function recyDo(){const P=recyPicked();if(!P.length)return;let e=0,f=0;
   for(const it of P){e+=recyEss(it);
-    if(it.wid){const w=it.wid,sp=wSpares(w);
-      // un double prend la place de l'arme recyclée (le plus haut rang) ; sinon l'arme disparaît
-      if(sp.length){const hi=Math.max(...sp);sp.splice(sp.indexOf(hi),1);meta.wlv[w]=hi;if(!sp.length)delete meta.wcp[w]}
-      else{delete meta.built[w];delete meta.wlv[w];if(meta.waff)delete meta.waff[w];if(meta.wfz)delete meta.wfz[w];if(meta.wlock)delete meta.wlock[w]}}
+    if(it.wid)wDestroy(it.wid); // un double prend la place de l'arme recyclée (le plus haut rang) ; sinon l'arme disparaît
     else meta.stash=meta.stash.filter(x=>x!==it)}
   meta.essence+=e;recySel.clear();recyAsk=false;SND.play('pick2');
   toast(`${P.length} objet${P.length>1?'s':''} recyclé${P.length>1?'s':''} · +${e} essence${f?` · ${f} fragment${f>1?'s':''}`:''}`)}

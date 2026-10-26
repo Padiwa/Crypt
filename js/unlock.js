@@ -45,13 +45,12 @@ const UNL=[
     learn:'Les sceaux légendaires, trouvés en Brèche, se posent sur un objet en plus de ses affixes.',go:['forge','seals'],help:'coop'},
 ];
 const UNL_BY=Object.fromEntries(UNL.map(u=>[u.k,u]));
-const relicsOwned=()=>Object.values(meta.relics||{}).reduce((n,a)=>n+((a&&a[0])|0)+((a&&a[1])|0),0);
 const isUnl=k=>!!(meta.unl[k]||meta.unlAll);
 // Palier de Tourment le plus haut accessible : le suivant de ton meilleur palier réussi.
 const tormMax=()=>meta.unlAll?10:isUnl('diff3')?Math.min(10,(meta.bestTorm|0)+1):0;
 const diffOk=i=>i===0||isUnl('diff'+i);
 // Vérifie les conditions ; les nouveaux déblocages sont annoncés (carte « Nouveau » au Camp, ligne en fin de mission), sauf en silencieux.
-function unlockCheck(silent){const got=[];for(const u of UNL){if(isUnl(u.k))continue;let ok=false;try{ok=!!u.when()}catch(e){}
+function unlockCheck(silent){const got=[];for(const u of UNL){if(isUnl(u.k))continue;let ok=false;try{ok=!!u.when()}catch{}
     if(ok){meta.unl[u.k]=1;got.push(u.k);if(!silent&&!meta.unlNew.includes(u.k))meta.unlNew.push(u.k)}}
   if(got.length)saveMeta();return got}
 function unlockAll(){for(const u of UNL)meta.unl[u.k]=1;meta.unlAll=1;meta.unlNew=[];saveMeta()}

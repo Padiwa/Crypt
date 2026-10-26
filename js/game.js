@@ -1,7 +1,7 @@
 // Crypte des Cendres — game.js
 /* ---------- État ---------- */
 let G=null, S=null, started=false, paused=false;
-let best=0; try{best=+localStorage.getItem('crypte-best2')||0}catch(e){}
+let best=0; try{best=+localStorage.getItem('crypte-best2')||0}catch{}
 const ETYPE={
   ghoul:{r:16,hp:16,spd:95,dmg:9,col:'#8ea37a'},
   bat:{r:10,hp:6,spd:165,dmg:5,col:'#6a557c'},
@@ -13,7 +13,7 @@ const ETYPE={
   slime:{r:22,hp:34,spd:72,dmg:8,col:'#3f9e8c'},
   boss:{r:50,hp:650,spd:60,dmg:22,col:'#3d2150'},
 };
-let heroCls='archer';try{heroCls=localStorage.getItem('crypte-cls')||'archer'}catch(e){}
+let heroCls='archer';try{heroCls=localStorage.getItem('crypte-cls')||'archer'}catch{}
 if(!CLS[heroCls])heroCls='archer';
 let floorPat=null;
 
@@ -29,7 +29,7 @@ function newGame(){
   genMap();
   G.biome=clamp(meta.biome|0,0,BIOMES.length-1);if(floorPat&&floorPat.__b!==G.biome)floorPat=null;
   G.mode=meta.mode==='breche'?'survie':meta.mode;G.relic=null;G.react=0;G.cracked=false;G.ult=0;G.bossT=bossIv();G.pod=null;G.target=null;G.exitPt=null;G.capT=0;G.extT=0;G.capN=0;G.nextTgt=0;
-  relicQFix();G.relQ=meta.relicQ.map(q=>({id:q.id,rad:!!q.rad}));G.relI=0;G.opened=[];G.relic=G.relQ[0]||null;
+  relicQFix();G.relQ=meta.relicQ.map(q=>({id:q.id,rad:!!q.rad}));G.relI=0;G.opened=[];G.shared=[];G.relic=G.relQ[0]||null;
   if(G.mode==='defense'){const m=1200*(1+.5*(L-1));G.pod={x:MAP/2,y:MAP/2,r:28,hp:m,max:m,flash:0};G.pillars.push(G.pod);G.P.y+=110;G.cam.y=G.P.y;G.wave=0;G.waveState='break';G.waveT=3;G.toSpawn=0}
   if(G.mode==='capture'){spawnTarget()}
   $('objBar').hidden=G.mode!=='defense';
@@ -169,13 +169,13 @@ function dmgEnemy(e,d,crit,dot){
   if(S.abHunt&&(e.type==='boss'||e.elite))d*=1+S.abHunt/100;
   if(S.abSoul&&G.P.soulN)d*=1+G.P.soulN*S.abSoul/100;
   if(NET.guest){if(dot)return;if(S.abExec&&e.type!=='boss'&&e.hp-d<e.max*S.abExec/100)d=Math.max(d,e.hp);
-    netHit(e,d,crit);e.hp=Math.max(1,e.hp-d);e.shown=2;if(crit)critTick();SND.play(crit?'crit':'hit');e.flash=1;if(SET.dmgNum&&(crit||G.en.length<60))ftext(e.x+rand(-8,8),e.y-e.r,Math.round(d)+(crit?'!':''),crit?'#ffd34d':'#f1e8d6',crit?20:15);
-    if(crit&&S.abRift&&!G._rift&&Math.random()*100<S.abRift){G._rift=1;chain(e,d*.7);G._rift=0}return}
+    netHit(e,d,crit);e.hp=Math.max(1,e.hp-d);e.shown=2;if(crit)critTick();hitFx(e,d,crit);
+    if(crit)riftTry(e,d);return}
   e.hp-=d;e.shown=2;
   if(S.abExec&&e.hp>0&&e.type!=='boss'&&e.type!=='cible'&&e.hp<e.max*S.abExec/100){e.hp=0;ftext(e.x,e.y-e.r-6,'jugé','#b07cff',14);burst(e.x,e.y,10,'#b07cff',140,3)}
-  if(!dot&&crit&&S.abRift&&!G._rift&&Math.random()*100<S.abRift){G._rift=1;chain(e,d*.7);G._rift=0}
+  if(!dot&&crit)riftTry(e,d);
   if(!dot&&crit)critTick();
-  if(!dot){SND.play(crit?'crit':'hit');e.flash=1;if(SET.dmgNum&&(crit||G.en.length<60))ftext(e.x+rand(-8,8),e.y-e.r,Math.round(d)+(crit?'!':''),crit?'#ffd34d':'#f1e8d6',crit?20:15)}
+  if(!dot)hitFx(e,d,crit);
   else if(SET.dmgNum&&Math.random()<.25)ftext(e.x,e.y-e.r,Math.round(d),'#ff9a4a',12);
   if(e.type==='cible'){if(e.hp<=0){e.hp=0;if(!e.downed){e.downed=true;burst(e.x,e.y,20,'#f0cf4a',160);toast('<b style="color:var(--r2)">La cible est à terre.</b> Reste près d\'elle pour la capturer.')}}}
   else if(e.hp<=0&&!e.dead)kill(e);
@@ -267,9 +267,15 @@ function explode(s,primary,frost){
 }
 function fireE(e,a,sp,d,r=7){G.eb.push({id:++G.bid,x:e.x+Math.cos(a)*e.r,y:e.y+Math.sin(a)*e.r,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,d,r,life:4})}
 function ring(e,n,sp){e.rot+=.27;for(let i=0;i<n;i++)fireE(e,e.rot+i/n*Math.PI*2,sp,e.dmg*.55,8)}
+// Retour d'un coup sur un monstre : son, éclat blanc, chiffre de dégâts (critique en doré).
+const hitFx=(e,d,crit)=>{SND.play(crit?'crit':'hit');e.flash=1;if(SET.dmgNum&&(crit||G.en.length<60))ftext(e.x+rand(-8,8),e.y-e.r,Math.round(d)+(crit?'!':''),crit?'#ffd34d':'#f1e8d6',crit?20:15)};
+// Faille (abyssal) : un critique peut lancer des éclairs en chaîne (70 % des dégâts) ; pas de chaîne depuis une chaîne.
+const riftTry=(e,d)=>{if(S.abRift&&!G._rift&&Math.random()*100<S.abRift){G._rift=1;chain(e,d*.7);G._rift=0}};
 // Récompense de capture (chaque joueur reçoit la sienne).
 function capReward(){const r=relicDrop(true);G.loot.relics.push(r);G.fresh++;G.gold+=60*G.level;
   toast(`<b style="color:var(--r2)">Cible capturée.</b> ${relicName(r)} et ${60*G.level} or. Rejoins l'extraction, ou traque la cible suivante.`)}
+// Ligne de tir dégagée entre un monstre et sa cible (5 points testés sur le trajet).
+const losClear=(e,dx,dy)=>{for(let k=1;k<6;k++)if(blocked(e.x+dx*k/6,e.y+dy*k/6,4))return false;return true};
 function blocked(x,y,r){
   if(x<EDGE+r||x>MAP-EDGE-r||y<EDGE+r||y>MAP-EDGE-r)return true;
   for(const p of G.pillars){if(p===G.pod)continue;const m=p.r+r;if(Math.abs(p.x-x)<m&&Math.abs(p.y-y)<m&&Math.hypot(p.x-x,p.y-y)<m)return true}
@@ -304,7 +310,7 @@ addEventListener('pointerup',e=>{if(e.pointerType==='mouse')mouse.down=false});
 function mouseVec(){const mm=mouseMode();if(mm==='joy'||!mouse.in||!G||!G.P)return null;if(mouse.down&&(mouse.btn|0)===0)return {x:0,y:0};
   const z=zoom(),hx=(G.P.x-G.cam.x)*z+innerWidth/2,hy=(G.P.y-G.cam.y)*z+innerHeight/2,dx=mouse.x-hx,dy=mouse.y-hy,d=Math.hypot(dx,dy),DZ=26;
   if(d<=DZ)return {x:0,y:0};const m=Math.min(1,(d-DZ)/90);return {x:dx/d*m,y:dy/d*m}}
-cv.addEventListener('pointerdown',e=>{if(joy.id!==null||paused)return;if(e.pointerType==='mouse'&&mouseMode()!=='joy')return;joy.id=e.pointerId;joy.ox=joy.x=e.clientX;joy.oy=joy.y=e.clientY;joy.vx=joy.vy=0;try{cv.setPointerCapture(e.pointerId)}catch(_){}});
+cv.addEventListener('pointerdown',e=>{if(joy.id!==null||paused)return;if(e.pointerType==='mouse'&&mouseMode()!=='joy')return;joy.id=e.pointerId;joy.ox=joy.x=e.clientX;joy.oy=joy.y=e.clientY;joy.vx=joy.vy=0;try{cv.setPointerCapture(e.pointerId)}catch{}});
 cv.addEventListener('pointermove',e=>{
   if(e.pointerId!==joy.id)return;const M=56;let dx=e.clientX-joy.ox,dy=e.clientY-joy.oy,d=Math.hypot(dx,dy);
   if(d>M){joy.ox+=dx/d*(d-M);joy.oy+=dy/d*(d-M);dx=e.clientX-joy.ox;dy=e.clientY-joy.oy;d=M}
@@ -514,15 +520,15 @@ function update(dt){
     else if(e.type==='poison'||e.type==='pyro'){
       e.noLos=(e.noLos||0)-dt;
       if(e.noLos>0){mx=ux;my=uy}else if(d<240){mx=-ux;my=-uy}else if(d>380){mx=ux;my=uy}else{mx=-uy*e.side*.6;my=ux*e.side*.6}
-      e.timer-=dt;if(e.timer<=0){e.timer=rand(3,4.2);let clear=true;for(let k=1;k<6;k++){if(blocked(e.x+dx*k/6,e.y+dy*k/6,4)){clear=false;break}}
-        if(!clear)e.noLos=2.5;else if(d<560){const lv=G.level,ds=diff().ds;
+      e.timer-=dt;if(e.timer<=0){e.timer=rand(3,4.2);
+        if(!losClear(e,dx,dy))e.noLos=2.5;else if(d<560){const lv=G.level,ds=diff().ds;
           G.lobs.push({x0:e.x,y0:e.y,tx:T.x+rand(-30,30),ty:T.y+rand(-30,30),t:0,T:1,kind:e.type,r:(e.type==='poison'?80:70)*Math.min(1.5,1+.02*(lv-1)),dps:2*ds})}}
     }
     else if(e.type==='archer'){
       e.noLos=(e.noLos||0)-dt;
       const lo=e.tgtPod?110:220,hi=e.tgtPod?170:330;if(e.noLos>0){mx=ux;my=uy}else if(d<lo){mx=-ux;my=-uy}else if(d>hi){mx=ux;my=uy}else{mx=-uy*e.side*.7;my=ux*e.side*.7}
-      e.timer-=dt;if(e.timer<=0){e.timer=rand(1.6,2.4);let clear=true;for(let k=1;k<6;k++){if(blocked(e.x+dx*k/6,e.y+dy*k/6,4)){clear=false;break}}
-        if(!clear)e.noLos=2.5;else if(d<520)fireE(e,Math.atan2(dy,dx),250,e.dmg)}
+      e.timer-=dt;if(e.timer<=0){e.timer=rand(1.6,2.4);
+        if(!losClear(e,dx,dy))e.noLos=2.5;else if(d<520)fireE(e,Math.atan2(dy,dx),250,e.dmg)}
     }else if(e.type==='brute'||e.type==='boss'){
       e.timer-=dt;const boss=e.type==='boss',half=e.hp<e.max/2;
       if(e.state==='walk'){mx=ux*(boss?.7:1);my=uy*(boss?.7:1);
@@ -563,7 +569,7 @@ function update(dt){
       else if(d.kind==='mod'){SND.play('pick2');gainMod(d.id)}
       else if(d.kind==='seal'){SND.play('leg');(G.loot.seals||(G.loot.seals=[])).push(d.id);G.fresh++}
       else if(d.kind==='relic'){SND.play('pick3');G.loot.relics.push(d.id);G.fresh++}
-      else if(d.kind==='react'){if(G.relic){G.react++;if(G.react>=reactNeed()){const r=G.relic;G.opened.push(r);G.relI++;G.react=0;G.relic=G.relQ[G.relI]||null;G.shake=6;
+      else if(d.kind==='react'){if(G.relic){G.react++;if(G.react>=reactNeed()){const r=G.relic;G.opened.push(r);relShare(r);G.relI++;G.react=0;G.relic=G.relQ[G.relI]||null;G.shake=6;
           SND.play('relic');}}}
       else if(d.kind==='potion'){SND.play('pick');if(G.potions<potMax()){G.potions++}else d.gone=false}
       else if(d.kind==='item'){SND.play(d.item.r>=3?'pick3':d.item.r>=2?'pick2':'pick');G.loot.items.push(d.item);G.fresh++;if(d.item.r===3)G.shake=6}

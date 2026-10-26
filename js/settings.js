@@ -4,11 +4,10 @@ const SET_DEF={sfx:.7,music:.35,shake:1,flash:true,vib:true,dmgNum:true,hand:'ri
 const ZOOM_MIN=.7,ZOOM_MAX=1.4;
 const setZoom=()=>Math.min(ZOOM_MAX,Math.max(ZOOM_MIN,+SET.zoom||1));
 let SET=Object.assign({},SET_DEF);
-try{Object.assign(SET,JSON.parse(localStorage.getItem('crypte-set')||'{}'))}catch(e){}
-const saveSet=()=>{try{localStorage.setItem('crypte-set',JSON.stringify(SET))}catch(e){}};
+try{Object.assign(SET,JSON.parse(localStorage.getItem('crypte-set')||'{}'))}catch{}
+const saveSet=()=>{try{localStorage.setItem('crypte-set',JSON.stringify(SET))}catch{}};
 const applyHand=()=>document.body.classList.toggle('lefty',SET.hand==='left');applyHand();
-let setFrom=null;
-function openSettings(from){setFrom=from;drawSettings();$('settings').hidden=false}
+function openSettings(){drawSettings();$('settings').hidden=false}
 function closeSettings(){$('settings').hidden=true}
 function drawSettings(){
   const pct=v=>Math.round(v*100);
@@ -54,7 +53,7 @@ document.addEventListener('DOMContentLoaded',()=>{});
   body.addEventListener('change',e=>{if(e.target.id!=='saveFile'||!e.target.files[0])return;const r=new FileReader();
     r.onload=()=>{saveDraft=String(r.result);const dd=parseCode(saveDraft);if(dd){savePending=dd;saveMsg=''}else saveMsg='Ce fichier ne contient pas de sauvegarde JSON valide.';drawSettings()};r.readAsText(e.target.files[0])});
   $('closeSet').onclick=closeSettings;$('closeSetX').onclick=closeSettings;
-  $('setBtn').onclick=()=>openSettings('intro');$('setBtnBag').onclick=()=>openSettings('bag');
+  $('setBtn').onclick=openSettings;$('setBtnBag').onclick=openSettings;
 })();
 /* Bannière : événements importants, un à la fois, au centre en haut */
 const BN={q:[],busy:false};
@@ -65,4 +64,4 @@ function nextBanner(){const m=BN.q.shift(),el=$('banner');if(!m){BN.busy=false;e
   BN.busy=true;el.style.setProperty('--bc',m.col);el.innerHTML=m.html;el.hidden=false;el.classList.remove('on');void el.offsetWidth;el.classList.add('on');
   setTimeout(nextBanner,m.prio>=2?2100:1700)}
 let vibT=0;
-function vibe(p){if(!SET.vib||!navigator.vibrate)return;const n=performance.now();if(n-vibT<120)return;vibT=n;try{navigator.vibrate(p)}catch(e){}}
+function vibe(p){if(!SET.vib||!navigator.vibrate)return;const n=performance.now();if(n-vibT<120)return;vibT=n;try{navigator.vibrate(p)}catch{}}

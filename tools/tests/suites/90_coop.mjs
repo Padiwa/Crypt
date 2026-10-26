@@ -119,6 +119,33 @@ export const tests = [
     await A.evaluate(() => { $('startBtn').click(); }); await wf(B, () => started && G && !G.over, 'B attend 11', 8000, A);
     t.eq(await B.evaluate(() => [G.mode, G.breche]), ['survie', true], 'invité en Brèche');
   } },
+  { name: 'reliques partagées à trois : chaque relique ouverte en donne une du même type aux autres, pour leur héros, sans en dépenser', fn: async (b, t) => {
+    const { A, G: [B, C] } = await pairCode(b, t, 2);
+    const set = (P, rel, q) => P.evaluate(([rel, q]) => { meta.relics = rel; meta.relicQ = q; saveMeta(); }, [rel, q]);
+    await set(A, { an: [2, 0] }, [{ id: 'an', rad: false }]); await set(B, { os: [1, 0] }, [{ id: 'os', rad: false }]); await set(C, {}, []);
+    const ess = async () => Promise.all([A, B, C].map((P) => P.evaluate(() => meta.essence | 0)));
+    const e0 = await ess();
+    await A.evaluate(() => { $('coop').hidden = true; $('startBtn').click(); });
+    for (const P of [B, C]) await wf(P, () => started && G && !G.over, 'invité en mission', 8000, A);
+    const crack = (P) => P.evaluate(() => { G.react = reactNeed() - 1; G.drops.push({ kind: 'react', x: G.P.x, y: G.P.y, t: 0, age: 1, mt: 0 }); });
+    await crack(A);
+    for (const P of [B, C]) await wf(P, () => G.shared.length === 1, 'partage de l\'hôte reçu', 5000, A);
+    t.eq(await C.evaluate(() => G.shared), [{ id: 'an', rad: false, from: 0 }], 'relique Ancestrale de l\'hôte partagée');
+    const bs = await B.evaluate(() => NET.slot);
+    await crack(B);
+    await wf(A, () => G.shared.length === 1, 'partage de l\'invité reçu par l\'hôte', 5000, B);
+    await wf(C, () => G.shared.length === 2, 'partage de l\'invité relayé au 3e joueur', 5000, A);
+    t.eq(await A.evaluate(() => G.shared), [{ id: 'os', rad: false, from: bs }], 'l\'hôte reçoit la relique de l\'invité');
+    t.eq(await C.evaluate(() => G.shared[1]), { id: 'os', rad: false, from: bs }, 'le 3e joueur la reçoit aussi');
+    t.eq(await B.evaluate(() => G.shared.length), 1, 'le joueur ne reçoit pas sa propre relique');
+    await A.evaluate(() => missionSuccess());
+    for (const P of [B, C]) await wf(P, () => G.over, 'fin de mission', 5000, A);
+    const e1 = await ess();
+    t.eq(e1.map((x, i) => x - e0[i]), [50, 50, 50], 'chacun : 25 essence par relique, la sienne et celle du partenaire');
+    t.eq(await A.evaluate(() => meta.relics.an), [1, 0], 'l\'hôte dépense sa relique, pas celle partagée');
+    t.eq(await B.evaluate(() => [meta.relics.os, meta.relics.an || null]), [[0, 0], null], 'l\'invité dépense la sienne seulement');
+    t.ok(await C.evaluate(() => /Partagées par les partenaires/.test($('over').textContent) && /ouverte par/.test($('over').textContent)), 'résumé de fin : reliques des partenaires');
+  } },
   { name: 'code à 4 chiffres : l\'hôte crée la partie, deux joueurs tapent le code et arrivent ensemble', fn: async (b, t) => {
     const { A, G: [B, C], code } = await pairCode(b, t, 2);
     t.ok(/^\d{4}$/.test(code), 'code de 4 chiffres affiché chez l\'hôte');

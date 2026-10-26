@@ -121,13 +121,26 @@ function drawDrop(d){
   ctx.strokeStyle='rgba(0,0,0,.6)';ctx.lineWidth=1.5;ctx.stroke();
 }
 const zoom=()=>clamp(Math.min(innerWidth,innerHeight)/620,.62,1.5)*(typeof setZoom==='function'?setZoom():1);
+// Vue de la caméra, commune aux deux rendus : zoom, taille visible (G.vw, G.vh), coin haut-gauche avec le tremblement, test de visibilité.
+function camView(){const z=zoom(),vw=innerWidth/z,vh=innerHeight/z;G.vw=vw;G.vh=vh;
+  const hs=(G.hshake||0)*SET.shake,sx=hs?rand(-hs,hs):0,sy=hs?rand(-hs,hs):0,ox=G.cam.x-vw/2+sx,oy=G.cam.y-vh/2+sy;
+  return {z,vw,vh,ox,oy,vis:(x,y,m=80)=>x>ox-m&&x<ox+vw+m&&y>oy-m&&y<oy+vh+m}}
+// Distance du héros à un point, en mètres affichés (10 unités = 1 m).
+const distTxt=(x,y)=>`${Math.round(Math.hypot(x-G.P.x,y-G.P.y)/10)} m`;
+// Flèches hors écran vers les Gardiens, la cible, l'extraction, le cryopode et la source la plus proche.
+// draw(x,y,angle,couleur,texte) dessine une flèche au bord de l'écran (coordonnées de l'écran).
+function offArrows(vis,draw){const P=G.P;
+  const arrow=(wx,wy,col,label)=>{if(vis(wx,wy,-10))return;
+    const a=Math.atan2(wy-G.cam.y,wx-G.cam.x),cx=innerWidth/2,cy=innerHeight/2,k=arrowK(a,cx,cy);draw(cx+Math.cos(a)*k,cy+Math.sin(a)*k,a,col,label)};
+  for(const e of G.en)if(e.type==='boss')arrow(e.x,e.y,'#b06ae0');
+  if(G.target)arrow(G.target.x,G.target.y,'#f0cf4a',distTxt(G.target.x,G.target.y));
+  if(G.exitPt)arrow(G.exitPt.x,G.exitPt.y,'#5fbf7a',distTxt(G.exitPt.x,G.exitPt.y));
+  if(G.pod)arrow(G.pod.x,G.pod.y,'#8fd3e0','Cryopode');
+  let wb=null,wd=1e9;for(const w of G.wells)if(w.on){const dd=Math.hypot(w.x-P.x,w.y-P.y);if(dd<wd){wd=dd;wb=w}}if(wb)arrow(wb.x,wb.y,'#9fdcff',(P.psnT>0||P.brnT>0?'Source ':'')+distTxt(wb.x,wb.y))}
 function render2D(){
-  const z=zoom(),vw=innerWidth/z,vh=innerHeight/z;G.vw=vw;G.vh=vh;
-  const P=G.P,hs_=(G.hshake||0)*SET.shake,sx=hs_?rand(-hs_,hs_):0,sy=hs_?rand(-hs_,hs_):0;
-  const ox=G.cam.x-vw/2+sx,oy=G.cam.y-vh/2+sy;
+  const {z,vw,vh,ox,oy,vis}=camView(),P=G.P;
   ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#050307';ctx.fillRect(0,0,cv.width,cv.height);
   ctx.setTransform(dpr*z,0,0,dpr*z,-ox*dpr*z,-oy*dpr*z);
-  const vis=(x,y,m=80)=>x>ox-m&&x<ox+vw+m&&y>oy-m&&y<oy+vh+m;
   const x0=Math.max(0,ox),y0=Math.max(0,oy),x1=Math.min(MAP,ox+vw),y1=Math.min(MAP,oy+vh);
   const BI=biome();if(!floorPat){floorPat=ctx.createPattern(buildTile(G.biome),'repeat');floorPat.__b=G.biome}
   if(x1>x0&&y1>y0){ctx.fillStyle=floorPat;ctx.fillRect(x0,y0,x1-x0,y1-y0)}
@@ -180,26 +193,20 @@ function render2D(){
   ctx.globalAlpha=1;
   // écran : flèches vers les Gardiens, joystick
   ctx.setTransform(dpr,0,0,dpr,0,0);
-  const arrow=(wx,wy,col,label)=>{if(vis(wx,wy,-10))return;
-    const a=Math.atan2(wy-G.cam.y,wx-G.cam.x),cx=innerWidth/2,cy=innerHeight/2;
-    const k=arrowK(a,cx,cy),x=cx+Math.cos(a)*k,y=cy+Math.sin(a)*k;
+  offArrows(vis,(x,y,a,col,label)=>{
     ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.fillStyle=col;ctx.strokeStyle='#120c16';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(14,0);ctx.lineTo(-8,-10);ctx.lineTo(-3,0);ctx.lineTo(-8,10);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
-    if(label){ctx.font="700 12px 'Alegreya Sans',system-ui,sans-serif";ctx.textAlign='center';ctx.fillStyle='#000';ctx.fillText(label,x-Math.cos(a)*26+1,y-Math.sin(a)*26+5);ctx.fillStyle=col;ctx.fillText(label,x-Math.cos(a)*26,y-Math.sin(a)*26+4)}};
-  const m=(x,y)=>`${Math.round(Math.hypot(x-P.x,y-P.y)/10)} m`;
-  for(const e of G.en)if(e.type==='boss')arrow(e.x,e.y,'#b06ae0');
-  if(G.target)arrow(G.target.x,G.target.y,'#f0cf4a',m(G.target.x,G.target.y));
-  if(G.exitPt)arrow(G.exitPt.x,G.exitPt.y,'#5fbf7a',m(G.exitPt.x,G.exitPt.y));
-  if(G.pod)arrow(G.pod.x,G.pod.y,'#8fd3e0','Cryopode');
-  {let wb=null,wd=1e9;for(const w of G.wells)if(w.on){const dd=Math.hypot(w.x-P.x,w.y-P.y);if(dd<wd){wd=dd;wb=w}}if(wb)arrow(wb.x,wb.y,'#9fdcff',(P.psnT>0||P.brnT>0?'Source ':'')+m(wb.x,wb.y))}
+    if(label){ctx.font="700 12px 'Alegreya Sans',system-ui,sans-serif";ctx.textAlign='center';ctx.fillStyle='#000';ctx.fillText(label,x-Math.cos(a)*26+1,y-Math.sin(a)*26+5);ctx.fillStyle=col;ctx.fillText(label,x-Math.cos(a)*26,y-Math.sin(a)*26+4)}});
   if(joy.id!==null){ctx.strokeStyle='rgba(237,227,209,.25)';ctx.lineWidth=2;circle(joy.ox,joy.oy,56);ctx.stroke();ctx.fillStyle='rgba(237,227,209,.3)';circle(joy.ox+joy.vx*56,joy.oy+joy.vy*56,22);ctx.fill()}
 }
 // Éléments du HUD, gardés en mémoire. Un élément absent (page en cache plus ancienne que les scripts) ne bloque pas le reste du HUD.
 const NOEL={style:{setProperty(){}},classList:{contains:()=>false,toggle(){}},setAttribute(){},getAttribute:()=>null,querySelector:()=>null,appendChild(){}};
 const _el={},el=id=>_el[id]||(_el[id]=$(id))||NOEL;
 // Secondes de recharge au centre d'un bouton de compétence (le texte est créé au premier besoin).
+// Bouton de compétence utilisé : il s'enfonce un instant et s'éclaire.
+const pressFx=b=>{if(b.animate)b.animate([{transform:'scale(.84)',filter:'brightness(2.2)'},{transform:'scale(1)',filter:'brightness(1)'}],{duration:260,easing:'ease-out'})};
 const skTxt=(id,v)=>{const b=el(id);if(b===NOEL)return;let t=b._t;if(!t){t=b.querySelector('.skt')||document.createElement('b');t.className='skt';t.setAttribute('aria-hidden','true');b.appendChild(t);b._t=t}if(t.textContent!==v)t.textContent=v;if(b.classList.contains('cool')!==!!v)b.classList.toggle('cool',!!v)};
 // Compétence utilisée (prête → en recharge) : le bouton s'enfonce et s'éclaire un instant.
-const skFire=(id,ready)=>{const b=el(id);if(b===NOEL)return;if(b._rd&&!ready&&b.animate)b.animate([{transform:'scale(.84)',filter:'brightness(2.2)'},{transform:'scale(1)',filter:'brightness(1)'}],{duration:260,easing:'ease-out'});b._rd=ready};
+const skFire=(id,ready)=>{const b=el(id);if(b===NOEL)return;if(b._rd&&!ready)pressFx(b);b._rd=ready};
 const setTx=(id,v)=>{const e=el(id);if(e._v!==v){e._v=v;e.textContent=v}};
 const setSt=(id,p,v)=>{const e=el(id),k='_s'+p;if(e[k]!==v){e[k]=v;e.style.setProperty(p,v)}};
 const setCls=(id,c,on)=>{const e=el(id);if(e.classList.contains(c)!==on)e.classList.toggle(c,on)};
@@ -219,7 +226,7 @@ function hud(){
   setTx('hpTxt',(P.shield>=1?`Bouclier ${Math.floor(P.shield)} · `:'')+`Héros niveau ${G.hl}`);
   setTx('goldTxt',String(G.gold));
   setSt('xpFill','transform',`scaleX(${r3(Math.min(1,G.xp/xpNeed(G.hl)))})`);
-  const dm=(x,y)=>`${Math.round(Math.hypot(x-P.x,y-P.y)/10)} m`;let hot=false;
+  const dm=distTxt;let hot=false;
   let ok='',ov='',op=null,oc='#f0cf4a';
   if(G.mode==='survie'){const left=Math.max(0,LEVEL_T-G.tl);hot=left<=15;setTx('lvlTxt',`Niveau ${G.level}`);ok='Portail dans';ov=fmt(left);op=G.tl/LEVEL_T;oc='#5fbf7a';{const g=G.bossT<=10?'Gardien en approche':'';setTx('bossTxt',g);setHid('bossTxt',!g)}}
   else if(G.mode==='defense'){setTx('lvlTxt',`Vague ${Math.max(1,G.wave)}`);if(G.waveState==='break'){ok='Vague suivante';ov=fmt(G.waveT)}else{ok='Ennemis restants';ov=String(G.toSpawn+G.en.length)}op=G.pod.hp/G.pod.max;oc='#8fd3e0';
@@ -247,7 +254,7 @@ function hud(){
   setSt('bPot','--cd',G.potions?'0':'1');
   const live=started&&!G.over;
   {const rd=live&&P.dashCd<=0,rn=live&&P.novaCd<=0,rp=live&&G.potions>0&&P.hp<S.hp,sec=v=>live&&v>.05?String(Math.ceil(v)):'';
-   setCls('bDash','ready',rd);setCls('bNova','ready',rn);setCls('bPot','ready',rp);skTxt('bDash',sec(P.dashCd));skTxt('bNova',sec(P.novaCd));skFire('bDash',rd);skFire('bNova',rn);{const pb=el('bPot');if(pb!==NOEL){if(pb._n!=null&&G.potions<pb._n&&pb.animate)pb.animate([{transform:'scale(.84)',filter:'brightness(2.2)'},{transform:'scale(1)',filter:'brightness(1)'}],{duration:260,easing:'ease-out'});pb._n=G.potions}}}
+   setCls('bDash','ready',rd);setCls('bNova','ready',rn);setCls('bPot','ready',rp);skTxt('bDash',sec(P.dashCd));skTxt('bNova',sec(P.novaCd));skFire('bDash',rd);skFire('bNova',rn);{const pb=el('bPot');if(pb!==NOEL){if(pb._n!=null&&G.potions<pb._n)pressFx(pb);pb._n=G.potions}}}
   {let bh=0,bm=0,bn=0;for(const e of G.en)if(e.type==='boss'&&!e.dead){bh+=Math.max(0,e.hp);bm+=e.max;bn++}
    if(bn){setSt('bossFill','transform',`scaleX(${r3(bh/bm)})`);setTx('bossName',bn>1?`${bn} Gardiens des Cendres`:'Le Gardien des Cendres')}}
   {const un=ultNeed(),ur=Math.min(1,(G.ult||0)/un);setSt('bUlt','--cd',r3(1-ur));setCls('bUlt','ready',live&&ur>=1);skFire('bUlt',live&&ur>=1);setTx('ultN',ur>=1?'':String(un-(G.ult|0)))}
@@ -379,11 +386,8 @@ const EXT_T=3;
 function arcLine(g,x,y,r,a0,a1){g.moveTo(x+Math.cos(a0)*r,y+Math.sin(a0)*r);g.arc(x,y,r,a0,a1)}
 function renderPixi(){
   const {R,world,top,dark,T,L,P:PP}=PX;
-  const z=zoom(),vw=innerWidth/z,vh=innerHeight/z;G.vw=vw;G.vh=vh;
-  const P=G.P,hs_=(G.hshake||0)*SET.shake,sx=hs_?rand(-hs_,hs_):0,sy=hs_?rand(-hs_,hs_):0;
-  const ox=G.cam.x-vw/2+sx,oy=G.cam.y-vh/2+sy;
+  const {z,vw,vh,ox,oy,vis}=camView(),P=G.P;
   world.scale.set(z);world.position.set(-ox*z,-oy*z);top.scale.set(z);top.position.set(-ox*z,-oy*z);
-  const vis=(x,y,m=80)=>x>ox-m&&x<ox+vw+m&&y>oy-m&&y<oy+vh+m;
   for(const o of PX.statics){const v=vis(o.x,o.y,o.m);o.s.visible=v;if(!v)continue;
     if(o.glow){const f=1+.06*Math.sin(G.t*11+o.b.ph)+.04*Math.sin(G.t*23+o.b.ph*2);o.s.width=o.s.height=340*f}
     else if(o.flame){const f=1+.06*Math.sin(G.t*11+o.b.ph)+.04*Math.sin(G.t*23+o.b.ph*2);o.s.scale.set(f)}}
@@ -416,7 +420,7 @@ function renderPixi(){
     else if(d.kind==='relic'){const r=RELICS[d.id].t;s.texture=T.relic[r];s.position.set(d.x,d.y+bob);beamC=RTIER[r].c;beamH=130;beamA=.4}
     else if(d.kind==='part'){const r=d.part.hf?6:bpdef(d.part.w).r;s.texture=T.part[r];s.position.set(d.x,d.y+bob);s.rotation=d.t*.8;beamC=RAR[r].c;beamH=90}
     else if(d.kind==='potion'){s.texture=T.potion;s.position.set(d.x,d.y+bob)}
-    else{s.texture=T.item[d.item.r];s.position.set(d.x,d.y+bob);beamC=d.wish?'#ffe08a':RAR[d.item.r].c;beamH=d.wish?220:d.item.r>=3?150:d.item.r===2?100:60;beamA=d.wish?.6:.35;if(d.wish){const k=(G.t*1.6)%1;s.scale.set(1+.25*Math.sin(G.t*8))}}
+    else{s.texture=T.item[d.item.r];s.position.set(d.x,d.y+bob);beamC=d.wish?'#ffe08a':RAR[d.item.r].c;beamH=d.wish?220:d.item.r>=3?150:d.item.r===2?100:60;beamA=d.wish?.6:.35;if(d.wish)s.scale.set(1+.25*Math.sin(G.t*8))}
     if(beamH){const b=take(PP.beam);b.texture=T.beam;b.tint=hexc(beamC);b.alpha=beamA;b.position.set(d.x,d.y);b.width=8;b.height=beamH}}
   // ennemis
   const shadow=(x,y,r)=>{const s=take(PP.sh);s.texture=T.shadow;s.position.set(x,y+r*.75);s.width=r*2.1;s.height=r*.9;s.alpha=.4;s.rotation=0;s.tint=0};
@@ -471,40 +475,32 @@ function renderPixi(){
   for(const tx of G.texts){if(!vis(tx.x,tx.y,30))continue;const b=take(PP.txt);if(b.text!==tx.txt)b.text=String(tx.txt);b.fontSize=tx.size;b.tint=hexc(tx.col);b.alpha=Math.max(0,1-tx.t/.8);b.position.set(tx.x,tx.y-tx.t*40+4)}
   // interface : flèches, joystick
   const g=L.uiG;g.clear();
-  const arrow=(wx,wy,col,label)=>{if(vis(wx,wy,-10))return;const c=hexc(col);
-    const a=Math.atan2(wy-G.cam.y,wx-G.cam.x),cx=innerWidth/2,cy=innerHeight/2;
-    const k=arrowK(a,cx,cy),x=cx+Math.cos(a)*k,y=cy+Math.sin(a)*k,ca=Math.cos(a),sa=Math.sin(a);
+  offArrows(vis,(x,y,a,col,label)=>{const c=hexc(col),ca=Math.cos(a),sa=Math.sin(a);
     const pt=(px,py)=>[x+px*ca-py*sa,y+px*sa+py*ca];
     g.lineStyle(2,0x120c16,1);g.beginFill(c,1);g.moveTo(...pt(14,0));g.lineTo(...pt(-8,-10));g.lineTo(...pt(-3,0));g.lineTo(...pt(-8,10));g.closePath();g.endFill();
-    if(label){const b=take(PP.utxt);if(b.text!==label)b.text=label;b.fontSize=12;b.tint=c;b.alpha=1;b.position.set(x-ca*26,y-sa*26+6)}};
-  const m=(x,y)=>`${Math.round(Math.hypot(x-P.x,y-P.y)/10)} m`;
-  for(const e of G.en)if(e.type==='boss')arrow(e.x,e.y,'#b06ae0');
-  if(G.target)arrow(G.target.x,G.target.y,'#f0cf4a',m(G.target.x,G.target.y));
-  if(G.exitPt)arrow(G.exitPt.x,G.exitPt.y,'#5fbf7a',m(G.exitPt.x,G.exitPt.y));
-  if(G.pod)arrow(G.pod.x,G.pod.y,'#8fd3e0','Cryopode');
-  {let wb=null,wd=1e9;for(const w of G.wells)if(w.on){const dd=Math.hypot(w.x-P.x,w.y-P.y);if(dd<wd){wd=dd;wb=w}}if(wb)arrow(wb.x,wb.y,'#9fdcff',(P.psnT>0||P.brnT>0?'Source ':'')+m(wb.x,wb.y))}
+    if(label){const b=take(PP.utxt);if(b.text!==label)b.text=label;b.fontSize=12;b.tint=c;b.alpha=1;b.position.set(x-ca*26,y-sa*26+6)}});
   if(joy.id!==null){g.lineStyle(2,0xede3d1,.25);g.drawCircle(joy.ox,joy.oy,56);g.lineStyle(0);g.beginFill(0xede3d1,.3);g.drawCircle(joy.ox+joy.vx*56,joy.oy+joy.vy*56,22);g.endFill()}
   endPools();
   R.render(PX.stage);
 }
+// Libère le moteur WebGL (canevas retiré de la page).
+function pxFree(){try{clearTimeout(PX.lostT);PX.R.view.remove();PX.R.destroy()}catch{}PX=null}
 function dropPixi(err){
   if(!PX)return;noteErr('WebGL désactivé',err);
-  try{clearTimeout(PX.lostT);PX.R.view.remove();PX.R.destroy()}catch(e){}
-  PX=null;floorPat=null;resize();toast('Rendu WebGL interrompu : le jeu passe au rendu standard (modifiable dans les réglages).',true);
+  pxFree();floorPat=null;resize();toast('Rendu WebGL interrompu : le jeu passe au rendu standard (modifiable dans les réglages).',true);
 }
 // Retour au premier plan : un téléphone peut avoir effacé ou perdu le rendu WebGL pendant l'absence (écran noir).
 // On reconstruit le moteur de rendu à neuf (nouveau contexte, textures refaites) ; s'il n'y arrive pas, le jeu passe au rendu standard.
 function renewRender(){floorPat=null;
   if(!PX){resize();return}
-  try{clearTimeout(PX.lostT);PX.R.view.remove();PX.R.destroy()}catch(e){}
-  PX=null;let ok=false;try{ok=initPixi()}catch(err){noteErr('rendu',err)}
+  pxFree();let ok=false;try{ok=initPixi()}catch(err){noteErr('rendu',err)}
   resize();if(ok){try{if(G)buildStatic()}catch(err){dropPixi(err)}}else toast('Rendu WebGL indisponible au retour : le jeu passe au rendu standard.',true)}
 // Textures d'un héros à ses couleurs (normale, touchée), faites à la demande et gardées (au plus 24 jeux de couleurs).
 function plTex(cls,pal){const T=PX.T,k=cls+pal.cloak+pal.rim+pal.inner;let t=T.plc.get(k);
-  if(!t){if(T.plc.size>=24){const [k0,t0]=T.plc.entries().next().value;T.plc.delete(k0);for(const x of t0)try{x.destroy(true)}catch(e){}}
+  if(!t){if(T.plc.size>=24){const [k0,t0]=T.plc.entries().next().value;T.plc.delete(k0);for(const x of t0)try{x.destroy(true)}catch{}}
     t=[mkTex(100,100,()=>pPlayer(cls,false,pal)),mkTex(100,100,()=>pPlayer(cls,true,pal))];T.plc.set(k,t)}
   return t}
-const glLost=()=>{try{return !!(PX&&(PX.lost||(PX.R.gl&&PX.R.gl.isContextLost&&PX.R.gl.isContextLost())))}catch(e){return false}};
+const glLost=()=>{try{return !!(PX&&(PX.lost||(PX.R.gl&&PX.R.gl.isContextLost&&PX.R.gl.isContextLost())))}catch{return false}};
 function render(){
   if(PX&&!PX.lost&&glLost())dropPixi('contexte WebGL perdu');
   if(PX){if(PX.lost)return;try{renderPixi();return}catch(err){dropPixi(err)}}

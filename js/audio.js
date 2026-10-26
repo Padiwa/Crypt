@@ -1,8 +1,8 @@
 // Crypte des Cendres — audio.js : sons synthétisés (Web Audio), aucun fichier à charger
 const SND=(()=>{
-  let ac=null,master,sfx,mus,noiseB=null,unlocked=false,musOn=false,bellT=null;const last={};
+  let ac=null,master,sfx,mus,noiseB=null,unlocked=false,musOn=false;const last={};
   function init(){if(ac)return true;const C=window.AudioContext||window.webkitAudioContext;if(!C)return false;
-    try{ac=new C()}catch(e){return false}
+    try{ac=new C()}catch{return false}
     master=ac.createDynamicsCompressor();master.threshold.value=-14;master.ratio.value=6;master.connect(ac.destination);
     sfx=ac.createGain();mus=ac.createGain();sfx.connect(master);mus.connect(master);
     noiseB=ac.createBuffer(1,ac.sampleRate,ac.sampleRate);const d=noiseB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
@@ -53,7 +53,7 @@ const SND=(()=>{
   const GAP={hit:.045,crit:.07,gold:.22,rain:.06,hurt:.08,boom:.08,pick:.2,pick2:.15,pick3:.12,ui:.03};
   // Sons de ramassage (Réglages) : 'all' = tout, 'imp' = seulement rare et mieux, mods, reliques, fragments, sceaux ; 'off' = aucun
   const PICK={gold:'low',pick:'low',pick2:'imp',pick3:'imp'};
-  function play(k){if(!ac||!unlocked||SET.sfx<=0||!LIB[k])return;const pk=PICK[k],pm=SET.pickSnd||'imp';if(pk&&(pm==='off'||(pm==='imp'&&pk==='low')))return;const t=ac.currentTime,g=GAP[k]||.02;if(last[k]&&t-last[k]<g)return;last[k]=t;try{LIB[k]()}catch(e){}}
+  function play(k){if(!ac||!unlocked||SET.sfx<=0||!LIB[k])return;const pk=PICK[k],pm=SET.pickSnd||'imp';if(pk&&(pm==='off'||(pm==='imp'&&pk==='low')))return;const t=ac.currentTime,g=GAP[k]||.02;if(last[k]&&t-last[k]<g)return;last[k]=t;try{LIB[k]()}catch{}}
   // Musique d'ambiance : bourdon grave filtré + cloches rares en mode mineur
   function music(){if(musOn||!ac)return;musOn=true;
     const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=380;f.Q.value=3;const g=ac.createGain();g.gain.value=.16;f.connect(g);g.connect(mus);
@@ -61,7 +61,7 @@ const SND=(()=>{
     for(const [fr,dt] of [[55,0],[55,7],[82.4,-5],[110,3]]){const o=ac.createOscillator();o.type='sawtooth';o.frequency.value=fr;o.detune.value=dt;o.connect(f);o.start()}
     const scale=[220,261.6,293.7,329.6,392,440,523.3];
     const bell=()=>{if(SET.music>0&&!document.hidden){const n=scale[Math.floor(Math.random()*scale.length)];tone({f:n,type:'sine',a:.01,d:2.6,v:.09,dest:mus});tone({f:n*2.01,type:'sine',a:.01,d:1.6,v:.03,dest:mus})}
-      bellT=setTimeout(bell,3500+Math.random()*4500)};bellT=setTimeout(bell,2500)}
+      setTimeout(bell,3500+Math.random()*4500)};setTimeout(bell,2500)}
   return {play,vol,unlock};
 })();
 addEventListener('click',e=>{if(e.target.closest('.btn,.cx-btn,.chip,.cx-chip,.tab,.cls,.cx-cell,.cx-slot,.cell,.mod,.rtile,.cx-role,.cx-pick,.cx-row,.cx-tab,.cx-mod'))SND.play('ui')},true);
