@@ -167,4 +167,32 @@ export const tests = [
       await wf(X, () => /pas autorisé par le relais/.test($('coopBody').textContent), 'X attend le refus du site', 8000);
     } finally { await R2.close(); }
   } },
+  { name: 'par défaut, la coopération passe par le relais Cloudflare (code à 4 chiffres)', fn: async (b, t) => {
+    const p = t.track(await newPage(b));
+    await p.click('#coopBtn');
+    t.eq(await p.evaluate(() => [RELAY_URL, !!document.querySelector('#coopBody [data-coop="create"]'), !!$('coopCode')]), ['wss://crypte-relais.cryptcendre.workers.dev', true, true], '« Créer une partie » et le champ du code, sans réglage');
+  } },
+  { name: 'code : coupure, rechargement de l\'invité puis de l\'hôte, raison affichée, reconnexion automatique', fn: async (b, t) => {
+    const { A, G: [B], code } = await pairCode(b, t, 1);
+    // l'invité passe en arrière-plan puis la liaison se coupe : l'hôte en donne la raison, l'invité revient tout seul par le code
+    await B.evaluate(() => netSend({ t: 'bg', on: 1 })); await sleep(A, 200);
+    await A.evaluate(() => NET.peers[0].pc.close());
+    await wf(A, () => NET.drop && NET.drop.why, 'A attend la coupure', 8000);
+    await wf(B, () => NET.on && NET.roster.length === 2, 'B attend la reconnexion', 20000, A);
+    t.ok(await A.evaluate(() => NET.drop.them && /arrière-plan/.test(dropTxt(NET.drop))), 'raison chez l\'hôte : l\'invité était en arrière-plan');
+    t.ok(await B.evaluate(() => !!NET.drop && /Reconnecté/.test($('toast').textContent)), 'l\'invité est reconnecté');
+    // l'invité recharge la page (mise à jour) : il rejoint la même partie
+    await B.reload();
+    await wf(B, () => NET.on && NET.roster.length === 2, 'B attend de revenir après rechargement', 20000, A);
+    // l'hôte recharge : il rouvre sa salle sous le même code, l'invité revient
+    await A.reload();
+    await wf(A, () => NET.host && NET.relay === 'on', 'A attend sa salle rouverte', 10000);
+    t.eq(await A.evaluate(() => RL.code), code, 'même code après rechargement de l\'hôte');
+    await wf(B, () => NET.on && NET.roster.length === 2, 'B attend de revenir après le rechargement de l\'hôte', 25000, A);
+    // l'hôte ferme la partie : pas de reconnexion, message clair
+    await A.click('#coopBtn'); await A.click('#coopBody [data-coop="quit"]');
+    await wf(B, () => !NET.on && !NET.retry && NET.drop && NET.drop.why === 'end', 'B attend la fin de partie', 8000, A);
+    await B.click('#coopBtn');
+    t.ok(await B.evaluate(() => /a fermé la partie/.test($('coopBody').textContent)), 'invité : « l\'hôte a fermé la partie »');
+  } },
 ];

@@ -19,15 +19,15 @@ npx wrangler deploy     # envoie le relais ; si ton compte n'a pas encore de sou
 À la fin, Wrangler affiche l'adresse du relais, par exemple `https://crypte-relais.ton-nom.workers.dev`.
 
 1. Ouvre cette adresse dans un navigateur : la page doit afficher « Relais de Crypte des Cendres : en service. »
-2. Dans le jeu, ouvre `js/relais.js` et mets cette adresse, en remplaçant `https://` par `wss://` :
+2. Le jeu utilise par défaut le relais `wss://crypte-relais.cryptcendre.workers.dev` (`RELAY_CF`, en haut de `js/net.js`). Pour un autre relais, mets son adresse dans `js/relais.js`, en remplaçant `https://` par `wss://` :
 
    ```js
    const RELAY_DEFAULT = 'wss://crypte-relais.ton-nom.workers.dev';
    ```
 
-3. Publie le site comme d'habitude. Dans Coop, le jeu propose maintenant « Créer une partie » et le champ du code.
+   `'off'` coupe le relais : le jeu ne propose plus que les QR codes.
 
-Tant que `RELAY_DEFAULT` est vide, le jeu garde la connexion par QR codes, comme avant.
+3. Publie le site comme d'habitude. Dans Coop, le jeu propose « Créer une partie » et le champ du code.
 
 ## Protections
 

@@ -2,13 +2,15 @@
 // L'hôte fait tourner les monstres et relie chaque invité (connexion en étoile) ; chacun simule son propre héros,
 // ses tirs et son butin (instancié). Les invités ne se connectent qu'à l'hôte, qui relaie les héros des autres.
 const NET={on:false,host:false,guest:false,pc:null,dc:null,state:'idle',code:'',err:'',hits:[],ebUsed:new Set(),snap:null,tick:null,
-  peers:[],slot:0,roster:[],hostCls:null,hostName:'',hostPr:0,ready:false};
+  peers:[],slot:0,roster:[],hostCls:null,hostName:'',hostPr:0,via:'',hostBgAt:0,ready:false};
 const NET_MAX=4; // joueurs, hôte compris
 const NET_V=9;
 const NET_TIMEOUT=20000; // silence toléré en mission (une notification ou un écran qui s'éteint ne doit pas couper la partie)   // version du protocole : deux appareils de versions différentes refusent de jouer ensemble
 const ICE=[{urls:'stun:stun.l.google.com:19302'}];
-// Adresse du relais (js/relais.js) ; pour les tests, localStorage « crypte-relay » la remplace (« off » : aucun relais, QR codes seulement).
-const RELAY_URL=(()=>{let v=null;try{v=localStorage.getItem('crypte-relay')}catch(e){}if(v==='off')return '';return String(v||(typeof RELAY_DEFAULT==='string'?RELAY_DEFAULT:'')).trim().replace(/\/+$/,'')})();
+// Relais du jeu (Cloudflare) : le mode par défaut, même si js/relais.js manque ou est vide (page en cache ancienne).
+// js/relais.js peut le remplacer (une autre adresse, ou « off » pour les QR codes seulement) ; pour les tests, localStorage « crypte-relay » aussi.
+const RELAY_CF='wss://crypte-relais.cryptcendre.workers.dev';
+const RELAY_URL=(()=>{let v=null;try{v=localStorage.getItem('crypte-relay')}catch(e){}if(!v&&typeof RELAY_DEFAULT==='string')v=RELAY_DEFAULT;v=String(v||RELAY_CF).trim();return v==='off'?'':v.replace(/\/+$/,'')})();
 const SLOT_C=['#e8853b','#8fd3e0','#b9a6f0','#f0cf4a'];
 // Nombre de joueurs dans la partie (hôte compris) : sert à la difficulté.
 const coopN=()=>NET.host?1+NET.peers.filter(p=>p.state==='open').length:NET.guest&&NET.on?Math.max(2,NET.roster.length):1;
@@ -36,7 +38,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 function pingOn(){wakeOn();if(NET.pingT)return;NET.pingT=setInterval(()=>{if(NET.on&&(!started||!G||G.over||G.hold))netSend({t:'ping'})},2000)}
 function closePeer(p){try{p.dc&&p.dc.close()}catch(e){}try{p.pc&&p.pc.close()}catch(e){}}
 function netReset(){relayClose();RL.code='';NET.relay=null;for(const p of NET.peers)closePeer(p);try{NET.dc&&NET.dc.close()}catch(e){}try{NET.pc&&NET.pc.close()}catch(e){}clearInterval(NET.tick);clearInterval(NET.htick);clearInterval(NET.pingT);NET.pingT=null;wakeOff();
-  Object.assign(NET,{on:false,host:false,guest:false,pc:null,dc:null,state:'idle',code:'',err:'',hits:[],snap:null,tick:null,peers:[],slot:0,roster:[],hostCls:null,hostName:'',hostPr:0,ready:false});
+  Object.assign(NET,{on:false,host:false,guest:false,pc:null,dc:null,state:'idle',code:'',err:'',hits:[],snap:null,tick:null,peers:[],slot:0,roster:[],hostCls:null,hostName:'',hostPr:0,via:'',hostBgAt:0,ready:false});
   NET.ebUsed=new Set();NET.fdc=null;NET.hq=0;NET.sq=0;NET.hT=0;NET.hostMode=null;if(G)G.mates=[];if(meta.mode==='breche'){meta.mode='survie';saveMeta()}refreshCoopUi();if(typeof refreshMenus==='function'&&!started)refreshMenus()}
 const myRelic=()=>!!(meta.relicQ&&meta.relicQ.length);
 function rosterList(){return [{slot:0,cls:heroCls,name:myName(),pr:myPr()},...NET.peers.filter(p=>p.state==='open'&&p.cls).map(p=>({slot:p.slot,cls:p.cls,name:p.name,pr:p.pr|0}))]}
@@ -60,16 +62,17 @@ function wireDc(dc,peer){
     if(peer){peer.state='open';peer.lastRx=performance.now();NET.on=true;NET.state='lobby';netSendTo(peer,{...helloMsg(),slot:peer.slot});sendRoster();
       // Mission déjà lancée (l'hôte a touché Lancer pendant la connexion) : le joueur rejoint en cours de route.
       if(started&&G&&!G.over){netStartFor(peer);if(!NET.tick){clearInterval(NET.tick);NET.tick=setInterval(netTick,50);clearInterval(NET.htick);NET.htick=setInterval(netHeroTick,33)}toast(`${whoHtml(peer.slot)} rejoint la mission.`)}}
-    else{relayClose();NET.on=true;NET.lastRx=performance.now();NET.state='connected';netSend(helloMsg())}
+    else{relayClose();NET.on=true;NET.lastRx=performance.now();NET.state='connected';NET.via=RL.code||'';netSend(helloMsg());
+      if(NET.retry){NET.retry=null;toast('<b style="color:#8fd3e0">Reconnecté à la partie.</b>',true)}coopSave()}
     pingOn();SND.play('relic');toast('<b style="color:#8fd3e0">Coopération connectée.</b>',true);refreshCoopUi();drawCoop()};
-  dc.onclose=()=>peer?netPeerLost(peer):netLost();dc.onerror=()=>{};
+  dc.onclose=()=>peer?netPeerLost(peer,false,'close'):netLost('close');dc.onerror=()=>{};
   dc.onmessage=e=>{if(peer)peer.lastRx=performance.now();else NET.lastRx=performance.now();let m;try{m=JSON.parse(e.data)}catch(x){return}
     try{peer?netRecvHost(peer,m):netRecvGuest(m)}catch(err){typeof noteErr==='function'&&noteErr('coop',err)}}}
 // Hôte : une place de plus, avec son offre de connexion (code SDP). rid : identifiant de l'invité au relais (absent en mode manuel).
 async function newPeer(rid){const used=new Set(NET.peers.map(p=>p.slot));let slot=1;while(used.has(slot))slot++;
   const peer={slot,rid:rid||null,state:'offer',code:'',cls:null,relic:false,Q:null,sh:[],lastRx:0};NET.peers.push(peer);drawCoop();
   try{const pc=new RTCPeerConnection({iceServers:ICE});peer.pc=pc;wireDc(pc.createDataChannel('crypte',{ordered:true}),peer);wireFast(pc.createDataChannel('fast',{ordered:false,maxRetransmits:0}),peer);
-    pc.onconnectionstatechange=()=>{if(pc.connectionState==='failed'){NET.err=`Joueur ${slot+1} : la connexion a échoué (même wifi ?).`;netPeerLost(peer,true)}};
+    pc.onconnectionstatechange=()=>{if(pc.connectionState==='failed'){if(peer.state==='open')netPeerLost(peer,false,'failed');else{NET.err=`Joueur ${slot+1} : la connexion a échoué (même wifi ?).`;netPeerLost(peer,true)}}};
     await pc.setLocalDescription(await pc.createOffer());await iceDone(pc);peer.code=await packSdp(pc.localDescription);return NET.peers.includes(peer)?peer:null}
   catch(err){NET.err=err.message;NET.peers=NET.peers.filter(p=>p!==peer);drawCoop();return null}}
 // Mode manuel : l'hôte prépare une invitation à la fois, avec son propre QR code.
@@ -83,7 +86,7 @@ async function netAnswerIn(code){const peer=NET.peers.find(p=>p.state==='waitAns
 function netCancelPending(){const p=NET.peers.find(q=>q.state!=='open'&&!q.rid);if(p){closePeer(p);NET.peers=NET.peers.filter(q=>q!==p)}if(!NET.peers.length&&!RL.ws)netReset();drawCoop()}
 // Invité : la réponse à l'offre de l'hôte (code SDP), qui ouvre la connexion directe.
 async function guestAnswer(code){const pc=new RTCPeerConnection({iceServers:ICE});NET.pc=pc;pc.ondatachannel=e=>e.channel.label==='fast'?wireFast(e.channel,null):wireDc(e.channel,null);
-  pc.onconnectionstatechange=()=>{if(pc.connectionState==='failed')netFail('la connexion a échoué (même wifi ?)')};
+  pc.onconnectionstatechange=()=>{if(pc.connectionState==='failed'){if(NET.on)netLost('failed');else netFail('la connexion a échoué (même wifi ?)')}};
   await pc.setRemoteDescription(await unpackSdp(code));await pc.setLocalDescription(await pc.createAnswer());await iceDone(pc);return packSdp(pc.localDescription)}
 async function netJoin(code){netReset();NET.guest=true;NET.state='answer';drawCoop();
   try{NET.code=await guestAnswer(code);NET.state='showAnswer'}
@@ -104,11 +107,11 @@ function relayOpen(code,role,onMsg,onEnd){relayClose();let ws;try{ws=new WebSock
   ws.onclose=()=>{if(RL.ws!==ws)return;RL.ws=null;clearInterval(RL.pingT);RL.pingT=null;onEnd(opened?'closed':'err')}}
 const relaySend=m=>{try{if(RL.ws&&RL.ws.readyState===1)RL.ws.send(JSON.stringify(m))}catch(e){}};
 // Hôte : « Créer une partie ».
-function netHostCode(){netReset();NET.host=true;NET.state='lobby';relayNewCode()}
+function netHostCode(code,key){netReset();NET.host=true;NET.state='lobby';if(code&&key){relayClose();NET.relay='wait';RL.key=key;RL.tries=0;relayHost(code);refreshCoopUi();drawCoop()}else relayNewCode()}
 // Nouveau code (salle neuve, nouveau secret) : les joueurs déjà connectés restent ; l'ancien code ne mène plus nulle part.
 function relayNewCode(){relayClose();NET.relay='wait';RL.key=Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);RL.tries=0;relayHost(rnd4());refreshCoopUi();drawCoop()}
 // Fermer l'accès : plus personne ne peut arriver avec un code (« Rouvrir » en donne un nouveau).
-function relayShut(){relayClose();RL.code='';NET.relay='closed';refreshCoopUi();drawCoop()}
+function relayShut(){relayClose();RL.code='';NET.relay='closed';coopForget();refreshCoopUi();drawCoop()}
 function relayHost(code){RL.code=code;relayOpen(code,'h',relayHostMsg,why=>{if(!NET.host)return;
   if(NET.relay==='wait'&&why==='err'){NET.relay='off';NET.err='Relais injoignable : vérifie la connexion internet, ou invite les joueurs par QR code (ci-dessous).';refreshCoopUi();drawCoop();return}
   // salle perdue (coupure réseau) : on la rouvre sous le même code tant que la partie existe
@@ -117,7 +120,7 @@ function relayHost(code){RL.code=code;relayOpen(code,'h',relayHostMsg,why=>{if(!
 const RELAY_WHY={origin:()=>`Ce site (${location.origin==='null'?'fichier local':location.origin}) n'est pas autorisé par le relais : ajoute son adresse à la variable ORIGINES du Worker, sur Cloudflare.`,
   slow:()=>'Trop de codes faux essayés depuis ce réseau : réessaie dans 10 minutes.'};
 function relayHostMsg(m){
-  if(m.t==='ok'){NET.relay='on';refreshCoopUi();drawCoop();return}
+  if(m.t==='ok'){NET.relay='on';coopSave();refreshCoopUi();drawCoop();return}
   if(RELAY_WHY[m.t]){relayClose();NET.relay='off';NET.err=RELAY_WHY[m.t]();refreshCoopUi();drawCoop();return}
   if(m.t==='taken'){if(++RL.tries>8){NET.relay='off';NET.err='Aucun code libre pour l\'instant : réessaie dans un moment.';drawCoop();return}relayHost(rnd4());return}
   if(m.t==='join'){relayGuestIn(m.id);return}
@@ -132,16 +135,19 @@ async function relayGuestIn(rid){if(!NET.host||NET.peers.some(p=>p.rid===rid))re
 function netKick(slot){const p=NET.peers.find(q=>q.slot===slot);if(!p)return;const nm=p.name||'Joueur '+(slot+1);netSendTo(p,{t:'kick'});
   setTimeout(()=>netPeerLost(p,true),150);toast(`<b>${esc(nm)}</b> est retiré de la partie.${NET.relay==='on'?' Touche « Nouveau code » pour qu\'il ne revienne pas.':''}`,true)}
 // Invité : rejoindre la partie d'un code.
-function netJoinCode(code){code=String(code||'').replace(/\D/g,'');if(code.length!==4){NET.err='Le code de la partie a 4 chiffres.';drawCoop();return}
+function netJoinCode(code,auto){code=String(code||'').replace(/\D/g,'');if(code.length!==4){NET.err='Le code de la partie a 4 chiffres.';drawCoop();return}
+  if(!auto){NET.retry=null;clearTimeout(RL.reT)}
   netReset();NET.guest=true;NET.state='rjoin';RL.code=code;drawCoop();
-  const fail=msg=>{relayClose();netReset();NET.err=msg;drawCoop()};
+  // échec : en reconnexion automatique, on réessaie (5 fois) tant que l'erreur peut passer (hôte qui recharge, réseau qui revient)
+  const fail=(msg,final)=>{relayClose();netReset();if(auto&&!final&&NET.retry&&NET.retry.n<5){rejoinSoon(code,NET.retry.n+1);return}
+    if(auto)coopForget();NET.retry=null;NET.err=msg;drawCoop()};
   RL.joinT=setTimeout(()=>{if(NET.guest&&NET.state==='rjoin')fail(`La partie ${code} ne répond pas : vérifie le code avec l'hôte.`)},15000);
   relayOpen(code,'g',async m=>{
     if(m.t==='nohost')return fail(`Aucune partie avec le code ${code}. Vérifie le code avec l'hôte : il le voit en touchant Coop.`);
-    if(RELAY_WHY[m.t])return fail(RELAY_WHY[m.t]());
-    if(m.t==='full')return fail('Cette partie est complète.');
+    if(RELAY_WHY[m.t])return fail(RELAY_WHY[m.t](),true);
+    if(m.t==='full')return fail('Cette partie est complète.',true);
     if(m.t==='hostgone'){if(!NET.on)fail('L\'hôte a fermé la partie.');return}
-    if(m.t==='offer'){if(m.v!==NET_V)return fail('Version du jeu différente de celle de l\'hôte. Mettez le jeu à jour sur les deux appareils (Réglages › Application), puis recommencez.');
+    if(m.t==='offer'){if(m.v!==NET_V)return fail('Version du jeu différente de celle de l\'hôte. Mettez le jeu à jour sur les deux appareils (Réglages › Application), puis recommencez.',true);
       clearTimeout(RL.joinT);NET.state='connecting';drawCoop();
       try{const ans=await guestAnswer(m.sdp);relaySend({t:'answer',sdp:ans});
         RL.joinT=setTimeout(()=>{if(NET.guest&&!NET.on)fail('La connexion directe n\'a pas pu s\'établir : êtes-vous sur le même wifi ?')},20000)}
@@ -159,16 +165,41 @@ function sendFast(m){const str=JSON.stringify(m);if(NET.host){for(const p of NET
 function netSendTo(p,m){if(p&&p.dc&&p.dc.readyState==='open')try{p.dc.send(typeof m==='string'?m:JSON.stringify(m))}catch(e){}}
 function netSend(m){if(NET.host){const s=JSON.stringify(m);for(const p of NET.peers)if(p.state==='open')netSendTo(p,s)}
   else if(NET.dc&&NET.dc.readyState==='open')try{NET.dc.send(JSON.stringify(m))}catch(e){}}
+/* ---------- Déconnexions : la raison, et la reconnexion automatique ----------
+   why : 'bye' (l'autre a fermé ou rechargé le jeu), 'close' / 'failed' (liaison coupée), 'timeout' (plus de nouvelles depuis 20 s).
+   Chaque appareil prévient les autres quand il passe en arrière-plan (« bg ») : une coupure juste après s'explique (écran en veille, autre appli). */
+const BG_RECENT=90000;
+function noteDrop(why,who,themBg){const meBg=NET.bgAt&&performance.now()-NET.bgAt<BG_RECENT;NET.drop={at:new Date(),why,who:who||'',me:!!meBg,them:!!themBg}}
+function dropTxt(d){const who=d.who?`<b>${esc(d.who)}</b>`:'l\'autre joueur';
+  if(d.why==='end')return `${who} a fermé la partie.`;
+  if(d.why==='bye')return `${who} a fermé ou rechargé le jeu.`;
+  if(d.me)return 'ton appareil était en arrière-plan ou en veille (écran éteint, autre appli) : la connexion s\'est coupée.';
+  if(d.them)return `${who} avait mis le jeu en arrière-plan (écran éteint ou autre appli).`;
+  if(d.why==='timeout')return `plus de nouvelles de ${who} depuis 20 s : wifi coupé, ou appareil en veille.`;
+  return `la connexion directe avec ${who} s'est coupée : wifi qui change, ou appareil en veille.`}
+const dropHtml=()=>NET.drop?`<p class="cx-hint coopdrop" style="margin:0">Dernière déconnexion, à ${NET.drop.at.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})} : ${dropTxt(NET.drop)}</p>`:'';
+document.addEventListener('visibilitychange',()=>{const hid=document.visibilityState==='hidden';if(hid)NET.bgAt=performance.now();if(NET.on)netSend({t:'bg',on:hid?1:0})});
 // Hôte : un invité est parti.
-function netPeerLost(peer,silent){if(!NET.peers.includes(peer))return;const was=peer.state==='open';closePeer(peer);NET.peers=NET.peers.filter(p=>p!==peer);
+function netPeerLost(peer,silent,why){if(!NET.peers.includes(peer))return;const was=peer.state==='open';closePeer(peer);NET.peers=NET.peers.filter(p=>p!==peer);
+  if(was&&why)noteDrop(why,peer.name,peer.bgAt&&performance.now()-peer.bgAt<BG_RECENT);
   if(G&&G.mates)G.mates=G.mates.filter(q=>q.slot!==peer.slot);
   NET.on=NET.peers.some(p=>p.state==='open');if(!NET.on&&meta.mode==='breche'&&!started){meta.mode='survie';saveMeta()}
-  if(was&&!silent)toast(`${prBadge(peer.pr)}<b style="color:#e0474b">${esc(peer.name||'Joueur '+(peer.slot+1))} déconnecté.</b>`+(started&&G&&!G.over?(NET.on?' La partie continue.':' Tu continues seul.'):''),true);
+  if(was&&!silent)toast(`${prBadge(peer.pr)}<b style="color:#e0474b">${esc(peer.name||'Joueur '+(peer.slot+1))} déconnecté.</b>`+(started&&G&&!G.over?(NET.on?' La partie continue.':' Tu continues seul.'):'')+(why&&why!=='bye'&&peer.rid?' Il peut revenir avec le code.':''),true);
   sendRoster();if(started&&G&&!G.over)coopCheckFail();refreshCoopUi();drawCoop()}
-// Invité : l'hôte est parti.
-function netLost(){if(NET.state==='idle')return;const was=NET.on,wasGuest=NET.guest;netReset();
-  if(was){toast('<b style="color:#e0474b">Hôte déconnecté.</b>'+(started&&G&&!G.over&&wasGuest?' La mission se termine : tu gardes ton butin.':''),true);
-    if(wasGuest&&started&&G&&!G.over){G.hold=false;missionSuccess()}}}
+// Invité : l'hôte est parti. Venu par un code, l'invité se reconnecte tout seul (l'hôte garde sa salle ouverte).
+function netLost(why='close'){if(NET.state==='idle'&&!NET.on)return;const was=NET.on,wasGuest=NET.guest,code=NET.via;
+  if(was)noteDrop(why,NET.hostName||'l\'hôte',NET.hostBgAt&&performance.now()-NET.hostBgAt<BG_RECENT);const drop=NET.drop;netReset();NET.drop=drop;
+  const again=was&&wasGuest&&code&&RELAY_URL&&why!=='end';
+  if(was){toast('<b style="color:#e0474b">Hôte déconnecté.</b>'+(started&&G&&!G.over&&wasGuest?' La mission se termine : tu gardes ton butin.':'')+(again?' Reconnexion…':''),true);
+    if(wasGuest&&started&&G&&!G.over){G.hold=false;missionSuccess()}}
+  if(again)rejoinSoon(code)}
+// Reconnexion par le code : plusieurs essais espacés (l'hôte peut être en train de recharger le jeu).
+function rejoinSoon(code,n=0){clearTimeout(RL.reT);NET.retry={code,n};drawCoop();RL.reT=setTimeout(()=>{if(NET.on||NET.host||!NET.retry)return;netJoinCode(code,true)},n?3000:1500)}
+// Après un rechargement (mise à jour, page fermée par erreur) : la partie en cours, gardée pour l'onglet pendant 10 minutes.
+const COOP_SS='crypte-coop';
+function coopSave(){try{if(NET.host&&NET.relay&&RL.code&&RL.key)sessionStorage.setItem(COOP_SS,JSON.stringify({r:'h',code:RL.code,key:RL.key,at:Date.now()}));
+  else if(NET.guest&&NET.on&&NET.via)sessionStorage.setItem(COOP_SS,JSON.stringify({r:'g',code:NET.via,at:Date.now()}));else sessionStorage.removeItem(COOP_SS)}catch(e){}}
+function coopForget(){try{sessionStorage.removeItem(COOP_SS)}catch(e){}}
 
 /* ---------- Démarrage de la mission ---------- */
 const SPAWN_OFF=[[0,0],[80,0],[-80,0],[0,80]];
@@ -217,7 +248,7 @@ function modeApply(md){if(!md)return;
   else if(md[0]==='c'){G.capT=md[1];G.extT=md[2];G.exitPt=md[3]>=0?{x:md[3],y:md[4]}:null}}
 function netTick(){if(!NET.on||!started||!G)return;const now=performance.now();
   if(NET.host){
-    for(const p of NET.peers.slice())if(p.state==='open'&&p.lastRx&&now-p.lastRx>NET_TIMEOUT&&!G.over&&!G.hold&&document.visibilityState==='visible')netPeerLost(p);
+    for(const p of NET.peers.slice())if(p.state==='open'&&p.lastRx&&now-p.lastRx>NET_TIMEOUT&&!G.over&&!G.hold&&document.visibilityState==='visible')netPeerLost(p,false,'timeout');
     if(!NET.on)return;
     const en=G.en.filter(e=>!e.dead).map(e=>[e.id,e.type,e.x|0,e.y|0,Math.ceil(e.hp),Math.ceil(e.max),r1(e.r),(e.corr?1:0)|(e.frz>0?2:0)|(e.slow>0?4:0)|(e.flash>0?8:0)|(e.burnT>0?16:0)|(e.downed?32:0),e.elite||0,e.gen||0,Math.round(e.dmg),e.state==='walk'?0:e.state==='wind'?1:2,r1(e.ang||0)]);
     const ps=[[0,...heroPack(G.P)]],osh=[[0,shotPack(G.shots,60)]];
@@ -225,7 +256,7 @@ function netTick(){if(!NET.on||!started||!G)return;const now=performance.now();
     NET.sSeq=(NET.sSeq||0)+1;sendFast({t:'s',sq:NET.sSeq,lv:G.level,tl:r1(G.tl),bt:r1(G.bossT),en,eb:G.eb.slice(0,150).map(b=>[b.id,b.x|0,b.y|0,b.vx|0,b.vy|0,b.r,Math.round(b.d),r1(b.life)]),
       lb:G.lobs.map(l=>[l.x0|0,l.y0|0,l.tx|0,l.ty|0,+l.t.toFixed(2),l.T,l.kind,l.r|0]),z:G.zones.map(z=>[z.id,z.x|0,z.y|0,z.r|0,z.kind,+z.dps.toFixed(2),r1(z.life),z.max]),ps,osh,md:modeSnap()});
   }else{
-    if(NET.lastRx&&now-NET.lastRx>NET_TIMEOUT&&!G.over&&!G.hold&&document.visibilityState==='visible'){netLost();return}
+    if(NET.lastRx&&now-NET.lastRx>NET_TIMEOUT&&!G.over&&!G.hold&&document.visibilityState==='visible'){netLost('timeout');return}
     const st=[];for(const e of G.en){const s0=e._s||{};if(e.slow>(s0.slow||0)+.05||e.frz>(s0.frz||0)+.05||(e.burnT>0&&e.burnT>(s0.burnT||0)+.05)||e.kx||e.ky){st.push([e.id,r1(e.slow||0),r1(e.frz||0),r1(e.burnT||0),r1(e.burnDps||0),e.kx|0,e.ky|0]);e.kx=e.ky=0;e._s={slow:e.slow,frz:e.frz,burnT:e.burnT}}}
     netSend({t:'g',p:heroPack(G.P),sh:shotPack(G.shots),h:NET.hits.splice(0),st,rel:!!G.relic});
   }}
@@ -235,7 +266,8 @@ const matesUp=()=>(G.mates||[]).some(q=>!q.down);
 function coopCheckFail(){if(!NET.host||!G||G.over)return;if(G.P.down&&!matesUp()){netSend({t:'fail'});gameOver()}}
 function netRecvHost(peer,m){
   if(m.t==='ping')return;
-  if(m.t==='bye'){netPeerLost(peer);return}
+  if(m.t==='bye'){netPeerLost(peer,false,'bye');return}
+  if(m.t==='bg'){peer.bgAt=m.on?performance.now():0;return}
   if(m.t==='leave'){peer.left=true;peer.Q=null;if(G&&G.mates)G.mates=G.mates.filter(q=>q.slot!==peer.slot);toast(`${whoHtml(peer.slot)} est retourné au Camp.`,true);if(started&&G&&!G.over)coopCheckFail();drawCoop();return}
   if(m.t==='hello'){if(m.v!==NET_V){netSendTo(peer,{t:'oldver',v:NET_V});NET.err=`Joueur ${peer.slot+1} : version du jeu différente. Mettez le jeu à jour sur les deux appareils (Réglages › Application), puis recommencez.`;netPeerLost(peer,true);return}
     const first=peer.name==null;peer.cls=CLS[m.cls]?m.cls:'guerrier';peer.relic=m.relic;peer.name=cleanName(m.name)||'Joueur '+(peer.slot+1);
@@ -253,8 +285,9 @@ function netRecvHost(peer,m){
 }
 function netRecvGuest(m){
   if(m.t==='ping')return;
-  if(m.t==='bye'){netLost();return}
-  if(m.t==='kick'){const inGame=started&&G&&!G.over;netReset();toast('<b style="color:#e0474b">L\'hôte t\'a retiré de la partie.</b>'+(inGame?' Tu gardes ton butin.':''),true);if(inGame){G.hold=false;missionSuccess()}NET.err='L\'hôte t\'a retiré de la partie.';drawCoop();return}
+  if(m.t==='bye'){netLost(m.end?'end':'bye');return}
+  if(m.t==='bg'){NET.hostBgAt=m.on?performance.now():0;return}
+  if(m.t==='kick'){const inGame=started&&G&&!G.over;netReset();NET.retry=null;coopForget();toast('<b style="color:#e0474b">L\'hôte t\'a retiré de la partie.</b>'+(inGame?' Tu gardes ton butin.':''),true);if(inGame){G.hold=false;missionSuccess()}NET.err='L\'hôte t\'a retiré de la partie.';drawCoop();return}
   if(m.t==='oldver'||(m.t==='hello'&&m.v!==NET_V)){const err='Version du jeu différente de celle de l\'hôte. Mettez le jeu à jour sur les deux appareils (Réglages › Application), puis recommencez.';netReset();NET.err=err;openCoop();NET.err=err;drawCoop();return}
   if(m.t==='hello'){if(m.slot)NET.slot=m.slot;NET.hostCls=m.cls;NET.hostName=cleanName(m.name);NET.hostPr=Math.max(0,m.pr|0);drawCoop();refreshCoopUi();return}
   if(m.t==='roster'){NET.roster=(m.list||[]).map(r=>({slot:r.slot|0,cls:CLS[r.cls]?r.cls:null,name:cleanName(r.name),pr:Math.max(0,r.pr|0)}));if(m.mode)NET.hostMode={mode:m.mode,lv:m.lv,dn:m.dn};drawCoop();refreshCoopUi();return}
@@ -340,14 +373,15 @@ function drawCoop(){const body=$('coopBody');if(!body||$('coop').hidden)return;c
       ${arriving?`<p class="cx-hint" style="margin:0">${arriving} joueur${arriving>1?'s':''} en train d'arriver…</p>`:''}
       ${!relay&&!pend&&!full?`<div class="actions" style="margin:0"><button class="cx-btn${open.length?'':' cx-btn--primary'}" data-coop="add">Inviter un joueur</button></div>`:''}
       <div class="setrow"><div><b>Mission</b><span>${missionTxt(lobbyInfo())}. Le mode, le niveau et la difficulté se choisissent sur l'écran d'accueil${open.length?'':' ; la Brèche demande au moins un autre joueur'}.</span></div></div>
-      ${open.length?`<p style="margin:0">Ferme cette fenêtre et touche « Lancer » : vous partez ensemble. Chacun joue son héros et peut en changer entre deux missions.</p>`:''}${RULES}</section>`;
+      ${open.length?`<p style="margin:0">Ferme cette fenêtre et touche « Lancer » : vous partez ensemble. Chacun joue son héros et peut en changer entre deux missions.</p>`:''}${dropHtml()}${RULES}</section>`;
     if(pend){const n=pend.slot+1;
       if(pend.state==='offer')h+='<p class="cx-hint">Préparation du code…</p>';
       else h+=`<section class="cx-section"><h3 class="cx-section__label">Inviter le joueur ${n}</h3>${codeBox('1. Fais scanner ou envoie ce code au joueur '+n,pend.code,true)}${pasteBox('2. Colle ou scanne son code de réponse','Valider','answer')}${pend.state==='connecting'?'<p class="cx-hint" style="margin:0">Connexion en cours…</p>':''}<div class="actions"><button class="cx-btn cx-btn--sm" data-coop="cancel">Annuler cette invitation</button></div></section>`}
     else if(relay&&!full)h+=cxMore('coop_man1','Un joueur sans internet ?',`<p class="cx-hint" style="margin:0">Invite-le par QR codes : il scanne le tien, puis tu scannes sa réponse.</p><div class="actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-coop="add">Inviter par QR codes</button></div>`,'Afficher');
     h+=`<div class="actions"><button class="cx-btn cx-btn--sm" data-coop="quit">Fermer la partie</button></div>`}
-  else if(NET.guest&&NET.on)h=`<section class="cx-section"><h3 class="cx-section__label">Connecté</h3>${rosterHtml(NET.roster.length?NET.roster:[{slot:0,cls:NET.hostCls},{slot:NET.slot,cls:heroCls}])}<p style="margin:0">${NET.hostMode?`Mission choisie par l'hôte : ${missionTxt(NET.hostMode)}. `:''}Attends que l'hôte lance la mission. Tu peux changer de héros d'ici là.</p>${RULES}<div class="actions"><button class="cx-btn cx-btn--sm" data-coop="quit">Se déconnecter</button></div></section>`;
-  else if(NET.guest&&(NET.state==='rjoin'||NET.state==='connecting'))h=`<section class="cx-section"><h3 class="cx-section__label">Rejoindre la partie ${RL.code}</h3><p style="margin:0">${NET.state==='rjoin'?'Recherche de la partie…':'Connexion à l\'hôte…'}</p><div class="actions"><button class="cx-btn cx-btn--sm" data-coop="quit">Annuler</button></div></section>`;
+  else if(NET.guest&&NET.on)h=`<section class="cx-section"><h3 class="cx-section__label">Connecté</h3>${rosterHtml(NET.roster.length?NET.roster:[{slot:0,cls:NET.hostCls},{slot:NET.slot,cls:heroCls}])}<p style="margin:0">${NET.hostMode?`Mission choisie par l'hôte : ${missionTxt(NET.hostMode)}. `:''}Attends que l'hôte lance la mission. Tu peux changer de héros d'ici là.</p>${dropHtml()}${RULES}<div class="actions"><button class="cx-btn cx-btn--sm" data-coop="quit">Se déconnecter</button></div></section>`;
+  else if(NET.guest&&(NET.state==='rjoin'||NET.state==='connecting'))h=`<section class="cx-section"><h3 class="cx-section__label">${NET.retry?'Reconnexion à':'Rejoindre'} la partie ${RL.code}</h3><p style="margin:0">${NET.state==='rjoin'?'Recherche de la partie…':'Connexion à l\'hôte…'}${NET.retry&&NET.retry.n?` (essai ${NET.retry.n+1})`:''}</p>${dropHtml()}<div class="actions"><button class="cx-btn cx-btn--sm" data-coop="quit">Annuler</button></div></section>`;
+  else if(NET.retry&&!NET.host)h=`<section class="cx-section"><h3 class="cx-section__label">Reconnexion à la partie ${NET.retry.code}</h3><p style="margin:0">Nouvel essai dans un instant…</p>${dropHtml()}<div class="actions"><button class="cx-btn cx-btn--sm" data-coop="quit">Annuler</button></div></section>`;
   else if(NET.guest&&NET.state==='answer')h='<p class="cx-hint">Préparation de la réponse…</p>';
   else if(NET.guest&&NET.state==='showAnswer')h=`<section class="cx-section"><h3 class="cx-section__label">Rejoindre</h3>${codeBox('Montre ou envoie ce code de réponse à l\'hôte',NET.code,true)}<p class="cx-hint" style="margin:0">La connexion s'établit dès que l'hôte l'a validé.</p><div class="actions"><button class="cx-btn cx-btn--sm" data-coop="quit">Annuler</button></div></section>`;
   else if(RELAY_URL){if(NET.state==='joinIn')moreOpen.coop_man=true;
@@ -358,6 +392,7 @@ function drawCoop(){const body=$('coopBody');if(!body||$('coop').hidden)return;c
       ${cxMore('coop_man','Sans internet : connexion par QR codes',`${steps}${manual}`,'Afficher')}`}
   else h=`<section class="cx-section"><h3 class="cx-section__label">Jouer à plusieurs</h3>${steps}${manual}</section>`;
   if(NET.err)h+=`<p class="empty" style="font-size:13px;color:#ff8a80">${NET.err}</p>`;
+  if(!NET.on&&!NET.host&&!NET.guest&&!NET.retry)h+=dropHtml();
   body.innerHTML=h;
   const code=NET.host?(NET.peers.find(p=>(p.state==='waitAnswer'||p.state==='connecting')&&!p.rid)||{}).code:NET.code;
   const qr=$('coopQr');if(qr&&code)loadQr().then(ok=>{if(ok&&$('coopQr'))$('coopQr').innerHTML=qrSvg(code)});
@@ -404,7 +439,7 @@ addEventListener('pagehide',()=>{if(NET.on)netSend({t:'bye'})});
     else if(a==='paste'){try{$('coopIn').value=await navigator.clipboard.readText()}catch(x){$('coopIn').focus()}}
     else if(a==='scan')coopScan(b.dataset.then);
     else if(a==='scanstop')camStop();
-    else if(a==='quit'){if(NET.on)netSend({t:'bye'});netReset();drawCoop()}});
+    else if(a==='quit'){if(NET.on)netSend({t:'bye',end:1});netReset();NET.retry=null;NET.drop=null;clearTimeout(RL.reT);coopForget();refreshCoopUi();drawCoop()}});
   $('coopBody').addEventListener('input',e=>{if(e.target.id!=='coopCode')return;const v=e.target.value.replace(/\D/g,'').slice(0,4);if(e.target.value!==v)e.target.value=v;if(v.length===4)netJoinCode(v)});
   $('coopBody').addEventListener('keydown',e=>{if(e.target.id==='coopCode'&&e.key==='Enter')netJoinCode(e.target.value)});
   // Lien d'invitation (#coop=1234) : la page ouvre la coopération et rejoint la partie toute seule.
@@ -412,6 +447,10 @@ addEventListener('pagehide',()=>{if(NET.on)netSend({t:'bye'})});
   const coopHash=delay=>{const m=location.hash.match(/^#coop=(\d{4})$/);if(!m||!RELAY_URL)return;try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
     const go=()=>{if(started||(NET.on&&NET.guest))return;openCoop();netJoinCode(m[1])};delay?addEventListener('load',()=>setTimeout(go,delay)):go()};
   coopHash(300);addEventListener('hashchange',()=>coopHash(0));
+  // Rechargement pendant une partie à code (mise à jour, page rechargée) : l'hôte rouvre sa salle sous le même code, l'invité la rejoint.
+  {let c=null;try{c=JSON.parse(sessionStorage.getItem(COOP_SS)||'null')}catch(e){}
+    if(c&&RELAY_URL&&Date.now()-(c.at||0)<10*60*1000&&!/^#coop=/.test(location.hash))addEventListener('load',()=>setTimeout(()=>{if(NET.on||NET.host||NET.guest||started)return;
+      if(c.r==='h'&&c.code&&c.key){netHostCode(c.code,c.key);toast('Partie rouverte sous le code '+c.code+'.',true)}else if(c.r==='g'&&c.code){NET.retry={code:c.code,n:0};netJoinCode(c.code,true)}},500))}
   const btn=document.createElement('button');btn.className='cx-btn cx-btn--sm cx-btn--ghost';btn.style.margin='0';btn.id='coopBtn';btn.innerHTML='Coop';btn.onclick=openCoop;
   const g=$('guideBtn');if(g)g.before(btn);
 })();
