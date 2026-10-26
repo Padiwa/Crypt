@@ -1160,3 +1160,12 @@ body:has(#camp:not([hidden])) .toast,body:has(#bag:not([hidden])) .toast{top:cal
 .cx-sheet__foot>#closeBag{flex:1 1 auto;min-width:0}
 /* Armurerie › Par héros : un bloc par héros, pastille à sa couleur devant son nom */
 .hgear .cx-section__label .cwho{display:inline-block;min-width:18px;height:18px;padding:0 3px;margin-right:8px;border-radius:9px;background:var(--wc);color:#1b0f06;font:800 11px/18px var(--font-body);text-align:center;letter-spacing:0;vertical-align:1px}
+/* Coopération par code : le code de la partie en grand chez l'hôte, la saisie chez l'invité */
+.code4box{display:grid;justify-items:center;gap:8px;padding:14px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2)}
+.code4big{font:700 46px/1 var(--font-display);letter-spacing:.2em;padding-left:.2em;color:var(--ink);font-variant-numeric:tabular-nums}
+.code4box .qr svg{display:block;width:min(170px,46vw);height:auto;background:#fff;border-radius:8px;padding:6px}
+.code4box .qr:empty{display:none}
+.codejoin{display:flex;gap:8px;align-items:stretch}
+.code4in{flex:1 1 auto;min-width:0;box-sizing:border-box;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font:700 26px/1.2 var(--font-body);letter-spacing:.3em;text-align:center;color:var(--ink);font-variant-numeric:tabular-nums}
+.code4in:focus{outline:none;border-color:var(--ember-hi)}
+.code4in::placeholder{letter-spacing:normal;font-weight:400;font-size:15px;color:var(--muted)}

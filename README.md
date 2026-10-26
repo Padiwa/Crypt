@@ -19,7 +19,9 @@ Action-RPG de crypte en hordes, jouable au pouce sur mobile et au clavier. Site 
 | `js/tut.js` | Parcours du joueur nouveau |
 | `js/unlock.js` | Déblocages progressifs du Camp et des choix de mission (conditions, cartes « Nouveau ») |
 | `js/rythmes/` | Rythmes de progression (`rapide.js` publié, `long.js`) |
-| `js/net.js` | Coopération à deux (WebRTC) |
+| `js/net.js` | Coopération jusqu'à 4 (WebRTC) : par code à 4 chiffres (relais) ou par QR codes |
+| `js/relais.js` | Adresse du relais de mise en relation (vide : QR codes seulement) |
+| `relais/` | Le relais (Cloudflare Worker + Durable Objects, offre gratuite) et son déploiement |
 | `js/update.js` | Détection des nouvelles versions |
 | `js/nav.js` | Navigation clavier et manette dans les menus |
 | `aide/` | Guide du joueur |
@@ -78,3 +80,5 @@ node tools/progression/ablate.mjs resultats/archer_1_etat.json
 `js/net.js` relie deux appareils en pair à pair (WebRTC, canal de données) sans serveur : les codes d'offre et de réponse (SDP compressé) s'échangent par QR code ou copier-coller. L'hôte simule les monstres et envoie un instantané 20 fois par seconde ; chaque joueur simule son héros, ses tirs (coups envoyés à l'hôte) et son propre butin. Le QR code utilise `qrcode-generator` (jsDelivr), chargé seulement à l'ouverture de l'écran Coopération. Fonctionne sur GitHub Pages (https) ; même réseau conseillé (un serveur STUN public est aussi indiqué).
 
 Chaque joueur se présente (message `hello`, protocole `NET_V`) avec son héros, son nom et le niveau de prestige de ce héros ; l'hôte renvoie la liste à tous (`roster`) à chaque changement. Le nom vient de `meta.pname` (Réglages › Compte, nettoyé par `cleanName`, 16 signes) ou, par défaut, de l'identifiant `meta.pid` tiré une fois (`Joueur-XXXXX`). Les deux font partie de la sauvegarde.
+
+**Rejoindre avec un code.** Avec un relais (`relais/`, à déployer une fois sur Cloudflare, voir `relais/README.md`, puis son adresse dans `js/relais.js`), l'hôte touche « Créer une partie » et reçoit un code à 4 chiffres ; les invités le tapent (ou scannent le QR code, ou ouvrent le lien `#coop=<code>`) et arrivent tout seuls, plusieurs à la fois. Le relais ne fait passer que l'offre et les réponses WebRTC (les mêmes codes SDP qu'en mode manuel), puis l'invité le quitte ; l'hôte garde sa salle ouverte tant que la partie existe, et la reprend sous le même code après une coupure. Sans relais, ou relais injoignable, la connexion par QR codes reste disponible. Pour les tests, `localStorage['crypte-relay']` remplace l'adresse (`off` : aucun relais) ; `node tools/tests/relais-local.mjs` lance un relais local (même logique, `relais/src/salle.js`).

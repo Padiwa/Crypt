@@ -1,5 +1,6 @@
-// Coopération à deux (WebRTC local) : connexion, mission, familiers, pas d'erreur. Lente : ignorée avec --quick.
-import { newPage, sleep } from '../lib.mjs';
+// Coopération (WebRTC local) : connexion par QR codes et par code à 4 chiffres (relais local), mission, noms. Lente : ignorée avec --quick.
+import { newPage, sleep, GAME } from '../lib.mjs';
+import { startRelay } from '../relais-local.mjs';
 export const slow = true;
 
 // Attente nommée : en cas de délai dépassé, dit laquelle et dans quel état était la page.
@@ -11,9 +12,29 @@ async function wf(p, fn, what, timeout = 8000, other = null) {
 }
 
 // Connecte deux pages (A héberge, B rejoint) et ferme les fenêtres de coopération.
+// Relais local (même logique que le Worker Cloudflare), lancé au premier test qui en a besoin.
+let R = null; const relay = async () => R || (R = await startRelay());
+// Une page avec le relais donné (« off » : QR codes seulement) et un héros.
+async function coopPage(b, t, url, cls) {
+  const p = t.track(await newPage(b));
+  await p.evaluate(([u, c]) => { localStorage.setItem('crypte-relay', u); if (c) localStorage.setItem('crypte-cls', c); }, [url, cls]); await p.reload();
+  return p;
+}
+// Par code : A crée la partie, les autres pages tapent le code.
+async function pairCode(b, t, n = 1) {
+  const { url } = await relay();
+  const A = await coopPage(b, t, url, 'archer'), G = [];
+  for (let i = 0; i < n; i++) G.push(await coopPage(b, t, url, ['guerrier', 'magicien', 'archer'][i]));
+  await A.click('#coopBtn'); await A.click('[data-coop="create"]');
+  await wf(A, () => /^\d{4}$/.test(($('coopCode4') || {}).textContent || ''), 'A attend le code', 8000);
+  const code = await A.evaluate(() => $('coopCode4').textContent);
+  for (const P of G) { await P.click('#coopBtn'); await P.fill('#coopCode', code); }
+  for (const P of G) await wf(P, () => NET.on && NET.roster.length > 1, 'invité attend la connexion', 15000, A);
+  return { A, G, code };
+}
+
 async function pair(b, t) {
-  const A = t.track(await newPage(b)), B = t.track(await newPage(b));
-  await B.evaluate(() => { localStorage.setItem('crypte-cls', 'guerrier'); }); await B.reload();
+  const A = await coopPage(b, t, 'off'), B = await coopPage(b, t, 'off', 'guerrier');
   await A.click('#coopBtn'); await A.click('[data-coop="host"]');
   await wf(A, () => NET.peers.some((p) => p.code), 'A attend 1', 15000);
   const offer = await A.evaluate(() => NET.peers.find((p) => p.code).code);
@@ -89,5 +110,36 @@ export const tests = [
     t.eq(await A.evaluate(() => meta.mode), 'breche', 'Brèche choisie');
     await A.evaluate(() => { $('startBtn').click(); }); await wf(B, () => started && G && !G.over, 'B attend 11', 8000, A);
     t.eq(await B.evaluate(() => [G.mode, G.breche]), ['survie', true], 'invité en Brèche');
+  } },
+  { name: 'code à 4 chiffres : l\'hôte crée la partie, deux joueurs tapent le code et arrivent ensemble', fn: async (b, t) => {
+    const { A, G: [B, C], code } = await pairCode(b, t, 2);
+    t.ok(/^\d{4}$/.test(code), 'code de 4 chiffres affiché chez l\'hôte');
+    t.eq(await A.evaluate(() => [NET.peers.filter((p) => p.state === 'open').length, document.querySelectorAll('#coopBody .coopros li').length, $('coopBtn').textContent.trim()]), [2, 3, 'Coop · 3'], 'deux invités connectés, trois joueurs dans le salon');
+    t.eq(await B.evaluate(() => [RL.ws === null, NET.roster.map((r) => r.cls)]), [true, ['archer', 'guerrier', 'magicien']], 'l\'invité a quitté le relais et voit les trois joueurs');
+    await A.click('#closeCoop'); await B.click('#closeCoop'); await C.click('#closeCoop');
+    await A.click('#startBtn');
+    await wf(B, () => started && G && !G.over, 'B attend la mission', 8000, A); await wf(C, () => started && G && !G.over, 'C attend la mission', 8000, A); await sleep(A, 1500);
+    t.eq(await A.evaluate(() => G.mates.length), 2, 'l\'hôte voit ses deux partenaires');
+    t.eq(await C.evaluate(() => G.mates.length), 2, 'chaque invité voit les deux autres');
+  } },
+  { name: 'code : partie inconnue, relais injoignable (repli sur les QR codes), lien d\'invitation', fn: async (b, t) => {
+    const { url } = await relay();
+    const B = await coopPage(b, t, url, 'guerrier');
+    await B.click('#coopBtn'); await B.fill('#coopCode', '0000');
+    await wf(B, () => /Aucune partie avec le code 0000/.test($('coopBody').textContent), 'B attend le refus', 8000);
+    t.ok(await B.evaluate(() => !NET.guest && !!$('coopCode')), 'code inconnu : message clair, on peut retaper');
+    const X = await coopPage(b, t, 'ws://127.0.0.1:9', 'archer');
+    await X.click('#coopBtn'); await X.click('[data-coop="create"]');
+    await wf(X, () => /Relais injoignable/.test($('coopBody').textContent), 'X attend l\'erreur du relais', 8000);
+    t.ok(await X.evaluate(() => NET.host && !!document.querySelector('[data-coop="add"]')), 'relais injoignable : invitation par QR codes proposée');
+    // lien d'invitation : la page s'ouvre avec #coop=<code> et rejoint toute seule
+    const A = await coopPage(b, t, url, 'archer');
+    await A.click('#coopBtn'); await A.click('[data-coop="create"]');
+    await wf(A, () => /^\d{4}$/.test(($('coopCode4') || {}).textContent || ''), 'A attend le code', 8000);
+    const code = await A.evaluate(() => $('coopCode4').textContent);
+    const L = await coopPage(b, t, url, 'magicien');
+    await L.goto(GAME + '#coop=' + code);
+    await wf(L, () => NET.on && NET.roster.length === 2, 'L attend la connexion par le lien', 15000, A);
+    t.eq(await L.evaluate(() => location.hash), '', 'le code est retiré de l\'adresse');
   } },
 ];

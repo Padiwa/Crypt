@@ -1,0 +1,13 @@
+{
+  "name": "crypte-relais",
+  "private": true,
+  "description": "Relais de mise en relation de Crypte des Cendres (Cloudflare Worker).",
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev"
+  },
+  "devDependencies": {
+    "wrangler": "^4"
+  }
+}

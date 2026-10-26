@@ -1,0 +1,13 @@
+# Crypte des Cendres — relais de mise en relation. Déploiement : voir README.md (npx wrangler deploy).
+name = "crypte-relais"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+
+[[durable_objects.bindings]]
+name = "SALLES"
+class_name = "Salle"
+
+# L'offre gratuite de Cloudflare demande des Durable Objects « SQLite » : ils ne stockent rien ici, mais la déclaration est obligatoire.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Salle"]
