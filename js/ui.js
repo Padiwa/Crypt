@@ -99,9 +99,6 @@ function refreshStats(){if(!G)return;const ratio=G.P.hp/S.hp;S=stats(G.eq);G.P.h
 /* ---------- Mods (interface) ---------- */
 let modSel=null,alSel=null,modTab='h',modPF='all',modSF=null;
 const AURA_C='#f0cf4a';
-function modCard(id,cls='',i,b){const m=MODS[id],rk=meta.mods[id],isA=modKind(id)==='a',p=isA?{c:AURA_C,s:'✦',n:'Aura'}:POL[MOD_POL[id]];
-  const d=isA?`+${MODS[id].cap+rk}`:(b&&i!==undefined?bDrain(b,id,rk,i):modDrain(id,rk));
-  return `<button class="mod${cls}" data-mod="${id}" style="--mc:${MOD_RAR[m.r].c}" aria-label="${m.n}, rang ${rk}, ${isA?'aura':'polarité '+p.n}"><span class="pl" style="color:${p.c}">${p.s}</span><span class="dr">${d}</span><b>${m.n}</b>${modSt(id)?`<span class="mst" aria-label="${modSt(id)} étoile${modSt(id)>1?'s':''}">${'★'.repeat(modSt(id))}</span>`:''}${meta.modCp[id]?`<span class="mcp" title="Copies">×${meta.modCp[id]}</span>`:''}<span class="pp">${'<i class="on"></i>'.repeat(rk)}${'<i></i>'.repeat(m.max-rk)}</span></button>`}
 function modDetail(id){
   const m=MODS[id],rk=meta.mods[id],c=MOD_RAR[m.r].c,k=modKind(id),isA=k==='a',b=build(bKind(id)),ok=modOk(id,heroCls);
   const slot=isA?(b.aura===id?0:-1):b.load.indexOf(id),eq=slot>=0,u=bUsed(b),cap=bCap(b),fc=fuseCost(id,rk),maxed=rk>=m.max;
@@ -297,11 +294,6 @@ function resolveRelic(){
   if(out.length)h+=`<details class="reldet"><summary>Détail des ${out.length} relique${out.length>1?'s':''}</summary><div>${out.join('<br>')}</div></details>`;
   return h;
 }
-// Résumé compact du butin rapporté (écran de fin) : compteurs par rareté et par niveau de relique.
-function overLoot(){const L=G.loot,byR={},byT={};for(const i of L.items)byR[i.r]=(byR[i.r]||0)+1;for(const id of L.relics){const t=RELICS[id].t;byT[t]=(byT[t]||0)+1}
-  const lc=(c,n,lab)=>`<span class="lc" style="--c:${c}">${n} ${lab}</span>`;if(!L.items.length&&!L.relics.length&&!L.parts.length)return '';
-  return `<div class="exsum"><div><span>Équipements</span><b>${L.items.length?`${L.items.length} · `+Object.keys(byR).sort((a,b)=>b-a).map(r=>lc(RAR[r].c,byR[r],RAR[r].n.toLowerCase()+(byR[r]>1?'s':''))).join(''):'0'}</b></div>
-    <div><span>Reliques ramassées</span><b>${L.relics.length?`${L.relics.length} · `+Object.keys(byT).sort((a,b)=>b-a).map(t=>lc(RTIER[t].c,byT[t],RTIER[t].n)).join(''):'0'}</b></div>${L.parts.length?`<div><span>Armes ramassées</span><b>${L.parts.length}</b></div>`:''}</div>`}
 function missionSuccess(){SND.play('win');if(NET.host)netSend({t:'exit'});G.hold=false;
   $('extract').hidden=true;$('lvlup').hidden=true;G.over=true;const rel=resolveRelic();const g=bank(true);recordBest();
   const txt=G.mode==='capture'?`Cible capturée en ${fmt(G.t)}, ${G.kills} ennemis abattus.`:G.mode==='defense'?`Tu as tenu ${G.wave} vagues, ${G.kills} ennemis abattus.`:`Tu es sorti au niveau ${G.level} après ${fmt(G.t)}, avec ${G.kills} ennemis abattus.`;

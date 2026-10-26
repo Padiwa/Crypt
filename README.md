@@ -12,6 +12,16 @@ Action-RPG de crypte en hordes, jouable au pouce sur mobile et au clavier. Site 
 | `js/render.js` | Rendu Canvas 2D, rendu WebGL (PixiJS 7.4.2) et HUD |
 | `js/ui.js` | Fiches d'objets, Pause, bonus de niveau, Mods, fin de mission |
 | `js/camp.js` | Le Camp (Héros, Armurerie, Reliques, Mods, Affixes, Forge), sauvegarde JSON |
+| `js/inv.js` | Coffre de l'Armurerie, fiche d'objet ancrée, recyclage |
+| `js/fuse.js` | Fusion de rang (armes et équipements) |
+| `js/seal.js` | Forge › Affixes (Source / Cible, sceaux) |
+| `js/pet.js` | Familiers |
+| `js/tut.js` | Parcours du joueur nouveau |
+| `js/net.js` | Coopération à deux (WebRTC) |
+| `js/update.js` | Détection des nouvelles versions |
+| `js/nav.js` | Navigation clavier et manette dans les menus |
+| `aide/` | Guide du joueur |
+| `tools/tests/` | Suite de tests automatiques |
 | `js/settings.js` | Réglages de l'appareil, bannière d'événements, vibrations |
 | `js/audio.js` | Sons synthétisés (Web Audio) et musique d'ambiance |
 | `js/main.js` | Boucle à pas fixe et démarrage |
@@ -31,6 +41,16 @@ L'appli détecte toute seule le changement de `VERSION` (au lancement, au retour
 
 ## Tester en local
 `python3 -m http.server 8000` dans ce dossier, puis http://localhost:8000. Adresses de test : `#test` (invincible, rapide), `#test2d` (idem en rendu Canvas), `#rapide` (manches courtes).
+
+## Tests
+Une suite unique vérifie le jeu dans un vrai navigateur (Chromium sans affichage) : démarrage, butin, reliques, fabrication et fusion, coffre, affixes, emplacements, missions, contrôles, sauvegarde, parcours, coopération.
+```
+npm i playwright && npx playwright install chromium
+node tools/tests/run.mjs            # tout (≈ 45 s)
+node tools/tests/run.mjs --quick    # sans la coopération
+node tools/tests/run.mjs fusion     # seulement les tests dont le nom contient « fusion »
+```
+Chaque fichier de `tools/tests/suites/` exporte une liste `tests`. Toute erreur JavaScript dans la page fait échouer le test. **À lancer avant chaque nouvelle version** : la commande sort en erreur si un test échoue.
 
 ## Installer sur téléphone
 Android (Chrome) : menu ⋮ → « Installer l'application ». iPhone (Safari) : Partager → « Sur l'écran d'accueil ».

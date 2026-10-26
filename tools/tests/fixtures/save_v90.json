@@ -1,0 +1,259 @@
+{
+  "jeu": "Crypte des Cendres",
+  "v": 1,
+  "meta": {
+    "gold": 999,
+    "up": {},
+    "tal": {},
+    "cp": 1,
+    "start": 1,
+    "essence": 10,
+    "mods": {
+      "ferocite": 0
+    },
+    "load": {
+      "guerrier": [
+        "ferocite",
+        null,
+        null,
+        null
+      ],
+      "archer": [
+        "ferocite",
+        null,
+        null,
+        null
+      ],
+      "magicien": [
+        "ferocite",
+        null,
+        null,
+        null
+      ]
+    },
+    "gear": {
+      "armure": null,
+      "amulette": null,
+      "bottes": null,
+      "anneau": null
+    },
+    "stash": [
+      {
+        "id": 901,
+        "slot": "armure",
+        "r": 3,
+        "lvl": 20,
+        "base": {
+          "k": "hp",
+          "v": 90
+        },
+        "aff": {
+          "armor": 10
+        },
+        "name": "Linceul du Néant",
+        "type": "Prime",
+        "bp": "x1",
+        "up": 10
+      },
+      {
+        "id": 1,
+        "slot": "amulette",
+        "r": 2,
+        "lvl": 40,
+        "base": {
+          "k": "crit",
+          "v": 3
+        },
+        "aff": {
+          "lootPct": 6,
+          "critDmg": 19,
+          "skillDur": 11
+        },
+        "name": "Talisman de l'Ossuaire",
+        "type": "Talisman",
+        "up": 30
+      }
+    ],
+    "wpn": {
+      "guerrier": "g0",
+      "archer": "a0",
+      "magicien": "m0"
+    },
+    "bp": {},
+    "built": {
+      "a2": true
+    },
+    "parts": {
+      "x1": [
+        1,
+        1,
+        0
+      ]
+    },
+    "relics": {
+      "lA1": [
+        2,
+        0
+      ],
+      "xA1": [
+        1,
+        0
+      ]
+    },
+    "mode": "survie",
+    "relicSel": null,
+    "relicQ": [
+      {
+        "id": "lA1",
+        "rad": false
+      }
+    ],
+    "diff": 0,
+    "waff": {},
+    "prest": {
+      "archer": {
+        "lv": 0,
+        "pts": {}
+      }
+    },
+    "wish": {
+      "leg": true,
+      "aff": {}
+    },
+    "pol": {
+      "archer": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "guerrier": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "magicien": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "mast": {
+      "archer": {
+        "r": 0,
+        "xp": 0
+      }
+    },
+    "align": {
+      "archer": 0,
+      "guerrier": 0,
+      "magicien": 0
+    },
+    "wlv": {
+      "a2": 22
+    },
+    "wload": {
+      "a0": [
+        "ferocite",
+        null,
+        null,
+        null
+      ],
+      "g0": [
+        "ferocite",
+        null,
+        null,
+        null
+      ],
+      "m0": [
+        "ferocite",
+        null,
+        null,
+        null
+      ]
+    },
+    "wpol": {
+      "a0": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "g0": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "m0": [
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "wmast": {
+      "a0": {
+        "r": 0,
+        "xp": 0
+      }
+    },
+    "walign": {
+      "a0": 0,
+      "g0": 0,
+      "m0": 0
+    },
+    "hload": {
+      "archer": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "guerrier": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "magicien": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "hslots": {},
+    "aura": {},
+    "v2": 1,
+    "modSt": {},
+    "modCp": {},
+    "v3": 1,
+    "v4": 1,
+    "seals": {},
+    "lshard": 0,
+    "pets": [],
+    "eggs": 1,
+    "pload": {},
+    "ppol": {},
+    "palign": {},
+    "petGift": 1
+  },
+  "cls": "archer",
+  "best": 0,
+  "at": "2026-10-26"
+}

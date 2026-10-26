@@ -2,9 +2,9 @@
 /* ---------- Camp ---------- */
 let campTab='equip',campSel=null;
 function syncEq(){if(G&&(!started||G.over)){G.eq=curEq();S=stats(G.eq);G.P.hp=S.hp}}
-let campMsg='',recyConfirm=false;
+let campMsg='';
 function fragStatus(id){const pc=meta.parts[id]||[0,0,0];return pc.filter(n=>n>0).length}
-let stF='all',stS='rar',stP=0;const ST_PAGE=24;
+let stF='all',stS='rar';
 // Héros : les objets dont tu as des fragments, avec un lien vers l'Armurerie.
 function fragInv(){
   const ids=craftIds().filter(id=>(meta.parts[id]||[]).some(n=>n>0)).sort((a,b)=>fragStatus(b)-fragStatus(a)||bpdef(b).r-bpdef(a).r);
@@ -180,7 +180,6 @@ const xfCap=it=>Math.max(RAR[it.r].aff,Object.keys(it.aff).length);
 const xfCost=it=>50*(it.r+1);
 const FZ_MAX=3,FZ_K=.5,fzCost=(it,n)=>100*(it.r+1)*(n+1);
 function fzGet(key,k){if(!key)return 0;if(key[0]==='w'){const o=meta.wfz&&meta.wfz[key.slice(2)];return (o&&o[k])||0}const it=xfGet(key);return (it&&it.fz&&it.fz[k])||0}
-const xfLbl=(k,i,w)=>`${esc(itemName(i))} · ${RAR[i.r].n.toLowerCase()} · ${w}`;
 function xfState(){const s=xfGet(xf.src),d=xfGet(xf.dst);if(!s||!d||!xf.k||s.aff[xf.k]==null)return null;
   if(AFF[xf.k].aby)return {ok:false,msg:'Les pouvoirs abyssaux sont liés à leur objet : impossible de les transférer ou de les fusionner.'};
   if(xf.rep&&AFF[xf.rep]&&AFF[xf.rep].aby)return {ok:false,full:true,msg:'Le pouvoir abyssal ne peut pas être remplacé : choisis une autre affixe.'};
@@ -194,9 +193,6 @@ function xfState(){const s=xfGet(xf.src),d=xfGet(xf.dst);if(!s||!d||!xf.k||s.aff
   if(xf.rep&&d.aff[xf.rep]!=null)return r({ok:true,mode:'rep',msg:`Remplace ${xfV(d,xf.rep,d.aff[xf.rep])} par ${T(v)} sur ${esc(itemName(d))}.`});
   return r({ok:false,full:true,msg:`${esc(itemName(d))} a déjà ${cap} affixe${cap>1?'s':''} : choisis celle à remplacer.`})}
 const xfV=(it,k,v)=>AFF[k].t(NOSCALE[k]?v:fmtN(v*upMul(it.up)));
-function xfCard(lab,it,where,lines,extra=''){
-  return `<div class="xfc${extra}"><span class="lab">${lab}</span>${it?`<span class="nm" style="color:${RAR[it.r].c}">${esc(itemName(it))}</span><span class="sub">${RAR[it.r].n} · ${where}</span>
-    <ul><li class="base">${baseTxtOf(it.slot,fmtN(it.base.v*upMul(it.up)))}</li>${lines}</ul>`:`<span class="sub">${lines}</span>`}</div>`}
 let afF='all',afP=0,afCat='all',afOpen='';
 const AFF_CAT={frz:'off',cold:'off',shard:'off',dmgPct:'off',apsPct:'off',crit:'off',critDmg:'off',novaPct:'off',skillRad:'off',burn:'off',multi:'off',pierce:'off',reach:'off',splash:'off',hp:'def',armor:'def',regen:'def',leech:'def',speed:'uti',cdr:'uti',burnPct:'off',chill:'off',shock:'off',execute:'off',bossDmg:'off',lowDmg:'off',ultPct:'off',fury:'off',lowArmor:'def',potHeal:'def',antidote:'def',auraSlow:'def',skillDur:'uti',dashCd:'uti',magnetPct:'uti',goldPct:'uti',xpPct:'uti',lootPct:'uti'};
 const AFF_NAME={frz:'Gel',cold:'Dégâts contre ralentis',shard:'Éclats de glace',dmgPct:'Dégâts',apsPct:'Vitesse d\'attaque',crit:'Chances de critique',critDmg:'Dégâts critiques',hp:'Points de vie',armor:'Réduction des dégâts',speed:'Vitesse de déplacement',regen:'Régénération',cdr:'Temps de recharge',skillRad:'Portée des compétences',novaPct:'Dégâts de compétence',burn:'Embrasement',multi:'Projectiles par tir',leech:'Vol de vie',reach:'Portée de frappe',splash:'Rayon d\'explosion',pierce:'Transpercement',burnPct:'Embrasement (%)',chill:'Ralentissement',shock:'Éclair en chaîne',execute:'Exécution',bossDmg:'Dégâts contre Gardiens',lowDmg:'Dégâts sous 50 % de vie',ultPct:'Dégâts de l\'ultime',fury:'Charge de l\'ultime',lowArmor:'Protection sous 30 % de vie',potHeal:'Soin des potions',antidote:'Antidote',auraSlow:'Aura de lenteur',skillDur:'Durée des compétences',dashCd:'Recharge de l\'esquive',magnetPct:'Portée de ramassage',goldPct:'Or',xpPct:'Expérience',lootPct:'Chances de butin'};
@@ -382,7 +378,7 @@ function campFootHtml(){
   return '';
 }
 const campScroll={};
-document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{const sc=$('campBody').parentElement;campScroll[campTab]=sc.scrollTop;campTab=t.dataset.tab;campSel=null;campBack=null;campMsg='';recyConfirm=false;drawCamp();sc.scrollTop=campScroll[campTab]||0});
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{const sc=$('campBody').parentElement;campScroll[campTab]=sc.scrollTop;campTab=t.dataset.tab;campSel=null;campBack=null;campMsg='';drawCamp();sc.scrollTop=campScroll[campTab]||0});
 $('campSheet').addEventListener('click',e=>{
   {const b=e.target.closest('#campDock [data-act]');if(b&&!b.disabled){modAct(b.dataset.act,b.dataset);return}}
   const b=e.target.closest('button');if(!b||b.disabled||b.closest('#modsCamp')||!b.closest('#campBody,#campFoot,#campDock'))return;campClick(b)});
@@ -394,9 +390,8 @@ function campClick(b){
   else if(d.wsel)campSel={wpn:d.wsel};
   else if(d.cact){
     const a=d.cact,arg=d.arg;
-    if(!a.startsWith('recy'))recyConfirm=false;if(a!=='ropen')campMsg='';
-    if(a==='ropen'){const [id,rd]=arg.split('|'),g=grantRelic(id,rd==='1');if(g){campMsg=`<div class="card" style="border-color:${RTIER[RELICS[id].t].c}"><div class="meta">Relique ${relicName(id)}${rd==='1'?' éclatante':''} ouverte</div><p style="margin:0;font-size:15px">${g.html}</p></div>`;$('campBody').parentElement.scrollTop=0}}
-    else if(a==='exp'){saveMsg='';savePending=null;saveMsgOk='';if(saveMode!=='exp'){saveMode='exp';downloadSave()}else saveMode=null}
+    campMsg='';
+    if(a==='exp'){saveMsg='';savePending=null;saveMsgOk='';if(saveMode!=='exp'){saveMode='exp';downloadSave()}else saveMode=null}
     else if(a==='savedl'){saveMsg='';downloadSave()}
     else if(a==='saveshare'){saveMsg='';shareSave();return}
     else if(a==='impopen'){saveMode=saveMode==='imp'?null:'imp';saveMsg='';savePending=null}
@@ -405,24 +400,16 @@ function campClick(b){
     else if(a==='imp'){const v=($('saveIn')||{}).value||saveDraft;saveDraft=v;const dd=parseCode(v);if(!dd)saveMsg='Ce JSON n\'est pas une sauvegarde valide. Vérifie qu\'il est complet, de la première accolade à la dernière.';else{savePending=dd;saveMsg=''}}
     else if(a==='impcancel'){savePending=null}
     else if(a==='impok'){const dd=savePending;try{localStorage.setItem('crypte-meta',JSON.stringify(dd.meta));if(dd.cls)localStorage.setItem('crypte-cls',dd.cls);if(dd.best)localStorage.setItem('crypte-best2',String(dd.best));location.reload();return}catch(err){saveMsg='Impossible d\'écrire la sauvegarde : le stockage de ce navigateur est bloqué.'}}
-    else if(a==='sfilter'){stF=arg;stP=0}
-    else if(a==='ssort'){stS=arg;stP=0}
-    else if(a==='spage'){stP+=+arg}
+    else if(a==='sfilter'){stF=arg}
     else if(a==='lock'&&campSel&&(campSel.wpn||campSel.slot==='arme')){const wid=campSel.wpn||curWid();meta.wlock=meta.wlock||{};meta.wlock[wid]=!meta.wlock[wid];const on=meta.wlock[wid];cxUndo(`${esc(wdef(wid).n)} ${on?'verrouillée':'déverrouillée'}`,()=>{meta.wlock[wid]=!on})}
     else if(a==='lock'){const it=campSel&&campSel.stash?meta.stash.find(i=>i.id===campSel.stash):campSel&&campSel.slot?meta.gear[campSel.slot]:null;if(it){it.lock=!it.lock;cxUndo(`${esc(itemName(it))} ${it.lock?'verrouillé':'déverrouillé'}`,()=>{it.lock=!it.lock})}}
-    else if(a==='recyask')recyConfirm=true;
-    else if(a==='recycancel')recyConfirm=false;
-    else if(a==='recyall'){const rec=meta.stash.filter(i=>!(i.type==='Sanguin'||i.type==='Abyssal'||i.up||i.lock));let e=0;for(const it of rec)e+=RAR[it.r].shard*2;meta.stash=meta.stash.filter(i=>i.type==='Sanguin'||i.type==='Abyssal'||i.up||i.lock);meta.essence+=e;recyConfirm=false;campSel=null;toast(`${rec.length} objet${rec.length>1?'s':''} recyclé${rec.length>1?'s':''} · +${e} essence`)}
     if(a==='bestall'){const plan=bestPlan(curEq(),meta.stash),names=[];for(const sl in plan){const it=plan[sl];meta.stash=meta.stash.filter(i=>i!==it);const old=meta.gear[sl];if(old)meta.stash.push(old);meta.gear[sl]=it;names.push(`<span style="color:${RAR[it.r].c}">${esc(itemName(it))}</span>`)}campSel=null;if(names.length)toast('Équipé : '+names.join(', '))}
     if(a==='equip'){const it=meta.stash.find(i=>i.id===campSel.stash),k=it&&tgtKey(curEq(),it);if(it&&k){meta.stash=meta.stash.filter(i=>i!==it);const old=meta.gear[k];if(old)meta.stash.push(old);meta.gear[k]=it;campSel={slot:k}}}
-    else if(a==='recycle'){const it=meta.stash.find(i=>i.id===campSel.stash);if(it&&!it.lock){const L=invList(),li=L.indexOf(it),nx=L[li+1]||L[li-1];meta.stash=meta.stash.filter(i=>i!==it);const e=recyGain(it);meta.essence+=e;campSel=nx?{stash:nx.id}:null;
-      cxUndo(`<b>${esc(itemName(it))}</b> recyclé · +${e} essence`,()=>{meta.stash.push(it);meta.essence-=e;campSel={stash:it.id}})}}
     else if(a==='unequip'){const s=campSel.slot,it=meta.gear[s];if(it){meta.stash.push(it);meta.gear[s]=null;campSel={stash:it.id}}}
     else if(a==='toarsenal'){campTab='arsenal';campSel=null}
     else if(a==='wequip'){if(ownedW(arg)&&wclsOf(arg)===heroCls){meta.wpn[heroCls]=arg;if(campTab==='equip'||isCoffre())campSel={slot:'arme'}}}
     else if(a==='arsv'){arsView=arg;campSel=null;campBack=null}
     else if(a==='fsub'){forgeSub=arg;campSel=null}
-    else if(a==='gorecy'){campTab='arsenal';arsView='recy';campSel=null}
     else if(a==='slotopen'){const u=SLOT_U.find(x=>x.k===arg);if(u&&!slotOpen(u.k)&&(!u.need||slotOpen(u.need))&&(meta.hfrag|0)>=u.hf&&meta.gold>=u.gold){meta.hfrag-=u.hf;meta.gold-=u.gold;meta.slotU[u.k]=true;meta.gear[u.k]=null;SND.play('leg');toast(`Emplacement <b>${u.n}</b> débloqué`)}}
     else if(a==='tutoff'){meta.tutOff=true;toast('Parcours masqué : « Réafficher le parcours » en bas de l\'onglet Héros.')}
     else if(a==='tuton'){meta.tutOff=false}
@@ -465,9 +452,7 @@ function campClick(b){
     else if(a==='rtier'){relTier=arg;relSel=null}
     else if(a==='rqadd'){const [id,rd]=arg.split('|'),rad=rd==='1',ow=(meta.relics[id]||[0,0])[rad?1:0];if(relicQN(id,rad)<ow)meta.relicQ.push({id,rad})}
     else if(a==='rqdel'){const [id,rd]=arg.split('|'),rad=rd==='1';for(let i=meta.relicQ.length-1;i>=0;i--)if(meta.relicQ[i].id===id&&!!meta.relicQ[i].rad===rad){meta.relicQ.splice(i,1);break}}
-    else if(a==='rqrm'){meta.relicQ.splice(+arg,1)}
     else if(a==='rgmv'){const [id,rd,d]=arg.split('|'),Gs=relGroups(),i=Gs.findIndex(g=>g.id===id&&(g.rad?'1':'0')===rd),j=i+(+d);if(i>=0&&j>=0&&j<Gs.length){[Gs[i],Gs[j]]=[Gs[j],Gs[i]];meta.relicQ=Gs.flatMap(g=>Array.from({length:g.n},()=>({id:g.id,rad:g.rad})))}}
-    else if(a==='rqup'||a==='rqdn'){const i=+arg,j=a==='rqup'?i-1:i+1,Q=meta.relicQ;if(j>=0&&j<Q.length)[Q[i],Q[j]]=[Q[j],Q[i]]}
     else if(a==='rqnone'){meta.relicQ=[]}
     else if(a==='rqtype'){const ids=Object.keys(RELICS).filter(id=>meta.relics[id]&&relMatch(id)).sort((x,y)=>RELICS[x].t-RELICS[y].t);for(const id of ids){const r=meta.relics[id];for(const rad of [true,false])while(relicQN(id,rad)<(r[rad?1:0]|0))meta.relicQ.push({id,rad})}}
     else if(a==='rqtypeoff'){meta.relicQ=meta.relicQ.filter(q=>!RELICS[q.id]||!relMatch(q.id))}
@@ -496,7 +481,6 @@ function campClick(b){
     else if(a==='prreset'){prOf().pts={}}
     else if(a==='up'){const u=UPG.find(x=>x.k===arg),c=upCost(u);if(meta.gold>=c&&lv(u.k)<u.max){meta.gold-=c;meta.up[u.k]=lv(u.k)+1}}
     else if(a==='tal'){const t=TAL[heroCls].find(x=>x.k===arg);if(meta.gold>=t.cost){meta.gold-=t.cost;meta.tal[t.k]=true}}
-    else if(a==='start'){meta.start=+arg}
     saveMeta();syncEq();
   }
   drawCamp();if(!$('settings').hidden)drawSettings();
@@ -505,7 +489,7 @@ $('campBody').addEventListener('input',e=>{if(e.target.id==='saveIn')saveDraft=e
 $('campBody').addEventListener('change',e=>{if(e.target.id==='xfSrc'){xf={src:e.target.value,k:'',dst:xf.dst===e.target.value?'':xf.dst,rep:''};drawCamp()}else if(e.target.id==='xfDst'){xf.dst=e.target.value;xf.rep='';drawCamp()}});
 $('campBody').addEventListener('change',e=>{if(e.target.id!=='saveFile'||!e.target.files[0])return;const r=new FileReader();
   r.onload=()=>{saveDraft=String(r.result);const dd=parseCode(saveDraft);if(dd){savePending=dd;saveMsg=''}else saveMsg='Ce fichier ne contient pas de sauvegarde JSON valide.';drawCamp()};r.readAsText(e.target.files[0])});
-function openCamp(){$('camp').hidden=false;campSel=null;campMsg='';recyConfirm=false;drawCamp()}
+function openCamp(){$('camp').hidden=false;campSel=null;campMsg='';drawCamp()}
 function closeCamp(){$('camp').hidden=true;if(!started)newGame();refreshMenus()}
 // Accueil : lignes résumées (Biome, Niveau, Difficulté, Reliques) ; Lancer et le Camp restent en bas.
 function diffLine(i){const D=i===3?dif3():DIFF[i],iv=Math.round(D.iv*(meta.mode==='capture'?1.5:1));
@@ -528,7 +512,6 @@ function refreshMenus(){
   $('diffDesc').textContent=di?diffLine(di):'';
 }
 // Feuille de choix (SettingRow → Sheet + Choice) : toucher une option la choisit et ferme la feuille.
-let pickOnClose=null;
 function openPick(title,opts,onPick,extra){$('pickTitle').textContent=title;
   $('pickBody').innerHTML=`<div class="cx-choices" role="radiogroup" aria-label="${title}">${opts.map((o,i)=>`<button class="cx-choice" role="radio" data-pick="${i}" aria-checked="${!!o.on}" style="--cc:${o.c||'var(--ink)'}"><span class="cx-choice__key">${i+1}</span><span class="cx-choice__name">${o.n}</span><p class="cx-choice__desc">${o.d||''}</p><span class="cx-choice__go" aria-hidden="true">›</span></button>`).join('')}</div>${extra?extra():''}`;
   $('pickBody').onclick=e=>{const b=e.target.closest('[data-pick]');if(b){const keep=onPick(+b.dataset.pick);if(keep)openPick(title,keep.opts||opts,onPick,extra);else closePick();return}

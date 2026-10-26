@@ -34,10 +34,8 @@ const BIOMES=[
 ];
 const biome=()=>BIOMES[Math.max(0,Math.min(BIOMES.length-1,(typeof G!=='undefined'&&G&&G.biome!=null)?G.biome:(meta.biome|0)))];
 const BASES_GIVRE={armure:['Pelisse givrée','Cuirasse de glace'],amulette:['Talisman de givre','Pendentif cristallin'],bottes:['Bottes fourrées','Grèves de glace'],anneau:['Anneau de givre','Bague cristalline']};
-const LEGEND_GIVRE={armure:['Linceul de l\'Hiver éternel'],amulette:['Œil du Blizzard'],bottes:['Pas de l\'Avalanche'],anneau:['Sceau du Zéro absolu']};
 const BASES={armure:['Cuirasse','Brigandine','Cotte de mailles','Manteau de chasseur'],amulette:['Talisman','Amulette','Médaillon'],bottes:['Bottes de cuir','Grèves','Solerets','Bottes de pèlerin'],anneau:['Anneau','Chevalière','Bague']};
 const SUFFIX=['du Corbeau','des Cendres','de la Veuve','du Pèlerin',"de l'Ossuaire",'du Loup gris','de la Lune noire','des Murmures','du Bourreau','de Fer-Sang'];
-const LEGEND={armure:["Linceul d'Argent",'Serment du Veilleur','Peau de Wyverne'],amulette:["Œil de l'Abîme",'Larme de la Sorcière','Sceau du Premier Mort'],bottes:['Pas du Spectre','Foulée de Cendre','Semelles du Banni'],anneau:['Alliance Brisée','Anneau du Bourreau','Cercle de Braise']};
 const GLYPH={
   arme:'<svg viewBox="0 0 24 24"><path d="M5 19 19 5M13 5h6v6M7 11l6 6M4 14l6 6"/></svg>',
   armure:'<svg viewBox="0 0 24 24"><path d="M6 4l6 2 6-2 2.5 5-3 2v9h-11v-9l-3-2z"/></svg>',
@@ -110,7 +108,6 @@ const WPN={
     {id:'m5',n:'Sceptre du Néant',r:6,dmg:42,aff:{multi:2,splash:50,novaPct:50,crit:12,cdr:15,critDmg:50,abPulse:300}},
     {id:'m13',n:'Étoile du Vide',r:6,dmg:45,aff:{multi:2,splash:45,crit:12,critDmg:55,skillRad:35,dmgPct:25,abRift:25}}],
 };
-const PARTS={archer:['Branches','Corde','Mécanisme'],guerrier:['Lame','Garde','Poignée'],magicien:['Hampe','Focus','Runes']};
 const wdef=id=>{for(const c in WPN){const w=WPN[c].find(x=>x.id===id);if(w)return Object.assign({cls:c},w)}return null};
 /* Objets des reliques : deux par emplacement et par rareté (Légendaire L, Ancestral N, Sanguin S, Abyssal B).
    3 fragments (dans les reliques de leur rareté) → l'objet, au niveau d'objet de ta plus haute mission. */
@@ -189,7 +186,6 @@ function rgItem(id,l){const T=RGEAR[id],slot=T.slot,r=T.r;
 // Niveau de mission le plus haut atteint, et le niveau d'objet qui en découle.
 const maxL=()=>Math.max(1,meta.maxL|0);
 const relicItemLvl=()=>1+(maxL()-1)*4;
-function rwLabel(id){const b=bpdef(id);return b?b.n:id}
 const MODES={
   survie:{n:'Survie',d:'Tiens face aux hordes. Toutes les 2 minutes, sors ou continue. Chaque manche terminée rapporte une relique.'},
   defense:{n:'Défense',d:'Protège le cryopode contre des vagues d\'ennemis. Toutes les 3 vagues : une relique et un équipement, puis sors ou continue.'},
@@ -429,7 +425,6 @@ const AFF={
 function affPick(pool){let t=0;for(const k of pool)t+=AFF[k].wt||1;let x=Math.random()*t;for(const k of pool){x-=AFF[k].wt||1;if(x<=0)return k}return pool[pool.length-1]}
 const BASE_STAT={arme:'dmg',armure:'hp',amulette:'crit',bottes:'speed',anneau:'dmgPct',dos:'armor'};
 const baseTxtOf=(slot,v)=>slot==='dos'?`−${v} % de dégâts subis`:slot==='arme'?`${v} dégâts de base`:slot==='armure'?`+${v} points de vie`:slot==='bottes'?`+${v} % de vitesse de déplacement`:slot==='anneau'?`+${v} % de dégâts`:`+${v} % de chances de critique`;
-function baseLine(it){return baseTxtOf(it.slot,it.base.v)}
 let uid=1+Math.max(0,...meta.stash.map(i=>i.id),...Object.values(meta.gear).filter(Boolean).map(i=>i.id));
 // Butin des monstres : Commun, Magique ou Rare. Le Tourment rend le Rare plus fréquent.
 function rollRarity(l){const tb=(typeof G!=='undefined'&&G)?dif().tier*1.5:0,x=Math.random()*100,rare=Math.min(30,8+l*.15)+tb;return x<rare?2:x<rare+32?1:0}
@@ -449,9 +444,7 @@ function genItem(l,minR=0){
 }
 /* Rang (1 à 10) : deux exemplaires identiques de même rang fusionnent en un seul du rang au-dessus, +10 % de statistiques par rang.
    Stocké dans it.up (et meta.wlv pour les armes) : 0 = rang 1, 9 = rang 10. */
-const UP_MAX=9,upCostLv=n=>5+3*n+Math.floor(n*n/10),upMul=n=>1+.1*(n||0),NOSCALE={multi:1,pierce:1,abSoul:1,abWard:1,abPulse:1,abExec:1,abRift:1,abHunt:1};
-const upCostRange=(from,k)=>{let c=0;for(let i=from;i<Math.min(UP_MAX,from+k);i++)c+=upCostLv(i);return c};
-const upInvested=n=>upCostRange(0,n||0);
+const UP_MAX=9,upMul=n=>1+.1*(n||0),NOSCALE={multi:1,pierce:1,abSoul:1,abWard:1,abPulse:1,abExec:1,abRift:1,abHunt:1};
 const fmtN=x=>(Math.round(x*10)/10).toLocaleString('fr-FR');
 const rkTxt=n=>`rang ${(n||0)+1}`;
 const itemName=it=>it.name+(it.up?` · R${it.up+1}`:'');

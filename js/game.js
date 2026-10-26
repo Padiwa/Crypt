@@ -278,7 +278,6 @@ function resolve(o){
 /* ---------- Entrées ---------- */
 const keys={};
 const joy={id:null,ox:0,oy:0,x:0,y:0,vx:0,vy:0};
-const anyOverlay=()=>!$('bag').hidden||!$('extract').hidden||!$('camp').hidden||!$('over').hidden||!$('intro').hidden;
 addEventListener('keydown',e=>{
   const k=e.key.toLowerCase();keys[k]=true;
   if(!started||G.over||!$('extract').hidden)return;

@@ -1,429 +1,52 @@
-# Crypte des Cendres — specs
+100
 
-Oct 26, 2026 · @cms · version 103
+100 / 100
 
-## Vue d'ensemble
+**Niveau 1**Gardien 1:00
 
-Crypte des Cendres est un prototype jouable de survivor-like mobile en vue de dessus, qui mélange les missions et reliques de Warframe avec le loot et les builds de Diablo. Il tourne dans le navigateur, sur téléphone (joystick tactile) comme sur ordinateur (clavier).
+0
 
-**Boucle de jeu**
+Survie**3:00**
 
-1. Au Camp : choisir son héros, son équipement, ses mods et une relique à ouvrir.
-2. Choisir une mission (Survie, Défense ou Capture) et un niveau de départ.
-3. En mission : attaques automatiques, cristaux d'expérience, choix de bonus à chaque niveau, butin au sol.
-4. Fin de manche : sortir avec le butin ou continuer plus fort.
-5. Retour au Camp : fabriquer, améliorer, recycler, ouvrir des reliques.
+**Le Gardien des Cendres**
 
-| Élément | Valeur |
-| --- | --- |
-| Carte | 2 800 × 2 800 unités, caméra qui suit le héros |
-| Manche de Survie | 2 min |
-| Gardien (boss) | toutes les 60 s en Survie, 90 s en Capture, toutes les 3 vagues en Défense |
-| Ennemis simultanés | jusqu'à 150 |
-| Niveaux de mission | 1 à 50, au choix |
+**Cryopode**
 
-## Héros
+\
+Clavier : ZQSD Espace esquive, E compétence, R potion, F ultime, I pause
 
-Trois classes, chacune avec ses stats, sa compétence, ses armes et 3 talents permanents. Toutes ont une esquive (recharge 3 s, 0,2 s d'invulnérabilité) et des potions (rendent 45 % de la vie, 5 au maximum).
+## Pause
 
-| Classe | Dégâts | Attaques / s | Vie | Critique | Armure | Vitesse | Attaque |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Archer | 8 | 1,80 | 100 | 5 % | 0 % | 220 | carreaux à distance, ×1,43 de délai en mouvement |
-| Guerrier | 14 | 1,50 | 160 | 5 % | 15 % | −6 % | coup en arc de 155° au corps à corps (portée 95), même en marchant |
-| Magicien | 12 | 1,25 | 85 | 8 % | 0 % | −2 % | orbes qui explosent (rayon 55), −10 % de recharge |
+### Butin de la partie
 
-Les dégâts de base s'ajoutent à ceux de l'arme équipée. Dégâts critiques de base : 150 %.
+### Bonus de la partie
 
-| Classe | Compétence | Recharge | Effet |
-| --- | --- | --- | --- |
-| Archer | Volée | 7 s | 24 carreaux perforants dans toutes les directions |
-| Guerrier | Tourbillon | 9 s | 1,6 s de rotation, coups dans un rayon de 130 toutes les 0,2 s, dégâts subis ÷ 2 |
-| Magicien | Nova de givre | 7 s | dégâts dans un rayon de 175, ralentit 2,5 s, efface les projectiles ennemis |
+### Équipement
 
-| Classe | Talent (150 or) | Talent (300 or) | Talent (500 or) |
-| --- | --- | --- | --- |
-| Archer | Tir en course : pleine cadence en mouvement | Pas de l'ombre : 3 tirs critiques après une esquive | Ricochet : chaque carreau rebondit une fois |
-| Guerrier | Charge brutale : l'esquive blesse et repousse | Soif de sang : +2 % de vie par ennemi tué | Onde de choc : un coup sur 4 frappe dans un rayon de 160 |
-| Magicien | Sillage de givre : l'esquive laisse une explosion glacée | Barrière : bouclier de 25 % de la vie, recharge après 4 s | Chaîne d'éclairs : une orbe sur 4 foudroie 3 ennemis |
+Toutes les statistiquesAfficherMasquer
 
-## Missions
+ModsAfficherMasquer
 
-Trois modes, tous avec un niveau de mission libre de 1 à 50, choisi sur l'écran d'accueil et une relique optionnelle à ouvrir.
+# PrototypeCrypte des Cendres
 
-| Mode | Objectif | Fin de manche | Récompense de manche | Échec |
-| --- | --- | --- | --- | --- |
-| Survie | tenir face aux hordes | toutes les 2 min : sortir ou continuer (niveau +1) | 1 relique | mort du héros |
-| Défense | protéger le cryopode au centre (1 200 PV, dégâts reçus ×0,6) | toutes les 3 vagues : sortir ou continuer | 1 relique + 1 équipement magique ou mieux | cryopode détruit ou mort |
-| Capture | mettre la cible à terre, rester 2,5 s à moins de 80 unités, rester 3 s dans la zone d'extraction (la jauge redescend si on en sort) | après 3 s passées dans la zone d'extraction | 1 relique + 60 or × niveau | mort du héros |
+### Héros
 
-**Défense** : chaque vague compte 10 + 4 × vague (+8 par niveau au-delà du 1er) ennemis, 80 au maximum. 60 % des ennemis visent le cryopode. Pause de 4 s entre les vagues, le cryopode récupère 8 % ; 30 % quand on continue.
+### Mission
 
-**Capture** : la cible (260 PV × difficulté) fuit quand le héros est à moins de 480 unités et se téléporte à 330 unités toutes les 4 à 6 s s'il est à moins de 260. Une flèche dorée indique sa direction et sa distance.
+### Réglages de la mission
 
-Fissure (ouverture de reliques) : on équipe au Camp (onglet Reliques, ou ligne Reliques de l'écran de départ) autant de reliques qu'on veut, dans l'ordre choisi (Tout équiper, Tout retirer). Depuis v94, la file du Camp est regroupée par relique et par état (« Relique Ossuaire ×8 », « éclatante ×2 »), dans l'ordre de la première de chaque groupe : ↑ ↓ déplacent le groupe entier, − et + retirent ou ajoutent une relique du groupe. Tant qu'il reste une relique à ouvrir, 18 % des ennemis sont corrompus (halo doré, +30 % de vie) et lâchent un réactif. 10 réactifs ouvrent la relique en cours, puis le compteur repart à 0 pour la suivante (« Relique 2/5 · 4/10 » en haut). Depuis v95, l'ouverture ne montre plus ni bannière ni message : seuls le son, la secousse et le compteur la signalent. À la réussite, chaque relique ouverte donne 1 fragment d'un objet de sa rareté (2 si éclatante) et 25 essence. Les reliques non ouvertes, ou toutes en cas d'échec, ne sont pas consommées et restent équipées.
+Niveau de missionPlus haut : plus de butin, monstres plus forts
 
-**Sortie et mort** : sortir garde tout le butin. Mourir garde la moitié de l'or ramassé, les mods et l'équipement déjà équipé ; les objets et reliques trouvés sont perdus.
+## Niveau 1 terminé
 
-**Biomes** (choix sur l'écran de départ, cumulé avec niveau et difficulté) : **Crypte des Cendres** (d'origine) et **❄ Abîmes gelés**. Abîmes gelés : sol de glace bleuté, piliers givrés, braseros à flamme bleue, neige qui tombe ; vie des monstres ×1,3, dégâts ×1,2, butin ×1,3. Nouvel ennemi **Revenant de givre** (26 PV, vitesse 108, 7 dégâts, remplace 65 % des groupes de goules) : son contact inflige **Gelure** 2,2 s (−38 % de vitesse de déplacement, réduite par l'Antidote, dissipée par les sources sacrées). La moitié des reliques trouvées y sont des reliques de givre.
+## *Héros niveau 2*Choisis un bonus
 
-**Affixes de givre** (uniquement sur les objets trouvés dans les Abîmes, 45 % en portent une d'office) : **Gel** (+4–8 % de chances d'immobiliser l'ennemi 1 s, plafond 40 %, pas sur les Gardiens), **Dégâts contre ralentis** (+12–22 % contre les ennemis ralentis ou gelés), **Éclats de glace** (6–12 % de chances qu'un ennemi tué éclate : 1,5 × dégâts dans un rayon de 85 et ralentissement, réaction en chaîne limitée à 3 niveaux, plafond 60 %). Les objets des Abîmes ont leurs propres noms (Pelisse givrée, Talisman de givre, Bottes fourrées, Anneau de givre…, légendaires Œil du Blizzard, Sceau du Zéro absolu…).
+Ces bonus durent jusqu'à la fin de la partie.
 
-Difficulté (écran de départ, en plus du niveau de mission) : Normal 1 Gardien toutes les 60 s ; Difficile 2 toutes les 45 s, butin et or +50 % ; Cauchemar 3 toutes les 35 s, +100 % ; Tourment avec 10 paliers I à X (sélecteur sous les chips) : palier t = 4 Gardiens (5 à partir de VI) toutes les max(16, 26 − t) s, butin et or +200 % + 50 % par palier au-delà du I (+650 % en X), vie des monstres × (1 + 0,5 t), dégâts × (1 + 0,22 t), valeurs d'affixes +5 % par palier, chance de Rare +1,5 point par palier. La difficulté décide du type de relique : Ossuaire (Normal à Cauchemar), Ancestrale (I à V), Sanguine ou Abyssale (VI à X). En Capture l'intervalle est multiplié par 1,5 ; en Défense, le nombre de Gardiens s'applique aux vagues de sortie. La barre de boss cumule la vie de tous les Gardiens vivants.
+## Tu es tombé
 
-**Élites** : chaque groupe d'ennemis (sauf chauves-souris) a une chance de compter une élite (2,5 % + 1,2 % par cran de difficulté + 1 % par palier de Tourment, plafond 15 %). Une élite a ×4 vie, ×1,25 taille, ×1,3 dégâts, un anneau coloré et son nom au-dessus d'elle, et un pouvoir : **Rapide** (×1,55 vitesse), **Bouclier** (−50 % de dégâts subis tant qu'elle a plus de la moitié de sa vie), **Vampire** (rend 10 % de sa vie à chaque coup porté), **Explosif** (laisse une zone de flammes de rayon 95 en mourant). Butin garanti : 1 objet magique ou mieux, 40 % d'un second, 30 % d'une relique, or ×5 et expérience ×6.
+## Réglages
 
-## Ennemis et difficulté
+## Le Camp
 
-Les ennemis apparaissent hors écran autour du héros ; ceux qui s'éloignent trop sont replacés près de lui.
-
-| Ennemi | Vie | Vitesse | Dégâts | Comportement | Arrive |
-| --- | --- | --- | --- | --- | --- |
-| Goule | 16 | 95 | 9 | fonce au contact, par groupes de 2 à 4 | dès le début |
-| Chauve-souris | 6 | 165 | 5 | essaim de 5 à 8, trajectoire ondulante | après 20 s |
-| Squelette archer | 13 | 85 | 8 | garde 220–330 de distance, tire toutes les 1,6–2,4 s, se rapproche sans ligne de tir | après 25 s |
-| Brute | 70 | 66 | 18 | signal rouge puis charge (×1,4 dégâts) | après 50 s ou niveau 2 |
-| Empoisonneur | 22 | 80 | 6 | garde 240–380 de distance, lance toutes les 3–4 s une fiole (cercle d'alerte 1 s) qui laisse une zone toxique de rayon 80 pendant 5 s | après 40 s ou niveau 2 |
-| Pyromancien | 24 | 80 | 6 | même comportement, bombe qui laisse des flammes de rayon 70 pendant 3 s | après 60 s ou niveau 3 |
-| Gelée | 34 → 15 → 7 | 72 → 86 → 104 | 8 | avance par sauts vers toi ; à moins de 170, signal rouge court (0,45 / 0,38 / 0,3 s selon la taille) puis bond de 150 (×1,4 dégâts au contact), toutes les 1,4–2,4 s, plus souvent pour les petites ; à sa mort se divise en 2 petites gelées projetées sur les côtés, qui se divisent à leur tour (3 tailles : 1 → 2 → 4, soit 7 ennemis à abattre). Chaque morceau compte comme un ennemi tué (XP, or, charge de l'ultime, butin réduit) ; seule la grande peut être corrompue | après 30 s ou niveau 2 |
-| Gardien | 650 | 60 | 22 | anneaux de projectiles, charge 1 fois sur 3, invoque 3 goules toutes les 7 s sous 50 % de vie | sur minuterie |
-
-**Équilibrage (passe 1, simulée)** : 300 parties de 3 min (durée de manche de l'époque ; 2 min depuis v84) jouées par un bot, 3 classes × profils T0 (rien) à T4 (ancestral +100, prestige 60) × niveaux 1 à 50 × difficultés. Changements : vie des monstres × 1,025^(L−1) et dégâts × 1,012^(L−1) en plus de la croissance linéaire ; Tourment vie × (1 + 0,5 t), dégâts × (1 + 0,22 t) ; butin × (1 + 0,06 (L−1)) au lieu de 0,25 ; or × (1 + 0,15 (L−1)) au lieu de 0,6 ; bonus de difficulté : ×0,15 sur la quantité d'objets, ×0,5 sur l'or ; chances d'objet par monstre divisées par 2 ; Gardien : 1 objet de plus tous les 10 niveaux (au lieu de 3), 1 relique tous les 12 (au lieu de 4) ; légendaire plafonné à 9 % (+0,6 % par palier de Tourment), rare à 30 % ; affixes Dégâts +0,6 × niveau d'objet (au lieu de 1,2), Vie +2,5 × niveau (au lieu de 4) ; prestige n : 600 + 300 n + 15 n² or, 30 + 15 n + n²/2 essence ; Archer 115 PV et 5 % d'armure, Magicien 100 PV et 5 %. Résultat visé et obtenu : T2 (rare niveau 25 +25) tient jusqu'au niveau 20–30, T3 (légendaire 60 +60) jusqu'au niveau 50 et Tourment I–V, Tourment X demande T4 ; 20 à 90 objets par manche (au lieu de 400 à 2 600) et 1 000 à 55 000 or en Normal (au lieu de 150 000). Outil : `tools/sim/` dans le dépôt.
-
-**Barre et anneau de vie** : la barre en haut à gauche fait 22 px de haut, avec une bordure rouge vif et les PV écrits en gras blanc dans la barre (« 29 / 115 »). Le bouclier s'y superpose en bleu. Sous 30 % de PV, la bordure pulse en rouge (fixe si le système réduit les animations). La ligne dessous n'affiche que le bouclier et le niveau du héros. Autour du héros, un anneau de 6 px avec un contour noir de 9 px et une légère lueur se vide dans le sens horaire avec la vie : vert au-dessus de 50 %, jaune, puis rouge pulsant sous 25 %. Le bouclier forme un arc bleu de 3 px juste à l'extérieur. Aucun message ne s'affiche quand on ramasse un objet : seuls le flash (s'il est activé), le faisceau au sol et le son signalent les bons objets.
-
-**Montée en difficulté** (niveau L, progression f de 0 à 1 dans la manche) :
-
-- Vie des ennemis × 1,2 × (1 + 0,75 × (L − 1)) × (1 + 0,35 × f)
-- Dégâts × 1,15 × (1 + 0,35 × (L − 1)) × (1 + 0,15 × f)
-- Nombre max d'ennemis : 22 + 14 × (L − 1) + 34 × f, × 1,15, plafond 250, et apparitions 13 % plus rapprochées (Défense : (10 + 4 × vague + 10 × (L − 1)) × 1,15, plafond 160). L'écran ne tremble que quand le héros encaisse un coup, plus fort selon la part de vie perdue (4 à 12 px)
-- Chaque nouveau Gardien a +25 % de vie
-
-**Altérations et sources sacrées** : rester dans une zone toxique ajoute un cumul de **Poison** toutes les 0,6 s (5 au maximum, 8 s, environ 1 dégât par seconde et par cumul au niveau 1, régénération et potions moitié moins efficaces). Les flammes appliquent la **Brûlure** (5 s, environ 4 dégâts par seconde au niveau 1). Les effets continuent après la sortie de la zone ; les potions ne les retirent pas. Six **sources sacrées** sont réparties sur la carte, signalées par une flèche bleue vers la plus proche : y passer avec une altération la retire, puis la source se tarit et réapparaît 30 s plus tard ailleurs. En Défense, les zones blessent aussi le cryopode. Le mod de héros **Antidote** réduit la durée des altérations de 15 % par rang.
-
-## Progression en partie
-
-Chaque ennemi lâche un cristal d'expérience (goule et chauve-souris 1, archer 2, brute 5, Gardien 30). Passer du niveau n au suivant demande 120 × 1,32^(n−1) + 20 × n points (120 ou plus au départ, puis 32 % de plus à chaque niveau : 140, 198, 269, 356, 464, 601, 775…), soit environ 5 niveaux sur une première manche au niveau 1, 8 au niveau 40 et 13 en trois manches, mesuré par le bot (historique : 18 puis 9 sur la première manche). En coopération, l'expérience de chaque cristal est divisée par le facteur de nombre de monstres (1 + 0,4 × (joueurs − 1)), car chacun la reçoit de tous les monstres. À chaque niveau, le jeu se met en pause et propose 3 bonus au hasard ; ils durent jusqu'à la fin de la mission.
-
-| Bonus | Effet par rang | Rangs | Classes |
-| --- | --- | --- | --- |
-| Rage | +12 % de dégâts | 5 | toutes |
-| Frénésie | +10 % de vitesse d'attaque | 5 | toutes |
-| Précision | +5 % de critique | 4 | toutes |
-| Cruauté | +30 % de dégâts critiques | 3 | toutes |
-| Double tir | +20 % de chances d'attaquer deux fois | 3 | toutes |
-| Puissance | +25 % de dégâts de compétence | 3 | toutes |
-| Salve | +1 projectile | 4 | Archer, Magicien |
-| Éventail | +2 projectiles, −10 % de dégâts | 2 | Archer, Magicien |
-| Perforation | +1 ennemi traversé | 2 | Archer |
-| Onde arcanique | +20 % de rayon d'explosion | 3 | Magicien |
-| Grande allonge | +15 % de portée | 3 | Guerrier |
-| Lames spectrales | +1 onde tranchante par coup | 4 | Guerrier |
-| Robustesse | +15 % de vie max, soigne 15 % | 5 | toutes |
-| Régénération | +1,5 PV / s | 3 | toutes |
-| Vampirisme | +1,5 % de vol de vie | 3 | Guerrier |
-| Célérité | +8 % de vitesse | 3 | toutes |
-| Aimant | +40 % de portée de ramassage (base 140) | 3 | toutes |
-| Concentration | −8 % de recharge | 4 | toutes |
-| Braises | brûlure de 10 % des dégâts / s | 3 | toutes |
-| Givre | +10 % de chances de ralentir | 3 | toutes |
-| Orage | +6 % de chances d'éclair en chaîne | 3 | toutes |
-| Ampleur | +12 % de portée des compétences | 4 | toutes |
-| Prolongation | +15 % de durée des compétences et ralentissements | 3 | toutes |
-| Exécution | +40 % de dégâts contre les ennemis sous 30 % de vie | 3 | toutes |
-| Tueur de Gardiens | +20 % de dégâts contre les Gardiens | 3 | toutes |
-| Réflexes | −15 % de recharge de l'esquive | 3 | toutes |
-| Endurci | −20 % de durée du poison et de la brûlure | 2 | toutes |
-| Savoir | +20 % d'expérience | 3 | toutes |
-| Bonne étoile | +15 % de chances de butin pendant la mission | 3 | toutes |
-| Fiole de réserve | +1 potion tout de suite (si moins de 5) | 3 | toutes |
-
-Un bonus arrivé à son rang maximum n'est plus proposé, ni un bonus dont la statistique est déjà au plafond : Précision à 75 % de critique, Concentration à 50 % de recharge, Réflexes à 60 %, Endurci à 60 %. Chaque carte affiche le rang actuel et le suivant (« rang 1 → 2 / 3 », « rang 5 / 5 · dernier ») ; dans la jauge, les cases pleines sont les rangs acquis et la case qui clignote le rang gagné. Le sac affiche « 2 / 3 » ou « max ». Quand il ne reste plus assez de bonus, le choix est complété par Soin (40 % de vie) ou Bourse (20 or × niveau).
-
-**Portée des compétences** : statistique affichée dans la fiche du héros (100 % de base). Elle vient du bonus Ampleur, du mod Étendue et d'une nouvelle propriété d'équipement (+8 à 16 %). Elle agrandit le Tourbillon, l'Onde de choc, la Nova de givre et le Sillage de givre, et allonge la portée des carreaux de la Volée.
-
-**Portée et rayon, sources** (plafond 300 % chacun, soit ×4) : affixe Portée des compétences 10–20 % + 0,5 × niveau d'objet ; mod Étendue +15 % par rang, 5 rangs (+75 %) ; bonus de niveau Ampleur +20 % × 5 (+100 %) ; prestige Envergure +3 % × 50 (+150 %). Rayon d'explosion du Magicien : mod Déflagration +20 % par rang, 5 rangs (+100 %) ; Onde arcanique +25 % × 5 (+125 %) ; prestige Déflagration +3 % × 50 (+150 %) ; affiché dans les statistiques du Magicien.
-
-**Ultime** (4e bouton au-dessus de la compétence, touche F) : se charge en abattant 60 ennemis, un Gardien compte pour 10 ; la réduction de recharge ne s'applique pas. Guerrier, **Colère du Titan** : onde de choc de 320 de rayon (dégâts de compétence ×3, recul) et 3 s d'invulnérabilité. Archer, **Pluie d'acier** : pendant 3 s, 4 flèches toutes les 0,12 s sur les ennemis à moins de 450 (×0,7). Magicien, **Pluie de météores** : 3 météores de 150 de rayon (×3), en priorité sur les Gardiens. La portée des compétences agrandit ces zones. Bonus de niveau : **Fureur** (−15 % d'ennemis à abattre, 3 fois) et **Apothéose** (+30 % de dégâts de l'ultime, 3 fois).
-
-**Frénésie critique** : 8 coups critiques en 5 s déclenchent un bonus de 5 s (allongé par la durée des compétences), puis 3 s de recharge. Archer : projectiles 50 % plus rapides et +1 transpercement ; Magicien : +50 % de rayon d'explosion ; Guerrier : +30 % de portée de frappe et +25 % de vitesse d'attaque. Sous la barre de vie, « Critiques n / 8 » dès 3 critiques, puis « Frénésie · n s » ; étincelles dorées autour du héros.
-
-**Tremblements** : complément à celui des coups reçus, la compétence secoue légèrement l'écran (3,5 px), l'ultime davantage (7 px, 11 px pour la Colère du Titan), chaque météore 6 px, chaque flèche de la Pluie d'acier 1,5 px, et le déclenchement de la Frénésie 3 px.
-
-## Butin, équipement, mods, reliques et fabrication
-
-**Chances de butin par ennemi tué**
-
-| Butin | Goule | Chauve-souris | Archer | Brute | Gardien |
-| --- | --- | --- | --- | --- | --- |
-| Or | 65 % × 1 | 35 % × 0,6 | 65 % × 1,5 | 65 % × 5 | 8 pièces, 50 au total |
-| Équipement | 1,2 % | 0,4 % | 1,6 % | 7 % | 2 (rare + magique) |
-| Relique | 0,3 % | 0,1 % | 0,4 % | 2,5 % | 1 |
-| Mod | 0,6 % | 0,2 % | 0,8 % | 6 % | 2 |
-| Potion | 0,5 % | 0,5 % | 0,5 % | 5 % | 1 |
-
-Au niveau L, les chances d'équipement, de relique et d'arme sont multipliées par 1 + 0,25 × (L − 1). La valeur de l'or est multipliée par 1 + 0,6 × (L − 1) et sa chance de tomber par 1 + 0,05 × (L − 1). Dès le niveau 2, des armes communes, magiques ou rares du héros tombent aussi des ennemis. Chaque Gardien donne +1 équipement tous les 10 niveaux, +1 relique tous les 12 niveaux et une arme avec une chance de 15 % × ce multiplicateur. Chaque Gardien donne aussi 25 essence.
-
-Équipement : armures (vie), amulettes (critique), bottes (vitesse) et anneaux (dégâts), en plus de l'arme, soit 5 emplacements. Un objet trouvé s'équipe tout de suite depuis la pause (il est alors gardé même en cas de mort) ou part au coffre (taille illimitée, filtre par type, tri par rareté, rang, niveau ou date, recherche par nom ou affixe, défilement continu, armes non portées incluses) à la sortie. Un objet peut être verrouillé (cadenas) : il ne peut plus être recyclé ni sacrifié. Le recyclage se fait uniquement dans Armurerie › Recyclage.
-
-**Affixes d'équipement (v80)** : chaque statistique du jeu a désormais son affixe, soit 37 affixes possibles sur armure, amulette, bottes et anneau (hors pouvoirs abyssaux et Embrasement fixe, réservés aux armes). Nouvelles : Embrasement en % des dégâts (4–13), Ralentissement à l'impact (5–10), Éclair en chaîne (3–6), Exécution sous 30 % (12–45), Dégâts contre Gardiens (8–31), Dégâts sous 50 % de vie (10–37), Dégâts de l'ultime (10–22), Charge de l'ultime (−4 à −9 %, plafond −60 %), Protection sous 30 % (8–15), Soin des potions (10–25), Antidote (8–16), Aura de lenteur (5–10), Durée des compétences (8–16), Recharge de l'esquive (5–10), Portée de ramassage (10–25), Or (8–28), Expérience (5–12), Chances de butin (3–7) et Vol de vie (1–3). Les affixes d'arme deviennent aussi possibles sur l'équipement, limitées à la classe jouée au moment du drop : Portée de frappe (Guerrier, 6–20), Rayon d'explosion (Magicien, 10–35), +1 projectile (Archer, Magicien) et +1 transpercement (Archer), ces deux dernières avec un poids de tirage de 0,35. Valeurs données du niveau 1 au niveau 100 avant le multiplicateur de rareté. Les sources Exécution, Gardiens, Expérience, Butin, Fureur et Apothéose s'additionnent maintenant aux bonus de niveau au lieu d'être écrasées. Le score de comparaison des objets tient compte des nouvelles statistiques de combat et de survie ; les affixes utilitaires n'y comptent pas. Alertes de butin et recherche par affixe couvrent les 37.
-
-### Progression v91 : raretés, reliques, fabrication et rang
-
-**Principe** : plus un objet est rare, plus il est fort, à niveau égal. Les monstres ne lâchent que du Commun, du Magique et du Rare ; tout ce qui est Légendaire ou plus rare se fabrique avec 3 fragments trouvés dans les reliques de sa rareté. Les objets Prime (et Prime de givre) sont supprimés.
-
-| Rareté | Affixes | Affixes × | Base × | Source | Fabrication |
-| --- | --- | --- | --- | --- | --- |
-| Commun | 1 | 1 | 1 | butin | — |
-| Magique | 2 | 1,1 | 1,05 | butin | — |
-| Rare | 3 | 1,2 | 1,1 | butin (chance min(30, 8 + 0,15 × niveau d'objet) % + 1,5 par palier de Tourment) | — |
-| Légendaire | 4 | 1,35 | 1,2 | fragments, relique Ossuaire | 300 or |
-| Ancestral | 5 | 1,55 | 1,3 | fragments, relique Ancestrale | 600 or |
-| Sanguin | 6 | 1,8 | 1,4 | fragments, relique Sanguine | 1 000 or |
-| Abyssal | 6 + 1 pouvoir | 2,1 | 1,5 | fragments, relique Abyssale | 1 500 or |
-
-**Reliques** : une par rareté, selon la difficulté seulement : Ossuaire en Normal, Difficile, Cauchemar ; Ancestrale en Tourment I à V ; Sanguine en Tourment VI à X, avec 10 % + 5 % par palier au-delà du V de chances d'être Abyssale (15 % en VI, 35 % en X). Chaque relique ouverte en mission (Fissure inchangée : 10 réactifs) donne, à la réussite, 1 fragment d'un objet de sa rareté (2 si éclatante, raffinage 50 essence), pris parmi les armes du héros de cette rareté et les objets des reliques de cette rareté ; les objets de givre seulement si la relique est ouverte dans les Abîmes gelés. Tirage pondéré 1 + 0,5 × fragments déjà réunis ; le fragment donné est un manquant s'il en reste. +25 essence par relique, œufs 8 / 12 / 15 / 25 %. **Reliques forgées** : 3 reliques d'un même type (20, 40, 80, 150 essence) → 1 relique forgée de ce type, pour l'objet choisi, qui garantit un fragment de cet objet. La fusion vers le type au-dessus est supprimée.
-
-**Objets des reliques** (RGEAR, 36) : 2 modèles par emplacement et par rareté, affixes fixes, valeurs tirées au niveau de fabrication : Légendaire L1–L8 (4 affixes), Ancestral N1–N8 (5), Sanguin S1–S10 (6, dont 2 de givre), Abyssal B1–B10 (6 + pouvoir, dont 2 de givre). Un objet fabriqué prend le niveau d'objet de la plus haute mission réussie : 1 + (meta.maxL − 1) × 4 ; meta.maxL monte à chaque sortie réussie.
-
-**Armes** : 14 par héros, 2 par rareté, dégâts de base croissants (Archer 6–7, 10–11, 15–16, 21–24, 28–31, 35–38, 42–46 ; Guerrier 6–7 à 46–50 ; Magicien 6–7 à 42–45) et autant d'affixes que l'équipement de même rareté (les abyssales ont 6 affixes + un pouvoir). Commun, Magique et Rare tombent des monstres et Gardiens (arme du héros, rareté tirée comme le butin) ; Légendaire et au-dessus se fabriquent. Une arme obtenue alors qu'on la possède déjà devient un double (meta.wcp).
-
-**Rang (remplace l'amélioration à l'essence)** : rang 1 à 10, stocké dans it.up et meta.wlv (0 à 9), +10 % aux statistiques par rang (×1,9 au rang 10). Deux exemplaires identiques (même modèle : nom de base pour le butin, identifiant pour les objets des reliques ; même rareté ; même rang) fusionnent en un seul du rang au-dessus. L'exemplaire gardé conserve affixes et niveau ; le plus faible des doubles libres (ni porté, ni verrouillé, ni scellé) est sacrifié. Armes : les doubles fusionnent avec l'arme possédée, puis entre eux, jusqu'au plus haut rang possible. Interface : bouton Fusionner dans la fiche ancrée, nouveau sous-onglet Forge › Fusion (liste des fusions, « Tout fusionner »), pastille Forge = fusions possibles. Recyclage : 2 × éclats de rareté × 2^(rang − 1) essence pour un objet (éclats 1, 2, 4, 8, 16, 24, 36), 20 × (rareté + 1) × 2^(rang − 1) pour une arme ; recycler une arme qui a des doubles met le meilleur double à sa place.
-
-**Armurerie** : puces Armes du héros, Légendaire, Ancestral, Sanguin, Abyssal, Prêts, Autres classes. Chaque carte : affixes (noms, valeurs au niveau de fabrication), relique source et difficulté, fragments, Fabriquer (ou « Fabriquer un double »), Tout fabriquer. Vue Mes armes : rang, doubles, Fusionner.
-
-**Équilibrage vérifié** (score « Équiper le meilleur », médiane, armure au niveau d'objet 97) : Commun 222, Magique 235, Rare 249, Légendaire 412, Ancestral 479, Sanguin 535, Abyssal 759. DPS d'arme seule (Archer) : Commun 31–32, Magique 41–44, Rare 55–93, Légendaire 129–142, Ancestral 175–189, Sanguin 247–306, Abyssal 411–486 ; même ordre sans chevauchement entre raretés pour les trois héros.
-
-**Migration des sauvegardes (meta.v5)** : objets Prime retirés contre 40 × (rareté + 1) essence + la moitié de l'essence d'amélioration ; amélioration +n → rang 1 + ⌊n / 11⌋ (max 10), avec remboursement de la moitié de l'essence investie ; fragments d'objets qui ne se fabriquent plus → 10 essence chacun ; anciennes reliques : Cendre et Ossuaire → Ossuaire, Sanguine → Sanguine, Abysse et forgées Prime → Abyssale (file d'ouverture convertie) ; anciens Légendaires et Ancestraux gardent leurs 4 affixes ; meta.maxL = max(niveau de départ, niveau débloqué).
-
-**Emplacements à débloquer (v93)** : 7 cases au total (arme, armure, amulette, bottes, anneau, puis anneau 2 et dos), communes à tous les héros. Déblocage dans l'ordre, onglet Héros › Emplacements : anneau 2 = 12 fragments de harnais + 2 000 or ; dos = 25 fragments + 5 000 or, après l'anneau 2 (meta.slotU, meta.hfrag). Fragments de harnais : seulement sur les Gardiens, chance 3 % × (1 + 0,5 × min(3, difficulté)) × (1 + 0,05 × palier de Tourment) : 3 % Normal, 4,5 % Difficile, 6 % Cauchemar, 7,5 % à 11,25 % en Tourment I à X ; ils tombent comme un fragment (drop part avec hf) et comptent à la réussite. Anneau 2 : un anneau va dans une case d'anneau vide, sinon à la place de celui qu'il améliore le plus (tgtKey) ; « Équiper le meilleur » remplit les deux cases avec deux anneaux différents ; la comparaison se fait face à l'anneau remplacé. Dos (statistique de base : réduction des dégâts, 2 + ⌊niveau / 25⌋ × 1,5) : uniquement en rareté Abyssale, 2 modèles dans les reliques Abyssales, Cape du Néant (Vie, Réduction, Régénération, Protection sous 30 %, Vol de vie, Soin des potions, Égide du Néant) et Ailes de l'Éclipse (Vie, Réduction, Régénération, Antidote, Aura de lenteur, Recharge de l'esquive, Moisson) ; jamais dans le butin. Un objet de dos se fabrique avant le déblocage mais ne s'équipe qu'après. Pas de rééquilibrage des monstres pour l'instant (choix de conception).
-
-**Chercher par affixe (v96)** : dans Forge › Affixes, la liste couvre tous les objets (portés, coffre, verrouillés, armes possédées). Une affixe ouverte liste jusqu'à 10 objets, du plus fort au plus faible, chacun avec deux boutons : Source (détruit, prend cette affixe ; depuis v98, tout objet peut être source, armes comprises, sauf les objets verrouillés (v99 : Cible seulement, le bouton Source n'est pas affiché) et les armes de départ ; une arme détruite est remplacée par son meilleur double, sinon le héros reprend son arme de départ) et Cible (reçoit l'affixe). Le choix s'affiche en pastille « − Source » ou « + Cible », et la barre du bas propose Fusionner ou Remplacer comme avant. **Ouverture de relique (v95)** : plus de bannière ni de message en mission.
-
-**HUD Gardien (v97)** : en Survie, le compte à rebours du Gardien n'est plus affiché ; « Gardien en approche » apparaît sous le niveau dans les 10 s qui précèdent son arrivée. En Défense, la ligne affiche « Sortie vague n », remplacée par « Gardien en approche » pendant la pause avant une vague à Gardien ; correctif : pendant une pause, n se calcule sur la vague suivante (« Sortie vague 6 » après avoir continué depuis la vague 3). La Capture garde le minuteur du Gardien.
-
-**Parcours du joueur nouveau (v100, js/tut.js)** : carte en tête de l'onglet Héros, une étape à la fois sur six, objectifs cochés automatiquement, un conseil et un lien vers le guide (#debuter-n). Étapes : 1 Premiers pas (réussir une mission ; porter armure, amulette, bottes, anneau) ; 2 Premiers achats (Force et Vigueur ; équiper un familier) ; 3 Monter en niveau (mission 10 réussie ; un objet au rang 2) ; 4 Premières reliques (ouvrir une relique ; fabriquer un légendaire ; mission 20 réussie) ; 5 Difficile et Cauchemar (réussir en Cauchemar ; débloquer l'anneau 2) ; 6 Tourment (réussir en Tourment ; fabriquer un ancestral ; débloquer le dos). Suivi : meta.wins, meta.bestDiff, meta.bestTorm (à chaque mission réussie), meta.relOpened (reliques ouvertes). « Masquer le parcours » (meta.tutOff), « Réafficher le parcours » en bas de l'onglet Héros ; la carte disparaît quand tout est fait. Guide : nouvelle section « Bien débuter » en tête, une sous-section par étape (quoi faire, quand passer à la suite, que faire si on bloque). Solo uniquement ; la coop garde sa section.
-
-**Messages en mission (v101)** : pendant une mission (inMission = partie lancée et non terminée), toast() et banner() n'affichent plus rien sauf les messages marqués keep : arrivée des Gardiens (Survie, Capture, Brèche ; en Défense, bannière « Vague n · un Gardien arrive » sur les vagues de sortie), événements des jumeaux de la Brèche, connexion et déconnexion en coopération, bascule de secours du rendu WebGL. Supprimés en mission : élite en approche et vaincue, Gardien vaincu, ultime, Frénésie critique, source sacrée, vagues ordinaires, capture, extraction, niveau suivant, message de départ (Fissure, Brèche), sceau trouvé, à terre et relevé en coop, confirmations de la pause. Les sons et effets visuels restent. **Régénération (bonus de niveau)** : +1,5 % de la vie maximale par seconde par rang (au moins 3 PV/s), au lieu de +1,5 PV/s ; 3 rangs maximum. Mod Second souffle (v102, statistique regenPct) : +0,5 % de la vie maximale par seconde par rang (0,5 % au rang 0, 2 % au rang 3, surcharge comprise), avec au moins 3 PV/s par point de pourcentage, soit jamais moins que l'ancien +1,5 PV/s par rang.
-
-**Déplacement à la souris (v103)** : sur ordinateur (pointeur de type souris), le héros va vers le pointeur : direction = héros à l'écran → pointeur, zone morte de 26 px autour du héros, vitesse pleine à 116 px. Clic gauche maintenu = immobile (les attaques des tireurs vont plus vite à l'arrêt) ; relâcher reprend le déplacement. Le héros s'arrête aussi quand le pointeur quitte le canvas (survol d'un bouton). Le clavier (ZQSD, flèches) s'ajoute. Curseur en croix sur le jeu. Réglages › Déplacement à la souris : Suivre le pointeur (par défaut, SET.mouse) ou Joystick (ancien glisser à la souris). Le tactile garde le joystick flottant.
-
-**Comparaison et Équiper le meilleur** : la fiche d'un objet (coffre ou butin de la partie) liste chaque statistique qui change avec sa nouvelle valeur et l'écart (▲ vert, ▼ rouge) face à l'objet porté. « Équiper le meilleur » (onglet Héros, et dans la pause pour le butin de la partie) choisit pour chaque emplacement l'objet qui maximise puissance + 0,3 × vie ; les objets remplacés partent au coffre.
-
-Pastilles d'onglets : Héros (améliorations d'équipement disponibles), Armurerie (objets fabricables maintenant), Reliques (reliques possédées quand aucune n'est équipée), Forge (points de prestige à placer, sinon fusions possibles, sinon améliorations et talents achetables).
-
-Onglet Reliques : grille de tuiles (gemme à la couleur du type, nombre d'intactes et d'éclatantes ✦, pastille « n équipées », ★ si un objet qu'elle contient attend son dernier fragment), filtrable par type et Forgées. Toucher une tuile ouvre sa fiche : les objets qu'elle contient avec tes fragments (n / 3, ★ un fragment de plus, prêt à fabriquer), puis les réglages d'équipement et le raffinage. Viennent ensuite les reliques forgées (fusion par type, choix de l'objet), la file d'ouverture, et « Où tombent les reliques » replié.
-
-Équiper par type (onglet Reliques) : au-dessus de la collection, des puces choisissent le type affiché : Toutes, Ossuaire, Ancestrale, Sanguine, Abyssale, et Forgées quand tu en possèdes. « Tout équiper · type (n) » en bas ajoute à la file toutes les reliques de ce type pas encore équipées ; « Retirer · type (n) » enlève de la file celles de ce type.
-
-**Transfert d'affixe** (Forge › Affixes du Camp) : on touche Source ou Cible puis un objet dans l'inventaire affiché (équipement porté marqué « Équipé », autres armes, coffre filtrable ; les objets non valides sont grisés). On choisit un équipement source non verrouillé, une de ses affixes, puis une cible (arme possédée, équipement porté ou du coffre). Si la cible a déjà l'affixe, elle n'est remplacée que par une valeur strictement plus forte ; sinon elle est ajoutée s'il reste de la place (1 à 4 affixes selon la rareté), ou remplace une affixe choisie. La source est détruite et le transfert coûte 50 essence × (rareté de la source + 1). La valeur transférée est celle affichée sur la source, amélioration comprise ; les améliorations suivantes de la cible l'augmentent ensuite. Deux cartes côte à côte montrent la source et l'aperçu de la cible : ligne retirée barrée en rouge, ligne ajoutée en vert.
-
-**Fusion d'affixe** : quand la cible a déjà l'affixe prise sur la source, le transfert devient une fusion par défaut. Nouvelle valeur = la plus forte des deux + 50 % de la plus faible (valeurs affichées, amélioration comprise ; +1 pour projectiles et transpercement). 3 fusions au maximum par affixe et par objet ; coût 100 × (rareté de la source + 1) × (numéro de la fusion) essence. Si la source est plus forte, deux puces permettent de choisir « Fusionner » ou « Remplacer » (le remplacement remet le compteur de fusions à 0). L'aperçu indique « fusion n / 3 ».
-
-**Chercher par affixe** (Forge › Affixes, juste après l'aperçu et avant les objets) : liste de toutes les affixes présentes sur tes objets non verrouillés (portés et coffre), filtrable en Offensives (dégâts, vitesse d'attaque, critique, dégâts critiques, dégâts et portée des compétences…), Défensives (vie, réduction des dégâts, régénération, vol de vie) et Utilitaires (vitesse de déplacement, recharge). Chaque ligne montre la meilleure valeur, l'objet qui la porte, le nombre d'objets et la valeur de ta cible si elle l'a déjà. Toucher la ligne déplie les objets classés du plus fort au plus faible ; « Prendre » désigne cet objet comme source avec cette affixe déjà choisie, puis passe au choix de la cible.
-
-Alertes de butin (Forge › Affixes, repliées en bas) : on coche les affixes recherchées (groupées en Offensives, Défensives, Utilitaires) et l'option Armes nouvelles (active par défaut, ancienne option Légendaires). En mission, quand un objet tombe avec une affixe cochée dont la valeur dépasse la meilleure valeur de cette affixe sur l'équipement porté (rang compris ; toujours si aucune pièce portée ne l'a), ou une arme que le héros ne possède pas encore, l'écran s'illumine brièvement (au plus un flash toutes les 0,35 s) et l'objet au sol porte un grand faisceau doré avec un anneau qui pulse jusqu'à son ramassage.
-
-**Mods** : deux builds séparés dans l'onglet Mods, plus un build Familier dans son propre onglet (décrit plus bas). Le **build d'arme** est attaché à chaque arme (4 cases, capacité 10 + Catalyseur jusqu'à +12 + maîtrise de l'arme jusqu'à +10) : changer d'arme change ses mods. Le **build de héros** est attaché à la classe (3 cases au départ, jusqu'à 6 en payant 15, 30 puis 50 fragments de schéma, + 1 case d'Aura ; capacité 10 + Réacteur jusqu'à +12 + maîtrise du héros jusqu'à +10 + bonus d'Aura). Un mod coûte sa valeur de base + son rang en capacité ; la fusion coûte 10 × 2^rang × (rareté + 1) essence. Un doublon devient une copie du mod (affichée ×n en bleu sur sa carte), sauf quand le mod ne peut plus être surchargé : il rapporte alors 8, 16 ou 24 essence, et les copies se dissolvent au même taux. Surcharge : un mod au rang maximum gagne jusqu'à 5 étoiles, chacune +12 % de sa valeur (+60 % à 5), pour (étoile n) n copies et 50 × (rareté + 1) × n essence ; sa capacité monte de 1 aux étoiles 2 et 4. Refusée si elle dépasse la capacité du build où le mod est équipé. La Pointe de diamant (perforation entière) ne se surcharge pas. Valeurs affichées arrondies (entier au-dessus de 10). Le tableau ci-dessous liste les mods d'arme.
-
-| Mod | Effet par rang | Rang max |
-| --- | --- | --- |
-| Férocité | +15 % de dégâts | 5 |
-| Cadence | +8 % de vitesse d'attaque | 5 |
-| Vitalité | +15 PV | 5 |
-| Égide, Pas léger, Intensité, Morsure du givre | armure, vitesse, compétence, ralentissement | 3 |
-| Allonge, Déflagration | portée (Guerrier), rayon d'explosion (Magicien) | 3 |
-| Œil du chasseur, Boucherie, Braise vive, Flux | critique, dégâts critiques, brûlure, recharge | 3 |
-| Sangsue (Guerrier), Pointe de diamant (Archer) | vol de vie, perforation | 3 / 1 |
-| Arc électrique, Écho (Archer, Magicien) | 6 % d'éclair, 25 % de projectile en plus | 3 |
-
-| Mod de héros ou Aura | Effet par rang | Polarité |
-| --- | --- | --- |
-| Vitalité, Égide, Pas léger | +15 PV, −3 % de dégâts subis, +5 % de vitesse | Rempart |
-| Intensité, Flux | +20 % de compétence, −6 % de recharge | Spirale |
-| Second souffle | +1,5 PV / s | Rempart |
-| Alchimiste | +15 % de soin des potions | Rempart |
-| Rapace | +20 % de portée de ramassage | Spirale |
-| Étendue | +10 % de rayon de compétence | Spirale |
-| Persistance | +12 % de durée de compétence et de ralentissement | Spirale |
-| Pas fantôme | −10 % de recharge de l'esquive | Rempart |
-| Dernier rempart | −10 % de dégâts subis sous 30 % de vie | Rempart |
-| Rage du survivant | +15 % de dégâts sous 50 % de vie | Braise |
-| Aura Présence glaciale | ennemis à moins de 180 ralentis de 8 % | Aura (+4 + rang de capacité) |
-| Aura Cupidité | +10 % d'or | Aura (+4 + rang de capacité) |
-| Aura Ferveur | +5 % de vitesse d'attaque | Aura (+4 + rang de capacité) |
-
-**Polarités et alignement** : chaque mod a une polarité, Braise ▲ (attaque), Rempart ■ (défense) ou Spirale ◆ (pouvoir). Au Camp (onglet Mods), une case peut être alignée sur une polarité : un mod de même polarité y coûte la moitié (arrondi au supérieur), un autre +25 %. Chaque alignement d'une classe coûte 200, 400, 800 puis 1 600 essence, et remet à 0 la maîtrise du build concerné (héros ou arme) ; chaque build a ses propres alignements. Si la capacité est dépassée, les derniers mods deviennent inactifs.
-
-**Filtres de mods** : au-dessus de la collection, des chips Tous, ▲ Braise, ■ Rempart, ◆ Spirale (et ✦ Aura pour le héros), chacune avec son nombre. Toucher le nom de polarité au-dessus d'une case filtre pour cette case : seuls les mods de sa polarité (tous si elle est neutre, jamais les auras), classés du moins cher au plus cher avec le coût réel dans cette case ; si elle est libre, « Équiper » place le mod dans cette case plutôt que dans la moins chère.
-
-**Maîtrise** : le héros (par classe) et chaque arme ont chacun un rang de 0 à 10, gagné à la fin de chaque mission (1 point par ennemi tué, que la mission réussisse ou non). Passer du rang r au suivant demande 100 × (r + 1) points. Chaque rang donne +1 de capacité de mods.
-
-**Familiers** (js/pet.js, onglet Familier du Camp, 5e des 6 onglets : collection, œufs, fusion, puis le build de mods du familier ; pastille = œufs à faire éclore ; le bouton ? ouvre #familiers ; l'onglet Mods ne montre plus que Héros et Arme, le sac en mission garde les trois) : un familier équipé à la fois, partagé par tous les héros, qui suit le héros en mission. Instance {t, rang 1–5, niveau 1–20, xp}. Premier œuf offert ; une relique ouverte en mission contient un œuf avec 8 % (Ossuaire), 15 % (Sanguine) ou 25 % (Abysse) de chances. L'éclosion donne un des 4 familiers au hasard, au rang ★. **Fusion** : 2 familiers identiques et de même rang → 1 du rang au-dessus (★★★★★ max), garde le meilleur niveau et la meilleure xp, coûte 100 essence × rang. Niveau : xp = ennemis abattus de la mission (comme la maîtrise), 50 × niveau par palier. Puissance = (1 + 0,35 × (rang − 1)) × (1 + 0,05 × (niveau − 1)).
-
-| Familier | Rôle | Effet de base |
-| --- | --- | --- |
-| Corbeau de cendre | Attaque | Toutes les 1,2 s, frappe l'ennemi le plus proche à moins de 260 px : 60 % des dégâts d'arme × puissance, critique 5 % |
-| Feu follet | Soutien | Soigne 1 % de vie max par seconde × puissance, ×2 à l'arrêt |
-| Golem de poche | Défense | Toutes les 7 s, attire 4 s les monstres à moins de 160 px (hors Gardiens et cibles), qui le visent à la place des héros ; 30 % des dégâts d'arme toutes les 0,5 s à ceux qui le touchent |
-| Furet pilleur | Butin | Portée de ramassage × (1 + 0,6 × puissance), +5 % × puissance de chances de butin |
-
-**Mods de familier** (type p, build de l'onglet Familier) : 3 cases, 4 dès ★★★ ; capacité 8 + 2 × rang + niveau / 2. Mêmes polarités, fusion, surcharge et alignement que les autres builds (l'alignement ne remet rien à 0). Communs : Crocs (+15 % dégâts par rang, 5 rangs), Vivacité (+10 % cadence, 5), Carapace (+15 % durée d'attirance, 3), Lien (+12 % portée et vitesse, 3), Partage de vie (2 % des dégâts du familier rendus en vie par rang, 3), Écho élémentaire (applique brûlure et ralentissement de l'arme, 1). Réservés : Bec acéré (corbeau, +8 % critique), Nuée (corbeau, +1 cible), Lumière apaisante (follet, +20 % soin), Purification (follet, retire poison, brûlure et gelure toutes les 6 s), Provocation (golem, +20 % rayon), Épines (golem, +25 % dégâts renvoyés), Flair du furet (+3 % butin), Poches profondes (furet, va chercher objets, mods et reliques à 420 px). Un mod réservé posé avec un autre familier est inactif. Les mods de familier n'entrent jamais dans les stats du héros.
-
-Coop : le paquet de position du héros porte \[type de familier, x, y, attirance\] (indices 9 à 12) ; l'hôte fait aussi attirer les monstres par le golem d'un partenaire. NET\_V = 6.
-
-| État | Commune (chacune) | Peu commune (chacune) | Rare |
-| --- | --- | --- | --- |
-| Intacte | 25,33 % | 11 % | 2 % |
-| Éclatante (raffinage : 50 essence) | 16,67 % | 20 % | 10 % |
-
-Sauvegarde : « Exporter » télécharge aussitôt crypte-sauvegarde-AAAA-MM-JJ.json, avec « Partager le fichier » (Web Share) sur téléphone et « Copier le JSON » en secours. L'import « Depuis un fichier » le relit tel quel, après confirmation.
-
-**Armurerie, deux vues (v82)** : puces Recettes (toutes les recettes, comme avant) et Mes armes (compteur = armes possédées). Mes armes liste les armes possédées de toutes les classes, héros courant en premier, de la plus rare à la moins rare : niveau +n, dégâts de base et affixes réels (amélioration et affixes ajoutées comprises), maîtrise, nombre de mods posés. Pour le héros courant : DPS estimé avec l'équipement porté et écart en % avec l'arme équipée, bouton Équiper.
-
-Fin de manche et objectif (v81, mis à jour v91) : le résumé de sortie affiche des compteurs : équipements = total + nombre par rareté, reliques = total + nombre par type (Ossuaire, Ancestrale, Sanguine, Abyssale), armes ramassées = total + nombre par rareté. Un bandeau d'objectif centré sous le HUD donne l'étape, la valeur en grand et une jauge : Survie = temps avant le portail (orange pulsant sous 15 s) ; Capture = 1/3 mettre la cible à terre, 2/3 la capturer, 3/3 rejoindre l'extraction ; Défense = vague suivante ou ennemis restants, jauge = vie du cryopode.
-
-Écran de fin de mission réussie (v83, mis à jour v91) : deux encadrés de compteurs. Butin rapporté : équipements (total + par rareté), reliques ramassées (total + par type), armes ramassées. Reliques ouvertes : total + par type, essence gagnée (25 par relique), fragments (nombre et nombre d'objets différents), objets prêts à fabriquer (par nom), œufs de familier, reliques non ouvertes. Le détail relique par relique est replié sous « Détail des n reliques », puis la maîtrise.
-
-**Rythme des sorties (v84)** : Survie, portail toutes les 2 minutes (LEVEL\_T = 120 s, 180 avant). Défense, sortie toutes les 3 vagues (DEF\_N = 3, 5 avant), avec le Gardien de la vague de sortie ; le HUD affiche « Sortie vague 3, 6, 9… ». Chaque manche rapporte toujours une relique (et un équipement magique ou mieux en Défense), donc environ 1,5 × plus de reliques de manche par heure. Moins d'expérience par manche de Survie (environ 4 niveaux sur la première). L'écran de mission réussie reprend le résumé de l'écran du portail (or, équipements par rareté, reliques par niveau, fragments, ennemis, durée de la mission), suivi du bilan des reliques ouvertes.
-
-| Pouvoir | Effet | Plafond |
-| --- | --- | --- |
-| Moisson | Chaque ennemi tué : +3 à 4 % de dégâts pendant 5 s, cumul ×10 | 6 % par cumul |
-| Égide du Néant | Chaque ennemi tué : 8 + 0,6 × niveau de l'objet en bouclier | 30 % des PV |
-| Onde du Vide | Toutes les 5 s : 250 à 350 % des dégâts à tous les ennemis dans 200 px (agrandi par la portée des compétences) | — |
-| Jugement | Les ennemis sous 8 à 12 % de vie meurent sur le coup, hors gardiens et cible | 20 % |
-| Faille | 20 à 30 % de chances qu'un critique rebondisse sur 3 ennemis à 70 % des dégâts | 60 % |
-| Chasse royale | +35 à 55 % de dégâts contre gardiens et élites | — |
-
-Un pouvoir abyssal est lié à son objet : il ne peut être ni transféré, ni fusionné, ni remplacé dans l'onglet Forge › Affixes. Il n'apparaît pas dans la recherche par affixe ni dans les alertes de butin, et il ne monte pas avec le rang. Les objets Abyssaux se recyclent comme les autres dans Forge › Recyclage (36 éclats de rareté) ; verrouille ceux que tu veux garder. « Équiper le meilleur » compte une valeur estimée pour chaque pouvoir.
-
-**Messages de butin** : aucun message n'apparaît plus au ramassage (objet, relique, mod, fragment, potion) ni à la chute d'un objet recherché ; le butin se consulte dans la pause (pastille sur le sac). Restent les sons, le flash réglable et le faisceau au sol.
-
-## Progression permanente
-
-Le Camp compte 6 onglets : Héros (équipement porté, statistiques, fragments des reliques, prestige), Armurerie (puces Coffre, Recettes, Mes armes, Recyclage), Reliques (collection, reliques forgées, file d'ouverture), Mods, Familier, Forge (Bonus, Affixes, Fusion, Sceaux). Deux monnaies : l'or (améliorations, talents, fabrication, prestige) et l'essence (mods, raffinage, reliques forgées, transfert d'affixes, prestige).
-
-| Amélioration de la Forge | Effet par niveau | Niveaux | Coût du 1er niveau |
-| --- | --- | --- | --- |
-| Vigueur | +8 % de vie max | 5 | 60 or |
-| Force | +6 % de dégâts | 5 | 70 or |
-| Célérité | +5 % de vitesse d'attaque | 5 | 70 or |
-| Alchimie | +1 potion au départ (base 2) | 3 | 90 or |
-| Fortune | +15 % d'or ramassé | 4 | 80 or |
-| Flair | +3 de chance de rareté | 3 | 110 or |
-| Catalyseur | +3 de capacité de mods | 4 | 100 or |
-
-Chaque niveau suivant coûte ×1,7 du précédent. Les talents coûtent 150, 300 et 500 or par classe.
-
-**Prestige du héros** (Forge) : se débloque quand les 8 améliorations permanentes sont au maximum. Il est propre à chaque héros et n'a pas de limite de niveau. Le niveau n+1 coûte 500 + 250 n or et 30 + 15 n essence et donne 1 point à placer, redistribuable gratuitement. Par point : Vitalité +2 % de vie, Puissance +2 % de dégâts, Vivacité +1 % de vitesse d'attaque, Acuité +0,5 % de critique (max 40 points), Brutalité +3 % de dégâts critiques, Arcanes +3 % de dégâts de compétence, Ténacité −0,5 % de dégâts subis (max 40), Sang-froid −0,5 % de recharge (max 30), Foulée +0,5 % de vitesse (max 30), Opulence +2 % d'or, Envergure +3 % de portée des compétences (max 50 points), Déflagration +3 % de rayon d'explosion (max 50). Les plafonds généraux (critique 75 %, armure 60 %, recharge 50 %) s'appliquent toujours.
-
-## Coopération
-
-De 2 à 4 joueurs jouent ensemble en Survie, chacun sur son appareil, reliés en étoile à l'hôte en pair à pair (WebRTC), sans serveur ni compte. L'hôte ouvre une invitation à la fois (« Inviter un joueur »), avec une connexion et un échange de codes par invité, jusqu'à 3 invités. Il relaie dans son instantané les héros et tirs de tous (numéro de place 0 à 3, couleur et étiquette « J2 · Guerrier »). Un battement toutes les 2 s hors mission évite que le silence du salon soit pris pour une déconnexion. La connexion se fait par échange de deux codes (offre de l'hôte, réponse de l'invité), en QR code (scan avec BarcodeDetector quand le navigateur l'a, Android Chrome) ou en copier-coller / Partager.
-
-| Sujet | Règle |
-| --- | --- |
-| Autorité | L'hôte simule les monstres, leurs tirs, zones et apparitions et envoie un instantané toutes les 50 ms ; l'invité interpole les positions |
-| Héros | Chacun simule son héros, ses compétences et ses tirs avec ses propres statistiques ; les tirs du partenaire sont affichés |
-| Dégâts de l'invité | Calculés chez lui (modificateurs compris) et envoyés à l'hôte, avec ralentissements, gel, brûlure et recul |
-| Coups reçus | Chacun gère ses contacts, projectiles et zones ; les monstres visent le héros debout le plus proche |
-| Monstres | Par joueur en plus : vie +50 %, nombre +40 %, plafond +50 (à 4 : vie ×2,5, nombre ×2,2, plafond 400) ; corrompus si l'un des joueurs a une relique équipée |
-| Butin | Instancié : chaque mort de monstre génère un butin propre à chaque joueur (objets, or, expérience, réactifs, reliques) |
-| Pauses | Le monde ne s'arrête pas pour le sac ou un bonus de niveau (héros protégé pendant le choix) ; il s'arrête en fin de manche |
-| À terre | Relève après 8 s près du partenaire debout le plus proche, avec 50 % de vie ; tout le monde à terre = échec pour tous |
-| Fin de manche | L'hôte décide sortir ou continuer ; chacun reçoit sa relique de manche |
-| Déconnexion | Message « bye » à la fermeture et silence de plus de 8 s : si l'hôte part, chaque invité termine en extraction ; si un invité part, les autres continuent |
-
-Fichier `js/net.js` ; QR code par `qrcode-generator` chargé à la demande depuis jsDelivr. Les puits sacrés restent propres à chaque joueur ; Défense et Capture ne sont pas proposées en coopération.
-
-| Sens | Message | Fréquence | Contenu |
-| --- | --- | --- | --- |
-| Hôte → invités | hello, roster | connexion, changement | classe de l'hôte, place attribuée (J2–J4), liste place + classe |
-| Hôte → invités | start | lancement | niveau, biome, carte (piliers, braseros, runes), point d'apparition |
-| Hôte → invités | s (instantané) | 20 / s | monstres (id, type, position, vie, taille, états, dégâts, phase), projectiles ennemis, fioles, zones, tous les héros, tirs de chaque joueur, minuteurs |
-| Hôte → invités | kill, round, cont, exit, fail | événement | mort d'un monstre (butin calculé par chacun), fin de manche et décision |
-| Invité → hôte | hello | connexion, changement de héros | classe, relique équipée |
-| Invité → hôte | g (état) | 20 / s | héros, tirs, coups portés (monstre, dégâts, critique), effets posés (ralenti, gel, brûlure, recul) |
-| Les deux sens | ping, bye | 2 s hors mission, fermeture | présence, départ propre |
-
-Ne circulent jamais : sauvegarde, inventaire, équipement, mods, or, essence, butin, expérience. Liaison WebRTC chiffrée ; débit total de l'hôte à 4 joueurs de l'ordre de 0,5 à 1 Mo/s en wifi local. Les dégâts des invités ne sont pas vérifiés par l'hôte. Un PC ou un Mac est l'hôte conseillé à 3 ou 4 joueurs ; le code de réponse du téléphone lui parvient par Partager puis Coller ou, mieux, par la webcam du PC.
-
-Arrivée en cours de mission : si la connexion d'un invité s'ouvre alors que la mission de l'hôte tourne déjà (hôte qui a touché Lancer pendant « Connexion en cours »), l'hôte envoie à cet invité seul un message start et l'ajoute comme partenaire à côté de lui. Avant ce correctif, l'invité restait sur « En attente de l'hôte ». Version du protocole (NET\_V = 3) dans hello : deux appareils de versions différentes se déconnectent avec un message demandant de mettre le jeu à jour.
-
-Lecture des QR codes par caméra (bouton « Scanner avec la caméra », proposé dès que l'appareil a une caméra) : détecteur intégré du navigateur (BarcodeDetector) quand il existe, sinon jsQR 1.4.0 chargé à la demande depuis jsDelivr (webcam de PC, tous navigateurs) ; image réduite à 960 px, une lecture toutes les 120 ms, cadre de visée. Un code reconnu (commençant par Z ou P) est validé aussitôt : l'invité rejoint, l'hôte accepte la réponse, sans copier-coller. La caméra s'arrête dès la lecture, au bouton Arrêter ou à la fermeture. QR code affiché jusqu'à 320 px de large.
-
-Connexion entre deux missions : elle reste ouverte après une sortie, un échec, le Camp ou un changement de héros (battement toutes les 2 s), et l'hôte relance sans refaire les codes. Tant que la coopération est active : verrou d'écran allumé (Screen Wake Lock, redemandé au retour au premier plan), pas de bandeau « Mettre à jour » (un rechargement couperait la partie ; Réglages › Application prévient), et silence toléré de 20 s en mission avant de considérer un joueur parti (au lieu de 8 s).
-
-Fluidité des partenaires (protocole NET\_V = 4) : chaque connexion a deux canaux. Le canal fiable et ordonné porte les événements (hello, start, kill, coups dans g, fins de manche). Le canal rapide (non ordonné, sans renvoi) porte le flux des héros h à 30 / s et l'instantané du monde s à 20 / s, numérotés (un paquet plus ancien est ignoré). Chaque appareil lisse les partenaires à chaque image : vitesse estimée sur les derniers paquets, prolongation du mouvement jusqu'à 0,2 s, rattrapage progressif, téléportation au-delà de 260 px. Mesure (hôte à 220 px/s, vu par l'invité) : avant, 2 images sur 3 figées et des sauts de 15 px ; après, aucune image figée, écart type de 0,5 px par image, environ 60 ms de retard.
-
-**Brèche** (mode coopératif, 2 joueurs minimum, choisi par l'hôte sous « Mode » dans le salon ; protocole NET\_V = 5) : Survie dont les Gardiens arrivent par paires de jumeaux (nombre arrondi au pair, au moins 2). Quand un jumeau meurt, l'autre doit mourir dans les 8 s, sinon le premier réapparaît à 50 % de vie, sans butin (noLoot transmis dans kill). Monstres +25 % de vie en plus du bonus de coopération.
-
-**Sceaux légendaires** (js/seal.js ; protocole NET\_V = 6 depuis les familiers) : chaque Gardien ou élite abattu en Brèche donne à chaque joueur 1 éclat et 0,3 % de chances d'un sceau au hasard (butin instancié). Fin de mission : sortie = sceaux et éclats gardés ; échec = sceaux perdus, moitié des éclats. 100 éclats s'échangent contre 1 sceau au hasard (Camp › Affixes). Un sceau par objet (armure, amulette, bottes, anneau), en plus des affixes, utilisable en solo. Le même sceau ne compte qu'une fois sur l'équipement porté. Poser un sceau sur un objet déjà scellé rend l'ancien à la réserve ; retirer coûte 300 essence. Les sceaux ne sont pas fusionnables.
-
-| Sceau | Effet | Portée |
-| --- | --- | --- |
-| Sablier brisé | −20 % de recharge de la compétence, hors plafond | soi |
-| Esprit vif | −15 % de recharge de la compétence | groupe |
-| Gourde sans fond | +2 potions au départ, maximum 6 | soi |
-| Alchimie partagée | potion bue : +25 % de vie aux alliés proches | groupe |
-| Seconde esquive | 2 esquives d'affilée avant recharge | soi |
-| Cri de ralliement | ultime +20 % de charge par ennemi | groupe |
-| Main tendue | alliés à terre proches relevés 2 fois plus vite | groupe |
-| Aura de soin | compétence : +5 % de vie aux alliés dans la zone | groupe |
-| Pas de l'ombre | après une esquive, prochain coup critique | soi |
-| Fortune d'équipe | +10 % de chances d'objet | groupe |
-
-Effets de groupe : actifs si toi ou un partenaire debout à moins de 300 px le porte. Chaque héros transmet un masque de ses sceaux de groupe dans son paquet de position. Les soins passent par un message fx relayé par l'hôte.
-
-## Technique
-
-Une seule page HTML avec JavaScript, sans serveur.
-
-**Interface v87 (design system « Crypte des Cendres », navigation)** :
-
-- **Accueil** (cx-screen) : en-tête Coop, Guide, Réglages ; Héros et Mission en cartes de choix (cx-pick), description du héros repliée sous « Compétences » ; Réglages de la mission en lignes résumées (Biome et Difficulté ouvrent une feuille de choix, le palier de Tourment se règle dans la feuille ; Niveau en −/+ ; Reliques ouvre le Camp) ; barre du bas fixe : Lancer (résume héros, mission, niveau) et Le Camp (or + pastille du total des choses à voir).
-- **Camp** : 6 onglets (Héros, Armurerie, Reliques, Mods, Familier, Forge) ; Forge a les sous-onglets Améliorations · Affixes · Recyclage · Sceaux, Mods a Héros · Arme ; chaque onglet ouvre sur une phrase + « En savoir plus » (état retenu, localStorage crypte-more) ; pastilles cx-tab\_\_badge ; action principale en barre du bas (Équiper le meilleur, Tout équiper, Transférer) ; Prestige déplacé en bas de l'onglet Héros ; la sauvegarde (exporter, importer) passe dans Réglages ; chaque onglet garde son défilement.
-- **Inventaire unique** (js/inv.js) : barre collée (recherche dans noms et affixes, tri, filtres par emplacement, compteur « ▲ n meilleurs »), défilement continu sans pages, partagée entre Héros et Forge › Affixes ; Héros affiche 3 chiffres clés et replie les statistiques complètes.
-- **Fiche ancrée** (cx-dock, remplace la barre du bas) : ‹ › et position dans la liste filtrée, comparaison ▲/▼, « Équiper · remplace X », puis Améliorer +1/+10, Verrouiller, Retirer au coffre, Prendre une affixe, Recevoir une affixe, Recycler à la Forge. Même principe pour le détail d'un mod (Équiper · case n, Fusionner, surcharge repliée) et pour le butin dans la Pause (Équiper maintenant).
-- **Parcours affixe** : depuis la fiche, Forge › Affixes s'ouvre avec l'objet en source (ou en cible), puce « Retour à Héros » (cx-back) qui rend onglet, sélection et défilement, étapes cx-steps (1 Source, 2 Affixe, 3 Cible) et consigne d'étape dans la barre du bas jusqu'à Transférer. « Chercher par affixe » et les alertes (repliées) passent sous le coffre.
-- **Annuler plutôt que confirmer** : verrouiller un objet ou retirer un mod passent tout de suite avec un toast « Annuler » de 5 s ; le recyclage d'un lot (Forge › Recyclage) garde sa confirmation.
-- **Mods** : jauge de capacité (cx-meter, rouge si dépassée), build en tuiles cx-mod sous la polarité de chaque case, seule la prochaine case verrouillée est montrée, liste « Tes mods » filtrable, alignement replié. **Familier** : carte du familier équipé (rang, jauge d'expérience, effet), lignes Œufs (Faire éclore) et Collection (déplie la liste et les fusions), puis capacité et build.
-- **Pause** : butin de la partie d'abord (▲, Équiper le meilleur butin), bonus, équipement, 3 chiffres clés, statistiques et mods repliés ; barre du bas Réglages, Guide (icônes) et Reprendre ; Rendu standard est dans Réglages › Rendu.
-- **Retour arrière** (js/nav.js) : chaque niveau ouvert pousse une entrée d'historique ; Retour ou Échap ferme la fiche, puis la feuille (choix, Réglages, Coop), puis le Camp ou la Pause ; à la racine, un premier Retour affiche « Touche encore Retour pour quitter ». Raccourcis du Camp (hors champ de saisie) : 1 à 6 onglets, flèches et \[ \] dans le coffre, Entrée équipe, / cherche.
-
-**Comparaison et armes (v88–v89)** :
-
-- **CompareObjet** : la fiche compare l'objet choisi à l'objet équipé du même emplacement, en tableau Affixes · Porté · Choisi · Écart. Ordre : statistique de base (toujours en tête), affixes communes, affixes gagnées (« + nouvelle »), affixes perdues (valeur barrée, « − perdue ») ; affixe abyssale ◈, sceau ✦ (« nouveau » / « perdu »). Valeurs avec le rang. Au-delà de 4 affixes, pagination « Affixes 1–4 sur n » avec ‹ › et l'annonce des pertes des pages suivantes. Bloc « Ton héros » (Puissance, Vie, Réduction, seulement ce qui change, sur valeurs arrondies) ; « Toutes les statistiques » ajoute le reste ; « Plus d'actions » déplie Verrouiller, Retirer, Prendre ou Recevoir une affixe, Recycler à la Forge. Aucun verdict ; un objet porté est marqué « Porté » sans comparaison. Même fiche pour le butin de la Pause (face à l'équipement de la partie).
-- **Armes dans le coffre** : les armes possédées et non portées (de tous les héros, héros courant d'abord) apparaissent dans le coffre de l'onglet Héros, avec un filtre « Arme ». Leur fiche : comparaison avec l'arme portée, Équiper (héros courant seulement), Verrouiller (meta.wlock), Fusionner, Recevoir une affixe, Recycler à la Forge (essence). L'arme portée se verrouille aussi depuis sa case. Une arme verrouillée est exclue du recyclage de sa fiche, de l'Armurerie et de « Forge › Recyclage ». Les armes ne servent pas de source d'affixe (inchangé) et n'apparaissent pas dans Forge › Affixes côté coffre.
-
-Recyclage (v90, dans l'Armurerie depuis v92) : puce de l'Armurerie (Coffre · Recettes · Mes armes · Recyclage) ; la Forge garde Bonus · Affixes · Fusion · Sceaux (« Améliorations » renommé « Bonus » en v91). Le coffre (barre d'inventaire, grille, fiche ancrée, « Équiper le meilleur ») est aussi dans l'Armurerie, puce Coffre par défaut ; l'onglet Héros garde l'équipement porté, les statistiques, les fragments et le prestige, avec un bouton « Ouvrir le coffre », seul endroit où l'on recycle. Puces « Rareté à recycler » (multi-sélection) + barre d'inventaire commune (recherche, tri, emplacement, filtre Arme). Grille des objets du coffre et des armes non portées (hors armes de départ) ; « Tout sélectionner » prend tous les objets non verrouillés du filtre ; « Recycler · n » avec l'essence gagnée, confirmation au-delà d'un objet. Gains selon la rareté et le rang (aucun fragment rendu depuis v91).
-
-**Fichiers (site GitHub Pages, sans build)** : `index.html`, `css/game.css`, puis les scripts classiques dans cet ordre, qui partagent la portée globale : `js/data.js` (données, sauvegarde), `js/game.js` (partie, combat, butin), `js/render.js` (Canvas, PixiJS, HUD), `js/ui.js` (fiches, pause, niveaux, mods, fin), `js/camp.js` (Camp), js/seal.js (sceaux), js/pet.js (familiers), js/net.js (coop), js/update.js (mises à jour), `js/settings.js` (réglages, bannière, vibrations), `js/audio.js` (sons), `js/main.js` (boucle). PWA : `manifest.webmanifest`, `sw.js` (cache, réseau d'abord pour la page et les scripts, numéro `VERSION` à incrémenter à chaque mise à jour), `icons/`, `.nojekyll`.
-
-**Son** : entièrement synthétisé en Web Audio, aucun fichier. Coups (avec limite de cadence), critiques, coup reçu, ramassages par rareté, or, potion, esquive, compétence propre à chaque classe, ultime, météores, Gardien qui surgit et qui meurt, élite, Frénésie, montée de niveau, relique ouverte, vague, victoire, défaite, clics d'interface. Musique d'ambiance : bourdon grave filtré qui respire et cloches rares en mode mineur. Le son démarre au premier geste et se coupe quand l'onglet est masqué.
-
-**Sons de ramassage (v86, Réglages › Son, SET.pickSnd)** : Tous, Importants (par défaut) ou Aucun. Importants coupe l'or et les objets communs ou magiques, et garde les objets rares et mieux, les mods, reliques, fragments et sceaux. Intervalle minimal entre deux sons d'un même type : or 0,22 s (0,05 avant), objet commun 0,2 s, rare et mod 0,15 s, légendaire, relique et fragment 0,12 s ; l'or est aussi plus discret. Les sons de combat (coups 0,045 s, critiques, dégâts reçus), d'ultime et d'alertes ne changent pas.
-
-**Réglages** (bouton sur l'écran de départ et dans la pause, propres à l'appareil, clé `crypte-set`) : volume des effets et de la musique, tremblement Normal / Réduit / Désactivé, flash de butin, chiffres de dégâts, vibrations (coup reçu, légendaire ou affixe recherchée), rendu WebGL ou standard.
-
-**Côté des boutons** (Réglages › Écran, SET.hand = right | left, propre à l'appareil) : à gauche, la classe lefty sur body place la grappe de compétences en bas à gauche en miroir (grande compétence et ultime côté bord, esquive et potion côté centre, icône d'esquive retournée) et déplace l'aide clavier en bas à droite, alignée à droite. Le joystick reste flottant (n'importe où sur l'écran).
-
-**Mises à jour** (`js/update.js`) : l'appli installée vérifie `sw.js` au lancement, quand elle revient au premier plan et toutes les 30 min. Dès qu'une nouvelle `VERSION` est installée, un bandeau en haut « Nouvelle version du jeu · Mettre à jour » s'affiche, seulement hors mission (accueil, pause, Camp, fin de partie) ; « Mettre à jour » recharge la page, la croix le masque jusqu'au prochain lancement. Réglages › Application affiche la version installée et un bouton Rechercher. Le cache garde désormais une copie par page, pour que l'ouverture du guide n'écrase plus le jeu hors connexion.
-
-**Robustesse du rendu** : la boucle de jeu programme l'image suivante avant de calculer la courante, et une erreur dans le calcul ou l'affichage est notée sans figer le jeu. Si le contexte WebGL est perdu (mémoire graphique du téléphone), le jeu attend 1,5 s qu'il revienne, puis passe au rendu standard avec un message ; au lancement d'une partie, un contexte déjà perdu bascule tout de suite. Le dernier incident (date, endroit, message) est gardé sur l'appareil (clé `crypte-err`) et affiché dans Réglages › Application.
-
-**Guide du joueur** (`aide/index.html`, 19 captures dans `aide/img/`) : une page illustrée qui explique chaque écran et chaque système, avec un sommaire en onglets. Trois accès, qui ouvrent un nouvel onglet : bouton Guide de l'écran d'accueil, bouton Guide du sac (section En mission) et bouton ? du Camp, qui ouvre la section de l'onglet affiché ; section Familiers en #familiers (`#camp-equip`, `#camp-arsenal`, `#camp-relics`, `#camp-mods`, `#camp-affix`, `#camp-forge`).
-
-**Bannière d'événements** : au centre en haut, un message à la fois pendant \~2 s, file de 3 classée par priorité (affixe recherchée ou légendaire > Gardien, relique ouverte, Gardien vaincu > élite, Frénésie). Les ramassages restent dans les messages sous la barre de vie, qui ne peuvent donc plus chasser un événement important.
-
-| Sujet | Choix actuel |
-| --- | --- |
-| Rendu | PixiJS 7.4.2 (WebGL), repli automatique sur Canvas 2D ; bouton dans la pause pour changer |
-| Boucle | logique à pas fixe de 60 calculs / s, au plus 6 rattrapages par image |
-| Collisions | grille spatiale de cases de 64 unités pour les projectiles et l'écartement des ennemis |
-| Mémoire | tableaux compactés sur place, sprites réutilisés, interface mise à jour seulement si elle change |
-| Sauvegarde | stockage local du navigateur (clé crypte-meta) ; export et import en JSON depuis Camp › Forge › Sauvegarde, avec comparaison et confirmation avant remplacement |
-| Contrôles mobile | joystick flottant, boutons esquive, compétence, potion (allumés quand disponibles), sac |
-| Contrôles clavier | ZQSD ou flèches, Espace esquive, E compétence, R potion, I pause, 1 à 3 pour les bonus |
-
-- [ ] Vérifier que le rendu WebGL s'affiche sur ton téléphone (indiqué dans la pause)
+## Choisir

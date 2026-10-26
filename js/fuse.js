@@ -25,8 +25,9 @@ function fuseGroups(){const G2={};for(const it of gearAll()){if((it.up|0)>=UP_MA
   const gear=Object.values(G2).filter(L=>L.length>=2&&L.some(fuseFree));
   const wpn=Object.values(WPN).flat().filter(w=>ownedW(w.id)&&wFusePlan(w.id).n>0).map(w=>w.id);
   return {gear,wpn,n:gear.length+wpn.length}}
-// Garde le meilleur exemplaire (porté, verrouillé, puis le plus haut niveau) et sacrifie le plus faible libre.
-function fuseGroup(L){const keep=[...L].sort((a,b)=>(isWorn(b)-isWorn(a))||((!!b.lock)-(!!a.lock))||(b.lvl-a.lvl)||(Object.keys(b.aff).length-Object.keys(a.aff).length))[0];
+// Garde le meilleur exemplaire (porté, puis le plus haut niveau, puis verrouillé) et sacrifie le plus faible libre.
+const keepOrder=(a,b)=>(isWorn(b)-isWorn(a))||(b.lvl-a.lvl)||((!!b.lock)-(!!a.lock))||(Object.keys(b.aff).length-Object.keys(a.aff).length);
+function fuseGroup(L){const keep=[...L].sort(keepOrder)[0];
   const eat=L.filter(x=>x!==keep&&fuseFree(x)).sort((a,b)=>(a.lvl-b.lvl)||(a.id-b.id))[0];return fuseGear(keep,eat)?keep:null}
 function fuseAll(){let n=0;for(let guard=0;guard<500;guard++){const g=fuseGroups();if(!g.n)break;let any=false;for(const L of g.gear)if(fuseGroup(L)){n++;any=true}for(const id of g.wpn){const d=wFuse(id);if(d){n+=d;any=true}}if(!any)break}return n}
 /* ---------- Forge › Fusion ---------- */
@@ -36,7 +37,7 @@ function campFusion(){const g=fuseGroups();
   h+='<div class="cx-rows">';
   for(const id of g.wpn){const w=wdef(id),p=wFusePlan(id),c=RAR[w.r].c;
     h+=`<div class="cx-row"><span class="cx-row__k"><b style="color:${c}">${esc(w.n)}</b><small>Arme ${RAR[w.r].n.toLowerCase()} · ${CLS[w.cls].n} · ${wSpares(id).length} double${wSpares(id).length>1?'s':''} · ${rkTxt(meta.wlv[id])} → <b>${rkTxt(p.R)}</b></small></span><button class="cx-btn cx-btn--sm cx-btn--primary" data-cact="wfuse" data-arg="${id}">Fusionner</button></div>`}
-  for(const L of g.gear){const it=L[0],keep=[...L].sort((a,b)=>(isWorn(b)-isWorn(a))||((!!b.lock)-(!!a.lock))||(b.lvl-a.lvl))[0],c=RAR[it.r].c;
+  for(const L of g.gear){const it=L[0],keep=[...L].sort(keepOrder)[0],c=RAR[it.r].c;
     h+=`<div class="cx-row"><span class="cx-row__k"><b style="color:${c}">${esc(it.rid?it.name:it.type)}</b><small>${RAR[it.r].n} · ${SLOT[it.slot]} · ${L.length} exemplaires ${rkTxt(it.up)} · garde <b>${esc(keep.name)}</b> niv. ${keep.lvl}${isWorn(keep)?' (porté)':''} → ${rkTxt((it.up|0)+1)}</small></span><button class="cx-btn cx-btn--sm cx-btn--primary" data-cact="gfuse" data-arg="${keep.id}">Fusionner</button></div>`}
   return h+`</div><p class="cx-hint" style="margin:0">L'exemplaire gardé conserve ses affixes et son niveau ; le plus faible des doubles libres est sacrifié. Chaque rang ajoute 10 % aux statistiques de l'objet (rang 10 au maximum).</p></section>`}
 function fusionFoot(){const g=fuseGroups();return g.n?`<button class="cx-btn cx-btn--primary" data-cact="fuseall">Tout fusionner · ${g.n}</button>`:''}

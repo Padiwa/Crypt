@@ -5,7 +5,7 @@ const PETS={
   golem:{n:'Golem de poche',role:'Défense',c:'#a9bccf',d:'Toutes les 7 s, attire pendant 4 s les monstres proches, qui le frappent au lieu de toi ; blesse ceux qui le touchent.'},
   furet:{n:'Furet pilleur',role:'Butin',c:'#f0cf4a',d:'Rapporte l\'or, les cristaux et les objets de plus loin, et +5 % de chances d\'objet.'},
 };
-const PET_IDS=Object.keys(PETS),PET_RK=5,PET_LV=20,PET_FUSE=r=>100*r,PET_R=30;
+const PET_IDS=Object.keys(PETS),PET_RK=5,PET_LV=20,PET_FUSE=r=>100*r;
 const petRkMul=r=>1+.35*(r-1),petLvMul=l=>1+.05*(l-1),petNeed=l=>50*l;
 const RKS='★';
 meta.pets=meta.pets||[];meta.eggs=meta.eggs|0;meta.pload=meta.pload||{};meta.ppol=meta.ppol||{};meta.palign=meta.palign||{};
