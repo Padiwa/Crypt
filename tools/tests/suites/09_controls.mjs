@@ -27,4 +27,21 @@ export const tests = [
     const a = await pos(p); await p.keyboard.down('d'); await sleep(p, 400); await p.keyboard.up('d');
     t.ok((await pos(p))[0] > a[0] + 20, 'déplacé');
   } },
+  { name: 'zoom réglé dans la pause : vue plus large ou plus serrée, HUD inchangé, gardé après rechargement', fn: async (b, t) => {
+    const p = t.track(await newPage(b)); await startMission(p);
+    const hud0 = await p.evaluate(() => [$('hpBox').offsetHeight, $('bagBtn').offsetWidth, $('bDash').offsetWidth, $('objBox').offsetHeight]);
+    const vw0 = await p.evaluate(() => G.vw);
+    await p.evaluate(() => openBag()); await p.click('#setBtnBag');
+    t.eq(await p.evaluate(() => [$('sv_zoom').textContent, document.querySelector('[data-zoom]').value]), ['100 %', '100'], 'curseur à 100 %');
+    await p.evaluate(() => { const i = document.querySelector('[data-zoom]'); i.value = '70'; i.dispatchEvent(new Event('input', { bubbles: true })); });
+    await sleep(p, 200);
+    t.ok(await p.evaluate((vw0) => Math.abs(G.vw - vw0 / .7) < 2, vw0), 'à 70 %, la vue montre 1/0,7 fois plus de largeur');
+    t.eq(await p.evaluate(() => $('sv_zoom').textContent), '70 %', 'valeur affichée');
+    await p.click('#closeSet'); await p.evaluate(() => closeBag()); await sleep(p, 200);
+    t.eq(await p.evaluate(() => [$('hpBox').offsetHeight, $('bagBtn').offsetWidth, $('bDash').offsetWidth, $('objBox').offsetHeight]), hud0, 'HUD de la même taille');
+    await p.reload(); await startMission(p); await sleep(p, 200);
+    t.ok(await p.evaluate((vw0) => SET.zoom === .7 && Math.abs(G.vw - vw0 / .7) < 2, vw0), 'zoom gardé après rechargement');
+    await p.evaluate(() => { SET.zoom = 1.4; }); await sleep(p, 200);
+    t.ok(await p.evaluate((vw0) => Math.abs(G.vw - vw0 / 1.4) < 2, vw0), 'à 140 %, vue plus serrée');
+  } },
 ];

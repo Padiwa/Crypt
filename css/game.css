@@ -1195,3 +1195,18 @@ body:has(#camp:not([hidden])) .toast,body:has(#bag:not([hidden])) .toast{top:cal
 .room #relHud b{font:700 13px/1 var(--font-body)}
 /* très petits écrans (320 px) : la 1re ligne garde la place pour la barre de vie */
 @media (max-width:340px){.room b{font-size:17px}.hud .gold{font-size:13px}.hud{gap:8px}}
+/* Héros › Couleurs du héros (v118) */
+.lookhead{display:flex;gap:12px;align-items:center}
+.lookprev{width:88px;height:88px;flex:none;border-radius:12px;border:1px solid var(--line);background:radial-gradient(circle at 50% 50%,#3b2f2a 0,#1a1412 72%)}
+.lookside{display:flex;flex-direction:column;gap:8px;align-items:flex-start;min-width:0}
+.lookrows{display:flex;flex-direction:column;gap:10px}
+.lookrow{display:flex;flex-direction:column;gap:5px}
+.lookk{font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.looksw{display:flex;flex-wrap:wrap;gap:6px}
+.lsw{width:28px;height:28px;flex:none;border-radius:50%;padding:0;position:relative;cursor:pointer;background:var(--sw);border:2px solid rgba(255,255,255,.16);box-sizing:border-box}
+.lsw[aria-checked="true"],.lsw--free.is-on{border-color:#fff;box-shadow:0 0 0 2px var(--ember)}
+.lsw--free{background:conic-gradient(#ff5a5f,#f0cf4a,#8fe07a,#6fd6e6,#8fb8ff,#ff8ad8,#ff5a5f)}
+.lsw--free.is-on{background:radial-gradient(circle,var(--sw) 0 52%,transparent 54%),conic-gradient(#ff5a5f,#f0cf4a,#8fe07a,#6fd6e6,#8fb8ff,#ff8ad8,#ff5a5f)}
+.lsw--free input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0;margin:0}
+.lsw:focus-visible,.lsw--free:focus-within{outline:2px solid var(--ember);outline-offset:2px}
+

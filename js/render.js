@@ -66,10 +66,12 @@ function allyTags2D(M){if(!M.length)return;const F1='800 10px Alegreya Sans, sys
     ctx.font=F1;ctx.textAlign='center';ctx.fillStyle='#f0cf4a';ctx.fillText(pr,x0+wp/2,y+.5)}
   ctx.restore()}
 const allShots=()=>G.oshots&&NET.on?G.shots.concat(G.oshots):G.shots;
+// Couleurs d'un héros à l'écran : les miennes (Héros › Couleurs), celles qu'un autre joueur a choisies en coopération.
+const palOf=(P,cls)=>lookPal(cls,P===G.P?myLook(cls):(typeof who==='function'&&NET.on?who(P.slot).look:null));
 function drawPlayer(P){
   shadow(P.x,P.y,P.r);
   ctx.globalAlpha=P.dashT>0?.55:(P.inv>0&&Math.floor(G.t*20)%2?.6:1);
-  const a=P.face,C=CLS[G.cls];ctx.lineCap='round';
+  const a=P.face,C=palOf(P,G.cls);ctx.lineCap='round';
   if(G.cls==='archer'){
     ctx.strokeStyle='#d6b17c';ctx.lineWidth=4;
     const bx=P.x+Math.cos(a)*(P.r+9),by=P.y+Math.sin(a)*(P.r+9);
@@ -118,7 +120,7 @@ function drawDrop(d){
   ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(d.x,d.y-10+bob);ctx.lineTo(d.x+7,d.y+bob);ctx.lineTo(d.x,d.y+10+bob);ctx.lineTo(d.x-7,d.y+bob);ctx.fill();
   ctx.strokeStyle='rgba(0,0,0,.6)';ctx.lineWidth=1.5;ctx.stroke();
 }
-const zoom=()=>clamp(Math.min(innerWidth,innerHeight)/620,.62,1.5);
+const zoom=()=>clamp(Math.min(innerWidth,innerHeight)/620,.62,1.5)*(typeof setZoom==='function'?setZoom():1);
 function render2D(){
   const z=zoom(),vw=innerWidth/z,vh=innerHeight/z;G.vw=vw;G.vh=vh;
   const P=G.P,hs_=(G.hshake||0)*SET.shake,sx=hs_?rand(-hs_,hs_):0,sy=hs_?rand(-hs_,hs_):0;
@@ -280,8 +282,8 @@ function pEnemy(type,white,frame){
   if(!white){const ex=r*.45,py=r*.3;ctx.fillStyle='#ff3b30';circle(ex,py,2.4);ctx.fill();circle(ex,-py,2.4);ctx.fill()}
 }
 function pCible(st){const r=18;ctx.fillStyle=st===2?'#5a5040':st===1?'#fff':'#a8874a';circle(0,0,r);ctx.fill();ctx.strokeStyle='#f0cf4a';ctx.lineWidth=3;ctx.stroke();if(st===0){ctx.fillStyle='#2a1e0e';circle(-5,0,r*.5);ctx.fill()}}
-function pPlayer(cls,flash){
-  const C=CLS[cls],r=17;ctx.lineCap='round';
+function pPlayer(cls,flash,C=lookPal(cls)){
+  const r=17;ctx.lineCap='round';
   if(cls==='archer'){ctx.strokeStyle='#d6b17c';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(r*.3,0);ctx.lineTo(r+9,0);ctx.stroke();
     ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(r+5,11);ctx.quadraticCurveTo(r+12,0,r+5,-11);ctx.stroke()}
   else if(cls==='guerrier'){ctx.strokeStyle='#cfd6dc';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(r+1,0);ctx.lineTo(r+26,0);ctx.stroke();
@@ -310,7 +312,7 @@ function initPixi(){
   for(const t of['ghoul','archer','brute','boss','poison','pyro','slime','givrin']){const s=2*(ETYPE[t].r+16);T.en[t]=mkTex(s,s,()=>pEnemy(t,false));T.enW[t]=mkTex(s,s,()=>pEnemy(t,true))}
   T.bat=[0,1,2].map(f=>mkTex(48,40,()=>pEnemy('bat',false,f)));T.batW=mkTex(48,40,()=>pEnemy('bat',true,1));
   T.cible=[0,1,2].map(s=>mkTex(48,48,()=>pCible(s)));
-  T.pl={};for(const c in CLS)T.pl[c]=[mkTex(100,100,()=>pPlayer(c,false)),mkTex(100,100,()=>pPlayer(c,true))];
+  T.pl={};for(const c in CLS)T.pl[c]=[mkTex(100,100,()=>pPlayer(c,false)),mkTex(100,100,()=>pPlayer(c,true))];T.plc=new Map();
   T.circle=mkTex(16,16,()=>{ctx.fillStyle='#fff';circle(0,0,8);ctx.fill()},2);
   T.aura=mkTex(56,56,()=>{ctx.fillStyle='rgba(240,190,60,.22)';circle(0,0,25);ctx.fill();ctx.strokeStyle='rgba(255,207,90,.7)';ctx.lineWidth=1.5;ctx.stroke()});
   T.bolt=mkTex(22,8,()=>{ctx.strokeStyle='#fff';ctx.lineCap='round';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-8,0);ctx.lineTo(8,0);ctx.stroke()});
@@ -429,11 +431,11 @@ function renderPixi(){
       if(e.type==='slime'){const k=e.r/ETYPE.slime.r,w=Math.sin(G.t*6+e.wob)*.08;s.scale.set(k*(1+w),k*(1-w))}}}
   // héros
   shadow(P.x,P.y,P.r);
-  const pl=L.player;pl.texture=T.pl[G.cls][P.flash>0?1:0];pl.position.set(P.x,P.y);pl.rotation=P.face;pl.alpha=P.down?.4:P.dashT>0?.55:(P.inv>0&&Math.floor(G.t*20)%2?.6:1);
+  const pl=L.player;pl.texture=plTex(G.cls,palOf(P,G.cls))[P.flash>0?1:0];pl.position.set(P.x,P.y);pl.rotation=P.face;pl.alpha=P.down?.4:P.dashT>0?.55:(P.inv>0&&Math.floor(G.t*20)%2?.6:1);
   {const M=NET.on?(G.mates||[]):[];L.mateS=L.mateS||[];
     for(let i=0;i<Math.max(M.length,L.mateS.length);i++){const Q=M[i];let q=L.mateS[i];if(!Q){if(q)q.visible=false;continue}
       if(!q){q=new PIXI.Sprite(T.pl.archer[0]);q.anchor.set(.5);world.addChildAt(q,world.getChildIndex(L.player));L.mateS[i]=q}
-      q.visible=true;q.texture=T.pl[Q.cls][Q.flash>0?1:0];q.position.set(Q.x,Q.y);q.rotation=Q.face;q.alpha=Q.down?.35:Q.dashT>0?.6:1;shadow(Q.x,Q.y,Q.r)}}
+      q.visible=true;q.texture=plTex(Q.cls,palOf(Q,Q.cls))[Q.flash>0?1:0];q.position.set(Q.x,Q.y);q.rotation=Q.face;q.alpha=Q.down?.35:Q.dashT>0?.6:1;shadow(Q.x,Q.y,Q.r)}}
   // effets
   const f=L.fxG;f.clear();
   if(NET.on)for(const Q of G.mates||[])petDrawPx(f,Q.pet,.85);petDrawPx(f,G.pet,1);
@@ -497,6 +499,11 @@ function renewRender(){floorPat=null;
   try{clearTimeout(PX.lostT);PX.R.view.remove();PX.R.destroy()}catch(e){}
   PX=null;let ok=false;try{ok=initPixi()}catch(err){noteErr('rendu',err)}
   resize();if(ok){try{if(G)buildStatic()}catch(err){dropPixi(err)}}else toast('Rendu WebGL indisponible au retour : le jeu passe au rendu standard.',true)}
+// Textures d'un héros à ses couleurs (normale, touchée), faites à la demande et gardées (au plus 24 jeux de couleurs).
+function plTex(cls,pal){const T=PX.T,k=cls+pal.cloak+pal.rim+pal.inner;let t=T.plc.get(k);
+  if(!t){if(T.plc.size>=24){const [k0,t0]=T.plc.entries().next().value;T.plc.delete(k0);for(const x of t0)try{x.destroy(true)}catch(e){}}
+    t=[mkTex(100,100,()=>pPlayer(cls,false,pal)),mkTex(100,100,()=>pPlayer(cls,true,pal))];T.plc.set(k,t)}
+  return t}
 const glLost=()=>{try{return !!(PX&&(PX.lost||(PX.R.gl&&PX.R.gl.isContextLost&&PX.R.gl.isContextLost())))}catch(e){return false}};
 function render(){
   if(PX&&!PX.lost&&glLost())dropPixi('contexte WebGL perdu');

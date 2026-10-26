@@ -1,5 +1,8 @@
 // Crypte des Cendres — settings.js : réglages propres à l'appareil (son, tremblement, flash, vibrations, chiffres)
-const SET_DEF={sfx:.7,music:.35,shake:1,flash:true,vib:true,dmgNum:true,hand:'right',pickSnd:'imp',mouse:'follow'};
+const SET_DEF={sfx:.7,music:.35,shake:1,flash:true,vib:true,dmgNum:true,hand:'right',pickSnd:'imp',mouse:'follow',zoom:1};
+// Zoom de la vue en mission, réglé par le joueur : 70 % (on voit plus loin) à 140 % (tout est plus gros). Le HUD ne change pas.
+const ZOOM_MIN=.7,ZOOM_MAX=1.4;
+const setZoom=()=>Math.min(ZOOM_MAX,Math.max(ZOOM_MIN,+SET.zoom||1));
 let SET=Object.assign({},SET_DEF);
 try{Object.assign(SET,JSON.parse(localStorage.getItem('crypte-set')||'{}'))}catch(e){}
 const saveSet=()=>{try{localStorage.setItem('crypte-set',JSON.stringify(SET))}catch(e){}};
@@ -19,6 +22,7 @@ function drawSettings(){
       <div class="setrow"><div><b>Sons de ramassage</b><span>Importants : seulement rare et mieux, mods, reliques, fragments et sceaux (pas l'or ni les objets communs ou magiques). Les sons de combat ne changent pas.</span></div><div class="cx-chips" role="radiogroup" aria-label="Sons de ramassage">${[['all','Tous'],['imp','Importants'],['off','Aucun']].map(([v,l])=>`<button class="cx-chip cx-chip--sm" role="radio" aria-checked="${(SET.pickSnd||'imp')===v}" data-pick="${v}">${l}</button>`).join('')}</div></div>
       <p class="cx-hint" style="margin:0">Le son démarre à ton premier geste dans le jeu (règle des navigateurs).</p></section>
     <section class="cx-section"><h3 class="cx-section__label">Écran</h3>
+      <label class="setrow"><div><b>Zoom · <span id="sv_zoom" style="font:inherit;color:inherit">${pct(setZoom())} %</span></b><span>Plus bas, tu vois plus loin ; plus haut, tout est plus gros. Effet immédiat, le HUD ne change pas.</span></div><input type="range" min="${pct(ZOOM_MIN)}" max="${pct(ZOOM_MAX)}" step="5" value="${pct(setZoom())}" data-zoom="1" aria-label="Zoom"></label>
       <div class="setrow"><div><b>Tremblement</b><span>Coups reçus, compétences, ultime</span></div><div class="cx-chips" role="radiogroup" aria-label="Tremblement">${sh.map(([v,l])=>`<button class="cx-chip cx-chip--sm" role="radio" aria-checked="${SET.shake===v}" data-shake="${v}">${l}</button>`).join('')}</div></div>
       <div class="setrow"><div><b>Boutons de compétences</b><span>Côté de l'écran ; le déplacement se fait de l'autre main</span></div><div class="cx-chips" role="radiogroup" aria-label="Côté des boutons">${[['left','À gauche'],['right','À droite']].map(([v,l])=>`<button class="cx-chip cx-chip--sm" role="radio" aria-checked="${SET.hand===v}" data-hand="${v}">${l}</button>`).join('')}</div></div>
       <div class="setrow"><div><b>Déplacement à la souris</b><span>Ordinateur : le héros va vers le pointeur ; clic gauche maintenu (ou pointeur sur le héros) = immobile. Clavier (ZQSD, flèches) toujours actif.</span></div><div class="cx-chips" role="radiogroup" aria-label="Déplacement à la souris">${[['follow','Suivre le pointeur'],['joy','Joystick']].map(([v,l])=>`<button class="cx-chip cx-chip--sm" role="radio" aria-checked="${(SET.mouse==='joy'?'joy':'follow')===v}" data-mouse="${v}">${l}</button>`).join('')}</div></div>
@@ -42,7 +46,8 @@ document.addEventListener('DOMContentLoaded',()=>{});
     else if(b.id==='setUpdGo'){location.reload();return}
     saveSet();drawSettings();SND.play('ui')});
   body.addEventListener('input',e=>{if(e.target.id==='saveIn'){saveDraft=e.target.value;return}
-    if(e.target.id==='setName'){meta.pname=cleanName(e.target.value);saveMeta();return}const k=e.target.dataset.vol;if(!k)return;SET[k]=+e.target.value/100;$('sv_'+k).textContent=e.target.value+' %';SND.vol();saveSet()});
+    if(e.target.id==='setName'){meta.pname=cleanName(e.target.value);saveMeta();return}
+    if(e.target.dataset.zoom){SET.zoom=+e.target.value/100;$('sv_zoom').textContent=e.target.value+' %';saveSet();return}const k=e.target.dataset.vol;if(!k)return;SET[k]=+e.target.value/100;$('sv_'+k).textContent=e.target.value+' %';SND.vol();saveSet()});
   body.addEventListener('change',e=>{if(e.target.dataset.vol==='sfx')SND.play('pick2');
     if(e.target.id==='setName'){meta.pname=cleanName(e.target.value);e.target.value=meta.pname;saveMeta();if(typeof netMe==='function')netMe()}});
   body.addEventListener('keydown',e=>{if(e.target.id==='setName'&&e.key==='Enter')e.target.blur()});

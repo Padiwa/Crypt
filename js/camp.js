@@ -302,6 +302,24 @@ function xfDo(){const s=xfGet(xf.src),st=xfState();if(!s||!xfSrcOk(xf.src)||!st|
   else meta.gear[xf.src.slice(2)]=null;
   meta.essence-=cost;const dn=itemName(xfGet(xf.dst)||{name:'la cible'});toast(`${st.mode==='fuse'?'Affixe fusionnée':'Affixe transférée'} : <b>${xfV(xfGet(xf.dst)||{},k,v)}</b> sur ${esc(dn)}. ${esc(itemName(s))} est détruit.`);
   xf={src:'',k:'',dst:'',rep:'',pick:'src'};campSel=null}
+// Héros › Couleurs du héros : cape, bordure et capuche de chaque classe, avec un aperçu. Nuancier + couleur libre.
+let lookCls=null;
+const lookC=()=>CLS[lookCls]?lookCls:heroCls;
+function lookHtml(){const c=lookC(),a=myLook(c),d=lookDef(c),same=a.every((x,i)=>x===d[i]),cn=CLS[c].n.toLowerCase();
+  const chip=k=>`<button class="cx-chip cx-chip--sm" data-cact="lookcls" data-arg="${k}" aria-pressed="${k===c}">${CLS[k].n}</button>`;
+  const row=(p,i)=>{const L=LOOK_SW[p.k],free=!L.includes(a[i]);
+    return `<div class="lookrow"><span class="lookk">${p.n}</span><div class="looksw" role="radiogroup" aria-label="${p.n} du ${cn}">${L.map(col=>`<button class="lsw" role="radio" aria-checked="${col===a[i]}" data-cact="look" data-arg="${i}|${col}" style="--sw:${col}" aria-label="${p.n} ${col}${col===d[i]?', couleur d\'origine':''}"></button>`).join('')}<label class="lsw lsw--free${free?' is-on':''}" style="--sw:${a[i]}"><input type="color" value="${a[i]}" data-look="${i}" aria-label="${p.n} : autre couleur"></label></div></div>`};
+  return `<section class="cx-section" id="lookSec"><h3 class="cx-section__label">Couleurs du héros</h3>
+    <div class="lookhead"><canvas class="lookprev" id="lookPrev" width="240" height="240" role="img" aria-label="Aperçu du ${cn}"></canvas>
+      <div class="lookside"><div class="cx-chips" aria-label="Classe">${Object.keys(CLS).map(chip).join('')}</div>
+      <button class="cx-btn cx-btn--sm cx-btn--ghost" data-cact="lookreset" data-arg="${c}" ${same?'disabled':''}>Couleurs d'origine</button></div></div>
+    <div class="lookrows">${LOOK_PARTS.map(row).join('')}</div>
+    <p class="cx-hint" style="margin:0">Chaque classe garde ses couleurs. En coopération, les autres joueurs les voient.</p></section>`}
+function lookSet(c,i,col){const a=myLook(c).slice();a[i]=col.toLowerCase();meta.look=meta.look||{};const d=lookDef(c);if(a.every((x,j)=>x===d[j]))delete meta.look[c];else meta.look[c]=a}
+function lookPaint(){const el=document.getElementById('lookPrev');if(!el)return;const c=lookC(),g=el.getContext('2d'),W=el.width,k=W/66;
+  g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,W,el.height);g.setTransform(k,0,0,k,W/2-11*k,el.height/2);g.rotate(-.35);
+  g.fillStyle='rgba(0,0,0,.35)';g.beginPath();g.ellipse(2,6,19,15,0,0,7);g.fill();
+  const old=ctx;ctx=g;try{pPlayer(c,false,lookPal(c,myLook(c)))}finally{ctx=old}}
 function prestSection(){
   const c=heroCls,o=prOf(c),free=prFree(c),op=prOpen(),cost=prCost(o.lv),nmax=UPG.filter(u=>lv(u.k)>=u.max).length;
   let h=`<h3>Prestige · ${CLS[c].n}${o.lv?` · niveau ${o.lv}`:''}</h3>`;
@@ -379,8 +397,9 @@ function drawCamp(){
   else if(campTab==='forge'){const fl=k=>!isUnl(FSUB_UNL[k]),lab=(k,l)=>fl(k)?`<span class="lockmini" aria-hidden="true">${LOCK_SVG}</span>${l}`:l;
     h=subTabs([['up',lab('up','Bonus')],['affix',lab('affix','Affixes')],['fuse',lab('fuse','Fusion'),fl('fuse')?0:fuseGroups().n],['seals',lab('seals','Sceaux'),!fl('seals')&&SEAL_IDS.some(id=>meta.seals[id]>0)&&!Object.values(meta.gear).some(i=>i&&i.seal)?1:0]],forgeSub,'fsub')+(fl(forgeSub)?lockedHtml(FSUB_UNL[forgeSub]):NC+more+(forgeSub==='affix'?campAffix():forgeSub==='seals'?campSeals():forgeSub==='fuse'?campFusion():campForge()))}
   else if(campTab==='mods'||campTab==='pets')h=NC+more+'<div id="modsCamp" class="col"></div>';
-  else h=NC+more+(campTab==='equip'?campEquip()+prestSection():campTab==='arsenal'?campArsenal2():campTab==='relics'?campRelics():'');
+  else h=NC+more+(campTab==='equip'?campEquip()+lookHtml()+prestSection():campTab==='arsenal'?campArsenal2():campTab==='relics'?campRelics():'');
   body.innerHTML=h;
+  if(campTab==='equip')lookPaint();
   if(tabLocked(campTab)){}
   else if(campTab==='pets'){if(modTab!=='p'){modTab='p';modSel=null;modSF=null;modPF='all';alSel=null}renderMods('modsCamp')}
   else if(campTab==='mods'){if(modTab==='p'||(modTab==='h'&&!isUnl('hmods'))){modTab=isUnl('hmods')?'h':'w';modSel=null;modSF=null;modPF='all';alSel=null}renderMods('modsCamp')}
@@ -476,6 +495,9 @@ function campClick(b){
     else if(a==='gfuse'){const it=gearAll().find(x=>x.id===+arg),L=it?gearAll().filter(x=>mKey(x)===mKey(it)&&(x.up|0)===(it.up|0)):[],k=L.length>=2?fuseGroup(L):null;if(k){SND.play('leg');toast(`<b style="color:${RAR[k.r].c}">${esc(k.name)}</b> passe au ${rkTxt(k.up)}`)}}
     else if(a==='fuse1'){const it=xfGet(arg),p=fusePartner(it);if(it&&p&&fuseGear(it,p)){SND.play('leg');toast(`<b style="color:${RAR[it.r].c}">${esc(it.name)}</b> passe au ${rkTxt(it.up)} · ${esc(p.name)} sacrifié`)}}
     else if(a==='fuseall'){const n=fuseAll();if(n){SND.play('leg');toast(`${n} fusion${n>1?'s':''} faite${n>1?'s':''}`)}}
+    else if(a==='lookcls'){lookCls=arg}
+    else if(a==='look'){const [i,col]=arg.split('|');lookSet(lookC(),+i,col);if(typeof netMe==='function')netMe()}
+    else if(a==='lookreset'){if(meta.look)delete meta.look[arg];if(typeof netMe==='function')netMe()}
     else if(a==='rsel'){relSel=relSel===arg?null:arg}
     else if(a==='rtier'){relTier=arg;relSel=null}
     else if(a==='rqadd'){const [id,rd]=arg.split('|'),rad=rd==='1',ow=(meta.relics[id]||[0,0])[rad?1:0];if(relicQN(id,rad)<ow)meta.relicQ.push({id,rad})}
@@ -513,7 +535,10 @@ function campClick(b){
   }
   drawCamp();if(!$('settings').hidden)drawSettings();
 }
-$('campBody').addEventListener('input',e=>{if(e.target.id==='saveIn')saveDraft=e.target.value});
+$('campBody').addEventListener('input',e=>{if(e.target.id==='saveIn')saveDraft=e.target.value;
+  const i=e.target.dataset.look;if(i!=null){lookSet(lookC(),+i,e.target.value);const l=e.target.parentElement;l.style.setProperty('--sw',e.target.value);l.classList.add('is-on');lookPaint()}});
+// couleur libre : enregistrée et envoyée aux autres joueurs quand le choix est fait
+$('campBody').addEventListener('change',e=>{if(e.target.dataset.look==null)return;lookSet(lookC(),+e.target.dataset.look,e.target.value);saveMeta();if(typeof netMe==='function')netMe();drawCamp()});
 $('campBody').addEventListener('change',e=>{if(e.target.id==='xfSrc'){xf={src:e.target.value,k:'',dst:xf.dst===e.target.value?'':xf.dst,rep:''};drawCamp()}else if(e.target.id==='xfDst'){xf.dst=e.target.value;xf.rep='';drawCamp()}});
 // Héros › Équipements enregistrés : renommer
 $('campBody').addEventListener('change',e=>{const i=e.target.dataset.setname;if(i==null)return;const s=setsOf()[+i];if(s){s.n=e.target.value.trim().slice(0,24)||s.n;saveMeta()}});

@@ -1,6 +1,6 @@
 # Crypte des Cendres — specs
 
-Oct 26, 2026 · @cms · version 117
+Oct 26, 2026 · @cms · version 118
 
 ## Vue d'ensemble
 
@@ -236,6 +236,13 @@ Au niveau L, les chances d'équipement, de relique et d'arme sont multipliées p
 **v106 · Rythme de progression réglable.** Tous les réglages de vitesse de progression sont regroupés dans `BAL_PRESETS` (haut de `js/data.js`), avec deux rythmes : `rapide` (par défaut) et `long` (environ 80 h). C'est un réglage de développement, pas un choix du joueur (aucun écran ne le propose) : on change de rythme en modifiant la ligne `BAL_MODE`.
 
 **v107 · Rythmes dans des fichiers.** Chaque rythme est un fichier : `js/rythmes/rapide.js` (rythme publié, par défaut) et `js/rythmes/long.js` (fin de jeu visée vers 80 h). Chacun définit `RYTHME` avec les valeurs du tableau ci-dessous, commentées ; `BAL_PRESETS` et `BAL_MODE` disparaissent de `data.js`. Le rythme chargé est celui de la balise `<script src="js/rythmes/….js">` d'`index.html`, placée avant `data.js` (et la liste `CORE` de `sw.js`). Pour un nouveau rythme, on copie un fichier et on change ses valeurs. Le simulateur charge n'importe quel fichier : `--rythme long` ou un chemin. Le joueur ne choisit toujours pas le rythme.
+
+**v118 · Couleurs du héros, zoom.**
+
+- Couleurs du héros (Héros › Couleurs du héros) : cape, bordure et capuche choisies pour chaque classe, dans la sauvegarde (`meta.look[classe]` = 3 couleurs ; absent = couleurs d'origine de `CLS`). Puces Guerrier, Archer, Magicien ; nuancier de 14 pastilles par partie et une pastille pour n'importe quelle couleur (`input type=color`) ; aperçu dessiné par `pPlayer` ; « Couleurs d'origine ». Rendu standard et WebGL (textures par jeu de couleurs, `plTex`, 24 au plus en cache).
+- Coopération : les couleurs du héros joué passent dans `hello` et `roster` (`look`) et se mettent à jour en direct ; un joueur d'une version plus ancienne voit les couleurs d'origine. Protocole inchangé (v9).
+- Zoom (Réglages › Écran, ouvert aussi depuis la pause) : curseur de 70 % à 140 %, multiplié au zoom automatique de l'écran, effet immédiat, gardé dans `crypte-set` (`SET.zoom`). Le HUD, les flèches et les boutons gardent leur taille ; la zone d'apparition des monstres suit la vue (juste hors de l'écran).
+- Tests : 84 (couleurs par classe, aperçu, rendu, couleurs en coopération, zoom et HUD inchangé).
 
 **v117 · HUD sans chevauchement, Capture en chaîne.**
 
@@ -560,7 +567,7 @@ Recyclage (v90, dans l'Armurerie depuis v92) : puce de l'Armurerie (Coffre · Re
 
 **Sons de ramassage (v86, Réglages › Son, SET.pickSnd)** : Tous, Importants (par défaut) ou Aucun. Importants coupe l'or et les objets communs ou magiques, et garde les objets rares et mieux, les mods, reliques, fragments et sceaux. Intervalle minimal entre deux sons d'un même type : or 0,22 s (0,05 avant), objet commun 0,2 s, rare et mod 0,15 s, légendaire, relique et fragment 0,12 s ; l'or est aussi plus discret. Les sons de combat (coups 0,045 s, critiques, dégâts reçus), d'ultime et d'alertes ne changent pas.
 
-**Réglages** (bouton sur l'écran de départ et dans la pause, propres à l'appareil, clé `crypte-set`) : volume des effets et de la musique, tremblement Normal / Réduit / Désactivé, flash de butin, chiffres de dégâts, vibrations (coup reçu, légendaire ou affixe recherchée), rendu WebGL ou standard. En tête, la section Compte (v109) : nom de joueur (meta.pname, 16 signes : lettres, chiffres, espace, - \_ ' .) et identifiant unique tiré une fois (meta.pid, nom par défaut Joueur-XXXXX) ; ces deux-là sont dans la sauvegarde, pas dans les réglages de l'appareil.
+**Réglages** (bouton sur l'écran de départ et dans la pause, propres à l'appareil, clé `crypte-set`) : volume des effets et de la musique, tremblement Normal / Réduit / Désactivé, flash de butin, chiffres de dégâts, vibrations (coup reçu, légendaire ou affixe recherchée), rendu WebGL ou standard, zoom de la vue de 70 % à 140 % (v118, le HUD garde sa taille). En tête, la section Compte (v109) : nom de joueur (meta.pname, 16 signes : lettres, chiffres, espace, - \_ ' .) et identifiant unique tiré une fois (meta.pid, nom par défaut Joueur-XXXXX) ; ces deux-là sont dans la sauvegarde, pas dans les réglages de l'appareil.
 
 **Côté des boutons** (Réglages › Écran, SET.hand = right | left, propre à l'appareil) : à gauche, la classe lefty sur body place la grappe de compétences en bas à gauche en miroir (grande compétence et ultime côté bord, esquive et potion côté centre, icône d'esquive retournée) et déplace l'aide clavier en bas à droite, alignée à droite. Le joystick reste flottant (n'importe où sur l'écran).
 

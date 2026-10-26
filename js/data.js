@@ -66,6 +66,17 @@ const CLS={
     desc:'Lance des orbes qui explosent à l\'impact, plus vite à l\'arrêt. Fragile, redoutable contre les groupes. <b>Nova de givre</b> : blesse, ralentit et dissipe les projectiles. <b>Ultime, Pluie de météores</b> : 3 météores sur les ennemis proches.',
     icon:'<path d="M12 2v20M3.3 7l17.4 10M3.3 17 20.7 7M9 4l3 2 3-2M9 20l3-2 3 2"/>'},
 };
+// Couleurs du héros, choisies par classe (Héros › Couleurs) : cape, bordure et capuche.
+// meta.look[classe] = ['#cape','#bordure','#capuche'] ; absent = couleurs d'origine de la classe. En coopération, les autres joueurs les voient.
+const LOOK_PARTS=[{k:'cloak',n:'Cape'},{k:'rim',n:'Bordure'},{k:'inner',n:'Capuche'}];
+const LOOK_SW={
+  cloak:['#5b2a26','#2d4c50','#3c2c63','#7a1f24','#8a4b16','#6e5a1c','#2f5a2a','#1f4a6b','#26306a','#5a2350','#3a3a44','#1a1a1f','#6f6458','#a89e8e'],
+  rim:['#d9a48a','#a9cbc0','#b9a6f0','#f0cf4a','#ff8a4c','#ff5a5f','#8fe07a','#6fd6e6','#8fb8ff','#ff8ad8','#f4efe6','#8f8f9c','#c9a227','#3a3a44'],
+  inner:['#2a1210','#14232a','#17122b','#0b0b0d','#3a0f12','#2e1a06','#0f2a14','#0b1e33','#2a0b26','#2b2b31','#4a3a2a','#5e4a8a','#7a2a2a','#e8d9b8']};
+const lookOk=a=>Array.isArray(a)&&a.length===3&&a.every(c=>typeof c==='string'&&/^#[0-9a-f]{6}$/i.test(c));
+const lookDef=cls=>[CLS[cls].cloak,CLS[cls].rim,CLS[cls].inner];
+const myLook=cls=>{const a=meta.look&&meta.look[cls];return lookOk(a)?a.map(c=>c.toLowerCase()):lookDef(cls)};
+const lookPal=(cls,a)=>{a=lookOk(a)?a:lookDef(cls);return {cloak:a[0],rim:a[1],inner:a[2]}};
 const WPN={
   // Deux armes par rareté. Commun, Magique, Rare : butin des monstres. Légendaire et au-dessus : 3 fragments des reliques.
   archer:[

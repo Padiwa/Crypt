@@ -68,7 +68,7 @@ export const tests = [
     t.eq(await B.evaluate(() => [started, $('intro').hidden, NET.on]), [false, false, true], 'invité au Camp, toujours connecté');
     t.eq(await A.evaluate(() => [started && !G.over, G.mates.length]), [true, 0], 'l\'hôte continue seul');
   } },
-  { name: 'noms et niveaux de prestige : identifiant par défaut, nom réglé dans Compte, mis à jour en direct', fn: async (b, t) => {
+  { name: 'noms, niveaux de prestige et couleurs : identifiant par défaut, nom réglé dans Compte, mis à jour en direct', fn: async (b, t) => {
     const [A, B] = await pair(b, t);
     const bid = await B.evaluate(() => meta.pid);
     t.ok(/^[A-Z2-9]{5}$/.test(bid), 'identifiant unique tiré pour le joueur');
@@ -83,6 +83,11 @@ export const tests = [
     await B.evaluate(() => { meta.prest.magicien = { lv: 4, pts: {} }; });
     await B.click('.cx-pick[data-c="magicien"]'); await sleep(A, 600);
     t.eq(await A.evaluate(() => [NET.on, NET.peers[0].cls, NET.peers[0].pr]), [true, 'magicien', 4], 'prestige du Magicien reçu, connexion gardée');
+    // couleurs du héros : chacun voit celles que l'autre a choisies pour le héros qu'il joue, mises à jour en direct
+    await B.evaluate(() => { lookSet('magicien', 0, '#7a1f24'); saveMeta(); netMe(); }); await sleep(A, 500);
+    t.eq(await A.evaluate(() => who(NET.peers[0].slot).look), ['#7a1f24', '#b9a6f0', '#17122b'], 'l\'hôte voit la cape choisie par l\'invité');
+    await A.evaluate(() => { lookSet(heroCls, 1, '#f0cf4a'); saveMeta(); netMe(); }); await sleep(A, 500);
+    t.eq(await B.evaluate(() => who(0).look[1]), '#f0cf4a', 'l\'invité voit la bordure choisie par l\'hôte');
     await A.click('#coopBtn');
     t.eq(await A.evaluate(() => [...document.querySelectorAll('#coopBody .coopros li')].map((li) => li.querySelector('.prb').textContent + ' ' + li.querySelector('.coopname').textContent)), ['7 Ombre b', '4 Joueur-' + bid], 'salon : prestige à gauche du nom, pour chaque joueur');
     await A.click('#closeCoop');

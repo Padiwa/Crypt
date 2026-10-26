@@ -2,7 +2,7 @@
 // L'hôte fait tourner les monstres et relie chaque invité (connexion en étoile) ; chacun simule son propre héros,
 // ses tirs et son butin (instancié). Les invités ne se connectent qu'à l'hôte, qui relaie les héros des autres.
 const NET={on:false,host:false,guest:false,pc:null,dc:null,state:'idle',code:'',err:'',hits:[],ebUsed:new Set(),snap:null,tick:null,
-  peers:[],slot:0,roster:[],hostCls:null,hostName:'',hostPr:0,via:'',hostBgAt:0,ready:false};
+  peers:[],slot:0,roster:[],hostCls:null,hostName:'',hostPr:0,hostLook:null,via:'',hostBgAt:0,ready:false};
 const NET_MAX=4; // joueurs, hôte compris
 const NET_V=9;
 const NET_TIMEOUT=20000; // silence toléré en mission (une notification ou un écran qui s'éteint ne doit pas couper la partie)   // version du protocole : deux appareils de versions différentes refusent de jouer ensemble
@@ -38,19 +38,20 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 function pingOn(){wakeOn();if(NET.pingT)return;NET.pingT=setInterval(()=>{if(NET.on&&(!started||!G||G.over||G.hold))netSend({t:'ping'})},2000)}
 function closePeer(p){try{p.dc&&p.dc.close()}catch(e){}try{p.pc&&p.pc.close()}catch(e){}}
 function netReset(){relayClose();RL.code='';NET.relay=null;for(const p of NET.peers)closePeer(p);try{NET.dc&&NET.dc.close()}catch(e){}try{NET.pc&&NET.pc.close()}catch(e){}clearInterval(NET.tick);clearInterval(NET.htick);clearInterval(NET.pingT);NET.pingT=null;wakeOff();
-  Object.assign(NET,{on:false,host:false,guest:false,pc:null,dc:null,state:'idle',code:'',err:'',hits:[],snap:null,tick:null,peers:[],slot:0,roster:[],hostCls:null,hostName:'',hostPr:0,via:'',hostBgAt:0,ready:false});
+  Object.assign(NET,{on:false,host:false,guest:false,pc:null,dc:null,state:'idle',code:'',err:'',hits:[],snap:null,tick:null,peers:[],slot:0,roster:[],hostCls:null,hostName:'',hostPr:0,hostLook:null,via:'',hostBgAt:0,ready:false});
   NET.ebUsed=new Set();NET.fdc=null;NET.hq=0;NET.sq=0;NET.hT=0;NET.hostMode=null;if(G)G.mates=[];if(meta.mode==='breche'){meta.mode='survie';saveMeta()}refreshCoopUi();if(typeof refreshMenus==='function'&&!started)refreshMenus()}
 const myRelic=()=>!!(meta.relicQ&&meta.relicQ.length);
-function rosterList(){return [{slot:0,cls:heroCls,name:myName(),pr:myPr()},...NET.peers.filter(p=>p.state==='open'&&p.cls).map(p=>({slot:p.slot,cls:p.cls,name:p.name,pr:p.pr|0}))]}
-// Présentation : héros, nom et prestige du héros joué, renvoyés à chaque changement (héros, nom, prestige).
-const helloMsg=()=>({t:'hello',v:NET_V,cls:heroCls,relic:myRelic(),name:myName(),pr:myPr()});
+function rosterList(){return [{slot:0,cls:heroCls,name:myName(),pr:myPr(),look:myLook(heroCls)},...NET.peers.filter(p=>p.state==='open'&&p.cls).map(p=>({slot:p.slot,cls:p.cls,name:p.name,pr:p.pr|0,look:p.look||null}))]}
+// Présentation : héros, nom, prestige et couleurs du héros joué, renvoyés à chaque changement.
+const helloMsg=()=>({t:'hello',v:NET_V,cls:heroCls,relic:myRelic(),name:myName(),pr:myPr(),look:myLook(heroCls)});
+const cleanLook=a=>lookOk(a)?a.map(c=>c.toLowerCase()):null;
 function netMe(){if(!NET.on)return;if(NET.host)sendRoster();else netSend(helloMsg())}
 // Nom et prestige d'un joueur de la partie, d'après son emplacement (0 = hôte).
-function who(slot){slot=slot|0;const def={name:'Joueur '+(slot+1),pr:0,cls:null};
-  if(slot===(NET.host?0:NET.slot))return {name:myName(),pr:myPr(),cls:heroCls};
-  if(NET.host){const p=NET.peers.find(p=>p.slot===slot);return p?{name:p.name||def.name,pr:p.pr|0,cls:p.cls}:def}
-  const r=(NET.roster||[]).find(r=>r.slot===slot);if(r)return {name:r.name||def.name,pr:r.pr|0,cls:r.cls};
-  return slot===0&&NET.hostName?{name:NET.hostName,pr:NET.hostPr|0,cls:NET.hostCls}:def}
+function who(slot){slot=slot|0;const def={name:'Joueur '+(slot+1),pr:0,cls:null,look:null};
+  if(slot===(NET.host?0:NET.slot))return {name:myName(),pr:myPr(),cls:heroCls,look:myLook(heroCls)};
+  if(NET.host){const p=NET.peers.find(p=>p.slot===slot);return p?{name:p.name||def.name,pr:p.pr|0,cls:p.cls,look:p.look||null}:def}
+  const r=(NET.roster||[]).find(r=>r.slot===slot);if(r)return {name:r.name||def.name,pr:r.pr|0,cls:r.cls,look:r.look||null};
+  return slot===0&&NET.hostName?{name:NET.hostName,pr:NET.hostPr|0,cls:NET.hostCls,look:NET.hostLook||null}:def}
 const prBadge=pr=>`<span class="prb" title="Prestige ${pr|0}" aria-label="Prestige ${pr|0}">${pr|0}</span>`;
 const whoHtml=slot=>{const w=who(slot);return `${prBadge(w.pr)}<b style="color:${SLOT_C[slot|0]||'#8fd3e0'}">${esc(w.name)}</b>`};
 // Le salon : joueurs et mission choisie par l'hôte (mode, niveau, difficulté), renvoyés à chaque changement.
@@ -271,7 +272,7 @@ function netRecvHost(peer,m){
   if(m.t==='bg'){peer.bgAt=m.on?performance.now():0;return}
   if(m.t==='leave'){peer.left=true;peer.Q=null;if(G&&G.mates)G.mates=G.mates.filter(q=>q.slot!==peer.slot);toast(`${whoHtml(peer.slot)} est retourné au Camp.`,true);if(started&&G&&!G.over)coopCheckFail();drawCoop();return}
   if(m.t==='hello'){if(m.v!==NET_V){netSendTo(peer,{t:'oldver',v:NET_V});NET.err=`Joueur ${peer.slot+1} : version du jeu différente. Mettez le jeu à jour sur les deux appareils (Réglages › Application), puis recommencez.`;netPeerLost(peer,true);return}
-    const first=peer.name==null;peer.cls=CLS[m.cls]?m.cls:'guerrier';peer.relic=m.relic;peer.name=cleanName(m.name)||'Joueur '+(peer.slot+1);
+    const first=peer.name==null;peer.cls=CLS[m.cls]?m.cls:'guerrier';peer.relic=m.relic;peer.name=cleanName(m.name)||'Joueur '+(peer.slot+1);peer.look=cleanLook(m.look);
     if(first&&!(started&&G&&!G.over)){peer.pr=Math.max(0,m.pr|0);toast(`${whoHtml(peer.slot)} a rejoint la partie.`,true)}peer.pr=Math.max(0,m.pr|0);if(peer.Q)peer.Q.cls=peer.cls;sendRoster();drawCoop();return}
   if(!G)return;
   if(m.t==='fx'){fxApply(m);for(const p of NET.peers)if(p!==peer&&p.state==='open')netSendTo(p,m);return}
@@ -290,8 +291,8 @@ function netRecvGuest(m){
   if(m.t==='bg'){NET.hostBgAt=m.on?performance.now():0;return}
   if(m.t==='kick'){const inGame=started&&G&&!G.over;netReset();NET.retry=null;coopForget();toast('<b style="color:#e0474b">L\'hôte t\'a retiré de la partie.</b>'+(inGame?' Tu gardes ton butin.':''),true);if(inGame){G.hold=false;missionSuccess()}NET.err='L\'hôte t\'a retiré de la partie.';drawCoop();return}
   if(m.t==='oldver'||(m.t==='hello'&&m.v!==NET_V)){const err='Version du jeu différente de celle de l\'hôte. Mettez le jeu à jour sur les deux appareils (Réglages › Application), puis recommencez.';netReset();NET.err=err;openCoop();NET.err=err;drawCoop();return}
-  if(m.t==='hello'){if(m.slot)NET.slot=m.slot;NET.hostCls=m.cls;NET.hostName=cleanName(m.name);NET.hostPr=Math.max(0,m.pr|0);drawCoop();refreshCoopUi();return}
-  if(m.t==='roster'){NET.roster=(m.list||[]).map(r=>({slot:r.slot|0,cls:CLS[r.cls]?r.cls:null,name:cleanName(r.name),pr:Math.max(0,r.pr|0)}));if(m.mode)NET.hostMode={mode:m.mode,lv:m.lv,dn:m.dn};drawCoop();refreshCoopUi();return}
+  if(m.t==='hello'){if(m.slot)NET.slot=m.slot;NET.hostCls=m.cls;NET.hostName=cleanName(m.name);NET.hostPr=Math.max(0,m.pr|0);NET.hostLook=cleanLook(m.look);drawCoop();refreshCoopUi();return}
+  if(m.t==='roster'){NET.roster=(m.list||[]).map(r=>({slot:r.slot|0,cls:CLS[r.cls]?r.cls:null,name:cleanName(r.name),pr:Math.max(0,r.pr|0),look:cleanLook(r.look)}));if(m.mode)NET.hostMode={mode:m.mode,lv:m.lv,dn:m.dn};drawCoop();refreshCoopUi();return}
   if(m.t==='start'){netStartGuest(m);return}
   // hors mission (retour au Camp, fin de partie) : on ignore le flux de la mission de l'hôte
   if(!G||!started||G.over)return;
