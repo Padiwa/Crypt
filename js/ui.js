@@ -327,7 +327,7 @@ function resolveRelic(){
 }
 function missionSuccess(){SND.play('win');if(NET.host)netSend({t:'exit'});G.hold=false;
   $('extract').hidden=true;$('lvlup').hidden=true;G.over=true;const rel=resolveRelic();const g=bank(true);recordBest();
-  const txt=G.mode==='capture'?`Cible capturée en ${fmt(G.t)}, ${G.kills} ennemis abattus.`:G.mode==='defense'?`Tu as tenu ${G.wave} vagues, ${G.kills} ennemis abattus.`:`Tu es sorti au niveau ${G.level} après ${fmt(G.t)}, avec ${G.kills} ennemis abattus.`;
+  const cn=Math.max(1,G.capN|0),txt=G.mode==='capture'?`${cn>1?cn+' cibles capturées':'Cible capturée'} en ${fmt(G.t)}, ${G.kills} ennemis abattus.`:G.mode==='defense'?`Tu as tenu ${G.wave} vagues, ${G.kills} ennemis abattus.`:`Tu es sorti au niveau ${G.level} après ${fmt(G.t)}, avec ${G.kills} ennemis abattus.`;
   showOver(G.mode==='capture'?'Capture réussie':'Extraction réussie',txt+' Ton butin t\'attend au Camp.',`<span class="coin"></span>+${g} or · ${meta.gold} au total`,
     `<div class="exsum">${lootSummary(true)}</div>`+rel);
 }

@@ -1,6 +1,6 @@
 # Crypte des Cendres — specs
 
-Oct 26, 2026 · @cms · version 116
+Oct 26, 2026 · @cms · version 117
 
 ## Vue d'ensemble
 
@@ -58,7 +58,7 @@ Trois modes, tous avec un niveau de mission libre de 1 à 50, choisi sur l'écra
 
 **Défense** : chaque vague compte 10 + 4 × vague (+8 par niveau au-delà du 1er) ennemis, 80 au maximum. 60 % des ennemis visent le cryopode. Pause de 4 s entre les vagues, le cryopode récupère 8 % ; 30 % quand on continue.
 
-**Capture** : la cible (260 PV × difficulté) fuit quand le héros est à moins de 480 unités et se téléporte à 330 unités toutes les 4 à 6 s s'il est à moins de 260. Une flèche dorée indique sa direction et sa distance.
+**Capture** : la cible (260 PV × difficulté) fuit quand le héros est à moins de 480 unités et se téléporte à 330 unités toutes les 4 à 6 s s'il est à moins de 260. Une flèche dorée indique sa direction et sa distance. Après chaque capture (2,5 s à côté de la cible à terre), une nouvelle cible apparaît 5 s plus tard tant qu'on ne s'est pas extrait ; la zone d'extraction, ouverte à la 1re capture, reste en place (v117). Chaque capture rapporte une relique de la difficulté et du Tourment, sans niveau minimum, et 60 or × niveau de mission.
 
 Fissure (ouverture de reliques) : on équipe au Camp (onglet Reliques, ou ligne Reliques de l'écran de départ) autant de reliques qu'on veut, dans l'ordre choisi (Tout équiper, Tout retirer). Depuis v94, la file du Camp est regroupée par relique et par état (« Relique Ossuaire ×8 », « éclatante ×2 »), dans l'ordre de la première de chaque groupe : ↑ ↓ déplacent le groupe entier, − et + retirent ou ajoutent une relique du groupe. Tant qu'il reste une relique à ouvrir, 10 % des ennemis sont corrompus (BAL.corrupt, rythme rapide) (halo doré, +30 % de vie) et lâchent un réactif. 30 réactifs (BAL.reactN ; moins en Tourment, voir Bonus du Tourment) ouvrent la relique en cours, puis le compteur repart à 0 pour la suivante (icône de relique avec l'anneau des réactifs et nombre de reliques ouvertes, en haut). Depuis v95, l'ouverture ne montre plus ni bannière ni message : seuls le son, la secousse et le compteur la signalent. À la réussite, chaque relique ouverte donne 1 fragment d'un objet de sa rareté (2 si éclatante) et 25 essence. Les reliques non ouvertes, ou toutes en cas d'échec, ne sont pas consommées et restent équipées.
 
@@ -192,7 +192,7 @@ Au niveau L, les chances d'équipement, de relique et d'arme sont multipliées p
 | Sanguin | 6 | 1,8 | 1,4 | fragments, relique Sanguine | 1 000 or |
 | Abyssal | 6 + 1 pouvoir | 2,1 | 1,5 | fragments, relique Abyssale | 1 500 or |
 
-**Reliques** : une par rareté, selon la difficulté seulement : Ossuaire en Normal, Difficile, Cauchemar ; Ancestrale en Tourment I à V ; Sanguine en Tourment VI à X, avec 10 % + 5 % par palier au-delà du V de chances d'être Abyssale (15 % en VI, 35 % en X). Chaque relique ouverte en mission (Fissure : 30 réactifs, moins en Tourment) donne, à la réussite, 1 fragment d'un objet de sa rareté (2 si éclatante, raffinage 50 essence), pris parmi les armes du héros de cette rareté et les objets des reliques de cette rareté ; les objets de givre seulement si la relique est ouverte dans les Abîmes gelés. Tirage pondéré 1 + 0,5 × fragments déjà réunis ; le fragment donné est un manquant s'il en reste. +25 essence par relique, œufs 8 / 12 / 15 / 25 %. **Reliques forgées** : 3 reliques d'un même type (20, 40, 80, 150 essence) → 1 relique forgée de ce type, pour l'objet choisi, qui garantit un fragment de cet objet. La fusion vers le type au-dessus est supprimée.
+**Reliques** : une par rareté, selon la difficulté : Ossuaire en Normal, Difficile, Cauchemar ; Ancestrale en Tourment I à V ; Sanguine en Tourment VI à X, ou Abyssale (part par palier dans le tableau des rythmes). Le niveau de mission plafonne la rareté (Ancestrale dès le niveau 30, Sanguine dès 40, Abyssale dès 45 ; sinon la relique du dessous), sauf pour les cibles capturées, qui donnent la relique de la difficulté à tout niveau (v117). Chaque relique ouverte en mission (Fissure : 30 réactifs, moins en Tourment) donne, à la réussite, 1 fragment d'un objet de sa rareté (2 si éclatante, raffinage 50 essence), pris parmi les armes du héros de cette rareté et les objets des reliques de cette rareté ; les objets de givre seulement si la relique est ouverte dans les Abîmes gelés. Tirage pondéré 1 + 0,5 × fragments déjà réunis ; le fragment donné est un manquant s'il en reste. +25 essence par relique, œufs 8 / 12 / 15 / 25 %. **Reliques forgées** : 3 reliques d'un même type (20, 40, 80, 150 essence) → 1 relique forgée de ce type, pour l'objet choisi, qui garantit un fragment de cet objet. La fusion vers le type au-dessus est supprimée.
 
 **Objets des reliques** (RGEAR, 36) : 2 modèles par emplacement et par rareté, affixes fixes, valeurs tirées au niveau de fabrication : Légendaire L1–L8 (4 affixes), Ancestral N1–N8 (5), Sanguin S1–S10 (6, dont 2 de givre), Abyssal B1–B10 (6 + pouvoir, dont 2 de givre). Un objet fabriqué prend le niveau d'objet de la plus haute mission réussie : 1 + (meta.maxL − 1) × 4 ; meta.maxL monte à chaque sortie réussie.
 
@@ -236,6 +236,14 @@ Au niveau L, les chances d'équipement, de relique et d'arme sont multipliées p
 **v106 · Rythme de progression réglable.** Tous les réglages de vitesse de progression sont regroupés dans `BAL_PRESETS` (haut de `js/data.js`), avec deux rythmes : `rapide` (par défaut) et `long` (environ 80 h). C'est un réglage de développement, pas un choix du joueur (aucun écran ne le propose) : on change de rythme en modifiant la ligne `BAL_MODE`.
 
 **v107 · Rythmes dans des fichiers.** Chaque rythme est un fichier : `js/rythmes/rapide.js` (rythme publié, par défaut) et `js/rythmes/long.js` (fin de jeu visée vers 80 h). Chacun définit `RYTHME` avec les valeurs du tableau ci-dessous, commentées ; `BAL_PRESETS` et `BAL_MODE` disparaissent de `data.js`. Le rythme chargé est celui de la balise `<script src="js/rythmes/….js">` d'`index.html`, placée avant `data.js` (et la liste `CORE` de `sw.js`). Pour un nouveau rythme, on copie un fichier et on change ses valeurs. Le simulateur charge n'importe quel fichier : `--rythme long` ou un chemin. Le joueur ne choisit toujours pas le rythme.
+
+**v117 · HUD sans chevauchement, Capture en chaîne.**
+
+- HUD en mission : rien ne se recouvre de 320 à 430 px de large. Sous la 1re ligne, trois colonnes : les altérations empilées à gauche ; au centre le bandeau d'objectif, puis les barres du Gardien et du cryopode, empilées dans un même conteneur (`.hudmid`) ; à droite, sous le sac, la pastille des reliques ouvertes (icône à la couleur de la relique en cours, anneau des réactifs, nombre ouvert). Libellés courts : Portail dans, Vague suivante, Ennemis restants, Traque la cible n, Capture la cible n, Vers l'extraction, Reste dans la zone. Les flèches hors écran restent sous le HUD (bord haut mesuré, `arrowK`).
+- Capture en chaîne : après chaque capture, tant qu'on ne s'est pas extrait, une nouvelle cible apparaît 5 s plus tard (`CAP_NEXT`), loin du héros. La zone d'extraction s'ouvre à la 1re capture et ne bouge plus. Le niveau affiche le nombre de captures ; dessous, la distance de l'extraction ou « Cible n dans x s ». Coopération : compteur et délai passent dans l'état du mode ; chacun reçoit sa relique à chaque capture.
+- Relique de capture : celle de la difficulté et du Tourment (Ossuaire hors Tourment, Ancestrale en I à V, Sanguine ou Abyssale en VI à X), sans le niveau minimum de mission (`relicDrop(true)`). Les autres reliques (monstres, élites, Gardiens, fins de manche) et leurs taux ne changent pas.
+- Récupération des affixes : la recherche par affixe liste tous les objets qui la portent, sans « … et N autres ».
+- Tests : 82 (audit de chevauchement du HUD à 4 largeurs × 3 missions, flèches sous le HUD, capture en chaîne, relique de capture, cible suivante en coopération).
 
 **v116 · Bonus du Tourment, retour d'une autre appli.**
 
@@ -322,7 +330,7 @@ Compatibilité des sauvegardes : une sauvegarde sans `meta.unlV` (v107 et plus a
 | Réactifs par relique · ennemis corrompus | 30 · 10 % | 40 · 8 % | 10 · 18 % |
 | Gardiens en Tourment (par vague · intervalle) | 2 puis 3 · 40 → 30 s | 2 · 50 → 40 s | 4 à 5 · 25 → 16 s |
 | Vie des Gardiens en Tourment | ×1,5 | ×2 | ×1 |
-| Niveau requis : Ancestrale, Sanguine, Abyssale | 30, 40, 45 | 30, 40, 45 | aucun |
+| Niveau requis : Ancestrale, Sanguine, Abyssale (pas pour une cible capturée) | 30, 40, 45 | 30, 40, 45 | aucun |
 | Fabrication · Bonus de la Forge (prix) | ×2 · ×3 | ×4 · ×6 | ×1 |
 | Fusion de rang (or) | 40 × 2^rang × (rareté + 1) × (1 + niveau/20) | base 120 | gratuite |
 | Rang max des objets de monstres (commun, magique, rare) | 3, 4, 5 | 2, 3, 4 | 10 |
@@ -414,7 +422,7 @@ Sauvegarde : « Exporter » télécharge aussitôt crypte-sauvegarde-AAAA-MM-JJ.
 
 **Armurerie, deux vues (v82)** : puces Recettes (toutes les recettes, comme avant) et Mes armes (compteur = armes possédées). Mes armes liste les armes possédées de toutes les classes, héros courant en premier, de la plus rare à la moins rare : niveau +n, dégâts de base et affixes réels (amélioration et affixes ajoutées comprises), maîtrise, nombre de mods posés. Pour le héros courant : DPS estimé avec l'équipement porté et écart en % avec l'arme équipée, bouton Équiper.
 
-Fin de manche et objectif (v81, mis à jour v91) : le résumé de sortie affiche des compteurs : équipements = total + nombre par rareté, reliques = total + nombre par type (Ossuaire, Ancestrale, Sanguine, Abyssale), armes ramassées = total + nombre par rareté. Un bandeau d'objectif centré sous le HUD donne l'étape, la valeur en grand et une jauge : Survie = temps avant le portail (orange pulsant sous 15 s) ; Capture = 1/3 mettre la cible à terre, 2/3 la capturer, 3/3 rejoindre l'extraction ; Défense = vague suivante ou ennemis restants, jauge = vie du cryopode.
+Fin de manche et objectif (v81, mis à jour v91) : le résumé de sortie affiche des compteurs : équipements = total + nombre par rareté, reliques = total + nombre par type (Ossuaire, Ancestrale, Sanguine, Abyssale), armes ramassées = total + nombre par rareté. Un bandeau d'objectif centré sous le HUD donne l'étape, la valeur en grand et une jauge : Survie = temps avant le portail (orange pulsant sous 15 s) ; Capture = traque la cible n (distance), capture la cible n (%), vers l'extraction (distance), reste dans la zone (%) ; Défense = vague suivante ou ennemis restants, jauge = vie du cryopode.
 
 Écran de fin de mission réussie (v83, mis à jour v91) : deux encadrés de compteurs. Butin rapporté : équipements (total + par rareté), reliques ramassées (total + par type), armes ramassées. Reliques ouvertes : total + par type, essence gagnée (25 par relique), fragments (nombre et nombre d'objets différents), objets prêts à fabriquer (par nom), œufs de familier, reliques non ouvertes. Le détail relique par relique est replié sous « Détail des n reliques », puis la maîtrise.
 

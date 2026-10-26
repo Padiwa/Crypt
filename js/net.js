@@ -243,10 +243,10 @@ function netHeroTick(){if(!NET.on||!started||!G||G.over)return;hSeq++;
   else sendFast({t:'h',q:hSeq,p:heroPack(G.P)})}
 // État propre au mode, envoyé par l'hôte : Défense (cryopode, vagues), Capture (capture, extraction).
 function modeSnap(){if(G.mode==='defense'&&G.pod)return ['d',G.pod.hp|0,G.pod.max|0,G.wave|0,G.waveState==='break'?1:0,r1(G.waveT||0),G.toSpawn|0];
-  if(G.mode==='capture')return ['c',r1(G.capT||0),r1(G.extT||0),G.exitPt?G.exitPt.x|0:-1,G.exitPt?G.exitPt.y|0:-1];return null}
+  if(G.mode==='capture')return ['c',r1(G.capT||0),r1(G.extT||0),G.exitPt?G.exitPt.x|0:-1,G.exitPt?G.exitPt.y|0:-1,G.capN|0,r1(G.nextTgt||0)];return null}
 function modeApply(md){if(!md)return;
   if(md[0]==='d'&&G.pod){G.pod.hp=md[1];G.pod.max=md[2];G.wave=md[3];G.waveState=md[4]?'break':'fight';G.waveT=md[5];G.toSpawn=md[6]}
-  else if(md[0]==='c'){G.capT=md[1];G.extT=md[2];G.exitPt=md[3]>=0?{x:md[3],y:md[4]}:null}}
+  else if(md[0]==='c'){G.capT=md[1];G.extT=md[2];G.exitPt=md[3]>=0?{x:md[3],y:md[4]}:null;G.capN=md[5]|0;G.nextTgt=+md[6]||0}}
 function netTick(){if(!NET.on||!started||!G)return;const now=performance.now();
   if(NET.host){
     for(const p of NET.peers.slice())if(p.state==='open'&&p.lastRx&&now-p.lastRx>NET_TIMEOUT&&!G.over&&!G.hold&&document.visibilityState==='visible')netPeerLost(p,false,'timeout');

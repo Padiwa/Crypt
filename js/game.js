@@ -28,7 +28,7 @@ function newGame(){
   G.cam={x:G.P.x,y:G.P.y};
   genMap();
   G.biome=clamp(meta.biome|0,0,BIOMES.length-1);if(floorPat&&floorPat.__b!==G.biome)floorPat=null;
-  G.mode=meta.mode==='breche'?'survie':meta.mode;G.relic=null;G.react=0;G.cracked=false;G.ult=0;G.bossT=bossIv();G.pod=null;G.target=null;G.exitPt=null;G.capT=0;G.extT=0;
+  G.mode=meta.mode==='breche'?'survie':meta.mode;G.relic=null;G.react=0;G.cracked=false;G.ult=0;G.bossT=bossIv();G.pod=null;G.target=null;G.exitPt=null;G.capT=0;G.extT=0;G.capN=0;G.nextTgt=0;
   relicQFix();G.relQ=meta.relicQ.map(q=>({id:q.id,rad:!!q.rad}));G.relI=0;G.opened=[];G.relic=G.relQ[0]||null;
   if(G.mode==='defense'){const m=1200*(1+.5*(L-1));G.pod={x:MAP/2,y:MAP/2,r:28,hp:m,max:m,flash:0};G.pillars.push(G.pod);G.P.y+=110;G.cam.y=G.P.y;G.wave=0;G.waveState='break';G.waveT=3;G.toSpawn=0}
   if(G.mode==='capture'){spawnTarget()}
@@ -50,13 +50,17 @@ function genMap(){
   G.wells=[];for(let i=0;i<6;i++){const w={r:30,on:true,cd:0};placeWell(w);G.wells.push(w)}
 }
 function farPoint(dmin){const P=G.P;for(let k=0;k<300;k++){const x=rand(160,MAP-160),y=rand(160,MAP-160);if(Math.hypot(x-P.x,y-P.y)>=dmin&&!blocked(x,y,60))return {x,y}}return {x:MAP-200,y:MAP-200}}
+// Capture : après chaque capture, tant qu'on ne s'est pas extrait, une nouvelle cible apparaît (CAP_NEXT secondes plus tard).
+// Chaque capture rapporte une relique de la difficulté et du Tourment, sans le plafond de niveau de mission des autres reliques
+// (relicDrop(true)). Les autres sources de reliques ne changent pas.
+const CAP_NEXT=5;
 function spawnTarget(){
   const p=farPoint(900),{hs}=diff();
-  G.target={type:'cible',x:p.x,y:p.y,r:18,hp:260*hs,max:260*hs,spd:175,dmg:0,col:'#a8874a',flash:0,hitCd:0,kx:0,ky:0,burnT:0,burnDps:0,burnAcc:0,
+  G.target={id:++G.eid,type:'cible',x:p.x,y:p.y,r:18,hp:260*hs,max:260*hs,spd:175,dmg:0,col:'#a8874a',flash:0,hitCd:0,kx:0,ky:0,burnT:0,burnDps:0,burnAcc:0,
     state:'walk',slow:0,timer:0,blink:4,shown:0,wob:rand(0,6),downed:false};
   G.en.push(G.target);
 }
-function relicDrop(){return ['os','an','sa','ab'][relicTierNow()]}
+function relicDrop(free){return ['os','an','sa','ab'][relicTierNow(free)]}
 const LV_MAX=50;
 const lootMul=L=>1+.06*(L-1);
 const goldMul=L=>1+.15*(L-1);
@@ -264,8 +268,8 @@ function explode(s,primary,frost){
 function fireE(e,a,sp,d,r=7){G.eb.push({id:++G.bid,x:e.x+Math.cos(a)*e.r,y:e.y+Math.sin(a)*e.r,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,d,r,life:4})}
 function ring(e,n,sp){e.rot+=.27;for(let i=0;i<n;i++)fireE(e,e.rot+i/n*Math.PI*2,sp,e.dmg*.55,8)}
 // Récompense de capture (chaque joueur reçoit la sienne).
-function capReward(){const r=relicDrop();G.loot.relics.push(r);G.fresh++;G.gold+=60*G.level;
-  toast(`<b style="color:var(--r2)">Cible capturée.</b> Relique ${relicName(r)} et ${60*G.level} or. Rejoins l'extraction.`)}
+function capReward(){const r=relicDrop(true);G.loot.relics.push(r);G.fresh++;G.gold+=60*G.level;
+  toast(`<b style="color:var(--r2)">Cible capturée.</b> ${relicName(r)} et ${60*G.level} or. Rejoins l'extraction, ou traque la cible suivante.`)}
 function blocked(x,y,r){
   if(x<EDGE+r||x>MAP-EDGE-r||y<EDGE+r||y>MAP-EDGE-r)return true;
   for(const p of G.pillars){if(p===G.pod)continue;const m=p.r+r;if(Math.abs(p.x-x)<m&&Math.abs(p.y-y)<m&&Math.hypot(p.x-x,p.y-y)<m)return true}
@@ -417,9 +421,10 @@ function update(dt){
   // Capture : décidée par l'hôte (en coopération, n'importe quel héros debout compte pour capturer et pour l'extraction).
   if(G.mode==='capture'&&!NET.guest){
     const t=G.target,heroes=[P,...(G.mates||[])].filter(h=>!h.down),near=(x,y,r)=>heroes.some(h=>Math.hypot(x-h.x,y-h.y)<r);
-    if(t&&t.downed){if(near(t.x,t.y,80)){G.capT+=dt;if(G.capT>=2.5){G.en=G.en.filter(e=>e!==t);G.target=null;burst(t.x,t.y,36,'#f0cf4a',220);
-        G.exitPt=farPoint(1000);capReward();if(NET.host)netSend({t:'cap'})}}
+    if(t&&t.downed){if(near(t.x,t.y,80)){G.capT+=dt;if(G.capT>=2.5){G.en=G.en.filter(e=>e!==t);G.target=null;G.capT=0;G.capN++;burst(t.x,t.y,36,'#f0cf4a',220);
+        if(!G.exitPt)G.exitPt=farPoint(1000);G.nextTgt=CAP_NEXT;capReward();if(NET.host)netSend({t:'cap'})}}
       else G.capT=Math.max(0,G.capT-dt)}
+    if(!G.target&&G.nextTgt>0){G.nextTgt-=dt;if(G.nextTgt<=0){G.nextTgt=0;spawnTarget()}}
     if(G.exitPt){const inZ=near(G.exitPt.x,G.exitPt.y,55);
       if(inZ){if(G.extT===0)toast('Reste <b>3 s</b> dans la zone pour t\'extraire.');G.extT+=dt;if(G.extT>=EXT_T){missionSuccess();return}}
       else G.extT=Math.max(0,G.extT-dt*1.5)}

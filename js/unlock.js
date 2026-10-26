@@ -24,7 +24,7 @@ const UNL=[
   {k:'arms',n:'Armurerie · Mes armes',when:()=>Object.values(WPN).flat().some(w=>!w.start&&ownedW(w.id))||maxL()>=8,need:'Trouve une deuxième arme.',
     learn:'Toutes tes armes, de chaque héros, avec leur rang et leur DPS comparé à celle que tu portes. Une arme trouvée en double se fusionne pour monter de rang.',go:['arsenal','mine'],help:'camp-arsenal'},
   {k:'capture',n:'Mission Capture',when:()=>maxL()>=10,need:'Réussis une mission de niveau 10.',
-    learn:'Traque une cible qui fuit, mets-la à terre, capture-la puis tiens 3 s dans la zone d\'extraction. Une relique et de l\'or à la clé.',home:1,help:'missions'},
+    learn:'Traque une cible qui fuit, mets-la à terre et capture-la : une relique de la difficulté (Tourment compris) et de l\'or. Une autre cible arrive ensuite ; tiens 3 s dans la zone d\'extraction pour rentrer avec tout.',home:1,help:'missions'},
   {k:'affix',n:'Forge · Affixes',when:()=>maxL()>=12||ownedRar(3),need:'Fabrique un objet légendaire ou réussis une mission de niveau 12.',
     learn:'Prends une affixe sur un objet (la source, détruite) pour la poser sur un autre (la cible) : c\'est ainsi qu\'on construit un build précis. Le coût en essence dépend de la rareté de la source.',go:['forge','affix'],help:'camp-affix'},
   {k:'diff1',n:'Difficulté Difficile',when:()=>maxL()>=12,need:'Réussis une mission de niveau 12.',

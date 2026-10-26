@@ -159,8 +159,9 @@ const EGG_CH=[.08,.12,.15,.25];
 const REL_SRC=['Normal, Difficile et Cauchemar (et plus haut sous le niveau requis)',`Tourment I et plus, niveau ${BAL.relicLv[0]}+`,`Tourment VI et plus, niveau ${BAL.relicLv[1]}+`,`Tourment VI et plus, niveau ${BAL.relicLv[2]}+, plus rare`];
 // Reliques forgées : 3 reliques d'un même type donnent une relique forgée du même type, qui garantit un fragment de l'objet choisi.
 // La rareté dépend du palier de Tourment, plafonnée par le niveau de mission (BAL.relicLv) : sous le niveau requis, la relique du dessous.
-function relicTierNow(){const D=dif();if(!D.tier)return 0;let t=D.tier<=5?1:Math.random()<BAL.abyss[0]+BAL.abyss[1]*(D.tier-6)?3:2;
-  const L=(typeof G!=='undefined'&&G&&G.level)||1;while(t>0&&L<BAL.relicLv[t-1])t--;return t}
+// free : sans ce plafond (cibles capturées : la relique suit seulement la difficulté et le Tourment).
+function relicTierNow(free){const D=dif();if(!D.tier)return 0;let t=D.tier<=5?1:Math.random()<BAL.abyss[0]+BAL.abyss[1]*(D.tier-6)?3:2;
+  if(free)return t;const L=(typeof G!=='undefined'&&G&&G.level)||1;while(t>0&&L<BAL.relicLv[t-1])t--;return t}
 const relicName=id=>RELICS[id].n;
 // Contenu d'une relique : les objets de sa rareté (armes du héros comprises). Objets de givre seulement dans les Abîmes gelés.
 function relPool(t,cls=heroCls){const r=t+3,frost=typeof G!=='undefined'&&G&&G.biome===1;
@@ -208,7 +209,7 @@ const MODES={
   survie:{n:'Survie',d:'Tiens face aux hordes. Toutes les 2 minutes, sors ou continue. Chaque manche terminée rapporte une relique.'},
   defense:{n:'Défense',d:'Protège le cryopode contre des vagues d\'ennemis. Toutes les 3 vagues : une relique et un équipement, puis sors ou continue.'},
   breche:{n:'Brèche',coop:1,d:'À plusieurs seulement. Survie où les Gardiens viennent par paires de jumeaux : abattez les deux en moins de 8 s, sinon le premier se relève. Monstres +25 % de vie ; sceaux légendaires et éclats sur les Gardiens et les élites.'},
-  capture:{n:'Capture',d:'Traque la cible, mets-la à terre, capture-la puis tiens 3 s dans la zone d\'extraction. Une relique et de l\'or à la clé.'},
+  capture:{n:'Capture',d:'Traque la cible, mets-la à terre et capture-la : une relique de la difficulté (Tourment compris) et de l\'or. Une autre cible arrive ensuite ; tiens 3 s dans la zone d\'extraction quand tu veux partir.'},
 };
 
 /* ---------- Progression permanente ---------- */

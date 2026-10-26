@@ -3,6 +3,34 @@ import { newPage, startMission, sleep } from '../lib.mjs';
 
 const RTIER_C1 = '#ff5a7a';
 const hudBoss = (p) => p.evaluate(() => [$('bossTxt').hidden, $('bossTxt').textContent]);
+// Audit du HUD : rectangles des éléments visibles en haut de l'écran, chevauchements deux à deux, débordements.
+// Cas chargé : 4 altérations, or à 6 chiffres, reliques, Gardien (barre), cryopode en Défense, extraction et 3 captures en Capture.
+export async function hudAudit(b, w, mode) {
+  const p = await newPage(b, { w, h: w < 360 ? 640 : 844 });
+  await p.evaluate(() => { meta.relics.os = [3, 0]; meta.relicQ = [0, 1, 2].map(() => ({ id: 'os', rad: false })); saveMeta(); });
+  await startMission(p, { mode, diff: 3, torm: 10, level: 48 });
+  await p.evaluate((mode) => {
+    G.gold = 123456; G.opened.push(G.relQ[0]); G.react = 12; G.bossT = mode === 'capture' ? 40 : 5;
+    Object.assign(G.P, { psnT: 5, psn: 3, brnT: 4, frzT: 2, cbT: 3 });
+    if (mode === 'capture') { G.capN = 3; G.exitPt = farPoint(1000); }
+    spawnBosses(true); banner('Un Gardien surgit des ténèbres', '#b06ae0', 2, true);
+  }, mode);
+  await sleep(p, 500);
+  const r = await p.evaluate(() => {
+    const ids = { vie: '#hpBox .hp-bar', pv: '#hpTxt', poison: '#stP', brulure: '#stB', gelure: '#stF', frenesie: '#stC', niveau: '#lvlTxt', alerte: '#bossTxt', reliques: '#relHud', or: '.hud .gold', sac: '#bagBtn', objectif: '#objBox', gardien: '#bossBar', cryopode: '#objBar', banniere: '#banner' };
+    const vis = (e) => e && !e.closest('[hidden]') && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().width > 0;
+    const R = {}; for (const [k, s] of Object.entries(ids)) { const e = document.querySelector(s); if (vis(e)) { const q = e.getBoundingClientRect(); R[k] = [q.left, q.top, q.right, q.bottom]; } }
+    const ks = Object.keys(R), over = [], out = [];
+    for (let i = 0; i < ks.length; i++) for (let j = i + 1; j < ks.length; j++) { const a = R[ks[i]], c = R[ks[j]]; if (a[0] < c[2] - 1 && c[0] < a[2] - 1 && a[1] < c[3] - 1 && c[1] < a[3] - 1) over.push(ks[i] + '×' + ks[j]); }
+    for (const k of ks) if (R[k][0] < -1 || R[k][2] > innerWidth + 1) out.push(k);
+    // flèches hors écran : leur pointe la plus haute reste sous le HUD du haut
+    hudBotAt = -1e9; const cx = innerWidth / 2, cy = innerHeight / 2; let top = 1e9;
+    for (let i = 0; i <= 64; i++) { const a = -Math.PI + i * Math.PI / 64; top = Math.min(top, cy + Math.sin(a) * arrowK(a, cx, cy) - 14); }
+    const hudB = Math.max(...ks.filter((k) => k !== 'banniere').map((k) => R[k][3]));
+    return { R, over, out, alerte: $('bossTxt').textContent, fleches: top >= hudB };
+  });
+  r.p = p; return r;
+}
 
 export const tests = [
   { name: 'Survie : « Gardien en approche » seulement dans les 10 dernières secondes', fn: async (b, t) => {
@@ -47,6 +75,45 @@ export const tests = [
     await p.evaluate(() => { $('toast').innerHTML = ''; G.react = REACT_N - 1; G.drops.push({ kind: 'react', x: G.P.x, y: G.P.y, t: 0, age: 1, mt: 0 }); });
     await sleep(p, 300);
     t.eq(await p.evaluate(() => [G.opened.length, $('toast').children.length, $('banner').hidden]), [1, 0, true], 'ouverte sans message');
+  } },
+  { name: 'HUD : rien ne se superpose de 320 à 430 px (Survie, Défense, Capture)', fn: async (b, t) => {
+    for (const w of [320, 360, 390, 430]) for (const mode of ['survie', 'defense', 'capture']) {
+      const r = await hudAudit(b, w, mode); t.track(r.p);
+      t.eq(r.over, [], `${w} px ${mode} : aucun chevauchement`);
+      t.eq(r.out, [], `${w} px ${mode} : rien ne déborde`);
+      t.ok(r.fleches, `${w} px ${mode} : les flèches restent sous le HUD`);
+      const shown = ['vie', 'poison', 'frenesie', 'niveau', 'alerte', 'reliques', 'or', 'sac', 'objectif', 'gardien', 'banniere'].filter((k) => !r.R[k]);
+      t.eq(shown, [], `${w} px ${mode} : tout est affiché`);
+      // reliques : pastille à l'extrême droite, sous le sac (2e ligne)
+      const [rel, sac] = [r.R.reliques, r.R.sac];
+      t.ok(Math.abs(rel[2] - sac[2]) <= 2 && rel[1] >= sac[3], `${w} px ${mode} : reliques à droite, en 2e ligne`);
+      await r.p.ctx.close();
+    }
+  } },
+  { name: 'Capture en chaîne : une nouvelle cible après chaque capture, une relique à chaque fois', fn: async (b, t) => {
+    const p = t.track(await newPage(b));
+    await startMission(p, { mode: 'capture', diff: 3, torm: 2, level: 5 });
+    const capture = () => p.evaluate(() => { G.spawns = []; G.spawnT = 99; G.bossT = 99; G.en = G.en.filter((e) => e === G.target); G.target.hp = 0; G.target.downed = true; G.target.spd = 0; G.P.x = G.target.x + 20; G.P.y = G.target.y; });
+    await capture(); await p.waitForFunction(() => G.capN === 1, null, { timeout: 6000 });
+    t.eq(await p.evaluate(() => [!!G.exitPt, G.target, G.loot.relics.slice(), $('lvlTxt').textContent, $('objK').textContent]), [true, null, ['an'], '1 capture', 'Vers l\'extraction'], 'capture 1 : extraction ouverte, Relique Ancestrale (Tourment II, même au niveau 5)');
+    t.ok(await p.evaluate(() => /^Cible 2 dans \d s$/.test($('bossTxt').textContent)), 'compte à rebours de la cible suivante');
+    const ex = await p.evaluate(() => [G.exitPt.x, G.exitPt.y]);
+    await p.waitForFunction(() => G.target && !G.target.downed, null, { timeout: 8000 });
+    t.eq(await p.evaluate(() => [G.target.hp === G.target.max, $('objK').textContent, /^Extraction · \d+ m$/.test($('bossTxt').textContent)]), [true, 'Traque la cible 2', true], 'cible 2 apparue, extraction rappelée');
+    await capture(); await p.waitForFunction(() => G.capN === 2, null, { timeout: 6000 });
+    t.eq(await p.evaluate(() => [G.loot.relics.slice(), [G.exitPt.x, G.exitPt.y]]), [['an', 'an'], ex], 'capture 2 : deuxième relique, même zone d\'extraction');
+    await p.evaluate(() => { G.P.x = G.exitPt.x; G.P.y = G.exitPt.y; }); await p.waitForFunction(() => G.over, null, { timeout: 8000 });
+    t.ok(await p.evaluate(() => /2 cibles capturées/.test($('over').textContent)), 'résumé : 2 cibles capturées');
+  } },
+  { name: 'Capture : relique de la difficulté et du Tourment sans plafond de niveau ; les autres reliques inchangées', fn: async (b, t) => {
+    const p = t.track(await newPage(b));
+    const r = await p.evaluate(() => {
+      const at = (d, tm, L, free) => { meta.diff = d; meta.torm = tm; G.level = L; const s = new Set(); for (let i = 0; i < 400; i++) s.add(relicDrop(free)); return [...s].sort().join(','); };
+      return { cap: [at(2, 1, 50, true), at(3, 1, 1, true), at(3, 5, 12, true), at(3, 6, 1, true), at(3, 10, 5, true)],
+        autres: [at(2, 1, 50), at(3, 3, 29), at(3, 3, 30), at(3, 8, 39), at(3, 8, 40), at(3, 10, 50)] };
+    });
+    t.eq(r.cap, ['os', 'an', 'an', 'ab,sa', 'ab,sa'], 'capture : Ossuaire hors Tourment, Ancestrale en I–V, Sanguine ou Abyssale en VI+, à tout niveau');
+    t.eq(r.autres, ['os', 'os', 'an', 'an', 'sa', 'ab,sa'], 'autres reliques : plafond de niveau inchangé (30, 40, 45)');
   } },
   { name: 'Capture : la cible à terre n\'est plus visée', fn: async (b, t) => {
     const p = t.track(await newPage(b)); await startMission(p, { mode: 'capture', cls: 'archer' });

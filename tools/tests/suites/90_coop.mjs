@@ -93,7 +93,7 @@ export const tests = [
     t.eq(await B.evaluate(() => { const w = who(G.mates[0].slot); return [w.name, w.pr]; }), ['Ombre b', 7], 'en mission, l\'invité affiche « 7 Ombre b » au-dessus de l\'hôte');
     t.eq(await A.evaluate(() => { const w = who(G.mates[0].slot); return [w.name, w.pr]; }), ['Joueur-' + bid, 4], 'et l\'hôte « 4 Joueur-… » au-dessus de l\'invité');
   } },
-  { name: 'Capture à deux (cible, capture et récompense synchronisées) puis Brèche', fn: async (b, t) => {
+  { name: 'Capture à deux (cible, capture, récompense et cible suivante synchronisées) puis Brèche', fn: async (b, t) => {
     const [A, B] = await pair(b, t);
     await A.click('.cx-pick[data-m="capture"]'); await sleep(A, 300);
     await A.click('#startBtn'); await wf(B, () => started && G && G.target, 'B attend 8', 8000, A);
@@ -104,6 +104,9 @@ export const tests = [
     await B.evaluate(([x, y]) => { G.P.x = x + 30; G.P.y = y; }, tp);
     await wf(A, () => !!G.exitPt, 'A attend 9', 8000); await sleep(A, 500);
     t.ok(await B.evaluate(() => !!G.exitPt && G.loot.relics.length >= 1), 'extraction et relique de capture chez l\'invité');
+    // capture en chaîne : la cible suivante arrive aussi chez l'invité, avec le compteur et le bandeau
+    await wf(B, () => G.target && !G.target.downed && G.capN === 1, 'B attend la cible 2', 10000, A);
+    t.eq(await B.evaluate(() => [$('lvlTxt').textContent, $('objK').textContent]), ['1 capture', 'Traque la cible 2'], 'invité : cible 2 affichée');
     await A.evaluate(() => { missionSuccess(); }); await wf(B, () => G.over, 'B attend 10', 5000, A);
     await A.click('#changeBtn').catch(() => {}); await A.evaluate(() => { $('over').hidden = true; started = false; $('intro').hidden = false; refreshMenus(); });
     await A.click('.cx-pick[data-m="breche"]'); await sleep(A, 300);

@@ -32,4 +32,17 @@ export const tests = [
     await p.click('.afind li.open ul li:last-child [data-cact="afdst"]');
     t.ok(await p.evaluate(() => xf.dst && !!document.querySelector('.afind .cx-pin--dst')), 'cible choisie et marquée');
   } },
+  { name: 'chercher par affixe : tous les objets et armes de l\'affixe, sans « et x autres »', fn: async (b, t) => {
+    const p = t.track(await newPage(b));
+    await p.evaluate(() => {
+      heroCls = 'archer'; meta.stash = [];
+      for (let i = 0; i < 14; i++) { const it = genItem(40, 1); it.aff = { crit: 1 + i }; it.slot = 'bottes'; meta.stash.push(it); }
+      for (const id of ['a1', 'a2', 'a3', 'g2', 'm2']) meta.built[id] = true; saveMeta();
+    });
+    await campView(p, 'forge', 'affix');
+    await p.click('[data-cact="afopen"][data-arg="crit"]');
+    const r = await p.evaluate(() => { const lis = [...document.querySelectorAll('.afind li.open ul li')]; return [lis.length, /autres, plus faibles/.test($('campBody').textContent), lis.filter((li) => /arme/.test(li.textContent)).length]; });
+    t.ok(r[0] >= 17 && !r[1], `toute la liste (${r[0]} lignes), pas de « et x autres »`);
+    t.ok(r[2] >= 3, `les armes qui portent l\'affixe sont toutes là (${r[2]})`);
+  } },
 ];

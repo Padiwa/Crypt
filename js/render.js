@@ -179,8 +179,8 @@ function render2D(){
   // écran : flèches vers les Gardiens, joystick
   ctx.setTransform(dpr,0,0,dpr,0,0);
   const arrow=(wx,wy,col,label)=>{if(vis(wx,wy,-10))return;
-    const a=Math.atan2(wy-G.cam.y,wx-G.cam.x),cx=innerWidth/2,cy=innerHeight/2,hw=innerWidth/2-34,hh=innerHeight/2-130;
-    const k=Math.min(hw/Math.abs(Math.cos(a)||1e-6),hh/Math.abs(Math.sin(a)||1e-6)),x=cx+Math.cos(a)*k,y=cy+Math.sin(a)*k;
+    const a=Math.atan2(wy-G.cam.y,wx-G.cam.x),cx=innerWidth/2,cy=innerHeight/2;
+    const k=arrowK(a,cx,cy),x=cx+Math.cos(a)*k,y=cy+Math.sin(a)*k;
     ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.fillStyle=col;ctx.strokeStyle='#120c16';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(14,0);ctx.lineTo(-8,-10);ctx.lineTo(-3,0);ctx.lineTo(-8,10);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
     if(label){ctx.font="700 12px 'Alegreya Sans',system-ui,sans-serif";ctx.textAlign='center';ctx.fillStyle='#000';ctx.fillText(label,x-Math.cos(a)*26+1,y-Math.sin(a)*26+5);ctx.fillStyle=col;ctx.fillText(label,x-Math.cos(a)*26,y-Math.sin(a)*26+4)}};
   const m=(x,y)=>`${Math.round(Math.hypot(x-P.x,y-P.y)/10)} m`;
@@ -202,6 +202,14 @@ const setTx=(id,v)=>{const e=el(id);if(e._v!==v){e._v=v;e.textContent=v}};
 const setSt=(id,p,v)=>{const e=el(id),k='_s'+p;if(e[k]!==v){e[k]=v;e.style.setProperty(p,v)}};
 const setCls=(id,c,on)=>{const e=el(id);if(e.classList.contains(c)!==on)e.classList.toggle(c,on)};
 const setHid=(id,h)=>{const e=el(id);if(e.hidden!==h)e.hidden=h};
+// Flèches hors écran (Gardiens, cible, extraction, cryopode, source) : elles restent sous le HUD du haut, mesuré
+// (1re ligne, altérations, colonne du milieu, reliques), et au-dessus des boutons, pour ne jamais passer sur le HUD.
+let hudBot=0,hudBotAt=-1e9;
+function hudBottom(){const now=performance.now();if(now-hudBotAt<400)return hudBot;hudBotAt=now;let b=0;
+  for(const s of ['.hud','#hpBox .sts','.hudmid','#relHud']){const e=document.querySelector(s);if(!e||e.hidden)continue;const r=e.getBoundingClientRect();if(r.height>0)b=Math.max(b,r.bottom)}
+  return hudBot=b}
+function arrowK(a,cx,cy){const T=Math.min(cy-40,Math.max(130,hudBottom()+30)),B=innerHeight-130,c=Math.cos(a),s=Math.sin(a);
+  return Math.min(c>0?(innerWidth-34-cx)/c:c<0?(cx-34)/-c:1e9,s<0?(cy-T)/-s:s>0?(B-cy)/s:1e9)}
 function hud(){
   const P=G.P,r3=v=>Math.max(0,v).toFixed(3);
   setSt('hpFill','transform',`scaleX(${r3(P.hp/S.hp)})`);
@@ -211,14 +219,16 @@ function hud(){
   setSt('xpFill','transform',`scaleX(${r3(Math.min(1,G.xp/xpNeed(G.hl)))})`);
   const dm=(x,y)=>`${Math.round(Math.hypot(x-P.x,y-P.y)/10)} m`;let hot=false;
   let ok='',ov='',op=null,oc='#f0cf4a';
-  if(G.mode==='survie'){const left=Math.max(0,LEVEL_T-G.tl);hot=left<=15;setTx('lvlTxt',`Niveau ${G.level}`);ok='Survie · portail dans';ov=fmt(left);op=G.tl/LEVEL_T;oc='#5fbf7a';{const g=G.bossT<=10?'Gardien en approche':'';setTx('bossTxt',g);setHid('bossTxt',!g)}}
-  else if(G.mode==='defense'){setTx('lvlTxt',`Vague ${Math.max(1,G.wave)}`);if(G.waveState==='break'){ok='Défense · vague suivante';ov=fmt(G.waveT)}else{ok='Défense · ennemis restants';ov=String(G.toSpawn+G.en.length)}op=G.pod.hp/G.pod.max;oc='#8fd3e0';
+  if(G.mode==='survie'){const left=Math.max(0,LEVEL_T-G.tl);hot=left<=15;setTx('lvlTxt',`Niveau ${G.level}`);ok='Portail dans';ov=fmt(left);op=G.tl/LEVEL_T;oc='#5fbf7a';{const g=G.bossT<=10?'Gardien en approche':'';setTx('bossTxt',g);setHid('bossTxt',!g)}}
+  else if(G.mode==='defense'){setTx('lvlTxt',`Vague ${Math.max(1,G.wave)}`);if(G.waveState==='break'){ok='Vague suivante';ov=fmt(G.waveT)}else{ok='Ennemis restants';ov=String(G.toSpawn+G.en.length)}op=G.pod.hp/G.pod.max;oc='#8fd3e0';
     {const g=G.waveState==='break'&&(G.wave+1)%DEF_N===0?'Gardien en approche':`Sortie vague ${Math.ceil(Math.max(1,G.wave+(G.waveState==='break'?1:0))/DEF_N)*DEF_N}`;setTx('bossTxt',g);setHid('bossTxt',false)}setSt('objFill','transform',`scaleX(${r3(G.pod.hp/G.pod.max)})`);hot=G.pod.hp<G.pod.max*.3}
-  else{setTx('lvlTxt','Capture');const t=G.target;
-    if(G.exitPt){ok=G.extT>0?'3/3 · reste dans la zone':'3/3 · rejoins l\'extraction';ov=G.extT>0?`${Math.min(100,Math.round(G.extT/EXT_T*100))} %`:dm(G.exitPt.x,G.exitPt.y);op=G.extT/EXT_T;oc='#5fbf7a';hot=true}
-    else if(t&&t.downed){ok='2/3 · capture la cible';ov=`${Math.round(G.capT/2.5*100)} %`;op=G.capT/2.5}
-    else if(t){ok='1/3 · mets la cible à terre';ov=dm(t.x,t.y);op=1-t.hp/t.max}
-    {const g=G.bossT<=10?'Gardien en approche':'';setTx('bossTxt',g);setHid('bossTxt',!g)}}
+  else{const t=G.target,ex=G.exitPt,c=G.capN|0,n=c+1;setTx('lvlTxt',c?`${c} capture${c>1?'s':''}`:'Capture');
+    // Capture en chaîne : la zone d'extraction reste ouverte après la 1re capture, la cible suivante arrive peu après.
+    if(ex&&G.extT>0){ok='Reste dans la zone';ov=`${Math.min(100,Math.round(G.extT/EXT_T*100))} %`;op=G.extT/EXT_T;oc='#5fbf7a';hot=true}
+    else if(t&&t.downed){ok=`Capture la cible ${n}`;ov=`${Math.round(G.capT/2.5*100)} %`;op=G.capT/2.5}
+    else if(t){ok=`Traque la cible ${n}`;ov=dm(t.x,t.y);op=1-t.hp/t.max}
+    else if(ex){ok='Vers l\'extraction';ov=dm(ex.x,ex.y);op=0;oc='#5fbf7a'}
+    {const g=G.bossT<=10?'Gardien en approche':ex&&t?`Extraction · ${dm(ex.x,ex.y)}`:ex&&G.nextTgt>0?`Cible ${n} dans ${Math.ceil(G.nextTgt)} s`:'';setTx('bossTxt',g);setHid('bossTxt',!g)}}
   setTx('objK',ok);setTx('timeTxt',ov);setHid('objBox',!ok);setSt('objFill2','transform',`scaleX(${op==null?0:r3(Math.max(0,Math.min(1,op)))})`);setSt('objFill2','--c',oc);setCls('objBox','hot',hot);
   // Reliques : icône à la couleur de la relique en cours (anneau = réactifs ramassés) et nombre de reliques ouvertes
   setHid('relHud',!G.relQ.length);if(G.relQ.length){const r=G.relic||G.opened[G.opened.length-1]||G.relQ[0];setTx('relN',String(G.opened.length));
@@ -460,8 +470,8 @@ function renderPixi(){
   // interface : flèches, joystick
   const g=L.uiG;g.clear();
   const arrow=(wx,wy,col,label)=>{if(vis(wx,wy,-10))return;const c=hexc(col);
-    const a=Math.atan2(wy-G.cam.y,wx-G.cam.x),cx=innerWidth/2,cy=innerHeight/2,hw=innerWidth/2-34,hh=innerHeight/2-130;
-    const k=Math.min(hw/Math.abs(Math.cos(a)||1e-6),hh/Math.abs(Math.sin(a)||1e-6)),x=cx+Math.cos(a)*k,y=cy+Math.sin(a)*k,ca=Math.cos(a),sa=Math.sin(a);
+    const a=Math.atan2(wy-G.cam.y,wx-G.cam.x),cx=innerWidth/2,cy=innerHeight/2;
+    const k=arrowK(a,cx,cy),x=cx+Math.cos(a)*k,y=cy+Math.sin(a)*k,ca=Math.cos(a),sa=Math.sin(a);
     const pt=(px,py)=>[x+px*ca-py*sa,y+px*sa+py*ca];
     g.lineStyle(2,0x120c16,1);g.beginFill(c,1);g.moveTo(...pt(14,0));g.lineTo(...pt(-8,-10));g.lineTo(...pt(-3,0));g.lineTo(...pt(-8,10));g.closePath();g.endFill();
     if(label){const b=take(PP.utxt);if(b.text!==label)b.text=label;b.fontSize=12;b.tint=c;b.alpha=1;b.position.set(x-ca*26,y-sa*26+6)}};

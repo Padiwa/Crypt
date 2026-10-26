@@ -1170,3 +1170,28 @@ body:has(#camp:not([hidden])) .toast,body:has(#bag:not([hidden])) .toast{top:cal
 .code4in:focus{outline:none;border-color:var(--ember-hi)}
 .code4in::placeholder{letter-spacing:normal;font-weight:400;font-size:15px;color:var(--muted)}
 .coopros .kickb{margin-left:2px;padding-inline:8px;min-height:30px}
+/* HUD en mission (v117) : rien ne se superpose.
+   1re ligne alignée en haut (vie, niveau, or, sac). En dessous, trois colonnes : à gauche les altérations (empilées),
+   au milieu le bandeau d'objectif puis les barres de Gardien et de cryopode, à droite les reliques ouvertes (pastille). */
+:root{--hud-l:92px;--hud-r:64px;--hud-row2:calc(env(safe-area-inset-top,0px) + 64px)}
+.hud{align-items:flex-start}
+.room{align-self:center}
+#hpBox .sts{position:fixed;left:max(16px,env(safe-area-inset-left,0px));top:var(--hud-row2);flex-direction:column;align-items:flex-start;gap:4px;width:var(--hud-l);margin:0}
+#hpBox .sts span{max-width:var(--hud-l);box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;font-size:10px;padding:1px 4px}
+/* colonne du milieu : bandeau d'objectif, puis Gardien, puis cryopode, empilés (jamais l'un sur l'autre) */
+.hudmid{position:fixed;top:calc(env(safe-area-inset-top,0px) + 58px);left:calc(16px + var(--hud-l) + 8px);right:calc(16px + var(--hud-r) + 8px);
+  display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;z-index:5}
+.hudmid>.objbox,.hudmid>.boss{position:static;left:auto;right:auto;top:auto;transform:none;margin:0}
+.objbox{width:max-content;min-width:0;max-width:100%;box-sizing:border-box}
+.objrow{flex-wrap:wrap;justify-content:center;column-gap:10px;row-gap:0}
+.objk{max-width:100%}
+.hudmid>.boss{width:100%;max-width:360px}
+.boss b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hp-num{white-space:nowrap}
+/* reliques ouvertes : pastille à l'extrême droite, en 2e ligne (anneau = réactifs de la relique en cours) */
+#relHud{position:fixed;right:max(16px,env(safe-area-inset-right,0px));top:var(--hud-row2);height:30px;min-width:var(--hud-r);box-sizing:border-box;padding:0 9px 0 6px;gap:6px;justify-content:center;
+  border:1px solid var(--line-strong,#4a4050);border-radius:15px;background:rgba(15,12,18,.85);box-shadow:0 2px 8px rgba(0,0,0,.4)}
+#relHud .rring{width:20px;height:20px}#relHud .rring i{width:15px;height:15px}#relHud svg{width:11px;height:11px}
+.room #relHud b{font:700 13px/1 var(--font-body)}
+/* très petits écrans (320 px) : la 1re ligne garde la place pour la barre de vie */
+@media (max-width:340px){.room b{font-size:17px}.hud .gold{font-size:13px}.hud{gap:8px}}
