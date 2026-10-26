@@ -105,6 +105,8 @@ function fusionSection(){
       <button class="btn buy" data-cact="rfuse" data-arg="${t}" ${ok?'':'disabled'}>Fusionner · <span class="essi"></span>${cost}</button></div>`;
     if(av>=3)h+=`<div class="ftgt"><span class="cx-hint" style="margin:0">Objet visé :</span><div class="cx-chips">${L.map(id=>{const b=bpdef(id);return `<button class="cx-chip cx-chip--sm" data-cact="rftgt" data-arg="${t}|${id}" aria-pressed="${fuseTgt[t]===id}">${esc(b.n)} <span class="n">${fragStatus(id)} / 3</span></button>`}).join('')}</div></div>`}
   return h+'</div></section>'}
+// File d'ouverture regroupée par type (relique + état), dans l'ordre de la première de chaque groupe.
+function relGroups(){const G2=[],ix={};for(const q of meta.relicQ){const k=q.id+'|'+(q.rad?1:0);if(ix[k]==null){ix[k]=G2.length;G2.push({id:q.id,rad:!!q.rad,n:0})}G2[ix[k]].n++}return G2}
 const RELIC_SVG='<svg viewBox="0 0 24 24"><path d="M6 3h12l3 6-9 12L3 9z"/><path d="M3 9h18M9 3l3 6 3-6M12 9v12"/></svg>';
 function campRelics(){
   relicQFix();const all=Object.keys(RELICS),own=all.filter(id=>{const a=meta.relics[id];return a&&(a[0]||a[1])}),Q=meta.relicQ;
@@ -113,8 +115,9 @@ function campRelics(){
   if(!own.length)return h+'<p class="empty">Aucune relique pour l\'instant. Les monstres en lâchent parfois, et chaque manche réussie en rapporte une. Le type dépend de la difficulté :</p>'+srcRows;
   const tot=own.reduce((n,id)=>n+meta.relics[id][0]+meta.relics[id][1],0);
   const qh=`<section class="cx-section"><h3 class="cx-section__label">Ordre d'ouverture · ${Q.length} / ${tot}</h3>
-    ${Q.length?`<div class="rq"><ol>${Q.map((q,i)=>`<li><span class="rqn">${i+1}.</span><span class="rgem${q.rad?' rad':''}" style="--tc:${RTIER[RELICS[q.id].t].c}">${RELIC_SVG}</span><b style="color:${RTIER[RELICS[q.id].t].c}">${esc(RELICS[q.id].n)}${q.rad?' · éclatante':''}</b>
-      <button class="btn" data-cact="rqup" data-arg="${i}" ${i?'':'disabled'} aria-label="Monter">↑</button><button class="btn" data-cact="rqdn" data-arg="${i}" ${i<Q.length-1?'':'disabled'} aria-label="Descendre">↓</button><button class="btn" data-cact="rqrm" data-arg="${i}" aria-label="Retirer">✕</button></li>`).join('')}</ol></div>`
+    ${Q.length?`<div class="rq"><ol>${relGroups().map((g,i,A)=>{const R=RELICS[g.id],c=RTIER[R.t].c,own=(meta.relics[g.id]||[0,0])[g.rad?1:0]|0,k=g.id+'|'+(g.rad?1:0);
+      return `<li><span class="rqn">${i+1}.</span><span class="rgem${g.rad?' rad':''}" style="--tc:${c}">${RELIC_SVG}</span><b style="color:${c}">${esc(R.fz?'Forgée · '+bpdef(R.tgt).n:R.n)}${g.rad?' · éclatante':''} <span style="color:var(--ink)">×${g.n}</span></b>
+      <button class="btn" data-cact="rgmv" data-arg="${k}|-1" ${i?'':'disabled'} aria-label="Monter">↑</button><button class="btn" data-cact="rgmv" data-arg="${k}|1" ${i<A.length-1?'':'disabled'} aria-label="Descendre">↓</button><button class="btn" data-cact="rqdel" data-arg="${k}" aria-label="Retirer une">−</button><button class="btn" data-cact="rqadd" data-arg="${k}" ${g.n<own?'':'disabled'} aria-label="Équiper une de plus">+</button></li>`}).join('')}</ol></div>`
       :'<p class="cx-hint" style="margin:0">Aucune relique équipée : la prochaine mission n\'en ouvrira aucune.</p>'}
     <div class="actions" style="margin:0"><button class="btn" data-cact="rqall" ${Q.length>=tot?'disabled':''}>Tout équiper</button><button class="btn danger" data-cact="rqnone" ${Q.length?'':'disabled'}>Tout retirer</button></div></section>`;
   const tiers=[...new Set(own.filter(id=>!RELICS[id].fz).map(id=>RELICS[id].t))].sort();
@@ -208,21 +211,24 @@ function wishSection(){const W=meta.wish||(meta.wish={leg:true,aff:{}});W.aff=W.
     <p class="cx-hint" style="margin:0">En mission, l'écran s'illumine et l'objet porte un grand faisceau doré quand un objet tombe avec une de ces affixes à une valeur plus haute que celle de ton équipement porté (ou que tu ne portes pas encore)${W.leg?', ou quand une arme que tu n\'as pas encore tombe':''}.</p>
     <div class="cx-chips"><button class="cx-chip cx-chip--sm" data-cact="wishleg" aria-pressed="${!!W.leg}" style="${W.leg?'':'color:var(--rar-legend)'}">Armes nouvelles</button>${n?`<button class="cx-btn cx-btn--ghost cx-btn--sm" data-cact="wishnone" style="margin:0">Tout retirer (${n})</button>`:''}</div>
     ${grp('off')}${grp('def')}${grp('uti')}</section>`}
+// Chercher par affixe : chaque objet qui porte l'affixe se choisit comme source (détruite, son affixe est prise) ou comme cible (elle reçoit).
 function affFinder(){
-  const srcs=[...Object.entries(meta.gear).filter(([k,i])=>i&&!i.lock).map(([k,i])=>['g:'+k,i,'équipé']),...meta.stash.filter(i=>!i.lock).map(i=>['s:'+i.id,i,'coffre'])];
-  const by={};for(const [key,it,w] of srcs)for(const k in it.aff){if(!AFF[k]||AFF[k].aby)continue;(by[k]||(by[k]=[])).push({key,it,w,v:affEff(it,k)})}
+  const eqW=curWid(),ws=Object.keys(WPN).flatMap(c=>WPN[c].filter(w=>ownedW(w.id)).map(w=>['w:'+w.id,weaponItem(c,w.id),w.id===eqW&&c===heroCls?'arme portée':'arme']));
+  const all=[...Object.entries(meta.gear).filter(([k,i])=>i).map(([k,i])=>['g:'+k,i,'équipé']),...meta.stash.map(i=>['s:'+i.id,i,'coffre']),...ws];
+  const by={};for(const [key,it,w] of all)for(const k in it.aff){if(!AFF[k]||AFF[k].aby)continue;(by[k]||(by[k]=[])).push({key,it,w,v:affEff(it,k)})}
   for(const k in by)by[k].sort((a,b)=>b.v-a.v);
   const cnt={all:Object.keys(by).length};for(const k in by){const c=AFF_CAT[k]||'uti';cnt[c]=(cnt[c]||0)+1}
   const keys=Object.keys(by).filter(k=>afCat==='all'||(AFF_CAT[k]||'uti')===afCat).sort((a,b)=>(AFF_CAT[a]||'z').localeCompare(AFF_CAT[b]||'z')||(AFF_NAME[a]||a).localeCompare(AFF_NAME[b]||b));
   const d=xfGet(xf.dst);
   const chip=(k,lab)=>`<button class="cx-chip cx-chip--sm" data-cact="afcat" data-arg="${k}" aria-pressed="${afCat===k}">${lab} <span class="n">${cnt[k]||0}</span></button>`;
-  let h=`<section class="cx-section"><h3 class="cx-section__label">Chercher par affixe</h3><div class="cx-chips">${chip('all','Toutes')}${chip('off','Offensives')}${chip('def','Défensives')}${chip('uti','Utilitaires')}</div>`;
-  if(!keys.length)return h+`<p class="cx-hint" style="margin:0">${srcs.length?'Aucune affixe de ce type sur tes objets non verrouillés.':'Aucun objet non verrouillé à prendre comme source.'}</p></section>`;
+  let h=`<section class="cx-section"><h3 class="cx-section__label">Chercher par affixe</h3><p class="cx-hint" style="margin:0">Ouvre une affixe, puis choisis pour chaque objet : <b>Source</b> (détruite, on prend cette affixe) ou <b>Cible</b> (elle reçoit l'affixe).</p><div class="cx-chips">${chip('all','Toutes')}${chip('off','Offensives')}${chip('def','Défensives')}${chip('uti','Utilitaires')}</div>`;
+  if(!keys.length)return h+`<p class="cx-hint" style="margin:0">${all.length?'Aucune affixe de ce type sur tes objets.':'Aucun objet.'}</p></section>`;
   h+='<ul class="afind">'+keys.map(k=>{const L=by[k],b=L[0],open=afOpen===k,mine=d&&d.aff[k]!=null?affEff(d,k):null;
     const row=`<button class="afrow" data-cact="afopen" data-arg="${k}" aria-expanded="${open}"><span class="afn">${AFF_NAME[k]||k}</span><span class="afv">${affShort(k,b.v)}</span><span class="afs">max · <b style="color:${RARV[b.it.r]}">${esc(itemName(b.it))}</b> · ${b.w}${L.length>1?` · ${L.length} objets`:''}${mine!=null?` · ta cible : ${affShort(k,mine)}`:''}</span><span class="afc" aria-hidden="true">${open?'▴':'▾'}</span></button>`;
     if(!open)return `<li>${row}</li>`;
-    return `<li class="open">${row}<ul>${L.slice(0,8).map((o,i)=>{const sel=xf.src===o.key&&xf.k===k,same=o.key===xf.dst;
-      return `<li><span><b style="color:${RARV[o.it.r]}">${esc(itemName(o.it))}</b> · ${o.w}<br><span class="afv2">${affShort(k,o.v)}</span>${i===0?' <span class="cx-tag cx-tag--heal">max</span>':''}</span>${same?'<span class="cx-hint" style="margin:0">c\'est ta cible</span>':`<button class="cx-btn cx-btn--sm" data-cact="afuse" data-arg="${k}|${o.key}" ${sel?'disabled':''}>${sel?'Choisi':'Prendre'}</button>`}</li>`}).join('')}${L.length>8?`<li class="cx-hint" style="margin:0">… et ${L.length-8} autres, plus faibles.</li>`:''}</ul></li>`}).join('')+'</ul></section>';
+    return `<li class="open">${row}<ul>${L.slice(0,10).map((o,i)=>{const isS=xf.src===o.key&&xf.k===k,isD=xf.dst===o.key,canS=o.key[0]!=='w'&&!o.it.lock&&!isD;
+      return `<li><span><b style="color:${RARV[o.it.r]}">${esc(itemName(o.it))}</b>${o.it.lock?` <span class="li" aria-label="verrouillé">${LOCK_SVG}</span>`:''} · ${o.w}<br><span class="afv2">${affShort(k,o.v)}</span>${i===0?' <span class="cx-tag cx-tag--heal">max</span>':''}</span>
+        <span style="display:flex;gap:6px;flex-shrink:0">${isS?'<span class="cx-pin cx-pin--src" style="position:static">Source</span>':`<button class="cx-btn cx-btn--sm" data-cact="afuse" data-arg="${k}|${o.key}" ${!canS?'disabled':''} title="${o.key[0]==='w'?'Une arme ne peut pas être source':o.it.lock?'Verrouillé : ne peut pas être détruit':''}">Source</button>`}${isD?'<span class="cx-pin cx-pin--dst" style="position:static">Cible</span>':`<button class="cx-btn cx-btn--sm" data-cact="afdst" data-arg="${o.key}" ${xf.src===o.key?'disabled':''}>Cible</button>`}</span></li>`}).join('')}${L.length>10?`<li class="cx-hint" style="margin:0">… et ${L.length-10} autres, plus faibles.</li>`:''}</ul></li>`}).join('')+'</ul></section>';
   return h;
 }
 const RARV=['var(--rar-common)','var(--rar-magic)','var(--rar-rare)','var(--rar-legend)','var(--rar-anc)','var(--rar-sang)','var(--rar-aby)'];
@@ -449,6 +455,7 @@ function campClick(b){
     else if(a==='rqadd'){const [id,rd]=arg.split('|'),rad=rd==='1',ow=(meta.relics[id]||[0,0])[rad?1:0];if(relicQN(id,rad)<ow)meta.relicQ.push({id,rad})}
     else if(a==='rqdel'){const [id,rd]=arg.split('|'),rad=rd==='1';for(let i=meta.relicQ.length-1;i>=0;i--)if(meta.relicQ[i].id===id&&!!meta.relicQ[i].rad===rad){meta.relicQ.splice(i,1);break}}
     else if(a==='rqrm'){meta.relicQ.splice(+arg,1)}
+    else if(a==='rgmv'){const [id,rd,d]=arg.split('|'),Gs=relGroups(),i=Gs.findIndex(g=>g.id===id&&(g.rad?'1':'0')===rd),j=i+(+d);if(i>=0&&j>=0&&j<Gs.length){[Gs[i],Gs[j]]=[Gs[j],Gs[i]];meta.relicQ=Gs.flatMap(g=>Array.from({length:g.n},()=>({id:g.id,rad:g.rad})))}}
     else if(a==='rqup'||a==='rqdn'){const i=+arg,j=a==='rqup'?i-1:i+1,Q=meta.relicQ;if(j>=0&&j<Q.length)[Q[i],Q[j]]=[Q[j],Q[i]]}
     else if(a==='rqnone'){meta.relicQ=[]}
     else if(a==='rqtype'){const ids=Object.keys(RELICS).filter(id=>meta.relics[id]&&relMatch(id)).sort((x,y)=>RELICS[x].t-RELICS[y].t);for(const id of ids){const r=meta.relics[id];for(const rad of [true,false])while(relicQN(id,rad)<(r[rad?1:0]|0))meta.relicQ.push({id,rad})}}
@@ -462,6 +469,7 @@ function campClick(b){
     else if(a==='wishleg'){const W=meta.wish||(meta.wish={leg:true,aff:{}});W.leg=!W.leg}
     else if(a==='wishnone'){if(meta.wish)meta.wish.aff={}}
     else if(a==='afopen'){afOpen=afOpen===arg?'':arg}
+    else if(a==='afdst'){const it=xfGet(arg);if(!it||arg===xf.src)return;xf.dst=arg;xf.rep='';xf.op='';xf.pick=xf.src?'dst':'src'}
     else if(a==='afuse'){const [k,key]=arg.split('|'),it=xfGet(key);if(!it||it.lock||it.aff[k]==null||key===xf.dst)return;xf.src=key;xf.k=k;xf.rep='';xf.pick='dst'}
     else if(a==='afilter'){afF=arg;afP=0}
     else if(a==='apage'){afP+=+arg}

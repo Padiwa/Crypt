@@ -542,7 +542,7 @@ function update(dt){
       else if(d.kind==='seal'){SND.play('leg');(G.loot.seals||(G.loot.seals=[])).push(d.id);G.fresh++}
       else if(d.kind==='relic'){SND.play('pick3');G.loot.relics.push(d.id);G.fresh++}
       else if(d.kind==='react'){if(G.relic){G.react++;if(G.react>=REACT_N){const r=G.relic;G.opened.push(r);G.relI++;G.react=0;G.relic=G.relQ[G.relI]||null;G.shake=6;
-          SND.play('relic');banner(`Relique ${RELICS[r.id].n}${r.rad?' éclatante':''} ouverte`,RTIER[RELICS[r.id].t].c,2);toast(`<b style="color:var(--r2)">Relique ${relicName(r.id)}${r.rad?' éclatante':''} ouverte.</b> `+(G.relic?`Suivante : ${relicName(G.relic.id)}${G.relic.rad?' éclatante':''}.`:'Toutes tes reliques sont ouvertes.')+' Réussis la mission pour recevoir les récompenses.')}}}
+          SND.play('relic');}}}
       else if(d.kind==='potion'){SND.play('pick');if(G.potions<potMax()){G.potions++}else d.gone=false}
       else if(d.kind==='item'){SND.play(d.item.r>=3?'pick3':d.item.r>=2?'pick2':'pick');G.loot.items.push(d.item);G.fresh++;if(d.item.r===3)G.shake=6}
       else if(d.kind==='part'){SND.play('pick3');G.loot.parts.push(d.part);G.fresh++}

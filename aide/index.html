@@ -212,7 +212,7 @@ details.more .tbl{margin:0 14px 14px}
     <h2><small>Pendant la partie</small>En mission</h2>
     <ol class="legend">
       <li><span><b>Barre de vie</b> en haut à gauche, avec tes PV écrits dedans. Le bleu par-dessus est ton bouclier. Sous 30 % de vie, la bordure clignote en rouge.</span></li>
-      <li><span><b>Niveau et minuteurs</b> : niveau de mission, temps avant le prochain Gardien, et avancement de la relique en cours.</span></li>
+      <li><span><b>Niveau et minuteurs</b> : niveau de mission (ou vague), « Gardien en approche » dans les 10 s qui précèdent un Gardien en Survie et pendant la pause avant une vague à Gardien en Défense, la vague de sortie en Défense, et l'avancement de la relique en cours. Le temps avant le portail ou la vague suivante est dans le bandeau d'objectif.</span></li>
       <li><span><b>Bandeau d'objectif</b> (au centre, sous le haut de l'écran) : ce qu'il faut faire et la valeur à surveiller, en grand, avec une jauge. Survie : temps avant le portail (orange et pulsant sous 15 s). Capture : les trois étapes, 1/3 mettre la cible à terre (distance), 2/3 la capturer (pourcentage), 3/3 rejoindre l'extraction (distance, puis pourcentage). Défense : temps avant la vague suivante ou ennemis restants, jauge = vie du cryopode.</span></li>
       <li><span><b>Or</b> ramassé pendant la mission.</span></li>
       <li><span><b>Sac</b> : met en pause. Le butin de la partie vient en premier (▲ sur ce qui est meilleur que ton équipement, « Équiper le meilleur butin »), puis tes bonus, ton équipement, trois chiffres clés, et repliés : toutes les statistiques et les mods. Toucher un objet ouvre sa fiche en bas avec « Équiper maintenant ». En bas : Réglages, Guide et Reprendre. Une pastille signale du nouveau butin.</span></li>
@@ -408,7 +408,7 @@ details.more .tbl{margin:0 14px 14px}
     <p>Monstres (rarement), Gardiens (toujours, et une de plus tous les 12 niveaux de mission), élites (30 %) et récompense de fin de manche. Le type dépend seulement de la <b>difficulté</b>.</p>
     <h3>Ouvrir une relique : la Fissure</h3>
     <ol>
-      <li>Au Camp, équipe une ou plusieurs reliques, dans l'ordre d'ouverture voulu. Pour aller vite, choisis un type au-dessus de ta collection puis touche <b>Tout équiper</b>. <b>Retirer</b> les enlève de la file.</li>
+      <li>Au Camp, équipe une ou plusieurs reliques, dans l'ordre d'ouverture voulu. La file les regroupe par type et par état (« Relique Ossuaire ×8 », « éclatante ×2 ») : ↑ ↓ déplacent tout le groupe, − et + retirent ou ajoutent une relique. Pour aller vite, choisis un type au-dessus de ta collection puis touche <b>Tout équiper</b>. <b>Retirer</b> les enlève de la file.</li>
       <li>En mission, une partie des ennemis sont <b>corrompus</b> (halo doré) et lâchent un réactif.</li>
       <li><b>10 réactifs</b> ouvrent la relique en cours, puis on passe à la suivante.</li>
       <li>Réussis la mission : chaque relique ouverte donne <b>un fragment d'un objet de sa rareté</b> et 25 essence, et parfois un <a href="#familiers">œuf de familier</a> (Ossuaire 8 %, Ancestrale 12 %, Sanguine 15 %, Abyssale 25 %). Le fragment donné est toujours un de ceux qui manquent à l'objet, s'il en reste ; un objet déjà à 2 fragments sur 3 sort un peu plus souvent. En cas d'échec, rien n'est consommé.</li>
@@ -512,7 +512,7 @@ details.more .tbl{margin:0 14px 14px}
     <h3>Fusion</h3>
     <p>Si la cible a déjà cette affixe, les deux valeurs fusionnent : la plus forte + 50 % de la plus faible, 3 fois au maximum par affixe.</p>
     <h3>Chercher par affixe</h3>
-    <p>La liste regroupe toutes les affixes de tes objets, filtrables en Offensives, Défensives et Utilitaires, avec la meilleure valeur et l'objet qui la porte. « Prendre » désigne directement cet objet comme source.</p>
+    <p>La liste regroupe toutes les affixes de tes objets, filtrables en Offensives, Défensives et Utilitaires, avec la meilleure valeur et l'objet qui la porte. Ouvre une affixe : chaque objet qui la porte (armes comprises) a deux boutons, <b>Source</b> (l'objet sera détruit et cette affixe prise) et <b>Cible</b> (l'objet reçoit l'affixe). Un objet verrouillé ou une arme ne peut être que cible. L'objet choisi affiche une pastille « − Source » ou « + Cible ».</p>
     <h3>Alertes de butin</h3>
     <p>Coche les affixes que tu recherches : en mission, un flash t'avertira quand l'une tombe avec une meilleure valeur que ton équipement.</p>
     <h3>Sceaux légendaires</h3>
@@ -651,7 +651,7 @@ details.more .tbl{margin:0 14px 14px}
 
 </main>
 
-<footer class="wrap">Crypte des Cendres · guide à jour de la version 93 du jeu. <a href="../index.html">Retour au jeu</a></footer>
+<footer class="wrap">Crypte des Cendres · guide à jour de la version 97 du jeu. <a href="../index.html">Retour au jeu</a></footer>
 
 <dialog id="zoom" aria-label="Capture agrandie"><button type="button" id="zoomX" aria-label="Fermer">×</button><img id="zoomImg" alt=""></dialog>
 
