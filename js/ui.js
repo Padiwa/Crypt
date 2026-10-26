@@ -5,46 +5,18 @@ function statRows(St){
   return rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join('');
 }
 function slotsHtml(eq,click,selSlot){
-  return Object.keys(SLOT).map(k=>{const it=eq[k],tag=click?'button':'div';
+  return Object.keys(SLOT).map(k=>{if(!slotOpen(k))return `<div class="slot locked" aria-disabled="true"><span>${SLOT[k]}</span><strong style="color:var(--muted)">Verrouillé</strong></div>`;const it=eq[k],tag=click?'button':'div';
     return `<${tag} class="slot${selSlot===k?' sel':''}"${click?` data-slot="${k}"`:''}><span>${SLOT[k]}</span><strong style="color:${it?RAR[it.r].c:'var(--muted)'}">${it?itemName(it):'Vide'}${it&&it.lock?`<span class="li" aria-label="verrouillé">${LOCK_SVG}</span>`:''}</strong></${tag}>`}).join('');
 }
-function better(it){const e=curEq(),a=stats(e),b=stats({...e,[it.slot]:it});return dps(b)+b.hp*.3>dps(a)+a.hp*.3}
+function better(it){const e=curEq(),k=tgtKey(e,it);if(!k)return false;const a=stats(e),b=stats({...e,[k]:it});return dps(b)+b.hp*.3>dps(a)+a.hp*.3}
 const LOCK_SVG='<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
-const cellHtml=(it,attr,sel,up)=>`<button class="cell${sel?' sel':''}${up?' up':''}${it.lock?' locked':''}" data-${attr}="${it.id}" style="border-color:${RAR[it.r].c};color:${RAR[it.r].c}" aria-label="${itemName(it)}${it.lock?', verrouillé':''}">${it.lock?`<span class="lk">${LOCK_SVG}</span>`:''}${it.up?`<span class="cup">+${it.up}</span>`:''}${GLYPH[it.slot]}</button>`;
-function upBlock(it){
-  const n=it.up||0;
-  if(n>=UP_MAX)return `<div class="upg"><span>Amélioration <b>+100 / 100</b> · statistiques ×3</span></div>`;
-  const c1=upCostRange(n,1),k=Math.min(10,UP_MAX-n),ck=upCostRange(n,k);
-  return `<div class="upg"><span>Amélioration <b>+${n} / ${UP_MAX}</b> · statistiques ×${fmtN(upMul(n))} · chaque niveau ajoute 2 % des valeurs de base</span>
-    <div class="actions"><button class="btn buy" data-cact="upg" data-arg="1" ${meta.essence<c1?'disabled':''}>+1 · <span class="essi"></span>${c1}</button>${k>1?`<button class="btn buy" data-cact="upg" data-arg="${k}" ${meta.essence<ck?'disabled':''}>+${k} · <span class="essi"></span>${ck}</button>`:''}</div></div>`;
-}
-function cmpBlock(e,it){const a=stats(e),b=stats({...e,[it.slot]:it}),cur=e[it.slot];
-  const R=[['Puissance (DPS)',dps(a),dps(b),0],['Vie',a.hp,b.hp,0],['Dégâts',a.dmg,b.dmg,1],['Attaques / s',a.aps,b.aps,2],['Critique',a.crit,b.crit,1,' %'],['Dégâts critiques',a.critDmg,b.critDmg,0,' %'],['Réduction',a.armor,b.armor,1,' %'],['Vitesse',a.speed/2.2,b.speed/2.2,0,' %'],['Régénération',a.regen,b.regen,1,' /s'],['Recharge',a.cdr,b.cdr,1,' %'],['Portée des compétences',100+a.skillRad,100+b.skillRad,0,' %'],[CLS[heroCls].skill,a.nova,b.nova,0]];
-  const f=(v,dc)=>(Math.round(v*10**dc)/10**dc).toLocaleString('fr-FR',{minimumFractionDigits:dc,maximumFractionDigits:dc});
-  const rows=R.filter(([l,x,y,dc])=>Math.abs(y-x)>=.5/10**dc).map(([l,x,y,dc,u=''])=>{const d=y-x,up=d>0;return `<div><span>${l}</span><b>${f(y,dc)}${u}</b><em class="${up?'g':'b'}">${up?'▲ +':'▼ −'}${f(Math.abs(d),dc)}</em></div>`}).join('');
-  return `<div class="cmp2"><div class="cmph">Comparé à ${cur?`<b style="color:${RAR[cur.r].c}">${esc(itemName(cur))}</b>`:'un emplacement vide'}</div>${rows||'<p class="cx-hint" style="margin:0">Aucun changement de statistique.</p>'}</div>`}
+const cellHtml=(it,attr,sel,up)=>`<button class="cell${sel?' sel':''}${up?' up':''}${it.lock?' locked':''}" data-${attr}="${it.id}" style="border-color:${RAR[it.r].c};color:${RAR[it.r].c}" aria-label="${itemName(it)}${it.lock?', verrouillé':''}">${it.lock?`<span class="lk">${LOCK_SVG}</span>`:''}${it.up?`<span class="cup">R${it.up+1}</span>`:''}${GLYPH[it.slot]}</button>`;
 const itemScore=e=>{const x=stats(e);let d=dps(x)*(1+x.abSoul*.06)*(1+x.abExec*.015)*(1+x.crit/100*x.abRift/100*2.1)*(1+x.abHunt*.0025)+x.dmg*x.abPulse/100*.8;d*=1+x.execute*.003+x.bossDmg*.0015+x.lowDmg*.001+x.shock*.01+x.chill*.003+x.ultPct*.001+x.fury*.002;return d+(x.hp+x.abWard*8)*.3*(1+x.armor/100+x.lowArmor*.003+x.potHeal*.001+x.antidote*.001+x.auraSlow*.003)};
 function bestPlan(e,pool){const cur={...e},pick={};
-  for(let pass=0;pass<2;pass++)for(const sl of ['armure','amulette','bottes','anneau']){let best=cur[sl],bs=itemScore(cur);
-    for(const it of pool){if(it.slot!==sl||Object.values(pick).includes(it)&&pick[sl]!==it)continue;const sc=itemScore({...cur,[sl]:it});if(sc>bs+1e-6){bs=sc;best=it}}
+  for(let pass=0;pass<2;pass++)for(const sl of Object.keys(e).filter(k=>k!=='arme')){let best=cur[sl],bs=itemScore(cur);
+    for(const it of pool){if(it.slot!==keySlot(sl)||Object.values(cur).includes(it)&&cur[sl]!==it||Object.values(pick).includes(it)&&pick[sl]!==it)continue;const sc=itemScore({...cur,[sl]:it});if(sc>bs+1e-6){bs=sc;best=it}}
     if(best!==cur[sl]){cur[sl]=best;pick[sl]=best}}
   return pick}
-function card(it,mode){
-  const r=RAR[it.r];let extra='';
-  if(mode==='stash'||mode==='run'){
-    const e=mode==='run'?G.eq:curEq(),a=stats(e),b=stats({...e,[it.slot]:it});
-    extra=cmpBlock(e,it)+(mode==='run'
-      ?`<div class="actions"><button class="btn main" data-ract="${it.id}">Équiper maintenant</button></div><p class="empty" style="font-size:13px">Un objet équipé est gardé même si tu meurs. L'ancien part au coffre du Camp.</p>`
-      :`<div class="actions"><button class="btn main" data-cact="equip">Équiper</button><button class="btn" data-cact="lock">${it.lock?'Déverrouiller':'Verrouiller'}</button></div><div class="actions"><button class="btn" data-cact="recycle" ${it.lock?'disabled':''}>${it.lock?'Verrouillé : recyclage impossible':(primeBp(it)?`Recycler · +${primeRecyEss(it)} essence · 1 fragment`:`Recycler · +${r.shard*2+Math.floor(upInvested(it.up)/2)} essence`)}</button></div>`+upBlock(it));
-  }else if(mode==='worn'){
-    extra=it.slot==='arme'?'<div class="actions"><button class="btn" data-cact="toarsenal">Changer d\'arme à l\'Armurerie</button></div>'
-      :`<div class="actions"><button class="btn" data-cact="unequip">Retirer au coffre</button><button class="btn" data-cact="lock">${it.lock?'Déverrouiller':'Verrouiller'}</button></div>`;
-    extra+=upBlock(it);
-  }
-  return `<div class="card"><div class="nm" style="color:${r.c}">${itemName(it)}${it.lock?`<span class="lockchip">${LOCK_SVG}Verrouillé</span>`:''}</div><div class="meta">${r.n} · ${SLOT[it.slot]}${it.wid?' · fabriquée':` · ${it.type==='Sanguin'?'exclusif des reliques Sanguine':it.type==='Abyssal'?'exclusif des reliques Abysse':it.type} · niveau ${it.lvl}`}${mode==='worn'?' · équipé':''}</div>
-    <ul><li>${baseTxtOf(it.slot,fmtN(it.base.v*upMul(it.up)))}</li>${Object.keys(it.aff).map(k=>`<li${AFF[k].aby?' class="abyp"':''}>${AFF[k].t(NOSCALE[k]?it.aff[k]:fmtN(it.aff[k]*upMul(it.up)))}</li>`).join('')}${it.seal&&SEALS[it.seal]?`<li class="sealp">${sealTxt(it.seal)}</li>`:''}</ul>${extra}</div>`;
-}
-
 /* ---------- Pause ---------- */
 let runSel=null;
 function openBag(){if(G.over)return;paused=true;resetJoy();$('bag').hidden=false;runSel=null;modSel=null;G.fresh=0;$('bag').querySelectorAll('details[data-more]').forEach(d=>d.open=!!(typeof moreOpen!=='undefined'&&moreOpen[d.dataset.more]));$('rendTxt').textContent=PX?'Rendu WebGL (PixiJS)':'Rendu standard';$('rendBtn').textContent=PX?'Passer au rendu standard':'Essayer WebGL';drawBag()}
@@ -74,7 +46,7 @@ function drawBag(){
   const bb=build(modTab==='p'?'h':modTab);$('bagModsT').textContent=`Mods · ${bActive(build('w')).length+bActive(build('h')).length} actifs`;
   renderMods('modsBag');
   // fiche ancrée : objet du butin choisi (prioritaire sur le détail d'un mod)
-  if(runSel){const it=L.items.find(i=>i.id===runSel),cur=G.eq[it.slot];
+  if(runSel){const it=L.items.find(i=>i.id===runSel),cur=G.eq[tgtKey(G.eq,it)];
     $('bagDock').innerHTML=`<div class="cx-dock__head"><h3 class="cx-dock__title" style="color:${RAR[it.r].c}">${esc(itemName(it))}</h3><button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-bag="close" aria-label="Fermer le détail"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
       <span class="cx-dock__meta">${RAR[it.r].n} · ${SLOT[it.slot]} · niveau ${it.lvl}</span>
       ${(()=>{const k='r:'+it.id;if(k!==cmpKey){cmpKey=k;cmpPage=0}return cmpObjet(G.eq,it)})()}<button class="cx-btn cx-btn--primary cx-btn--block" data-bag="equip" data-arg="${it.id}" style="margin-top:4px">Équiper maintenant${cur?` · remplace ${esc(itemName(cur))}`:''}</button><p class="cx-hint" style="margin:0">Un objet équipé est gardé même si tu meurs. L'ancien part au coffre du Camp.</p>`;
@@ -117,8 +89,9 @@ function pickUp(k){
 function equipRun(id){
   const it=G.loot.items.find(i=>i.id===id);if(!it)return;
   G.loot.items=G.loot.items.filter(i=>i!==it);
-  const old=meta.gear[it.slot];if(old){meta.stash.push(old)}
-  meta.gear[it.slot]=it;G.eq[it.slot]=it;saveMeta();refreshStats();runSel=null;
+  const k=tgtKey(G.eq,it);if(!k){G.loot.items.push(it);toast('Emplacement verrouillé');return}
+  const old=meta.gear[k];if(old){meta.stash.push(old)}
+  meta.gear[k]=it;G.eq[k]=it;saveMeta();refreshStats();runSel=null;
   toast(`<span style="color:${RAR[it.r].c}">${it.name}</span> équipé`);drawBag();
 }
 function refreshStats(){if(!G)return;const ratio=G.P.hp/S.hp;S=stats(G.eq);G.P.hp=Math.max(1,Math.min(S.hp,ratio*S.hp))}
@@ -205,7 +178,7 @@ function renderMods(rootId){
   const slotHtml=i=>{if(i>b.slots)return '';if(i>=b.slots){const nx=i===b.slots;return `<div class="cx-modslot"><span class="cx-modslot__pol" style="cursor:default">Verrouillée</span><div class="cx-mod cx-mod--empty cx-mod--locked"><b>${b.kind==='p'?'Familier ★★★':nx?`${HSLOT_COST[b.slots-3]} fragments`:'—'}</b></div></div>`}
     const id=b.load[i],p=b.pol[i];return `<div class="cx-modslot${modSF===i?' fsel':''}"><button class="cx-modslot__pol" data-act="slotf" data-i="${i}" aria-pressed="${modSF===i}" aria-label="Filtrer les mods pour la case ${i+1} (${p?POL[p].n:'neutre'})" style="color:${p?POL[p].c:'var(--muted)'}">${p?POL[p].s+' '+POL[p].n:'Neutre'}</button>${id?modTile(id,(modSel===id?' is-sel':'')+(act.includes(id)?'':' off'),i,b):'<div class="cx-mod cx-mod--empty"><b>Libre</b></div>'}</div>`};
   const buyBox=modTab==='h'&&b.slots<HSLOT_MAX&&inCamp?(()=>{const c=HSLOT_COST[b.slots-3],have=fragTotal();
-    return `<div class="cx-rows"><div class="cx-row"><span class="cx-row__k" style="color:var(--ink)">Case ${b.slots+1} du héros<small>${c} fragments de schéma, pris parmi ceux que tu as en plus grand nombre · tu en as ${have}</small></span><button class="cx-btn cx-btn--sm" data-act="slotbuy" style="margin:0" ${have<c?'disabled':''}>Débloquer</button></div></div>`})():'';
+    return `<div class="cx-rows"><div class="cx-row"><span class="cx-row__k" style="color:var(--ink)">Case ${b.slots+1} du héros<small>${c} fragments de relique, pris parmi ceux que tu as en plus grand nombre · tu en as ${have}</small></span><button class="cx-btn cx-btn--sm" data-act="slotbuy" style="margin:0" ${have<c?'disabled':''}>Débloquer</button></div></div>`})():'';
   const petTab=inCamp&&campTab==='pets',bn=modTab==='h'?`Build ${deCls(heroCls)}`:modTab==='w'?`Build ${b.de}`:'Build du familier';
   const over=u>cap;
   root.innerHTML=`${petTab?petPanel():`<div class="cx-tabs" role="tablist"><button class="cx-tab" role="tab" data-act="mtab" data-t="h" aria-selected="${modTab==='h'}">Héros · ${CLS[heroCls].n}</button><button class="cx-tab" role="tab" data-act="mtab" data-t="w" aria-selected="${modTab==='w'}">Arme · ${wdef(curWid()).n}</button>${inCamp?'':`<button class="cx-tab" role="tab" data-act="mtab" data-t="p" aria-selected="${modTab==='p'}">Familier</button>`}</div>`}
@@ -260,7 +233,8 @@ function lootSummary(end){
   return `<div><span>Or ramassé</span><b style="color:var(--r2)">${G.gold}</b></div>
     <div><span>Équipements</span><b>${its?`${its} · `+Object.keys(byR).sort((a,b)=>b-a).map(r=>lc(RAR[r].c,byR[r],RAR[r].n.toLowerCase()+(byR[r]>1?'s':''))).join(''):'0'}</b></div>
     <div><span>Reliques</span><b>${L.relics.length?`${L.relics.length} · `+Object.keys(byT).sort((a,b)=>b-a).map(t=>lc(RTIER[t].c,byT[t],RTIER[t].n)).join(''):'0'}</b></div>
-    ${pts?`<div><span>Fragments de schéma</span><b>${pts}</b></div>`:''}
+    ${(()=>{const W=L.parts.filter(p=>!p.hf),H=L.parts.length-W.length,b={};for(const p of W){const r=wdef(p.w).r;b[r]=(b[r]||0)+1}
+      return (W.length?`<div><span>Armes</span><b>${W.length} · `+Object.keys(b).sort((x,y)=>y-x).map(r=>lc(RAR[r].c,b[r],RAR[r].n.toLowerCase()+(b[r]>1?'s':''))).join('')+`</b></div>`:'')+(H?`<div><span>Fragments de harnais</span><b style="color:var(--rar-aby)">${H}</b></div>`:'')})()}
     ${G.relQ.length&&!end?`<div><span>Reliques ouvertes</span><b>${G.opened.length} / ${G.relQ.length}${G.relic?` · ${G.react} / ${REACT_N} réactifs`:''}</b></div>`:''}<div><span>Ennemis abattus</span><b>${G.kills}</b></div><div><span>${end?'Durée de la mission':'Temps de survie'}</span><b>${fmt(G.t)}</b></div>`;
 }
 function roundDone(){
@@ -284,25 +258,28 @@ function bank(full){
   {const pm=petBank(G.kills);if(pm)G.mastMsg+='<br>'+pm}
   if(full){
     for(const it of G.loot.items)meta.stash.push(it)
-    for(const p of G.loot.parts){if(meta.built[p.w])meta.essence+=6;else{const a=meta.parts[p.w]||(meta.parts[p.w]=[0,0,0]);a[p.p]++}}
+    for(const p of G.loot.parts){if(p.hf)meta.hfrag=(meta.hfrag|0)+1;else if(p.full)gainWeapon(p.w);else if(meta.built[p.w])meta.essence+=6;else{const a=meta.parts[p.w]||(meta.parts[p.w]=[0,0,0]);a[p.p]++}}
+    meta.maxL=Math.max(meta.maxL|0,G.level);
     for(const id of G.loot.relics){const a=meta.relics[id]||(meta.relics[id]=[0,0]);a[0]++}
   }
   sealBank(full);saveMeta();return g;
 }
 function recordBest(){if(G.t>best){best=G.t;try{localStorage.setItem('crypte-best2',String(best))}catch(e){}}}
 function showOver(title,txt,earn,rel){$('overTitle').textContent=title;$('overTxt').textContent=txt;$('earnTxt').innerHTML=earn;$('relicTxt').innerHTML=[rel,G&&G.mastMsg?`<p class="lead" style="font-size:13px;margin:6px 0 0">${G.mastMsg}</p>`:''].filter(Boolean).join('');refreshMenus();$('over').hidden=false}
+// Ouvre une relique : un fragment d'un objet de sa rareté (deux si éclatante ; la relique forgée vise son objet).
 function grantRelic(id,rad){
-  const a=meta.relics[id];if(!a||a[rad?1:0]<=0)return null;
-  a[rad?1:0]--;const r=rollRelic(id,rad),rar=RW_RAR[RELICS[id].rw.indexOf(r)];
-  const [k,v]=r.split(':');let si=null;if(k==='ess')meta.essence+=+v;else if(k==='gold')meta.gold+=+v;else if(k==='sang'){si=sangItem(v,sangLvl());meta.stash.push(si)}else if(k==='aby'){si=abyItem(v,abyLvl());meta.stash.push(si)}else if(v==='*')giveFrag(k);else{const p=meta.parts[k]||(meta.parts[k]=[0,0,0]);p[+v]++}
+  const a=meta.relics[id],R=RELICS[id];if(!R||!a||a[rad?1:0]<=0)return null;
+  a[rad?1:0]--;const n=rad?2:1,got=[];
+  for(let i=0;i<n;i++){const pool=R.fz?[R.tgt]:relPool(R.t);if(!pool.length)break;
+    // les fragments manquants d'un objet presque complet passent un peu avant
+    const w=pool.map(x=>1+fragStatus(x)*.5),tot=w.reduce((p,q)=>p+q,0);let x=Math.random()*tot,k=0;while(x>w[k]&&k<pool.length-1){x-=w[k];k++}
+    const bid=pool[k],fi=giveFrag(bid);got.push({bid,fi})}
   relicQFix();
-  const frag=k!=='ess'&&k!=='gold'&&k!=='sang'&&k!=='aby';
-  return {rar,k,v,si,frag,html:`<b style="color:${MOD_RAR[rar].c}">${rwLabel(r)}</b> (${['commun','peu commun','rare'][rar]})`+(frag?` · fragment ${fragStatus(k)} / 3 de ${bpdef(k).n}, à fabriquer à l'Armurerie`:'')+(si?` · <b style="color:${RAR[si.r].c}">${si.name}</b> niveau ${si.lvl} rejoint ton coffre (${Object.keys(si.aff).map(q=>AFF[q].t(si.aff[q])).join(', ')})`:'')};
-}
+  return {got,html:got.map(g=>{const b=bpdef(g.bid),st=fragStatus(g.bid);return `<b style="color:${RAR[b.r].c}">${esc(b.n)}</b> · fragment ${b.frag[g.fi]} (${st} / 3${st>=3?', prêt à fabriquer':''})`}).join(' et ')}}
 function resolveRelic(){
-  const out=[],S={n:0,ess:0,gold:0,frag:0,fragN:{},items:[],eggs:0,byT:{}};
+  const out=[],S={n:0,ess:0,frag:0,fragN:{},ready:new Set(),eggs:0,byT:{}};
   for(const r of G.opened){const g=grantRelic(r.id,r.rad);if(!g)continue;meta.essence+=25;S.n++;S.ess+=25;const t=RELICS[r.id].t;S.byT[t]=(S.byT[t]||0)+1;
-    if(g.k==='ess')S.ess+=+g.v;else if(g.k==='gold')S.gold+=+g.v;else if(g.si)S.items.push(g.si);else if(g.frag){S.frag++;const n=bpdef(g.k).n;S.fragN[n]=(S.fragN[n]||0)+1}
+    for(const f of g.got){S.frag++;S.fragN[f.bid]=1;if(fragStatus(f.bid)>=3)S.ready.add(f.bid)}
     const egg=eggFromRelic(r.id);if(egg)S.eggs++;
     out.push(`${relicName(r.id)}${r.rad?' éclatante':''} : ${g.html}.`+(egg?' <b style="color:#f0cf4a">Œuf de familier.</b>':''))}
   const left=G.relQ.length-G.opened.length;
@@ -311,9 +288,8 @@ function resolveRelic(){
   let h=`<div class="exsum" style="margin-top:4px">`;
   if(S.n)h+=`<div><span>Reliques ouvertes</span><b>${S.n} · ${Object.keys(S.byT).sort((a,b)=>b-a).map(t=>lc(RTIER[t].c,S.byT[t],RTIER[t].n)).join('')}</b></div>`;
   if(S.ess)h+=`<div><span>Essence</span><b style="color:var(--ess)">+${S.ess}</b></div>`;
-  if(S.gold)h+=`<div><span>Or des reliques</span><b style="color:var(--r2)">+${S.gold}</b></div>`;
-  if(S.frag)h+=`<div><span>Fragments de schéma</span><b>${S.frag} · ${Object.keys(S.fragN).length} schéma${Object.keys(S.fragN).length>1?'s':''}</b></div>`;
-  if(S.items.length)h+=`<div><span>Objets exclusifs</span><b>${S.items.map(i=>`<span class="lc" style="--c:${RAR[i.r].c}">${i.name}</span>`).join('')}</b></div>`;
+  if(S.frag)h+=`<div><span>Fragments</span><b>${S.frag} · ${Object.keys(S.fragN).length} objet${Object.keys(S.fragN).length>1?'s':''}</b></div>`;
+  if(S.ready.size)h+=`<div><span>Prêts à fabriquer</span><b>${[...S.ready].map(id=>{const b=bpdef(id);return `<span class="lc" style="--c:${RAR[b.r].c}">${esc(b.n)}</span>`}).join('')}</b></div>`;
   if(S.eggs)h+=`<div><span>Œufs de familier</span><b style="color:#f0cf4a">${S.eggs}</b></div>`;
   if(left)h+=`<div><span>Non ouvertes (restent équipées)</span><b>${left}</b></div>`;
   h+='</div>';
@@ -324,7 +300,7 @@ function resolveRelic(){
 function overLoot(){const L=G.loot,byR={},byT={};for(const i of L.items)byR[i.r]=(byR[i.r]||0)+1;for(const id of L.relics){const t=RELICS[id].t;byT[t]=(byT[t]||0)+1}
   const lc=(c,n,lab)=>`<span class="lc" style="--c:${c}">${n} ${lab}</span>`;if(!L.items.length&&!L.relics.length&&!L.parts.length)return '';
   return `<div class="exsum"><div><span>Équipements</span><b>${L.items.length?`${L.items.length} · `+Object.keys(byR).sort((a,b)=>b-a).map(r=>lc(RAR[r].c,byR[r],RAR[r].n.toLowerCase()+(byR[r]>1?'s':''))).join(''):'0'}</b></div>
-    <div><span>Reliques ramassées</span><b>${L.relics.length?`${L.relics.length} · `+Object.keys(byT).sort((a,b)=>b-a).map(t=>lc(RTIER[t].c,byT[t],RTIER[t].n)).join(''):'0'}</b></div>${L.parts.length?`<div><span>Fragments ramassés</span><b>${L.parts.length}</b></div>`:''}</div>`}
+    <div><span>Reliques ramassées</span><b>${L.relics.length?`${L.relics.length} · `+Object.keys(byT).sort((a,b)=>b-a).map(t=>lc(RTIER[t].c,byT[t],RTIER[t].n)).join(''):'0'}</b></div>${L.parts.length?`<div><span>Armes ramassées</span><b>${L.parts.length}</b></div>`:''}</div>`}
 function missionSuccess(){SND.play('win');if(NET.host)netSend({t:'exit'});G.hold=false;
   $('extract').hidden=true;$('lvlup').hidden=true;G.over=true;const rel=resolveRelic();const g=bank(true);recordBest();
   const txt=G.mode==='capture'?`Cible capturée en ${fmt(G.t)}, ${G.kills} ennemis abattus.`:G.mode==='defense'?`Tu as tenu ${G.wave} vagues, ${G.kills} ennemis abattus.`:`Tu es sorti au niveau ${G.level} après ${fmt(G.t)}, avec ${G.kills} ennemis abattus.`;

@@ -66,7 +66,7 @@ const petLootPct=()=>G&&G.pet&&G.pet.t==='furet'&&G.petS?5*G.petS.mul+G.petS.pLo
 function petBank(n){const p=petEq();if(!p||!G.pet||!n)return '';let up=0;p.xp=(p.xp|0)+n;while(p.lv<PET_LV&&p.xp>=petNeed(p.lv)){p.xp-=petNeed(p.lv);p.lv++;up++}if(p.lv>=PET_LV)p.xp=0;
   return `${PETS[p.t].n} : niveau ${p.lv} / ${PET_LV}`+(up?` (+${up})`:'')}
 // Œufs : chance par relique ouverte, selon son niveau.
-const EGG_CH=[0,.08,.15,.25];
+const EGG_CH=[.08,.12,.15,.25];
 function eggFromRelic(id){const t=RELICS[id]?RELICS[id].t:0;if(Math.random()<EGG_CH[t]){meta.eggs++;return true}return false}
 // Dessin (2D et WebGL partagent cette forme simple, dessinée au-dessus du sol).
 function petDraw2D(Q,alpha){if(!Q)return;const c=PETS[Q.t].c,b=Math.sin((Q.flap||0))*2;ctx.save();ctx.globalAlpha=alpha;ctx.translate(Q.x,Q.y+(Q.t==='corbeau'?b:0));ctx.scale(1.45,1.45);

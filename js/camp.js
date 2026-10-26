@@ -5,180 +5,139 @@ function syncEq(){if(G&&(!started||G.over)){G.eq=curEq();S=stats(G.eq);G.P.hp=S.
 let campMsg='',recyConfirm=false;
 function fragStatus(id){const pc=meta.parts[id]||[0,0,0];return pc.filter(n=>n>0).length}
 let stF='all',stS='rar',stP=0;const ST_PAGE=24;
-function stashView(){
-  const counts={all:meta.stash.length};for(const it of meta.stash)counts[it.slot]=(counts[it.slot]||0)+1;
-  let list=meta.stash.filter(i=>stF==='all'||i.slot===stF);
-  const by={rar:(a,b)=>b.r-a.r||(b.up||0)-(a.up||0)||b.lvl-a.lvl,up:(a,b)=>(b.up||0)-(a.up||0)||b.r-a.r,lvl:(a,b)=>b.lvl-a.lvl||b.r-a.r,new:(a,b)=>b.id-a.id};
-  list=[...list].sort(by[stS]);
-  const pages=Math.max(1,Math.ceil(list.length/ST_PAGE));stP=clamp(stP,0,pages-1);
-  const pageItems=list.slice(stP*ST_PAGE,stP*ST_PAGE+ST_PAGE);
-  const fChip=(k,lab)=>`<button class="chip" data-cact="sfilter" data-arg="${k}" aria-pressed="${stF===k}">${lab} <span style="color:var(--muted)">${counts[k]||0}</span></button>`;
-  const sChip=(k,lab)=>`<button class="chip sm" data-cact="ssort" data-arg="${k}" aria-pressed="${stS===k}">${lab}</button>`;
-  return `<div class="alrow">${fChip('all','Tout')}${['armure','amulette','bottes','anneau'].map(k=>fChip(k,SLOT[k])).join('')}</div>
-    <div class="alrow" style="align-items:center"><span class="empty" style="font-size:12px">Trier :</span>${sChip('rar','Rareté')}${sChip('up','Amélioration')}${sChip('lvl','Niveau')}${sChip('new','Récents')}</div>
-    ${pageItems.length?`<div class="grid">${pageItems.map(it=>cellHtml(it,'stash',campSel&&campSel.stash===it.id,better(it))).join('')}</div>`:`<p class="empty">${meta.stash.length?'Aucun objet de ce type.':'Ton coffre est vide. Sors vivant d\'une mission pour y ramener les objets trouvés.'}</p>`}
-    ${pages>1?`<div class="pager"><button class="btn" data-cact="spage" data-arg="-1" ${stP===0?'disabled':''} aria-label="Page précédente">‹</button><span>Page ${stP+1} / ${pages}</span><button class="btn" data-cact="spage" data-arg="1" ${stP>=pages-1?'disabled':''} aria-label="Page suivante">›</button></div>`:''}`;
-}
+// Héros : les objets dont tu as des fragments, avec un lien vers l'Armurerie.
 function fragInv(){
-  const ids=[...WPN.archer,...WPN.guerrier,...WPN.magicien,...GEAR_BP].map(x=>x.id).filter(id=>(meta.parts[id]||[]).some(n=>n>0));
-  if(!ids.length)return '<p class="empty" style="font-size:13px">Aucun fragment. Ouvre des reliques pour en obtenir, puis fabrique l\'équipement à l\'Armurerie.</p>';
-  return `<ul class="partlist">${ids.map(id=>{const b=bpdef(id),pc=meta.parts[id];
-    return `<li><b style="color:${RAR[b.r].c}">${b.n}</b> <span style="color:var(--muted)">(${fragStatus(id)} / 3)</span> · ${b.frag.map((n,i)=>`<span style="color:${pc[i]?'var(--heal)':'var(--muted)'}">${n}${pc[i]>1?' ×'+pc[i]:''}</span>`).join(', ')}</li>`}).join('')}</ul>
-    <button class="btn" data-cact="toarsenal" style="align-self:flex-start">Voir les recettes à l'Armurerie</button>`;
+  const ids=craftIds().filter(id=>(meta.parts[id]||[]).some(n=>n>0)).sort((a,b)=>fragStatus(b)-fragStatus(a)||bpdef(b).r-bpdef(a).r);
+  if(!ids.length)return '<p class="cx-hint" style="margin:0">Aucun fragment. Ouvre des reliques en mission : chacune donne un fragment d\'un objet de sa rareté. Trois fragments d\'un même objet se fabriquent à l\'Armurerie.</p>';
+  return `<ul class="partlist">${ids.slice(0,12).map(id=>{const b=bpdef(id),pc=meta.parts[id];
+    return `<li><b style="color:${RAR[b.r].c}">${esc(b.n)}</b> <span style="color:var(--muted)">(${fragStatus(id)} / 3)</span> · ${b.frag.map((n,i)=>`<span style="color:${pc[i]?'var(--heal)':'var(--muted)'}">${n}${pc[i]>1?' ×'+pc[i]:''}</span>`).join(', ')}</li>`}).join('')}${ids.length>12?`<li class="cx-hint" style="margin:0">… et ${ids.length-12} autres</li>`:''}</ul>
+    <button class="btn" data-cact="toarsenal" style="align-self:flex-start">Fabriquer à l'Armurerie</button>`;
 }
-function relicBtns(bid){
-  return Object.keys(RELICS).filter(id=>RELICS[id].rw.some(x=>x.split(':')[0]===bid)).map(id=>{
-    const a=meta.relics[id]||[0,0],tc=RTIER[RELICS[id].t].c,out=[];
-    const eqb=(rad,lab)=>{const n=relicQN(id,rad),own=a[rad?1:0];return `<button class="btn relb" data-cact="rqadd" data-arg="${id}|${rad?1:0}" style="--tc:${tc}" ${n>=own?'disabled':''}>${n>=own?`${lab} : tout équipé (${n})`:`Équiper ${lab} · ${n} / ${own}`}</button>`};
-    if(a[0])out.push(eqb(false,relicName(id)));
-    if(a[1])out.push(eqb(true,relicName(id)+' éclatante'));
-    return out.length?out.join(''):`<span class="part" title="Tu n'as pas cette relique">${relicName(id)}</span>`}).join('');
-}
-// Où trouver les fragments d'un schéma : chaque relique qui en donne, sa tranche de niveaux, ce que tu possèdes, et les autres sources.
-const REL_LV=['missions 1 à 10','missions 11 à 25','missions 26 à 40','missions 41 et plus'];
-function bpSources(b){const pcs=meta.parts[b.id]||[0,0,0],miss=b.frag.filter((n,i)=>!pcs[i]);
-  const rel=Object.keys(RELICS).filter(id=>!RELICS[id].fz&&RELICS[id].rw.some(x=>x.split(':')[0]===b.id));
-  const rows=rel.map(id=>{const R=RELICS[id],a=meta.relics[id]||[0,0],tc=RTIER[R.t].c,n=R.rw.filter(x=>x.split(':')[0]===b.id).length;
-    const eqb=(rad,lab)=>{const q=relicQN(id,rad),own=a[rad?1:0];return own?`<button class="btn relb" data-cact="rqadd" data-arg="${id}|${rad?1:0}" style="--tc:${tc}" ${q>=own?'disabled':''}>${q>=own?`${lab} : équipée (${q})`:`Équiper ${lab} · ${q} / ${own}`}</button>`:''};
-    const btns=eqb(false,'intacte')+eqb(true,'éclatante');
-    return `<li><span class="rgem sm" style="--tc:${tc}">${RELIC_SVG}</span><div><b style="color:${tc}">${R.n}</b><span class="cx-hint" style="margin:0">Relique ${RTIER[R.t].n} · ${R.bio?'Abîmes gelés, ':''}${REL_LV[R.t]}${n>1?` · ${n} récompenses sur 6`:''}${a[0]||a[1]?` · tu en as ${a[0]+a[1]}`:' · pas encore trouvée'}</span>${btns?`<div class="actions" style="margin:4px 0 0">${btns}</div>`:''}</div></li>`}).join('');
-  const other=[];
-  if(b.kind==='arme'&&b.r>=1&&b.r<=2)other.push(`Monstres et Gardiens en mission, dès le niveau 2${b.cls===heroCls?'':` (en jouant le ${CLS[b.cls].n})`}`);
-  if(b.r===3)other.push('Relique forgée : fusionne 3 reliques Abysse dans l\'onglet Reliques et choisis ce schéma, puis ouvre-la en mission');
-  if(b.relicOnly)other.push('Uniquement dans ces reliques : ni en mission, ni par la fusion');
-  return `<div class="bpsrc"><div class="meta">${miss.length?`Il te manque : <b>${miss.join(', ')}</b>. `:'Tu as les 3 fragments. '}Où les trouver :</div><ul class="srcl">${rows}${other.map(t=>`<li><span class="srcdot" aria-hidden="true"></span><div><span class="cx-hint" style="margin:0">${t}</span></div></li>`).join('')}</ul></div>`}
-let wRecy=null,fuseTgt=null;
-const primeBp=it=>it&&it.type==='Prime'?(it.bp||(GEAR_BP.find(g=>g.n===it.name)||{}).id||null):null;
+let fuseTgt={};
 function giveFrag(id){const pc=meta.parts[id]||(meta.parts[id]=[0,0,0]),miss=[0,1,2].filter(i=>!pc[i]),i=miss.length?pick(miss):ri(0,2);pc[i]++;return i}
-const wRecyEss=b=>40*(b.r+1)+Math.floor(upInvested(meta.wlv[b.id]||0)/2);
-const primeRecyEss=it=>40*(it.r+1)+Math.floor(upInvested(it.up)/2);
+// Essence rendue par une arme recyclée : selon sa rareté et son rang (un rang vaut deux exemplaires).
+const wRecyEss=b=>20*(b.r+1)*2**(meta.wlv[b.id]|0);
+// Où trouver un objet : sa relique et la difficulté où elle tombe.
+const srcTxt=b=>b.r>=3?`Relique <b style="color:${RTIER[b.r-3].c}">${RTIER[b.r-3].n}</b> · ${REL_SRC[b.r-3]}`:'Butin des monstres et des Gardiens';
 function bpCard(b){
   const pc=meta.parts[b.id]||[0,0,0],isW=b.kind==='arme',r=RAR[b.r],mine=!isW||b.cls===heroCls;
-  const own=isW&&ownedW(b.id),eq=isW&&(meta.wpn[b.cls]||WPN[b.cls][0].id)===b.id;
-  const cost=isW?Math.round(b.bp/2):b.craft,ready=pc.every(x=>x>0);
-  const baseTxt=isW?`${b.dmg} dégâts de base`:baseTxtOf(b.slot,b.base);
-  let foot;
-  const canRecy=false; // le recyclage se fait dans Forge › Recyclage
-  if(own)foot=(eq?`<span class="owned">Équipée${mine?'':' · '+CLS[b.cls].n}</span>`:mine?`<button class="btn main" data-cact="wequip" data-arg="${b.id}">Équiper</button>`:`<span class="owned">Fabriquée · ${CLS[b.cls].n}</span>`)
-    +(canRecy?(wRecy===b.id?`<div class="card" style="width:100%;box-sizing:border-box"><p style="margin:0;font-size:14px">Recycler <b style="color:${r.c}">${b.n}</b> ? Tu récupères <b>${wRecyEss(b)} essence</b> et <b>1 fragment</b> de son schéma. L'arme, son niveau d'amélioration et ses affixes ajoutées sont perdus ; ses mods restent dans ta collection.</p><div class="actions"><button class="btn danger" data-cact="wrecyok" data-arg="${b.id}">Recycler</button><button class="btn" data-cact="wrecyno">Annuler</button></div></div>`
-      :`<button class="btn danger" data-cact="wrecy" data-arg="${b.id}">Recycler · <span class="essi"></span>${wRecyEss(b)} · 1 fragment</button>`):'');
-  else foot=`<div class="parts">${b.frag.map((n,i)=>`<span class="part${pc[i]?' have':''}">${n}${pc[i]>1?' ×'+pc[i]:''}</span>`).join('')}</div>
-    <button class="btn main buy" data-cact="craft" data-arg="${b.id}" ${ready&&meta.gold>=cost&&true?'':'disabled'}>Fabriquer · <span class="coin"></span>${cost}</button>`;
-  const src=own||b.bp===0?'':bpSources(b);
-  return `<div class="wpn${eq&&mine?' on':''}"><div class="nm" style="color:${r.c}">${b.n}</div><div class="meta">${r.n} · ${isW?'Arme · '+CLS[b.cls].n:SLOT[b.slot]+' Prime · toutes classes'+(b.bio?' · ❄ Abîmes gelés':'')} · ${baseTxt}</div>
-    <ul>${Object.keys(b.aff).map(k=>`<li>${AFF[k].t(b.aff[k])}</li>`).join('')||'<li>Aucun bonus</li>'}</ul>
-    ${src}<div class="wfoot">${foot}</div></div>`;
+  const own=isW&&ownedW(b.id),eq=isW&&curWid(b.cls)===b.id,craftable=b.r>=3,ready=craftable&&pc.every(x=>x>0),cost=b.craft;
+  const lvl=relicItemLvl();
+  const baseTxt=isW?`${b.dmg} dégâts de base`:baseTxtOf(b.slot,Math.round(baseRoll(b.slot,lvl)*RB[b.r]));
+  const lines=isW?Object.keys(b.aff).map(k=>`<li${AFF[k].aby?' class="abyp"':''}>${AFF[k].t(b.aff[k])}</li>`).join(''):b.aff.map(k=>`<li>${AFF_NAME[k]||k}</li>`).join('')+(b.pw?`<li class="abyp">${AFF[b.pw].t(AFF[b.pw].r(lvl))}</li>`:'');
+  const sp=isW?wSpares(b.id).length:0;
+  let st=isW?(own?`<span class="owned">${eq?'Équipée':'Possédée'} · ${rkTxt(meta.wlv[b.id])}${sp?` · ${sp} double${sp>1?'s':''}`:''}${mine?'':' · '+CLS[b.cls].n}</span>`:''):'';
+  let foot='';
+  if(craftable)foot=`<div class="parts">${b.frag.map((n,i)=>`<span class="part${pc[i]?' have':''}">${n}${pc[i]>1?' ×'+pc[i]:''}</span>`).join('')}</div>
+    <button class="btn main buy" data-cact="craft" data-arg="${b.id}" ${ready&&meta.gold>=cost?'':'disabled'}>${isW&&own?'Fabriquer un double':'Fabriquer'} · <span class="coin"></span>${cost}</button>`;
+  if(isW&&own&&!eq&&mine)foot+=`<button class="btn" data-cact="wequip" data-arg="${b.id}">Équiper</button>`;
+  return `<div class="wpn${eq&&mine?' on':''}"><div class="nm" style="color:${r.c}">${esc(b.n)}</div><div class="meta">${r.n} · ${isW?'Arme · '+CLS[b.cls].n:SLOT[b.slot]+(b.bio?' · ❄ Abîmes gelés':'')} · ${baseTxt}${!isW?` · niveau ${lvl}`:''}</div>
+    <ul>${lines||'<li>Aucun bonus</li>'}</ul>
+    <div class="meta">${srcTxt(b)}${isW&&!craftable?'':''}</div>${st}<div class="wfoot">${foot}</div></div>`;
 }
 let arsAsk=null;
-const bpCost=b=>b.kind==='arme'?Math.round(b.bp/2):b.craft;
-function craftPlan(){const ids=[...WPN[heroCls],...Object.keys(WPN).filter(c=>c!==heroCls).flatMap(c=>WPN[c]),...GEAR_BP].map(x=>x.id).filter(id=>bpdef(id).bp!==0||bpdef(id).kind!=='arme');
-  const parts={},plan=[];let gold=meta.gold;for(const id of ids)parts[id]=[...(meta.parts[id]||[0,0,0])];
-  for(const id of ids){const b=bpdef(id);if(b.kind==='arme'&&(ownedW(id)||b.bp===0))continue;
-    for(let n=0;n<(b.kind==='arme'?1:20);n++){const pc=parts[id],c=bpCost(b);if(!pc.every(x=>x>0)||gold<c)break;parts[id]=pc.map(x=>x-1);gold-=c;plan.push(id)}}
+function craftPlan(){const ids=craftIds(),parts={},plan=[];let gold=meta.gold;for(const id of ids)parts[id]=[...(meta.parts[id]||[0,0,0])];
+  for(const id of ids){const b=bpdef(id);for(let n=0;n<20;n++){const pc=parts[id];if(!pc.every(x=>x>0)||gold<b.craft)break;parts[id]=pc.map(x=>x-1);gold-=b.craft;plan.push(id)}}
   return {plan,cost:meta.gold-gold}}
-function recyPlan(){const ws=Object.keys(WPN).flatMap(c=>WPN[c].filter(w=>w.bp>0&&ownedW(w.id)&&!(meta.wlock&&meta.wlock[w.id])&&(meta.wpn[c]||WPN[c][0].id)!==w.id));
-  const pr=meta.stash.filter(it=>primeBp(it)&&!it.lock);
-  return {ws,pr,ess:ws.reduce((a,w)=>a+wRecyEss(bpdef(w.id)),0)+pr.reduce((a,it)=>a+primeRecyEss(it),0)}}
-function craftOne(id){const b=bpdef(id),pc=meta.parts[id],cost=bpCost(b);if(!pc||!pc.every(x=>x>0)||meta.gold<cost)return false;if(b.kind==='arme'&&ownedW(id))return false;
-  meta.parts[id]=pc.map(x=>x-1);meta.gold-=cost;
-  if(b.kind==='arme'){meta.built[id]=true;if(b.cls===heroCls)meta.wpn[heroCls]=id}
-  else meta.stash.push({id:uid++,slot:b.slot,r:b.r,lvl:20,base:{k:BASE_STAT[b.slot],v:b.base},aff:{...b.aff},name:b.n,type:'Prime',bp:b.id});
-  return true}
+function craftOne(id){const b=bpdef(id),pc=meta.parts[id];if(!b||b.r<3||!pc||!pc.every(x=>x>0)||meta.gold<b.craft)return null;
+  meta.parts[id]=pc.map(x=>x-1);meta.gold-=b.craft;
+  if(b.kind==='arme'){const g=gainWeapon(id);if(g==='new'&&b.cls===heroCls)meta.wpn[heroCls]=id;return g}
+  const it=rgItem(id,relicItemLvl());meta.stash.push(it);return it}
 function arsBar(){const cp=craftPlan();
-  let h=`<div class="actions" style="margin:0"><button class="btn${cp.plan.length?' main':''}" data-cact="craftask" ${cp.plan.length?'':'disabled'}>Tout fabriquer${cp.plan.length?` · ${cp.plan.length}`:''}</button><button class="btn" data-cact="gorecy">Recycler à la Forge</button></div>`;
-  if(!cp.plan.length)h+='<p class="cx-hint" style="margin:0">Rien à fabriquer : il faut les 3 fragments et l\'or. Le recyclage des armes et objets Prime se fait dans Forge › Recyclage.</p>';
+  let h=`<div class="actions" style="margin:0"><button class="btn${cp.plan.length?' main':''}" data-cact="craftask" ${cp.plan.length?'':'disabled'}>Tout fabriquer${cp.plan.length?` · ${cp.plan.length}`:''}</button><button class="btn" data-cact="gofuse">Fusionner à la Forge</button></div>`;
   if(arsAsk==='craft'&&cp.plan.length){const cnt={};for(const id of cp.plan)cnt[id]=(cnt[id]||0)+1;
-    h+=`<div class="card"><p style="margin:0;font-size:14px">Fabriquer ${cp.plan.length} objet${cp.plan.length>1?'s':''} pour <b><span class="coin"></span> ${cp.cost} or</b> : ${Object.keys(cnt).map(id=>`<b style="color:${RAR[bpdef(id).r].c}">${bpdef(id).n}</b>${cnt[id]>1?' ×'+cnt[id]:''}`).join(', ')}.</p><div class="actions"><button class="btn main" data-cact="craftall">Fabriquer</button><button class="btn" data-cact="arsno">Annuler</button></div></div>`}
+    h+=`<div class="card"><p style="margin:0;font-size:14px">Fabriquer ${cp.plan.length} objet${cp.plan.length>1?'s':''} pour <b><span class="coin"></span> ${cp.cost} or</b> : ${Object.keys(cnt).map(id=>`<b style="color:${RAR[bpdef(id).r].c}">${esc(bpdef(id).n)}</b>${cnt[id]>1?' ×'+cnt[id]:''}`).join(', ')}.</p><div class="actions"><button class="btn main" data-cact="craftall">Fabriquer</button><button class="btn" data-cact="arsno">Annuler</button></div></div>`}
   return h}
-let arsView='rec';
-// Armurerie › Mes armes : toutes les armes possédées, avec leurs valeurs réelles (amélioration et affixes ajoutées comprises).
+let arsView='coffre',arsR='w';
+// Armurerie › Mes armes : toutes les armes possédées, avec leurs valeurs réelles (rang et affixes ajoutées comprises).
 function myWeapons(){const order=[heroCls,...Object.keys(CLS).filter(c=>c!==heroCls)];
   const all=order.flatMap(c=>WPN[c].filter(w=>ownedW(w.id)).map(w=>({c,w})));const tot=Object.values(WPN).flat().length;
   const base=curEq(),dpsOf=id=>dps(stats({...base,arme:weaponItem(heroCls,id)})),cur=dpsOf(curWid());
-  let h=`<p class="cx-hint" style="margin:0">${all.length} arme${all.length>1?'s':''} possédée${all.length>1?'s':''} sur ${tot}. Valeurs avec amélioration et affixes ajoutées. Pour ton héros, la ligne DPS compare chaque arme à celle équipée, avec ton équipement actuel.</p>`;
+  let h=`<p class="cx-hint" style="margin:0">${all.length} arme${all.length>1?'s':''} possédée${all.length>1?'s':''} sur ${tot}. Valeurs avec rang et affixes ajoutées. Pour ton héros, la ligne DPS compare chaque arme à celle équipée, avec ton équipement actuel.</p>`;
   for(const c of order){const L=all.filter(x=>x.c===c);if(!L.length)continue;
     h+=`<h3>${CLS[c].n}${c===heroCls?' · ton héros':''} <span class="cx-hint" style="margin:0;font-weight:400">${L.length} / ${WPN[c].length}</span></h3>`;
     h+=L.sort((a,b)=>b.w.r-a.w.r).map(({w})=>{const it=weaponItem(c,w.id),m=upMul(it.up),r=RAR[w.r],eq=curWid(c)===w.id,mine=c===heroCls;
-      const mods=(meta.wload[w.id]||[]).filter(Boolean).length,mt=(meta.wmast[w.id]||{r:0}).r;
+      const mods=(meta.wload[w.id]||[]).filter(Boolean).length,mt=(meta.wmast[w.id]||{r:0}).r,sp=wSpares(w.id).length,fp=wFusePlan(w.id);
       const d=mine?dpsOf(w.id):0,diff=mine&&!eq&&cur?Math.round((d/cur-1)*100):0;
-      return `<div class="wpn${eq&&mine?' on':''}"><div class="nm" style="color:${r.c}">${w.n}${it.up?` <span style="color:var(--ink)">+${it.up}</span>`:''}</div>
-        <div class="meta">${r.n} · ${fmtN(w.dmg*m)} dégâts de base · maîtrise ${mt} / 10 · ${mods} mod${mods>1?'s':''}</div>
+      return `<div class="wpn${eq&&mine?' on':''}"><div class="nm" style="color:${r.c}">${esc(w.n)} <span style="color:var(--ink)">${rkTxt(it.up)}</span></div>
+        <div class="meta">${r.n} · ${fmtN(w.dmg*m)} dégâts de base · maîtrise ${mt} / 10 · ${mods} mod${mods>1?'s':''}${sp?` · ${sp} double${sp>1?'s':''}`:''}</div>
         <ul>${Object.keys(it.aff).map(k=>`<li${AFF[k].aby?' class="abyp"':''}>${AFF[k].t(NOSCALE[k]?it.aff[k]:fmtN(it.aff[k]*m))}</li>`).join('')||'<li>Aucun bonus</li>'}</ul>
         ${mine?`<div class="meta">DPS estimé <b style="color:var(--ink)">${fmtN(Math.round(d))}</b>${eq?'':` · <b style="color:${diff>=0?'var(--heal)':'var(--blood)'}">${diff>=0?'+':''}${diff} %</b> par rapport à l'arme équipée`}</div>`:''}
-        <div class="wfoot">${eq?`<span class="owned">Équipée${mine?'':' · '+CLS[c].n}</span>`:mine?`<button class="btn main" data-cact="wequip" data-arg="${w.id}">Équiper</button>`:`<span class="owned">${CLS[c].n}</span>`}</div></div>`}).join('')}
+        <div class="wfoot">${eq?`<span class="owned">Équipée${mine?'':' · '+CLS[c].n}</span>`:mine?`<button class="btn main" data-cact="wequip" data-arg="${w.id}">Équiper</button>`:`<span class="owned">${CLS[c].n}</span>`}${fp.n?`<button class="btn" data-cact="wfuse" data-arg="${w.id}">Fusionner · ${rkTxt(fp.R)}</button>`:''}</div></div>`}).join('')}
   return h}
 function campArsenal2(){
-  const order=[heroCls,...Object.keys(CLS).filter(c=>c!==heroCls)];
   const nOwn=Object.values(WPN).flat().filter(w=>ownedW(w.id)).length;
-  const tabs=`<div class="cx-chips" role="tablist" aria-label="Armurerie"><button class="cx-chip" role="tab" data-cact="arsv" data-arg="rec" aria-pressed="${arsView==='rec'}">Recettes</button><button class="cx-chip" role="tab" data-cact="arsv" data-arg="mine" aria-pressed="${arsView==='mine'}">Mes armes <span class="n">${nOwn}</span></button></div>`;
+  const tv=(k,lab,n)=>`<button class="cx-chip" role="tab" data-cact="arsv" data-arg="${k}" aria-pressed="${arsView===k}">${lab}${n!=null?` <span class="n">${n}</span>`:''}</button>`;
+  const tabs=`<div class="cx-chips" role="tablist" aria-label="Armurerie">${tv('coffre','Coffre',stashN())}${tv('rec','Recettes')}${tv('mine','Mes armes',nOwn)}${tv('recy','Recyclage')}</div>`;
   if(arsView==='mine')return `${campMsg}${tabs}${myWeapons()}`;
-  return `${campMsg}${tabs}${arsBar()}<p class="empty" style="font-size:13px">Toutes les recettes. Chaque équipement se fabrique avec ses 3 fragments de schéma, trouvés dans les reliques. Équipe tes reliques ici ou à l'onglet Reliques : elles s'ouvrent en mission, une par une, tous les 10 réactifs (+25 essence chacune).</p>`
-    +order.map(c=>`<h3>Armes · ${CLS[c].n}${c===heroCls?' · ton héros':''}</h3>`+WPN[c].filter((w,i)=>i>0||c===heroCls).map(w=>bpCard(bpdef(w.id))).join('')).join('')
-    +`<h3>Équipement Prime · toutes classes</h3>`+GEAR_BP.map(g=>bpCard(bpdef(g.id))).join('');
+  if(arsView==='coffre')return `${campMsg}${tabs}${campCoffre()}`;
+  if(arsView==='recy')return `${campMsg}${tabs}${campRecycle()}`;
+  const ready=id=>{const pc=meta.parts[id]||[0,0,0];return pc.every(x=>x>0)};
+  const nReady=craftIds().filter(ready).length;
+  const ch=(k,lab,c,n)=>`<button class="cx-chip cx-chip--sm" data-cact="arsr" data-arg="${k}" aria-pressed="${arsR===k}"${c&&arsR!==k?` style="color:${c}"`:''}>${lab}${n!=null?` <span class="n">${n}</span>`:''}</button>`;
+  let h=`${campMsg}${tabs}${arsBar()}<p class="cx-hint" style="margin:0">Les armes communes, magiques et rares tombent des monstres. Tout ce qui est légendaire ou plus rare se fabrique avec 3 fragments, trouvés en ouvrant les reliques de sa rareté. Un objet fabriqué sort au niveau d'objet de ta plus haute mission réussie (niveau ${maxL()} → objet niveau ${relicItemLvl()}).</p>
+    <div class="cx-chips">${ch('w','Armes · '+CLS[heroCls].n)}${[3,4,5,6].map(r=>ch(String(r),RAR[r].n,RAR[r].c)).join('')}${ch('ready','Prêts',null,nReady)}${ch('o','Autres classes')}</div>`;
+  let list=[];
+  if(arsR==='w')list=WPN[heroCls].map(w=>w.id);
+  else if(arsR==='o')list=Object.keys(WPN).filter(c=>c!==heroCls).flatMap(c=>WPN[c].filter(w=>w.r>=3||ownedW(w.id))).map(w=>w.id);
+  else if(arsR==='ready')list=craftIds().filter(ready);
+  else list=Object.keys(RGEAR).filter(id=>RGEAR[id].r===+arsR);
+  if(!list.length)h+='<p class="cx-hint" style="margin:0">Rien à fabriquer pour l\'instant : il faut les 3 fragments.</p>';
+  return h+list.map(id=>bpCard(bpdef(id))).join('');
 }
 let relSel=null,relTier='all';
-// Filtre de type : 'all', un niveau (0–3), 'g' (givre) ou 'f' (forgées)
-const relMatch=(id,f=relTier)=>{const R=RELICS[id];return f==='all'||(f==='g'?!!R.bio:f==='f'?!!R.fz:String(R.t)===f)};
-const relTypeName=f=>f==='g'?'reliques de givre':f==='f'?'reliques forgées':f==='all'?'reliques':'reliques '+RTIER[+f].n;
+// Filtre : 'all', un type (0–3) ou 'f' (forgées)
+const relMatch=(id,f=relTier)=>{const R=RELICS[id];return f==='all'||(f==='f'?!!R.fz:String(R.t)===f&&!R.fz)};
 const relToEquip=f=>Object.keys(RELICS).filter(id=>meta.relics[id]&&relMatch(id,f)).reduce((n,id)=>n+[true,false].reduce((m,rad)=>m+Math.max(0,(meta.relics[id][rad?1:0]|0)-relicQN(id,rad)),0),0);
 const relInQ=f=>meta.relicQ.filter(q=>RELICS[q.id]&&relMatch(q.id,f)).length;
 const FUSE_COST=[20,40,80,150];
+// Reliques non forgées d'un type, celles hors de la file d'ouverture d'abord, les intactes avant les éclatantes.
 function relAvail(t){const out=[];for(const id in RELICS){if(RELICS[id].t!==t||RELICS[id].fz)continue;const a=meta.relics[id];if(!a)continue;
   for(const rad of [false,true]){const own=Math.max(0,a[rad?1:0]|0),q=Math.min(own,relicQN(id,rad));for(let k=0;k<own;k++)out.push({id,rad,q:k>=own-q})}}
-  return out.sort((x,y)=>(x.q-y.q)||(x.rad-y.rad)||((meta.relics[y.id][0]+meta.relics[y.id][1])-(meta.relics[x.id][0]+meta.relics[x.id][1])))}
-const legBps=()=>[...WPN[heroCls].filter(w=>w.r===3&&!ownedW(w.id)),...Object.keys(WPN).filter(c=>c!==heroCls).flatMap(c=>WPN[c].filter(w=>w.r===3&&!ownedW(w.id))),...GEAR_BP.filter(g=>g.r===3)].map(x=>x.id);
-function chainPlan(t){const have=[0,1,2,3].map(i=>relAvail(i).length);let cost=0,fus=0;
-  const ensure=(k,n)=>{const use=Math.min(n,have[k]);have[k]-=use;let r=n-use;if(!r)return true;if(k===0)return false;if(!ensure(k-1,3*r))return false;cost+=r*FUSE_COST[k-1];fus+=r;return true};
-  if(!ensure(t,3))return null;return {cost:cost+FUSE_COST[t],fus}}
-function fuseOnce(t){const av=relAvail(t);if(av.length<3)return null;meta.essence-=FUSE_COST[t];for(const q of av.slice(0,3))meta.relics[q.id][q.rad?1:0]--;relicQFix();
-  if(t<3){const nid=pick(Object.keys(RELICS).filter(id=>RELICS[id].t===t+1&&!RELICS[id].bio&&!RELICS[id].fz));const a=meta.relics[nid]||(meta.relics[nid]=[0,0]);a[0]++;return nid}return true}
-function ensureRel(t){while(relAvail(t).length<3){if(t===0)return false;if(!ensureRel(t-1))return false;fuseOnce(t-1)}return true}
+  return out.sort((x,y)=>(x.q-y.q)||(x.rad-y.rad))}
+// Objets visés par la fusion : ceux du contenu de la relique, les plus proches d'être complets d'abord.
+const fuseTargets=t=>relPool(t).sort((a,b)=>fragStatus(b)-fragStatus(a)||(bpdef(a).kind==='arme'?-1:1));
 function fusionSection(){
-  {const L=legBps();if(!fuseTgt||!L.includes(fuseTgt))fuseTgt=L[0]||null}
-  let h=`<section class="cx-section"><h3 class="cx-section__label">Fusion de reliques</h3><p class="cx-hint" style="margin:0">Fusionne 3 reliques d'un même niveau. Celles hors de la file d'ouverture partent en premier, les intactes avant les éclatantes ; si besoin, des reliques de la file sont utilisées et en sont retirées. Trois reliques Abysse donnent une relique forgée du schéma légendaire de ton choix : ouvre-la en mission pour recevoir à coup sûr un de ses fragments.</p><div class="fuse">`;
-  for(let t=0;t<4;t++){const AV=relAvail(t),av=AV.length,qn=AV.slice(0,3).filter(q=>q.q).length,inQ=AV.filter(q=>q.q).length,cp=av<3&&t>0?chainPlan(t):null,cost=cp?cp.cost:FUSE_COST[t],ok=(av>=3||cp)&&meta.essence>=cost;
-    const res=t<3?`1 relique <b style="color:${RTIER[t+1].c}">${RTIER[t+1].n}</b>`:`1 <b style="color:${RTIER[3].c}">relique forgée</b>`;
-    h+=`<div class="frow"><span class="rgem" style="--tc:${RTIER[t].c}">${RELIC_SVG}</span><div class="fl"><b>3 × <span style="color:${RTIER[t].c}">${RTIER[t].n}</span> → ${res}</b><span>${av} possédée${av>1?'s':''}${inQ?` dont ${inQ} dans la file d'ouverture`:''}${av<3?(cp?` · les ${3-av} manquante${3-av>1?'s':''} seront créée${3-av>1?'s':''} avec tes reliques de niveau inférieur (${cp.fus} fusion${cp.fus>1?'s':''} en plus)`:` · il en faut ${3-av} de plus${t>0?`, ou ${3*(3-av)} ${RTIER[t-1].n} pour les créer`:''}`):''}${(av>=3||cp)&&meta.essence<cost?` · il manque ${cost-meta.essence} essence`:''}${ok&&qn?` · ${qn} ${qn>1?'seront retirées':'sera retirée'} de la file`:''}</span></div>
-      <button class="btn buy" data-cact="rfuse" data-arg="${t}" ${ok&&(t<3||fuseTgt)?'':'disabled'}>${cp?'Fusionner en chaîne':'Fusionner'} · <span class="essi"></span>${cost}</button></div>`;
-    if(t===3){const L=legBps();if(!fuseTgt||!L.includes(fuseTgt))fuseTgt=L[0]||null;
-      h+=`<div class="ftgt"><span class="cx-hint" style="margin:0">Schéma visé :</span><div class="cx-chips">${L.map(id=>{const b=bpdef(id);return `<button class="cx-chip cx-chip--sm" data-cact="rftgt" data-arg="${id}" aria-pressed="${fuseTgt===id}">${b.n} <span class="n">${fragStatus(id)} / 3</span></button>`}).join('')||'<span class="cx-hint">Toutes les armes légendaires sont déjà fabriquées.</span>'}</div></div>`}}
+  let h=`<section class="cx-section"><h3 class="cx-section__label">Reliques forgées</h3><p class="cx-hint" style="margin:0">Fusionne 3 reliques d'un même type en une relique forgée de ce type : elle donne à coup sûr un fragment de l'objet de ton choix. Celles hors de la file d'ouverture partent en premier.</p><div class="fuse">`;
+  for(let t=0;t<4;t++){const AV=relAvail(t),av=AV.length,cost=FUSE_COST[t],L=fuseTargets(t);if(!fuseTgt[t]||!L.includes(fuseTgt[t]))fuseTgt[t]=L[0]||null;const ok=av>=3&&meta.essence>=cost&&fuseTgt[t];
+    if(!av)continue;
+    h+=`<div class="frow"><span class="rgem" style="--tc:${RTIER[t].c}">${RELIC_SVG}</span><div class="fl"><b>3 × <span style="color:${RTIER[t].c}">${RTIER[t].n}</span> → relique forgée</b><span>${av} possédée${av>1?'s':''}${av<3?` · il en faut ${3-av} de plus`:''}${av>=3&&meta.essence<cost?` · il manque ${cost-meta.essence} essence`:''}</span></div>
+      <button class="btn buy" data-cact="rfuse" data-arg="${t}" ${ok?'':'disabled'}>Fusionner · <span class="essi"></span>${cost}</button></div>`;
+    if(av>=3)h+=`<div class="ftgt"><span class="cx-hint" style="margin:0">Objet visé :</span><div class="cx-chips">${L.map(id=>{const b=bpdef(id);return `<button class="cx-chip cx-chip--sm" data-cact="rftgt" data-arg="${t}|${id}" aria-pressed="${fuseTgt[t]===id}">${esc(b.n)} <span class="n">${fragStatus(id)} / 3</span></button>`}).join('')}</div></div>`}
   return h+'</div></section>'}
 const RELIC_SVG='<svg viewBox="0 0 24 24"><path d="M6 3h12l3 6-9 12L3 9z"/><path d="M3 9h18M9 3l3 6 3-6M12 9v12"/></svg>';
-function rwInfo(r){const [k,v]=r.split(':');if(k==='ess'||k==='gold')return {cur:true};if(k==='sang')return {sang:true};if(k==='aby')return {aby:true};const b=bpdef(k),pc=meta.parts[k]||[0,0,0],n=fragStatus(k),have=v==='*'?(n>=3?1:0):(pc[+v]||0),built=b.kind==='arme'&&ownedW(k);
-  return {b,have,n,built,completes:!have&&n===2&&!built}}
 function campRelics(){
   relicQFix();const all=Object.keys(RELICS),own=all.filter(id=>{const a=meta.relics[id];return a&&(a[0]||a[1])}),Q=meta.relicQ;
   let h=`${campMsg}`;
-  if(!own.length)return h+'<p class="empty">Aucune relique pour l\'instant. Les monstres en lâchent parfois, et chaque manche réussie en rapporte une.</p>';
+  const srcRows=`<div class="cx-rows">${RTIER.map((T,t)=>`<div class="cx-row"><span class="cx-row__k"><b style="color:${T.c}">Relique ${T.n}</b><small>${REL_SRC[t]} · fragments ${RAR[T.r].n.toLowerCase()}s</small></span><span class="cx-hint" style="margin:0">${(meta.relics[Object.keys(RELICS)[t]]||[0,0]).reduce((a,b)=>a+b,0)}</span></div>`).join('')}</div>`;
+  if(!own.length)return h+'<p class="empty">Aucune relique pour l\'instant. Les monstres en lâchent parfois, et chaque manche réussie en rapporte une. Le type dépend de la difficulté :</p>'+srcRows;
   const tot=own.reduce((n,id)=>n+meta.relics[id][0]+meta.relics[id][1],0);
-  // file d'ouverture (affichée après la collection)
   const qh=`<section class="cx-section"><h3 class="cx-section__label">Ordre d'ouverture · ${Q.length} / ${tot}</h3>
-    ${Q.length?`<div class="rq"><ol>${Q.map((q,i)=>`<li><span class="rqn">${i+1}.</span><span class="rgem${q.rad?' rad':''}" style="--tc:${RTIER[RELICS[q.id].t].c}">${RELIC_SVG}</span><b style="color:${RTIER[RELICS[q.id].t].c}">${RELICS[q.id].n}${q.rad?' · éclatante':''}</b>
+    ${Q.length?`<div class="rq"><ol>${Q.map((q,i)=>`<li><span class="rqn">${i+1}.</span><span class="rgem${q.rad?' rad':''}" style="--tc:${RTIER[RELICS[q.id].t].c}">${RELIC_SVG}</span><b style="color:${RTIER[RELICS[q.id].t].c}">${esc(RELICS[q.id].n)}${q.rad?' · éclatante':''}</b>
       <button class="btn" data-cact="rqup" data-arg="${i}" ${i?'':'disabled'} aria-label="Monter">↑</button><button class="btn" data-cact="rqdn" data-arg="${i}" ${i<Q.length-1?'':'disabled'} aria-label="Descendre">↓</button><button class="btn" data-cact="rqrm" data-arg="${i}" aria-label="Retirer">✕</button></li>`).join('')}</ol></div>`
       :'<p class="cx-hint" style="margin:0">Aucune relique équipée : la prochaine mission n\'en ouvrira aucune.</p>'}
     <div class="actions" style="margin:0"><button class="btn" data-cact="rqall" ${Q.length>=tot?'disabled':''}>Tout équiper</button><button class="btn danger" data-cact="rqnone" ${Q.length?'':'disabled'}>Tout retirer</button></div></section>`;
-  // collection
-  const tiers=[...new Set(own.map(id=>RELICS[id].t))].sort();
+  const tiers=[...new Set(own.filter(id=>!RELICS[id].fz).map(id=>RELICS[id].t))].sort();
   const tchip=(k,lab,c)=>`<button class="cx-chip cx-chip--sm" data-cact="rtier" data-arg="${k}" aria-pressed="${relTier===String(k)}"${c&&relTier!==String(k)?` style="color:${c}"`:''}>${lab}</button>`;
-  const list=own.filter(id=>relMatch(id)).sort((x,y)=>RELICS[x].t-RELICS[y].t);
+  const list=own.filter(id=>relMatch(id)).sort((x,y)=>RELICS[x].t-RELICS[y].t||(!!RELICS[x].fz-!!RELICS[y].fz));
   if(relSel&&!own.includes(relSel))relSel=null;
-  h+=`<section class="cx-section"><h3 class="cx-section__label">Tes reliques · ${tot}</h3><div class="cx-chips">${tchip('all','Toutes')}${tiers.map(t=>tchip(t,RTIER[t].n,RTIER[t].c)).join('')}${own.some(id=>RELICS[id].bio)?tchip('g','Givre','#9fd0ff'):''}${own.some(id=>RELICS[id].fz)?tchip('f','Forgées',RTIER[3].c):''}</div>
-    ${(()=>{const ne=relToEquip(relTier),nq=relInQ(relTier),sh=relTier==='g'?'Givre':relTier==='f'?'Forgées':relTier==='all'?'':RTIER[+relTier].n;return relTier!=='all'&&nq?`<div class="actions" style="margin:0"><button class="btn danger" data-cact="rqtypeoff">Retirer · ${sh} (${nq})</button></div>`:(ne?'':`<p class="cx-hint" style="margin:0">${relTier==='all'?'Toutes tes reliques':sh} : déjà équipées.</p>`)})()}
-    <div class="rtiles">${list.map(id=>{const R=RELICS[id],a=meta.relics[id],c=RTIER[R.t].c,nq=relicQN(id,false)+relicQN(id,true),comp=R.rw.some(r=>rwInfo(r).completes);
-      return `<button class="rtile${relSel===id?' sel':''}" data-cact="rsel" data-arg="${id}" style="--tc:${c}" aria-pressed="${relSel===id}" aria-label="${relicName(id)}, ${a[0]} intacte${a[0]>1?'s':''}, ${a[1]} éclatante${a[1]>1?'s':''}${nq?`, ${nq} équipée${nq>1?'s':''}`:''}">
-        <span class="rgem${a[1]?' rad':''}">${RELIC_SVG}</span><b>${R.n}</b><span class="rt">${RTIER[R.t].n}</span>
-        <span class="rc">${a[0]?`×${a[0]}`:''}${a[1]?`<i>✦×${a[1]}</i>`:''}</span>${nq?`<span class="req">${nq} équipée${nq>1?'s':''}</span>`:''}${comp?'<span class="rcomp" title="Contient un fragment qui complète un schéma">★</span>':''}</button>`}).join('')}</div></section>`;
-  if(relSel){const id=relSel,R=RELICS[id],a=meta.relics[id],c=RTIER[R.t].c;
+  h+=`<section class="cx-section"><h3 class="cx-section__label">Tes reliques · ${tot}</h3><div class="cx-chips">${tchip('all','Toutes')}${tiers.map(t=>tchip(t,RTIER[t].n,RTIER[t].c)).join('')}${own.some(id=>RELICS[id].fz)?tchip('f','Forgées','var(--ink)'):''}</div>
+    ${(()=>{const ne=relToEquip(relTier),nq=relInQ(relTier),sh=relTier==='f'?'Forgées':relTier==='all'?'':RTIER[+relTier].n;return relTier!=='all'&&nq?`<div class="actions" style="margin:0"><button class="btn danger" data-cact="rqtypeoff">Retirer · ${sh} (${nq})</button></div>`:(ne?'':`<p class="cx-hint" style="margin:0">${relTier==='all'?'Toutes tes reliques':sh} : déjà équipées.</p>`)})()}
+    <div class="rtiles">${list.map(id=>{const R=RELICS[id],a=meta.relics[id],c=RTIER[R.t].c,nq=relicQN(id,false)+relicQN(id,true),comp=R.fz?fragStatus(R.tgt)===2:relPool(R.t).some(x=>fragStatus(x)===2);
+      return `<button class="rtile${relSel===id?' sel':''}" data-cact="rsel" data-arg="${id}" style="--tc:${c}" aria-pressed="${relSel===id}" aria-label="${esc(relicName(id))}, ${a[0]} intacte${a[0]>1?'s':''}, ${a[1]} éclatante${a[1]>1?'s':''}${nq?`, ${nq} équipée${nq>1?'s':''}`:''}">
+        <span class="rgem${a[1]?' rad':''}">${RELIC_SVG}</span><b>${esc(R.fz?bpdef(R.tgt).n:R.n)}</b><span class="rt">${R.fz?'Forgée · ':''}${RTIER[R.t].n}</span>
+        <span class="rc">${a[0]?`×${a[0]}`:''}${a[1]?`<i>✦×${a[1]}</i>`:''}</span>${nq?`<span class="req">${nq} équipée${nq>1?'s':''}</span>`:''}${comp?'<span class="rcomp" title="Peut compléter un objet">★</span>':''}</button>`}).join('')}</div></section>`;
+  if(relSel){const id=relSel,R=RELICS[id],a=meta.relics[id],c=RTIER[R.t].c,pool=R.fz?[R.tgt]:relPool(R.t);
     const ctl=(rad,lab)=>{const n=relicQN(id,rad),ow=a[rad?1:0];return `<div class="rctl"><span>${lab} · <b>${n} / ${ow}</b> équipée${n>1?'s':''}</span><span class="cx-stepper"><button type="button" data-cact="rqdel" data-arg="${id}|${rad?1:0}" ${n?'':'disabled'} aria-label="Retirer une ${lab.toLowerCase()}">−</button><button type="button" data-cact="rqadd" data-arg="${id}|${rad?1:0}" ${n<ow?'':'disabled'} aria-label="Équiper une ${lab.toLowerCase()}">+</button></span></div>`};
-    h+=`<section class="cx-card rdet" style="--tc:${c}"><div class="cx-card__head"><span class="rgem big${a[1]?' rad':''}">${RELIC_SVG}</span><div><h4 class="cx-card__title" style="color:${c}">${R.n}</h4><div class="cx-card__meta">Relique ${RTIER[R.t].n} · intacte ×${a[0]} · éclatante ×${a[1]}</div></div></div>
-      <ul class="rrw">${(R.fz?[R.rw[0]]:R.rw).map((r,i)=>{const rr=R.fz?2:RW_RAR[i],inf=rwInfo(r),c0=R.fz?100:CH[0][rr],c1=R.fz?100:CH[1][rr];
-        const st=inf.aby?'<span class="rs aby">abyssal</span>':inf.sang?'<span class="rs sang">exclusif</span>':inf.cur?'<span class="rs cur">monnaie</span>':inf.built?'<span class="rs ok">arme fabriquée</span>':inf.completes?'<span class="rs comp">★ complète le schéma</span>':inf.have?`<span class="rs ok">✓ possédé ×${inf.have}</span>`:`<span class="rs miss">manquant · ${inf.n} / 3</span>`;
-        return `<li><div class="rrh"><span class="dot" style="background:${MOD_RAR[rr].c}"></span><span class="rl">${rwLabel(r)}</span>${st}</div>
-          <div class="rbars"><span>Intacte</span><div class="rbar"><i style="width:${Math.min(100,c0*3.3)}%"></i></div><em>${fmtN(c0)} %</em><span>Éclatante</span><div class="rbar rad"><i style="width:${Math.min(100,c1*3.3)}%"></i></div><em>${fmtN(c1)} %</em></div></li>`}).join('')}</ul>
+    h+=`<section class="cx-card rdet" style="--tc:${c}"><div class="cx-card__head"><span class="rgem big${a[1]?' rad':''}">${RELIC_SVG}</span><div><h4 class="cx-card__title" style="color:${c}">${esc(R.n)}</h4><div class="cx-card__meta">${R.fz?'Relique forgée':'Relique'} ${RTIER[R.t].n} · ${REL_SRC[R.t]} · intacte ×${a[0]} · éclatante ×${a[1]}</div></div></div>
+      <p class="cx-hint" style="margin:0">${R.fz?'S\'ouvre en mission et donne à coup sûr un fragment de cet objet (deux si éclatante).':`S'ouvre en mission et donne un fragment d'un de ces ${pool.length} objets ${RAR[RTIER[R.t].r].n.toLowerCase()}s (deux si éclatante). Les fragments manquants d'un objet presque complet sortent un peu plus souvent.`}</p>
+      <ul class="rrw">${pool.map(bid=>{const b=bpdef(bid),n=fragStatus(bid),own=b.kind==='arme'&&ownedW(bid);
+        const st=n>=3?'<span class="rs ok">✓ prêt à fabriquer</span>':n===2?'<span class="rs comp">★ un fragment de plus</span>':`<span class="rs miss">${n} / 3</span>`;
+        return `<li><div class="rrh"><span class="dot" style="background:${RAR[b.r].c}"></span><span class="rl">${esc(b.n)} · ${b.kind==='arme'?'arme':SLOT[b.slot].toLowerCase()}${own?' · possédée':''}</span>${st}</div></li>`}).join('')}</ul>
       <div class="cx-card__foot">${a[0]?ctl(false,'Intactes'):''}${a[1]?ctl(true,'Éclatantes'):''}
-        ${a[0]&&!R.fz?`<button class="btn buy" data-cact="refine" data-arg="${id}" ${meta.essence<50||relicQN(id,false)>=a[0]?'disabled':''}>Raffiner en éclatante · <span class="essi"></span>50</button>`:''}</div></section>`}
-  else h+='<p class="cx-hint" style="margin:0">Touche une relique pour voir ses récompenses, tes chances et ce qu\'il te manque. ★ : contient le dernier fragment d\'un schéma.</p>';
-  return h+fusionSection()+qh;
+        ${a[0]?`<button class="btn buy" data-cact="refine" data-arg="${id}" ${meta.essence<50||relicQN(id,false)>=a[0]?'disabled':''}>Raffiner en éclatante · <span class="essi"></span>50</button>`:''}</div></section>`}
+  else h+='<p class="cx-hint" style="margin:0">Touche une relique pour voir les objets qu\'elle contient et tes fragments. ★ : un fragment de plus complète un objet.</p>';
+  return h+fusionSection()+qh+cxMore('relsrc','Où tombent les reliques',srcRows,'Afficher');
 }
 let saveMode=null,saveDraft='',saveMsg='',savePending=null;
 const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
@@ -246,8 +205,8 @@ function wishSection(){const W=meta.wish||(meta.wish={leg:true,aff:{}});W.aff=W.
   const chip=k=>`<button class="cx-chip cx-chip--sm" data-cact="wish" data-arg="${k}" aria-pressed="${!!W.aff[k]}">${AFF_NAME[k]||k}</button>`;
   const grp=c=>{const ks=keys.filter(k=>(AFF_CAT[k]||'uti')===c);return ks.length?`<span class="cx-hint" style="margin:0">${AFF_CATN[c]}</span><div class="cx-chips">${ks.map(chip).join('')}</div>`:''};
   return `<section class="cx-section"><h3 class="cx-section__label">Alertes de butin</h3>
-    <p class="cx-hint" style="margin:0">En mission, l'écran s'illumine et l'objet porte un grand faisceau doré quand un objet tombe avec une de ces affixes à une valeur plus haute que celle de ton équipement porté (ou que tu ne portes pas encore)${W.leg?', ou quand un légendaire tombe':''}.</p>
-    <div class="cx-chips"><button class="cx-chip cx-chip--sm" data-cact="wishleg" aria-pressed="${!!W.leg}" style="${W.leg?'':'color:var(--rar-legend)'}">Légendaires</button>${n?`<button class="cx-btn cx-btn--ghost cx-btn--sm" data-cact="wishnone" style="margin:0">Tout retirer (${n})</button>`:''}</div>
+    <p class="cx-hint" style="margin:0">En mission, l'écran s'illumine et l'objet porte un grand faisceau doré quand un objet tombe avec une de ces affixes à une valeur plus haute que celle de ton équipement porté (ou que tu ne portes pas encore)${W.leg?', ou quand une arme que tu n\'as pas encore tombe':''}.</p>
+    <div class="cx-chips"><button class="cx-chip cx-chip--sm" data-cact="wishleg" aria-pressed="${!!W.leg}" style="${W.leg?'':'color:var(--rar-legend)'}">Armes nouvelles</button>${n?`<button class="cx-btn cx-btn--ghost cx-btn--sm" data-cact="wishnone" style="margin:0">Tout retirer (${n})</button>`:''}</div>
     ${grp('off')}${grp('def')}${grp('uti')}</section>`}
 function affFinder(){
   const srcs=[...Object.entries(meta.gear).filter(([k,i])=>i&&!i.lock).map(([k,i])=>['g:'+k,i,'équipé']),...meta.stash.filter(i=>!i.lock).map(i=>['s:'+i.id,i,'coffre'])];
@@ -274,7 +233,7 @@ function xfSlot(key,it,label,oth){if(!it)return `<div class="cx-slot cx-slot--em
   const ok=xfOk(key,it);
   return `<button class="cx-slot${oth?'':' is-equipped'}${xfSt(key)}" data-cact="xfsel" data-arg="${key}" ${ok?'':'aria-disabled="true"'} aria-label="${esc(itemName(it))}, ${label}${oth?'':', équipé'}${key===xf.src?', source':key===xf.dst?', cible':''}"><span class="cx-slot__k">${label}${oth?'':' · équipé'}</span><span class="cx-slot__v" style="color:${RARV[it.r]}">${esc(itemName(it))}${it.lock?`<span class="li" aria-hidden="true">${LOCK_SVG}</span>`:''}</span>${xfPin(key)}</button>`}
 function xfCell(key,it){const ok=xfOk(key,it);
-  return `<button class="cx-cell${xfSt(key)}" data-cact="xfsel" data-arg="${key}" ${ok?'':'aria-disabled="true"'} style="--rar:${RARV[it.r]}" aria-label="${esc(itemName(it))}${it.lock?', verrouillé':''}${key===xf.src?', source':key===xf.dst?', cible':''}">${it.lock?`<span class="cx-cell__lock">${LOCK_SVG}</span>`:''}${GLYPH[it.slot]}${it.up?`<span class="cx-cell__up">+${it.up}</span>`:''}${xfPin(key)}</button>`}
+  return `<button class="cx-cell${xfSt(key)}" data-cact="xfsel" data-arg="${key}" ${ok?'':'aria-disabled="true"'} style="--rar:${RARV[it.r]}" aria-label="${esc(itemName(it))}${it.lock?', verrouillé':''}${key===xf.src?', source':key===xf.dst?', cible':''}">${it.lock?`<span class="cx-cell__lock">${LOCK_SVG}</span>`:''}${GLYPH[it.slot]}${it.up?`<span class="cx-cell__up">R${it.up+1}</span>`:''}${xfPin(key)}</button>`}
 function xfDiffCard(kind,it,where,lines,gone){const src=kind==='src';
   return `<div class="cx-diff__card cx-diff__card--${kind}${gone&&src?' is-gone':''}"><span class="cx-diff__lab">${src?'− Source · détruite':gone?'+ Cible · aperçu':'+ Cible'}</span>${it?`<span class="cx-diff__nm" style="color:${RARV[it.r]}">${esc(itemName(it))}</span><span class="cx-diff__sub">${RAR[it.r].n} · ${where}</span>
     <ul><li class="cx-line cx-line--base">${baseTxtOf(it.slot,fmtN(it.base.v*upMul(it.up)))}</li>${lines}</ul>`:`<span class="cx-diff__sub">${src?'Choisis l\'objet source.':'Choisis la cible.'}</span>`}</div>`}
@@ -305,7 +264,7 @@ function campAffix(){
   }
   h+=affFinder();
   const eqW=meta.wpn[heroCls]&&ownedW(meta.wpn[heroCls])?meta.wpn[heroCls]:WPN[heroCls][0].id;
-  h+=`<section class="cx-section"><h3 class="cx-section__label">Équipé · ${CLS[heroCls].n}</h3><div class="cx-slots">${xfSlot('w:'+eqW,weaponItem(heroCls,eqW),'Arme')}${['armure','amulette','bottes','anneau'].map(k=>xfSlot('g:'+k,meta.gear[k],SLOT[k])).join('')}</div></section>`;
+  h+=`<section class="cx-section"><h3 class="cx-section__label">Équipé · ${CLS[heroCls].n}</h3><div class="cx-slots">${xfSlot('w:'+eqW,weaponItem(heroCls,eqW),'Arme')}${GEAR_KEYS().map(k=>xfSlot('g:'+k,meta.gear[k],SLOT[k])).join('')}</div></section>`;
   const ow=Object.keys(WPN).flatMap(c=>WPN[c].filter(w=>ownedW(w.id)&&w.id!==eqW).map(w=>[c,w]));
   if(ow.length)h+=`<section class="cx-section"><h3 class="cx-section__label">Autres armes</h3><div class="cx-slots">${ow.map(([c,w])=>xfSlot('w:'+w.id,weaponItem(c,w.id),`Arme · ${CLS[c].n}`,true)).join('')}</div></section>`;
   {const list=invList('affix');h+=`<section class="cx-section"><h3 class="cx-section__label">Coffre · ${meta.stash.length} objet${meta.stash.length>1?'s':''}</h3>${meta.stash.length?invToolbar(list,'affix'):''}<div id="invGrid">${invGrid(list,'affix')}</div></section>`}
@@ -350,16 +309,16 @@ function campForge0(){
   return `<h3>Améliorations permanentes</h3><div class="ups">${ups}</div><h3>Talents · ${CLS[heroCls].n}</h3><div class="tals">${tals}</div>`;
 }
 function tabBadges(){
-  const bp=[...Object.values(WPN).flat().filter((w,i)=>!/0$/.test(w.id)),...GEAR_BP];
-  const craft=bp.filter(x=>{const b=bpdef(x.id);if(b.kind==='arme'&&ownedW(b.id))return false;const pc=meta.parts[b.id]||[0,0,0],cost=b.kind==='arme'?Math.round(b.bp/2):b.craft;return pc.every(n=>n>0)&&meta.gold>=cost}).length;
+  const craft=craftIds().filter(id=>{const b=bpdef(id),pc=meta.parts[id]||[0,0,0];return pc.every(n=>n>0)&&meta.gold>=b.craft}).length,fz=fuseGroups().n;
   const relTot=Object.values(meta.relics).reduce((n,a)=>n+(a[0]||0)+(a[1]||0),0);relicQFix();const relFree=relTot-meta.relicQ.length;
   const ups=UPG.filter(u=>lv(u.k)<u.max&&meta.gold>=upCost(u)).length+(TAL[heroCls]||[]).filter(t=>!hasTal(t.k)&&meta.gold>=t.cost).length;
   const pr=(prOpen()||prOf().lv)?prFree():0,prBuy=(prOpen()||prOf().lv)&&meta.gold>=prCost(prOf().lv).gold&&meta.essence>=prCost(prOf().lv).ess?1:0;
   const best=Object.keys(bestPlan(curEq(),meta.stash.slice(0,300))).length;
-  const B={equip:best?{n:best,t:`${best} amélioration${best>1?'s':''} d'équipement`}:null,arsenal:craft?{n:craft,t:`${craft} objet${craft>1?'s':''} à fabriquer`}:null,
+  const su=SLOT_U.filter(u=>!slotOpen(u.k)&&(!u.need||slotOpen(u.need))&&(meta.hfrag|0)>=u.hf&&meta.gold>=u.gold).length;
+  const B={equip:best||su?{n:best+su,t:su?`${su} emplacement${su>1?'s':''} à débloquer`:`${best} amélioration${best>1?'s':''} d'équipement`}:null,arsenal:craft?{n:craft,t:`${craft} objet${craft>1?'s':''} à fabriquer`}:null,
     relics:relFree&&!meta.relicQ.length?{n:relFree,t:`${relFree} relique${relFree>1?'s':''} non équipée${relFree>1?'s':''}`}:null,
     pets:meta.eggs>0?{n:meta.eggs,t:`${meta.eggs} œuf${meta.eggs>1?'s':''} à faire éclore`}:null,
-    forge:(ups+pr+prBuy)?{n:pr?pr:ups+prBuy,t:pr?`${pr} point${pr>1?'s':''} de prestige à placer`:`${ups+prBuy} amélioration${ups+prBuy>1?'s':''} achetable${ups+prBuy>1?'s':''}`}:null};
+    forge:(ups+pr+prBuy+fz)?{n:pr?pr:fz?fz:ups+prBuy,t:pr?`${pr} point${pr>1?'s':''} de prestige à placer`:fz?`${fz} fusion${fz>1?'s':''} possible${fz>1?'s':''}`:`${ups+prBuy} amélioration${ups+prBuy>1?'s':''} achetable${ups+prBuy>1?'s':''}`}:null};
   document.querySelectorAll('.tab').forEach(t=>{let el=t.querySelector('.cx-tab__badge');const b=B[t.dataset.tab];
     if(!b){if(el)el.remove();return}if(!el){el=document.createElement('span');el.className='cx-tab__badge';t.appendChild(el)}el.textContent=b.n>9?'9+':b.n;el.title=b.t;el.setAttribute('aria-label',b.t)})}
 // Texte repliable (Disclosure) : une phrase, le détail derrière « En savoir plus ». L'état ouvert est retenu par clé.
@@ -368,24 +327,27 @@ function cxMore(key,sentence,body,lab='En savoir plus'){return `<details class="
 document.addEventListener('toggle',e=>{const d=e.target;if(!d.matches||!d.matches('details[data-more]'))return;moreOpen[d.dataset.more]=d.open;try{localStorage.setItem('crypte-more',JSON.stringify(moreOpen))}catch(err){}},true);
 const subTabs=(items,cur,act)=>`<div class="cx-tabs" role="tablist">${items.map(([k,l,n])=>`<button class="cx-tab" role="tab" data-cact="${act}" data-arg="${k}" aria-selected="${cur===k}">${l}${n?`<span class="cx-tab__badge">${n}</span>`:''}</button>`).join('')}</div>`;
 const CAMP_MORE={
-  equip:['Touche un objet pour voir sa fiche et l\'équiper.','<p>▲ signale un objet meilleur que celui que tu portes, le cadenas un objet verrouillé (ni recyclé ni utilisé comme source d\'affixe). « Équiper le meilleur » choisit pour chaque emplacement l\'objet qui donne le plus de puissance et de vie.</p><p>Le <b>Prestige</b>, en bas de l\'onglet, s\'ouvre quand toutes les améliorations de la Forge sont au maximum.</p>'],
-  arsenal:['Fabrique tes armes et objets Prime avec leurs 3 fragments.','<p>Les fragments viennent des reliques, ouvertes en mission. « Recettes » liste tout ce qui se fabrique, avec où trouver les fragments ; « Mes armes » montre tes armes et leur DPS comparé à celle que tu portes.</p>'],
-  relics:['Équipe des reliques : elles s\'ouvrent pendant la mission.',`<p>En mission, ${REACT_N} réactifs (ennemis au halo doré) ouvrent la première relique de la liste, puis la suivante. Chaque relique ouverte rapporte sa récompense et +25 essence, à la réussite de la mission.</p><p>Trois reliques d\'un même niveau fusionnent en une relique du niveau au-dessus. Le raffinage (50 essence) rend une relique éclatante : ses récompenses rares deviennent plus probables.</p>`],
+  ars_coffre:['Touche un objet pour voir sa fiche et l\'équiper.','<p>▲ signale un objet meilleur que celui que tu portes, le cadenas un objet verrouillé (ni recyclé, ni sacrifié par une fusion, ni utilisé comme source d\'affixe). « Équiper le meilleur », en bas, choisit pour chaque emplacement l\'objet qui donne le plus de puissance et de vie.</p>'],
+  equip:['Ton équipement porté et tes statistiques. Touche un emplacement pour voir sa fiche.','<p>Le coffre (tout ce que tu possèdes sans le porter) est dans l\'Armurerie, comme le recyclage. « Équiper le meilleur », en bas, choisit pour chaque emplacement l\'objet du coffre qui donne le plus de puissance et de vie.</p><p>Le <b>Prestige</b>, en bas de l\'onglet, s\'ouvre quand toutes les améliorations de la Forge sont au maximum.</p>'],
+  arsenal:['Fabrique les objets légendaires et plus rares avec leurs 3 fragments.','<p>Les fragments viennent des reliques, ouvertes en mission : Ossuaire (légendaires), Ancestrale (ancestraux), Sanguine (sanguins), Abyssale (abyssaux). Un objet sort au niveau d\'objet de ta plus haute mission réussie. Fabriquer une arme que tu as déjà donne un double, à fusionner à la Forge.</p><p>« Mes armes » montre tes armes, leur rang et leur DPS comparé à celle que tu portes.</p>'],
+  relics:['Équipe des reliques : elles s\'ouvrent pendant la mission.',`<p>En mission, ${REACT_N} réactifs (ennemis au halo doré) ouvrent la première relique de la liste, puis la suivante. Chaque relique ouverte donne un fragment d\'un objet de sa rareté et +25 essence, à la réussite de la mission.</p><p>Le type de relique dépend de la difficulté : Ossuaire en Normal, Difficile et Cauchemar ; Ancestrale en Tourment I à V ; Sanguine et Abyssale en Tourment VI à X. Trois reliques d\'un même type donnent une relique forgée qui vise l\'objet de ton choix. Le raffinage (50 essence) rend une relique éclatante : elle donne deux fragments.</p>`],
   mods:['Place tes mods dans les cases du héros et de l\'arme.','<p>Chaque mod coûte de la capacité ; la maîtrise, gagnée en mission, en ajoute. Une case alignée sur une polarité divise par deux le coût des mods de cette polarité. Un mod au rang maximum se surcharge avec ses copies (jusqu\'à 5 étoiles).</p>'],
-  pets:['Ton familier te suit en mission ; fais éclore tes œufs ici.','<p>Les œufs tombent parfois en ouvrant une relique (Ossuaire 8 %, Sanguine 15 %, Abysse 25 %). Deux familiers identiques de même rang fusionnent en un seul du rang au-dessus (★★★★★ au maximum). Un familier équipé gagne des niveaux (jusqu\'à 20) avec les ennemis abattus.</p>'],
+  pets:['Ton familier te suit en mission ; fais éclore tes œufs ici.','<p>Les œufs tombent parfois en ouvrant une relique (Ossuaire 8 %, Ancestrale 12 %, Sanguine 15 %, Abyssale 25 %). Deux familiers identiques de même rang fusionnent en un seul du rang au-dessus (★★★★★ au maximum). Un familier équipé gagne des niveaux (jusqu\'à 20) avec les ennemis abattus.</p>'],
   forge_up:['L\'or du Camp achète des améliorations permanentes et des talents.','<p>Chaque rang s\'applique à tous tes héros ; les talents sont propres au héros. Quand toutes les améliorations sont au maximum, le <b>Prestige</b> s\'ouvre dans l\'onglet Héros.</p><p>La sauvegarde (exporter, importer) se trouve maintenant dans <b>Réglages</b>.</p>'],
   forge_affix:['Touche Source ou Cible, puis un objet, puis l\'affixe à prendre.','<p>La source est détruite ; son affixe passe sur la cible, qui la gagne, la renforce ou la remplace. Le coût en essence dépend de la rareté de la source. Une affixe déjà plus forte sur la cible ne peut pas être remplacée par une plus faible.</p>'],
-  forge_recy:['Touche les objets à recycler, puis Recycler en bas.','<p>Recycler détruit un objet contre de l\'essence (selon sa rareté et son amélioration). Une arme ou un objet Prime rend aussi 1 fragment de son schéma. Les objets portés et verrouillés ne se recyclent pas. Filtre par rareté puis « Tout sélectionner » pour recycler un lot d\'un coup.</p>'],
+  ars_recy:['Touche les objets à recycler, puis Recycler en bas.','<p>Recycler détruit un objet contre de l\'essence, selon sa rareté et son rang. Les objets portés et verrouillés ne se recyclent pas. Filtre par rareté puis « Tout sélectionner » pour recycler un lot d\'un coup.</p>'],
+  forge_fuse:['Deux exemplaires identiques de même rang fusionnent en un seul du rang au-dessus.','<p>Identique : même modèle (le nom de base pour le butin, le nom exact pour les objets des reliques), même rareté et même rang. L\'exemplaire gardé conserve ses affixes et son niveau ; chaque rang ajoute 10 % à ses statistiques, jusqu\'au rang 10. Pour une arme, les doubles (trouvés ou fabriqués) se fusionnent avec celle que tu possèdes.</p>'],
   forge_seals:['Pose un sceau légendaire sur un objet porté.','<p>Les sceaux tombent seulement en Brèche (le mode à plusieurs), sur les Gardiens et les élites ; 100 éclats s\'échangent contre un sceau au hasard. Un sceau par objet, en plus de ses affixes.</p>']};
 function drawCamp(){
   if(campTab==='affix'){campTab='forge';forgeSub='affix'}
-  const fk=campTab==='forge'?'forge_'+forgeSub:campTab;
-  {const h=document.getElementById('campHelp');if(h)h.href='aide/index.html#'+(campTab==='pets'?'familiers':campTab==='forge'?(forgeSub==='affix'?'camp-affix':forgeSub==='seals'?'camp-affix':'camp-forge'):'camp-'+campTab)}
+  if(campTab==='forge'&&forgeSub==='recy'){campTab='arsenal';arsView='recy'}
+  const fk=campTab==='forge'?'forge_'+forgeSub:campTab==='arsenal'?(arsView==='recy'?'ars_recy':arsView==='coffre'?'ars_coffre':'arsenal'):campTab;
+  {const h=document.getElementById('campHelp');if(h)h.href='aide/index.html#'+(campTab==='arsenal'&&(arsView==='coffre'||arsView==='recy')?'camp-coffre':campTab==='pets'?'familiers':campTab==='forge'?(forgeSub==='affix'?'camp-affix':forgeSub==='seals'?'camp-affix':forgeSub==='fuse'?'camp-fusion':'camp-forge'):'camp-'+campTab)}
   $('campGold').innerHTML=`<span class="coin"></span>${meta.gold}<span class="e"><span class="essi"></span>${meta.essence}</span>`;
   document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.tab===campTab)));
   const body=$('campBody'),M=CAMP_MORE[fk],more=M?cxMore(fk,M[0],M[1]):'';
   let h='';
-  if(campTab==='forge'){h=subTabs([['up','Améliorations'],['affix','Affixes'],['recy','Recyclage'],['seals','Sceaux',SEAL_IDS.some(id=>meta.seals[id]>0)&&!Object.values(meta.gear).some(i=>i&&i.seal)?1:0]],forgeSub,'fsub')+more+(forgeSub==='affix'?campAffix():forgeSub==='seals'?campSeals():forgeSub==='recy'?campRecycle():campForge())}
+  if(campTab==='forge'){h=subTabs([['up','Bonus'],['affix','Affixes'],['fuse','Fusion',fuseGroups().n],['seals','Sceaux',SEAL_IDS.some(id=>meta.seals[id]>0)&&!Object.values(meta.gear).some(i=>i&&i.seal)?1:0]],forgeSub,'fsub')+more+(forgeSub==='affix'?campAffix():forgeSub==='seals'?campSeals():forgeSub==='fuse'?campFusion():campForge())}
   else if(campTab==='mods'||campTab==='pets')h=more+'<div id="modsCamp" class="col"></div>';
   else h=more+(campTab==='equip'?campEquip()+prestSection():campTab==='arsenal'?campArsenal2():campTab==='relics'?campRelics():'');
   body.innerHTML=h;
@@ -398,8 +360,9 @@ function drawCamp(){
 // L'action principale de l'onglet, collée en bas de la feuille.
 function campFootHtml(){
   if(campTab==='forge'&&forgeSub==='affix')return affixFoot();
-  if(campTab==='forge'&&forgeSub==='recy')return recyFoot();
-  if(campTab==='equip'){const pn=Object.keys(bestPlan(curEq(),meta.stash)).length;return pn?`<button class="cx-btn cx-btn--primary" data-cact="bestall">Équiper le meilleur · ${pn}</button>`:''}
+  if(isRecy())return recyFoot();
+  if(campTab==='forge'&&forgeSub==='fuse')return fusionFoot();
+  if(campTab==='equip'||isCoffre()){const pn=Object.keys(bestPlan(curEq(),meta.stash)).length;return pn?`<button class="cx-btn cx-btn--primary" data-cact="bestall">Équiper le meilleur · ${pn}</button>`:''}
   if(campTab==='relics'){relicQFix();const ne=relToEquip(relTier);if(!ne)return '';const sh=relTier==='g'?'Givre':relTier==='f'?'Forgées':relTier==='all'?'':RTIER[+relTier].n;return `<button class="cx-btn cx-btn--primary" data-cact="rqtype">Tout équiper${sh?' · '+sh:''} · ${ne}</button>`}
   return '';
 }
@@ -417,7 +380,7 @@ function campClick(b){
   else if(d.cact){
     const a=d.cact,arg=d.arg;
     if(!a.startsWith('recy'))recyConfirm=false;if(a!=='ropen')campMsg='';
-    if(a==='ropen'){const [id,rd]=arg.split('|'),g=grantRelic(id,rd==='1');if(g){campMsg=`<div class="card" style="border-color:${MOD_RAR[g.rar].c}"><div class="meta">Relique ${relicName(id)}${rd==='1'?' éclatante':''} ouverte</div><p style="margin:0;font-size:15px">${g.html}</p></div>`;$('campBody').parentElement.scrollTop=0}}
+    if(a==='ropen'){const [id,rd]=arg.split('|'),g=grantRelic(id,rd==='1');if(g){campMsg=`<div class="card" style="border-color:${RTIER[RELICS[id].t].c}"><div class="meta">Relique ${relicName(id)}${rd==='1'?' éclatante':''} ouverte</div><p style="margin:0;font-size:15px">${g.html}</p></div>`;$('campBody').parentElement.scrollTop=0}}
     else if(a==='exp'){saveMsg='';savePending=null;saveMsgOk='';if(saveMode!=='exp'){saveMode='exp';downloadSave()}else saveMode=null}
     else if(a==='savedl'){saveMsg='';downloadSave()}
     else if(a==='saveshare'){saveMsg='';shareSave();return}
@@ -434,25 +397,20 @@ function campClick(b){
     else if(a==='lock'){const it=campSel&&campSel.stash?meta.stash.find(i=>i.id===campSel.stash):campSel&&campSel.slot?meta.gear[campSel.slot]:null;if(it){it.lock=!it.lock;cxUndo(`${esc(itemName(it))} ${it.lock?'verrouillé':'déverrouillé'}`,()=>{it.lock=!it.lock})}}
     else if(a==='recyask')recyConfirm=true;
     else if(a==='recycancel')recyConfirm=false;
-    else if(a==='recyall'){const rec=meta.stash.filter(i=>!(i.type==='Prime'||i.type==='Sanguin'||i.type==='Abyssal'||i.up||i.lock));let e=0;for(const it of rec)e+=RAR[it.r].shard*2;meta.stash=meta.stash.filter(i=>i.type==='Prime'||i.type==='Sanguin'||i.type==='Abyssal'||i.up||i.lock);meta.essence+=e;recyConfirm=false;campSel=null;toast(`${rec.length} objet${rec.length>1?'s':''} recyclé${rec.length>1?'s':''} · +${e} essence`)}
+    else if(a==='recyall'){const rec=meta.stash.filter(i=>!(i.type==='Sanguin'||i.type==='Abyssal'||i.up||i.lock));let e=0;for(const it of rec)e+=RAR[it.r].shard*2;meta.stash=meta.stash.filter(i=>i.type==='Sanguin'||i.type==='Abyssal'||i.up||i.lock);meta.essence+=e;recyConfirm=false;campSel=null;toast(`${rec.length} objet${rec.length>1?'s':''} recyclé${rec.length>1?'s':''} · +${e} essence`)}
     if(a==='bestall'){const plan=bestPlan(curEq(),meta.stash),names=[];for(const sl in plan){const it=plan[sl];meta.stash=meta.stash.filter(i=>i!==it);const old=meta.gear[sl];if(old)meta.stash.push(old);meta.gear[sl]=it;names.push(`<span style="color:${RAR[it.r].c}">${esc(itemName(it))}</span>`)}campSel=null;if(names.length)toast('Équipé : '+names.join(', '))}
-    if(a==='equip'){const it=meta.stash.find(i=>i.id===campSel.stash);if(it){meta.stash=meta.stash.filter(i=>i!==it);const old=meta.gear[it.slot];if(old)meta.stash.push(old);meta.gear[it.slot]=it;campSel={slot:it.slot}}}
-    else if(a==='recycle'){const it=meta.stash.find(i=>i.id===campSel.stash);if(it&&!it.lock){const L=invList(),li=L.indexOf(it),nx=L[li+1]||L[li-1];meta.stash=meta.stash.filter(i=>i!==it);const pb=primeBp(it),e=recyGain(it);meta.essence+=e;let fi=-1;
-      if(pb)fi=giveFrag(pb);campSel=nx?{stash:nx.id}:null;
-      cxUndo(`<b>${esc(itemName(it))}</b> recyclé · +${e} essence${pb?` · fragment ${bpdef(pb).frag[fi]}`:''}`,()=>{meta.stash.push(it);meta.essence-=e;if(pb&&fi>=0&&meta.parts[pb])meta.parts[pb][fi]=Math.max(0,meta.parts[pb][fi]-1);campSel={stash:it.id}})}}
-    else if(a==='upg'){const k=+arg;let it=null,isW=false,wid=null;
-      if(campSel&&campSel.wpn){isW=true;wid=campSel.wpn}
-      else if(campSel&&campSel.slot==='arme'){isW=true;wid=meta.wpn[heroCls]&&ownedW(meta.wpn[heroCls])?meta.wpn[heroCls]:WPN[heroCls][0].id}
-      else if(campSel&&campSel.slot)it=meta.gear[campSel.slot];else if(campSel&&campSel.stash)it=meta.stash.find(i=>i.id===campSel.stash);
-      const n=isW?(meta.wlv[wid]||0):it?(it.up||0):null;
-      if(n!==null&&n<UP_MAX){const kk=Math.min(k,UP_MAX-n),c=upCostRange(n,kk);if(meta.essence>=c){meta.essence-=c;if(isW)meta.wlv[wid]=n+kk;else it.up=n+kk;toast(`Amélioré à +${n+kk}`)}}}
+    if(a==='equip'){const it=meta.stash.find(i=>i.id===campSel.stash),k=it&&tgtKey(curEq(),it);if(it&&k){meta.stash=meta.stash.filter(i=>i!==it);const old=meta.gear[k];if(old)meta.stash.push(old);meta.gear[k]=it;campSel={slot:k}}}
+    else if(a==='recycle'){const it=meta.stash.find(i=>i.id===campSel.stash);if(it&&!it.lock){const L=invList(),li=L.indexOf(it),nx=L[li+1]||L[li-1];meta.stash=meta.stash.filter(i=>i!==it);const e=recyGain(it);meta.essence+=e;campSel=nx?{stash:nx.id}:null;
+      cxUndo(`<b>${esc(itemName(it))}</b> recyclé · +${e} essence`,()=>{meta.stash.push(it);meta.essence-=e;campSel={stash:it.id}})}}
     else if(a==='unequip'){const s=campSel.slot,it=meta.gear[s];if(it){meta.stash.push(it);meta.gear[s]=null;campSel={stash:it.id}}}
     else if(a==='toarsenal'){campTab='arsenal';campSel=null}
-    else if(a==='wequip'){if(ownedW(arg)&&wclsOf(arg)===heroCls){meta.wpn[heroCls]=arg;if(campTab==='equip')campSel={slot:'arme'}}}
-    else if(a==='arsv'){arsView=arg}
+    else if(a==='wequip'){if(ownedW(arg)&&wclsOf(arg)===heroCls){meta.wpn[heroCls]=arg;if(campTab==='equip'||isCoffre())campSel={slot:'arme'}}}
+    else if(a==='arsv'){arsView=arg;campSel=null;campBack=null}
     else if(a==='fsub'){forgeSub=arg;campSel=null}
-    else if(a==='gorecy'){campTab='forge';forgeSub='recy';campSel=null}
-    else if(a==='gorecy1'){const B={tab:campTab,sel:campSel,scroll:$('campBody').parentElement.scrollTop,label:'Héros'};recySel=new Set([arg]);recyAsk=false;campBack=B;campTab='forge';forgeSub='recy';campSel=null}
+    else if(a==='gorecy'){campTab='arsenal';arsView='recy';campSel=null}
+    else if(a==='slotopen'){const u=SLOT_U.find(x=>x.k===arg);if(u&&!slotOpen(u.k)&&(!u.need||slotOpen(u.need))&&(meta.hfrag|0)>=u.hf&&meta.gold>=u.gold){meta.hfrag-=u.hf;meta.gold-=u.gold;meta.slotU[u.k]=true;meta.gear[u.k]=null;SND.play('leg');toast(`Emplacement <b>${u.n}</b> débloqué`)}}
+    else if(a==='gocoffre'){campTab='arsenal';arsView='coffre';campSel=null}
+    else if(a==='gorecy1'){const B={tab:campTab,sel:campSel,scroll:$('campBody').parentElement.scrollTop,label:campTab==='arsenal'?'Coffre':'Héros'};recySel=new Set([arg]);recyAsk=false;campBack=B;campTab='arsenal';arsView='recy';campSel=null}
     else if(a==='rcsel'){if(recySel.has(arg))recySel.delete(arg);else recySel.add(arg);recyAsk=false}
     else if(a==='rcr'){const r=+arg;if(recyR.has(r))recyR.delete(r);else recyR.add(r);recyAsk=false}
     else if(a==='rcrall'){recyR.clear();recyAsk=false}
@@ -465,33 +423,27 @@ function campClick(b){
     else if(a==='dmore'){dockMore=!dockMore}
     else if(a==='dall'){dockAll=!dockAll}
     else if(a==='dnav'){const L=invList('equip'),i=L.findIndex(isSel),n=L[i+(+arg)];if(n)campSel=selOf(n)}
-    else if(a==='xftake'||a==='xfrecv'){const sc=$('campBody').parentElement.scrollTop;campBack={tab:campTab,sel:campSel,scroll:sc,label:{equip:'Héros',arsenal:'Armurerie'}[campTab]||'Héros',mode:a==='xfrecv'?'recv':'take'};
+    else if(a==='xftake'||a==='xfrecv'){const sc=$('campBody').parentElement.scrollTop;campBack={tab:campTab,sel:campSel,scroll:sc,label:{equip:'Héros',arsenal:arsView==='coffre'?'Coffre':'Armurerie'}[campTab]||'Héros',mode:a==='xfrecv'?'recv':'take'};
       xf=a==='xftake'?{src:arg,k:'',dst:'',rep:'',pick:'dst'}:{src:'',k:'',dst:arg,rep:'',pick:'src'};campTab='forge';forgeSub='affix';campSel=null;drawCamp();$('campBody').parentElement.scrollTop=0;return}
     else if(a==='goback'){const B=campBack;campBack=null;if(B){campTab=B.tab;campSel=B.sel;drawCamp();$('campBody').parentElement.scrollTop=B.scroll||0;return}}
-    else if(a==='wrecy'){wRecy=arg}
-    else if(a==='wrecyq'){const b=bpdef(arg);if(b&&ownedW(arg)&&b.bp>0&&!(meta.wlock&&meta.wlock[arg])&&(meta.wpn[b.cls]||WPN[b.cls][0].id)!==arg){const L=invList('equip'),li=L.findIndex(isSel),nx=L[li+1]||L[li-1];
-      const e=wRecyEss(b),sv={lv:meta.wlv[arg],af:meta.waff&&meta.waff[arg],fz:meta.wfz&&meta.wfz[arg]};delete meta.built[arg];delete meta.wlv[arg];if(meta.waff)delete meta.waff[arg];if(meta.wfz)delete meta.wfz[arg];meta.essence+=e;const fi=giveFrag(arg);
-      campSel=nx&&!(nx.wid===arg)?selOf(nx):null;
-      cxUndo(`<b>${esc(b.n)}</b> recyclée · +${e} essence · fragment ${b.frag[fi]}`,()=>{meta.built[arg]=true;if(sv.lv)meta.wlv[arg]=sv.lv;if(sv.af){meta.waff=meta.waff||{};meta.waff[arg]=sv.af}if(sv.fz){meta.wfz=meta.wfz||{};meta.wfz[arg]=sv.fz}meta.essence-=e;if(meta.parts[arg])meta.parts[arg][fi]=Math.max(0,meta.parts[arg][fi]-1);campSel={wpn:arg}})}}
-    else if(a==='wrecyno'){wRecy=null}
-    else if(a==='wrecyok'){const b=bpdef(arg);if(b&&ownedW(arg)&&b.bp>0&&!(meta.wlock&&meta.wlock[arg])&&(meta.wpn[b.cls]||WPN[b.cls][0].id)!==arg){const e=wRecyEss(b);delete meta.built[arg];delete meta.wlv[arg];if(meta.waff)delete meta.waff[arg];meta.essence+=e;const i=giveFrag(arg);
-      toast(`<b style="color:${RAR[b.r].c}">${b.n}</b> recyclée : +${e} essence et le fragment ${b.frag[i]}`)}wRecy=null}
     else if(a==='craftask'){arsAsk=arsAsk==='craft'?null:'craft'}
-    else if(a==='arecyask'){arsAsk=arsAsk==='recy'?null:'recy'}
     else if(a==='arsno'){arsAsk=null}
     else if(a==='craftall'){const cp=craftPlan();let n=0;for(const id of cp.plan)if(craftOne(id))n++;arsAsk=null;if(n){SND.play('pick3');toast(`${n} objet${n>1?'s':''} fabriqué${n>1?'s':''}`)}}
-    else if(a==='arecyall'){const rp=recyPlan();let e=0,n=0;for(const w of rp.ws){const b=bpdef(w.id);e+=wRecyEss(b);delete meta.built[w.id];delete meta.wlv[w.id];if(meta.waff)delete meta.waff[w.id];giveFrag(w.id);n++}
-      for(const it of rp.pr){e+=primeRecyEss(it);meta.stash=meta.stash.filter(x=>x!==it);giveFrag(primeBp(it));n++}meta.essence+=e;arsAsk=null;campSel=null;if(n)toast(`${n} objet${n>1?'s':''} recyclé${n>1?'s':''} · +${e} essence et ${n} fragment${n>1?'s':''}`)}
-    else if(a==='craft'){const b=bpdef(arg),pc=meta.parts[arg],cost=b.kind==='arme'?Math.round(b.bp/2):b.craft;
-      if(pc&&pc.every(x=>x>0)&&meta.gold>=cost){
-        if(b.kind==='arme'){meta.parts[arg]=pc.map(x=>x-1);meta.gold-=cost;meta.built[arg]=true;if(b.cls===heroCls)meta.wpn[heroCls]=arg;toast(`<b style="color:${RAR[b.r].c}">${b.n}</b> fabriquée et équipée`)}
-        else{meta.parts[arg]=pc.map(x=>x-1);meta.gold-=cost;meta.stash.push({id:uid++,slot:b.slot,r:b.r,lvl:20,base:{k:BASE_STAT[b.slot],v:b.base},aff:{...b.aff},name:b.n,type:'Prime',bp:b.id});toast(`<b style="color:${RAR[b.r].c}">${b.n}</b> fabriqué, il t'attend au coffre`)}}}
-    else if(a==='rftgt'){fuseTgt=arg}
-    else if(a==='rfuse'){const t=+arg,cp=relAvail(t).length<3&&t>0?chainPlan(t):null,cost=cp?cp.cost:FUSE_COST[t];if((relAvail(t).length>=3||cp)&&meta.essence>=cost&&(t<3||fuseTgt)&&ensureRel(t)){const av=relAvail(t);meta.essence-=FUSE_COST[t];
+    else if(a==='craft'){const b=bpdef(arg),g=craftOne(arg);if(g){SND.play('pick3');
+        if(g==='new')toast(`<b style="color:${RAR[b.r].c}">${esc(b.n)}</b> fabriquée${b.cls===heroCls?' et équipée':''}`);
+        else if(g==='copy')toast(`Double de <b style="color:${RAR[b.r].c}">${esc(b.n)}</b> fabriqué : fusionne-le à la Forge pour monter de rang`);
+        else toast(`<b style="color:${RAR[b.r].c}">${esc(b.n)}</b> niveau ${g.lvl} fabriqué, il t'attend au coffre`)}}
+    else if(a==='rftgt'){const [t,id]=arg.split('|');fuseTgt[+t]=id}
+    else if(a==='rfuse'){const t=+arg,av=relAvail(t),cost=FUSE_COST[t],tg=fuseTgt[t];if(av.length>=3&&meta.essence>=cost&&tg&&RELICS['F_'+tg]){meta.essence-=cost;
         for(const q of av.slice(0,3))meta.relics[q.id][q.rad?1:0]--;relicQFix();SND.play('relic');
-        if(t<3){const ids=Object.keys(RELICS).filter(id=>RELICS[id].t===t+1&&!RELICS[id].fz),nid=pick(ids);const a=meta.relics[nid]||(meta.relics[nid]=[0,0]);a[0]++;relSel=nid;
-          campMsg=`<div class="card" style="border-color:${RTIER[t+1].c}"><div class="meta">Fusion réussie</div><p style="margin:0;font-size:15px">Tu obtiens la relique <b style="color:${RTIER[t+1].c}">${relicName(nid)}</b>.</p></div>`}
-        else{const fid='F_'+fuseTgt,a=meta.relics[fid]||(meta.relics[fid]=[0,0]);a[0]++;relSel=fid;campMsg=`<div class="card" style="border-color:${RTIER[3].c}"><div class="meta">Fusion réussie</div><p style="margin:0;font-size:15px">Tu obtiens la <b style="color:${RTIER[3].c}">${RELICS[fid].n}</b>. Équipe-la et ouvre-la en mission : elle donne à coup sûr un fragment de ce schéma (${fragStatus(fuseTgt)} / 3 aujourd'hui).</p></div>`}}}
+        const fid='F_'+tg,ra=meta.relics[fid]||(meta.relics[fid]=[0,0]);ra[0]++;relSel=fid;
+        campMsg=`<div class="card" style="border-color:${RTIER[t].c}"><div class="meta">Fusion réussie</div><p style="margin:0;font-size:15px">Tu obtiens la <b style="color:${RTIER[t].c}">${esc(RELICS[fid].n)}</b>. Équipe-la et ouvre-la en mission : elle donne à coup sûr un fragment de cet objet (${fragStatus(tg)} / 3 aujourd'hui).</p></div>`}}
+    else if(a==='arsr'){arsR=arg}
+    else if(a==='gofuse'){campTab='forge';forgeSub='fuse';campSel=null}
+    else if(a==='wfuse'){const w=wdef(arg),d=wFuse(arg);if(d){SND.play('leg');toast(`<b style="color:${RAR[w.r].c}">${esc(w.n)}</b> passe au ${rkTxt(meta.wlv[arg])}`)}}
+    else if(a==='gfuse'){const it=gearAll().find(x=>x.id===+arg),L=it?gearAll().filter(x=>mKey(x)===mKey(it)&&(x.up|0)===(it.up|0)):[],k=L.length>=2?fuseGroup(L):null;if(k){SND.play('leg');toast(`<b style="color:${RAR[k.r].c}">${esc(k.name)}</b> passe au ${rkTxt(k.up)}`)}}
+    else if(a==='fuse1'){const it=xfGet(arg),p=fusePartner(it);if(it&&p&&fuseGear(it,p)){SND.play('leg');toast(`<b style="color:${RAR[it.r].c}">${esc(it.name)}</b> passe au ${rkTxt(it.up)} · ${esc(p.name)} sacrifié`)}}
+    else if(a==='fuseall'){const n=fuseAll();if(n){SND.play('leg');toast(`${n} fusion${n>1?'s':''} faite${n>1?'s':''}`)}}
     else if(a==='rsel'){relSel=relSel===arg?null:arg}
     else if(a==='rtier'){relTier=arg;relSel=null}
     else if(a==='rqadd'){const [id,rd]=arg.split('|'),rad=rd==='1',ow=(meta.relics[id]||[0,0])[rad?1:0];if(relicQN(id,rad)<ow)meta.relicQ.push({id,rad})}
@@ -566,7 +518,7 @@ function openPick(title,opts,onPick,extra){$('pickTitle').textContent=title;
 function closePick(){$('pickSheet').hidden=true}
 $('pickClose').onclick=closePick;$('pickSheet').addEventListener('click',e=>{if(e.target.id==='pickSheet')closePick()});
 const diffOpts=()=>DIFF.map((d,i)=>({n:i===3?`${d.n} · ${dif3().n.replace('Tourment ','palier ')}`:d.n,d:diffLine(i),c:i?d.c:'var(--ink)',on:i===(meta.diff|0)}));
-const tormExtra=()=>(meta.diff|0)===3?`<div class="cx-rows"><div class="cx-row"><span class="cx-row__k" style="color:var(--ink)">Palier de Tourment<small>Plus haut : monstres plus forts, plus d'objets ancestraux</small></span><span class="cx-stepper"><button type="button" data-torm="-1" ${dif().tier<=1?'disabled':''} aria-label="Baisser le palier">−</button><b style="min-width:3.2em;display:grid;place-items:center;font:700 16px/1 var(--font-body);color:#ff6a3a">${ROM[dif().tier-1]}</b><button type="button" data-torm="1" ${dif().tier>=10?'disabled':''} aria-label="Monter le palier">+</button></span></div></div>`:'<p class="cx-hint" style="margin:0">Toucher une difficulté la choisit et ferme la feuille.</p>';
+const tormExtra=()=>(meta.diff|0)===3?`<div class="cx-rows"><div class="cx-row"><span class="cx-row__k" style="color:var(--ink)">Palier de Tourment<small>Plus haut : monstres plus forts, plus de Rares ; reliques Sanguines et Abyssales dès VI</small></span><span class="cx-stepper"><button type="button" data-torm="-1" ${dif().tier<=1?'disabled':''} aria-label="Baisser le palier">−</button><b style="min-width:3.2em;display:grid;place-items:center;font:700 16px/1 var(--font-body);color:#ff6a3a">${ROM[dif().tier-1]}</b><button type="button" data-torm="1" ${dif().tier>=10?'disabled':''} aria-label="Monter le palier">+</button></span></div></div>`:'<p class="cx-hint" style="margin:0">Toucher une difficulté la choisit et ferme la feuille.</p>';
 $('rowDiff').onclick=()=>openPick('Difficulté',diffOpts(),i=>{meta.diff=i;saveMeta();newGame();refreshMenus();return i===3?{opts:diffOpts()}:null},tormExtra);
 $('rowBio').onclick=()=>openPick('Biome',BIOMES.map((b,i)=>({n:(i?'❄ ':'')+b.n,d:b.d,c:i?'#9fd0ff':'var(--ink)',on:i===(meta.biome|0)})),i=>{meta.biome=i;saveMeta();newGame();refreshMenus()});
 const setLv=v=>{meta.start=clamp(Math.round(+v)||1,1,LV_MAX);saveMeta();newGame();refreshMenus()};

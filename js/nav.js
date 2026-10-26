@@ -32,7 +32,7 @@ addEventListener('keydown',e=>{
   const tabs=[...document.querySelectorAll('#camp .cx-tabs--icons .cx-tab')];
   if(/^[1-9]$/.test(e.key)&&tabs[+e.key-1]){tabs[+e.key-1].click();e.preventDefault();return}
   if(e.key==='/'){const s=document.querySelector('#campBody [data-inv="q"]');if(s){s.focus();e.preventDefault()}return}
-  if(campTab==='equip'){const L=invList('equip');if(!L.length)return;const i=L.findIndex(isSel);
+  if(isCoffre()){const L=invList('equip');if(!L.length)return;const i=L.findIndex(isSel);
     const g=document.querySelector('#invGrid .grid'),cols=g?Math.max(1,getComputedStyle(g).gridTemplateColumns.split(' ').length):1;
     let n=null;
     if(e.key==='['||e.key==='ArrowLeft')n=Math.max(0,i-1);else if(e.key===']'||e.key==='ArrowRight')n=Math.min(L.length-1,i+1);

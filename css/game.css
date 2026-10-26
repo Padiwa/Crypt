@@ -1105,4 +1105,5 @@ body:has(#camp:not([hidden])) .toast,body:has(#bag:not([hidden])) .toast{top:cal
 .cx-cmp__row .d.up,.cx-cmp__row .d.dn,.cx-cmp__row .d.eq{display:block;border:0;padding:0;margin:0;background:none;box-shadow:none;border-radius:0;grid-template-columns:none;min-height:0;white-space:nowrap}
 .cx-dock .cx-btn--block{white-space:normal;line-height:1.2;padding-top:8px;padding-bottom:8px;text-align:center}
 .cx-cmp__row{grid-template-columns:minmax(0,1fr) 50px 54px 72px}
-.cx-tabs:not(.cx-tabs--icons)>.cx-tab{flex:1 1 auto;min-width:0;padding-left:6px;padding-right:6px;font-size:14px;white-space:nowrap}
+.cx-tabs:not(.cx-tabs--icons)>.cx-tab{flex:1 0 auto;min-width:auto;padding-left:7px;padding-right:7px;font-size:13.5px;white-space:nowrap}
+.slot.locked{border-style:dashed;opacity:.6}

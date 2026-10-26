@@ -96,7 +96,7 @@ function drawDrop(d){
   if(d.kind==='mod'){const c=MOD_RAR[MODS[d.id].r].c;beam(d.x,d.y,90,c,.3);
     ctx.save();ctx.translate(d.x,d.y+bob);ctx.rotate(Math.sin(d.t*2)*.25);ctx.fillStyle='#1d1822';ctx.fillRect(-8,-11,16,22);
     ctx.strokeStyle=c;ctx.lineWidth=2;ctx.strokeRect(-8,-11,16,22);ctx.fillStyle=c;ctx.fillRect(-4,-6,8,2);ctx.fillRect(-4,-1,8,2);ctx.fillRect(-2,4,4,2);ctx.restore();return}
-  if(d.kind==='part'){const c=RAR[bpdef(d.part.w).r].c;beam(d.x,d.y,90,c,.3);
+  if(d.kind==='part'){const c=RAR[d.part.hf?6:bpdef(d.part.w).r].c;beam(d.x,d.y,90,c,.3);
     ctx.save();ctx.translate(d.x,d.y+bob);ctx.rotate(d.t*.8);ctx.fillStyle='#1d1822';ctx.strokeStyle=c;ctx.lineWidth=2.5;ctx.beginPath();
     for(let i=0;i<6;i++){const a=i/6*Math.PI*2;ctx.lineTo(Math.cos(a)*10,Math.sin(a)*10)}ctx.closePath();ctx.fill();ctx.stroke();ctx.fillStyle=c;circle(0,0,3.5);ctx.fill();ctx.restore();return}
   const col=d.kind==='potion'?'#5fbf7a':RAR[d.item.r].c;
@@ -379,7 +379,7 @@ function renderPixi(){
     else if(d.kind==='mod'){const r=MODS[d.id].r;s.texture=T.mod[r];s.position.set(d.x,d.y+bob);s.rotation=Math.sin(d.t*2)*.25;beamC=MOD_RAR[r].c;beamH=90}
     else if(d.kind==='seal'){s.texture=T.seal;s.position.set(d.x,d.y+bob);s.rotation=G.t*1.5;beamC=SEAL_C;beamH=170;beamA=.55}
     else if(d.kind==='relic'){const r=RELICS[d.id].t;s.texture=T.relic[r];s.position.set(d.x,d.y+bob);beamC=RTIER[r].c;beamH=130;beamA=.4}
-    else if(d.kind==='part'){const r=bpdef(d.part.w).r;s.texture=T.part[r];s.position.set(d.x,d.y+bob);s.rotation=d.t*.8;beamC=RAR[r].c;beamH=90}
+    else if(d.kind==='part'){const r=d.part.hf?6:bpdef(d.part.w).r;s.texture=T.part[r];s.position.set(d.x,d.y+bob);s.rotation=d.t*.8;beamC=RAR[r].c;beamH=90}
     else if(d.kind==='potion'){s.texture=T.potion;s.position.set(d.x,d.y+bob)}
     else{s.texture=T.item[d.item.r];s.position.set(d.x,d.y+bob);beamC=d.wish?'#ffe08a':RAR[d.item.r].c;beamH=d.wish?220:d.item.r>=3?150:d.item.r===2?100:60;beamA=d.wish?.6:.35;if(d.wish){const k=(G.t*1.6)%1;s.scale.set(1+.25*Math.sin(G.t*8))}}
     if(beamH){const b=take(PP.beam);b.texture=T.beam;b.tint=hexc(beamC);b.alpha=beamA;b.position.set(d.x,d.y);b.width=8;b.height=beamH}}

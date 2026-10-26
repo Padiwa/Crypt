@@ -56,7 +56,7 @@ function spawnTarget(){
     state:'walk',slow:0,timer:0,blink:4,shown:0,wob:rand(0,6),downed:false};
   G.en.push(G.target);
 }
-function relicDrop(){const t=relicTierRoll(G.level),frost=G.biome===1&&Math.random()<.5;return pick(Object.keys(RELICS).filter(id=>!RELICS[id].fz&&RELICS[id].t===t&&(frost?RELICS[id].bio===1:!RELICS[id].bio)))}
+function relicDrop(){return ['os','an','sa','ab'][relicTierNow()]}
 const LV_MAX=50;
 const lootMul=L=>1+.06*(L-1);
 const goldMul=L=>1+.15*(L-1);
@@ -197,13 +197,14 @@ function kill(e){
   const boss=e.type==='boss'&&!e.noLoot,L=G.level,DL=dif().loot,dl=1+DL*.5,lm=lootMul(L)*(1+(S.lootPct||0)/100)*(1+DL*.15)*biome().loot*(teamHas('fort')?1.1:1)*(1+petLootPct()/100);
   G.ult=Math.min(ultNeed(),(G.ult||0)+(boss?10:1)*(teamHas('cri')?1.2:1));
   burst(e.x,e.y,boss?60:10,e.col,boss?320:150,4);burst(e.x,e.y,boss?20:4,'#e8853b',120);
-  const push=(o,s=20)=>{const d=Object.assign({x:e.x+rand(-s,s),y:e.y+rand(-s,s),t:rand(0,6),age:0,mt:0},o);G.drops.push(d);if(o.kind==='item'){const w=wishMatch(o.item);if(w){d.wish=1;lootFlash(w,o.item)}}};
+  const push=(o,s=20)=>{const d=Object.assign({x:e.x+rand(-s,s),y:e.y+rand(-s,s),t:rand(0,6),age:0,mt:0},o);G.drops.push(d);if(o.kind==='item'){const w=wishMatch(o.item);if(w){d.wish=1;lootFlash(w,o.item)}}else if(o.kind==='part'&&o.part.full&&meta.wish&&meta.wish.leg&&!ownedW(o.part.w)){d.wish=1;lootFlash({leg:1},null)}};
   sealLoot(e,push);
   if(boss){
     push({kind:'item',item:genItem(itemLvl(),2)},40);push({kind:'item',item:genItem(itemLvl(),1)},40);push({kind:'relic',id:relicDrop()},40);push({kind:'potion'},40);
     for(let i=0;i<Math.floor((L-1)/10);i++)push({kind:'item',item:genItem(itemLvl(),1)},50);
     for(let i=0;i<Math.floor((L-1)/12);i++)push({kind:'relic',id:relicDrop()},50);
     if(Math.random()<Math.min(1,.15*lm))push({kind:'part',part:rollPart()},40);
+    if(Math.random()<hfChance())push({kind:'part',part:{hf:1}},40);
     for(let i=0;i<2;i++)push({kind:'mod',id:rollMod(true)},40);
     meta.essence+=25;saveMeta();G.shake=14;SND.play('bossdie');banner('Gardien vaincu · son butin est à toi','#e8853b',2);
     if(!G.en.some(o=>o.type==='boss'&&!o.dead))$('bossBar').hidden=true;

@@ -34,7 +34,7 @@ const sealTxt=id=>`<b style="color:${SEAL_C}">Sceau · ${SEALS[id].n}</b> : ${SE
 
 /* ---------- Camp › Affixes : sceaux ---------- */
 let sealSel=null,sealMsg='';
-function sealTargets(){const out=[];for(const sl of ['armure','amulette','bottes','anneau']){const it=meta.gear[sl];if(it)out.push({it,w:'porté'})}
+function sealTargets(){const out=[];for(const sl of GEAR_KEYS()){const it=meta.gear[sl];if(it)out.push({it,w:'porté'})}
   for(const it of meta.stash)if(it&&it.slot!=='arme')out.push({it,w:'coffre'});
   return out.sort((a,b)=>(a.w==='porté'?0:1)-(b.w==='porté'?0:1)||b.it.r-a.it.r||b.it.lvl-a.it.lvl)}
 function campSeals(){const inv=SEAL_IDS.filter(id=>meta.seals[id]>0),sh=meta.lshard|0,worn=new Set(Object.values(meta.gear).filter(i=>i&&i.seal).map(i=>i.seal));
