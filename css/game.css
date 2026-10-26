@@ -810,7 +810,13 @@ button.cx-row .cx-row__v::after{content:""; width:7px; height:7px; margin-left:4
 .sk.dash,.sk.ult{width:var(--skill-side);height:var(--skill-side)}
 .sk.potion{width:var(--skill-side);height:var(--skill-side)}
 .sk.nova{width:var(--skill-main);height:var(--skill-main)}
-.sk::after{background:conic-gradient(rgba(0,0,0,.7) calc(var(--cd,0)*360deg),transparent 0)}
+/* Recharge : anneau à la couleur de la compétence qui se remplit, secondes restantes au centre, icône atténuée ; prête = pleine couleur et halo */
+.sk::after{background:conic-gradient(currentColor calc((1 - var(--cd,0))*360deg),rgba(255,255,255,.08) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4px));mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4px));pointer-events:none;transition:opacity .15s}
+.sk.ready::after{opacity:0}
+.sk .skt{position:absolute;inset:0;display:grid;place-items:center;font:800 22px/1 var(--font-body);color:var(--ink);text-shadow:0 1px 3px #000,0 0 8px #000;z-index:3;font-variant-numeric:tabular-nums;pointer-events:none}
+.sk.nova .skt{font-size:30px}
+.sk .skt:empty{display:none}
+.sk.cool svg{opacity:.2}
 .sk.ready{background:color-mix(in srgb,currentColor 30%,#16121a);box-shadow:0 0 18px color-mix(in srgb,currentColor 50%,transparent),inset 0 0 10px color-mix(in srgb,currentColor 35%,transparent)}
 .sk small{color:var(--ink);bottom:6px}
 /* Bonus de niveau */
@@ -1149,3 +1155,8 @@ body:has(#camp:not([hidden])) .toast,body:has(#bag:not([hidden])) .toast{top:cal
 .unlover>b{font:700 12px/1 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--ember-hi)}
 .unlover p{margin:0;font-size:13px;line-height:1.35;color:var(--muted)}
 .unlover p span{display:block;font-weight:700;color:var(--ink)}
+/* Pause : « Retour au Camp » en toutes lettres, à sa largeur ; « Reprendre » prend le reste */
+.cx-sheet__foot>.quitbtn{flex:0 0 auto;white-space:nowrap;padding-inline:14px}
+.cx-sheet__foot>#closeBag{flex:1 1 auto;min-width:0}
+/* Armurerie › Par héros : un bloc par héros, pastille à sa couleur devant son nom */
+.hgear .cx-section__label .cwho{display:inline-block;min-width:18px;height:18px;padding:0 3px;margin-right:8px;border-radius:9px;background:var(--wc);color:#1b0f06;font:800 11px/18px var(--font-body);text-align:center;letter-spacing:0;vertical-align:1px}

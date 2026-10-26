@@ -33,7 +33,9 @@ function abandonRun(){if(!G||G.over)return;
   ['bag','lvlup','extract','over'].forEach(id=>$(id).hidden=true);$('bossBar').hidden=true;$('objBar').hidden=true;
   newGame();$('intro').hidden=false;refreshMenus();refreshCoopUi();campTab='equip';openCamp();
   toast('Mission abandonnée : retour au Camp, le butin du niveau est perdu.')}
-$('quitBtnBag').addEventListener('click',()=>{quitAsk=true;drawBag()});
+// Bouton « Retour au Camp » du pied de la pause (recréé si la page en cache est plus ancienne que les scripts).
+{let q=$('quitBtnBag');if(!q){q=document.createElement('button');q.className='cx-btn quitbtn';q.id='quitBtnBag';q.textContent='Retour au Camp';const f=$('bagFoot');f&&f.insertBefore(q,$('closeBag'))}
+  q.addEventListener('click',()=>{quitAsk=true;drawBag()})}
 $('bagBtn').addEventListener('click',()=>{if(started&&!G.over&&$('extract').hidden&&$('lvlup').hidden)$('bag').hidden?openBag():closeBag()});
 $('closeBag').addEventListener('click',closeBag);$('closeBagX').addEventListener('click',closeBag);
 $('rendBtn').addEventListener('click',()=>{if(PX){dropPixi('choix du joueur');try{localStorage.setItem('crypte-nogl','1')}catch(e){}}else{try{localStorage.removeItem('crypte-nogl')}catch(e){}location.reload()}});

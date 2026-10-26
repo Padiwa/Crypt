@@ -38,13 +38,22 @@ $('campBody').addEventListener('change',e=>{if(e.target.dataset.inv==='sort'){st
 /* ---------- Onglet Héros ---------- */
 function keyStats(St){return `<div class="cx-keystats"><div><span>Puissance</span><b>${Math.round(dps(St))}</b></div><div><span>Vie</span><b>${Math.round(St.hp)}</b></div><div><span>Réduction</span><b>${Math.round(St.armor)} %</b></div></div>`}
 // Vues de l'Armurerie qui montrent le coffre (fiche ancrée) ou le recyclage.
-const isCoffre=()=>campTab==='arsenal'&&arsView==='coffre',isRecy=()=>campTab==='arsenal'&&arsView==='recy';
+const isCoffre=()=>campTab==='arsenal'&&arsView==='coffre',isRecy=()=>campTab==='arsenal'&&arsView==='recy',isHerosV=()=>campTab==='arsenal'&&arsView==='heros';
+// Armurerie › Par héros : ce que porte chaque héros, le héros joué en premier. Toucher un objet ouvre sa fiche (le donner au héros joué, le retirer…).
+function herosView(){const order=[heroCls,...Object.keys(CLS).filter(c=>c!==heroCls)];
+  return order.map(c=>{const g=meta.gearBy[c]||{},wid=curWid(c),w=wdef(wid),ks=Object.keys(SLOT).filter(k=>k!=='arme'&&slotOpen(k)),n=ks.filter(k=>g[k]).length,me=c===heroCls;
+    const lk=it=>it.lock?`<span class="li" aria-label="verrouillé">${LOCK_SVG}</span>`:'';
+    const cells=[`<button class="slot${campSel&&campSel.wpn===wid?' sel':''}" data-wsel="${wid}"><span>Arme${(meta.wlv||{})[wid]?' · '+rkTxt(meta.wlv[wid]):''}</span><strong style="color:${RAR[w.r].c}">${esc(w.n)}</strong></button>`,
+      ...ks.map(k=>{const it=g[k];
+        return it?`<button class="slot${isSel(it)?' sel':''}" data-stash="${it.id}"><span>${SLOT[k]}${it.up?' · '+rkTxt(it.up):''}</span><strong style="color:${RAR[it.r].c}">${esc(itemName(it))}${lk(it)}</strong></button>`:`<div class="slot"><span>${SLOT[k]}</span><strong style="color:var(--muted)">Vide</strong></div>`})];
+    return `<section class="cx-section hgear"><h3 class="cx-section__label"><span class="cwho" style="--wc:${CLS[c].col}" aria-hidden="true">${CLS[c].n[0]}</span>${CLS[c].n}${me?' · héros joué':''} · ${n} objet${n>1?'s':''}</h3><div class="slots">${cells.join('')}</div>
+      ${n?'':`<p class="cx-hint" style="margin:0">${me?'Rien de porté : touche « Équiper le meilleur » dans l\'onglet Héros.':`Rien de porté : choisis le ${CLS[c].n} sur l'écran d'accueil, puis « Équiper le meilleur » dans l'onglet Héros.`}</p>`}</section>`}).join('')}
 const stashN=()=>meta.stash.length+allWorn().length+invWeapons(true).length;
 function campEquip(){
   const eq=curEq(),St=stats(eq),pn=Object.keys(bestPlan(eq,meta.stash)).length,n=stashN();
   return `${campMsg}${tutCard()}<section class="cx-section"><h3 class="cx-section__label">${CLS[heroCls].n} · équipement</h3><div class="slots">${slotsHtml(eq,true,campSel&&campSel.slot)}</div>
     ${pn?'':'<p class="cx-hint" style="margin:0">Ton équipement est déjà le meilleur que tu possèdes.</p>'}
-    <div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-cact="gocoffre">Ouvrir le coffre · ${n} objet${n>1?'s':''}</button></div></section>
+    <div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-cact="gocoffre">Ouvrir le coffre · ${n} objet${n>1?'s':''}</button><button class="cx-btn cx-btn--sm" data-cact="goheros">Équipement des héros</button></div></section>
     ${setsHtml()}${slotUnlockHtml()}
     ${keyStats(St)}${cxMore('equip_stats','Toutes les statistiques',`<div class="statgrid">${statRows(St)}</div>`,'Afficher')}
     <section class="cx-section"><h3 class="cx-section__label">Fragments des reliques</h3>${fragInv()}</section>${meta.tutOff&&tutStep()>=0?'<div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm cx-btn--ghost" data-cact="tuton">Réafficher le parcours</button></div>':''}`;
@@ -67,7 +76,7 @@ function slotUnlockHtml(){if(!isUnl('slots'))return '';const next=SLOT_U.filter(
 // Armurerie › Coffre : tout ce que tu possèdes, armes et objets portés compris (pastille du héros qui les porte).
 function campCoffre(){const list=invList('equip'),n=stashN();
   return `<section class="cx-section"><h3 class="cx-section__label">Coffre · ${n} objet${n>1?'s':''}</h3>
-    ${n?invToolbar(list,'equip'):''}<div id="invGrid">${invGrid(list,'equip')}</div>${n?`<p class="cx-hint" style="margin:0">La pastille A, G ou M montre le héros qui porte l'objet (Archer, Guerrier, Magicien).${isUnl('recy')?' Pour recycler : puce Recyclage, en haut de l\'Armurerie.':''}</p>`:''}</section>`}
+    ${n?invToolbar(list,'equip'):''}<div id="invGrid">${invGrid(list,'equip')}</div>${n?`<p class="cx-hint" style="margin:0">La pastille A, G ou M montre le héros qui porte l'objet (Archer, Guerrier, Magicien) ; « Par héros », en haut, les range héros par héros.${isUnl('recy')?' Pour recycler : puce Recyclage, en haut de l\'Armurerie.':''}</p>`:''}</section>`}
 
 /* ---------- Fiche ancrée (cx-dock) ---------- */
 const XSVG={x:'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',prev:'<svg viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg>',next:'<svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>',
@@ -117,14 +126,14 @@ function cmpObjet(eq,it,heroRows=true){
 document.addEventListener('click',e=>{const b=e.target.closest('[data-cmp]');if(!b||b.disabled)return;e.stopPropagation();cmpPage+=+b.dataset.cmp;if(!$('camp').hidden)drawCamp();if(!$('bag').hidden)drawBag()},true);
 function campDockHtml(){
   if((campTab==='mods'||campTab==='pets')&&modSel&&meta.mods[modSel]!=null)return modDock(modSel);
-  if(!(campTab==='equip'||isCoffre())||!campSel)return '';
+  if(!(campTab==='equip'||isCoffre()||isHerosV())||!campSel)return '';
   const eq=curEq();let it=null,key='',worn=false,othC=null;
   if(campSel.wpn){const c=wclsOf(campSel.wpn);if(c&&ownedW(campSel.wpn)){it=weaponItem(c,campSel.wpn);key='w:'+campSel.wpn;if(curWid(heroCls)===campSel.wpn){worn=true}}}
   else if(campSel.stash){it=meta.stash.find(i=>i.id===campSel.stash);key='s:'+campSel.stash}
   else if(campSel.slot){it=eq[campSel.slot];worn=true;key=campSel.slot==='arme'?'w:'+curWid():'g:'+campSel.slot}
   else if(campSel.oth){const [c,k]=campSel.oth.split('|');it=(meta.gearBy[c]||{})[k]||null;othC=c;key='o:'+(it&&it.id)}
   if(!it)return '';
-  const list=invList('equip'),idx=(isCoffre()||campSel.stash||campSel.wpn)?list.findIndex(isSel):-1,r=RAR[it.r];
+  const list=invList('equip'),idx=!isHerosV()&&(isCoffre()||campSel.stash||campSel.wpn)?list.findIndex(isSel):-1,r=RAR[it.r];
   const wc=it.wid?wornBy(it):null,whoW=othC||(wc&&wc!==heroCls?wc:null);
   const nav=idx>=0?`<span class="cx-dock__nav"><button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-cact="dnav" data-arg="-1" ${idx>0?'':'disabled'} aria-label="Objet précédent">${XSVG.prev}</button><button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-cact="dnav" data-arg="1" ${idx<list.length-1?'':'disabled'} aria-label="Objet suivant">${XSVG.next}</button></span>`:'';
   const n=it.up||0;

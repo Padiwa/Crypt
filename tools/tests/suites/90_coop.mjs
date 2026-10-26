@@ -3,10 +3,10 @@ import { newPage, sleep } from '../lib.mjs';
 export const slow = true;
 
 // Attente nommée : en cas de délai dépassé, dit laquelle et dans quel état était la page.
-async function wf(p, fn, what, timeout = 8000) {
+async function wf(p, fn, what, timeout = 8000, other = null) {
   try { await p.waitForFunction(fn, null, { timeout }); } catch (e) {
-    const s = await p.evaluate(() => JSON.stringify({ started, over: !!(G && G.over), mode: G && G.mode, on: NET.on, state: NET.state, peers: NET.peers.map((q) => [q.state, q.cls]) })).catch(() => '?');
-    throw new Error(`${what} : délai dépassé ${s}`);
+    const st = (q) => q.evaluate(() => JSON.stringify({ started, over: !!(G && G.over), mode: G && G.mode, on: NET.on, state: NET.state, slot: NET.slot, peers: NET.peers.map((x) => [x.state, x.cls]), err: localStorage.getItem('crypte-err') })).catch(() => '?');
+    throw new Error(`${what} : délai dépassé ${await st(p)}${other ? ' · autre page ' + await st(other) : ''}`);
   }
 }
 
@@ -18,9 +18,9 @@ async function pair(b, t) {
   await wf(A, () => NET.peers.some((p) => p.code), 'A attend 1', 15000);
   const offer = await A.evaluate(() => NET.peers.find((p) => p.code).code);
   await B.click('#coopBtn'); await B.click('[data-coop="join"]'); await B.fill('#coopIn', offer); await B.click('[data-coop="joingo"]');
-  await wf(B, () => NET.state === 'showAnswer', 'B attend 2', 15000);
+  await wf(B, () => NET.state === 'showAnswer', 'B attend 2', 15000, A);
   await A.fill('#coopIn', await B.evaluate(() => NET.code)); await A.click('[data-coop="answer"]');
-  await wf(A, () => NET.on, 'A attend 3', 15000); await wf(B, () => NET.on, 'B attend 4', 15000);
+  await wf(A, () => NET.on, 'A attend 3', 15000); await wf(B, () => NET.on, 'B attend 4', 15000, A);
   await A.click('#closeCoop'); await B.click('#closeCoop');
   return [A, B];
 }
@@ -28,7 +28,7 @@ async function pair(b, t) {
 export const tests = [
   { name: 'deux joueurs se connectent et jouent une Survie', fn: async (b, t) => {
     const [A, B] = await pair(b, t);
-    await A.click('#startBtn'); await wf(B, () => started, 'B attend 5', 8000); await sleep(A, 3000);
+    await A.click('#startBtn'); await wf(B, () => started, 'B attend 5', 8000, A); await sleep(A, 3000);
     t.ok(await A.evaluate(() => G.mates.length === 1), 'l\'hôte voit l\'invité');
     t.ok(await B.evaluate(() => G.mates.length === 1 && G.en.length > 0), 'l\'invité voit l\'hôte et les monstres');
   } },
@@ -40,7 +40,7 @@ export const tests = [
     t.eq(await A.evaluate(() => document.querySelector('.cx-pick[data-m="breche"]').getAttribute('aria-disabled')), 'false', 'Brèche disponible à deux');
     await A.click('.cx-pick[data-m="defense"]'); await sleep(A, 500);
     t.eq(await B.evaluate(() => [NET.on, NET.hostMode && NET.hostMode.mode]), [true, 'defense'], 'l\'invité voit la Défense');
-    await A.click('#startBtn'); await wf(B, () => started && G && !G.over, 'B attend 6', 8000); await sleep(A, 2500);
+    await A.click('#startBtn'); await wf(B, () => started && G && !G.over, 'B attend 6', 8000, A); await sleep(A, 2500);
     t.eq(await B.evaluate(() => [G.mode, !!G.pod, meta.mode, G.mates.length]), ['defense', true, 'survie', 1], 'invité en Défense, sa sauvegarde garde son mode');
     t.ok(await B.evaluate(() => G.pod.max > 0 && $('objBar').hidden === false), 'cryopode affiché chez l\'invité');
     await B.evaluate(() => { openBag(); }); await B.click('#quitBtnBag'); await B.click('#bagDock [data-bag="quitok"]'); await sleep(A, 800);
@@ -68,14 +68,14 @@ export const tests = [
     await B.click('#coopBtn');
     t.eq(await B.evaluate(() => [...document.querySelectorAll('#coopBody .coopros li .prb')].map((x) => x.textContent)), ['7', '4'], 'salon de l\'invité');
     await B.click('#closeCoop');
-    await A.click('#startBtn'); await wf(B, () => started && G && G.mates.length === 1, 'B attend 7', 8000); await sleep(A, 800);
+    await A.click('#startBtn'); await wf(B, () => started && G && G.mates.length === 1, 'B attend 7', 8000, A); await sleep(A, 800);
     t.eq(await B.evaluate(() => { const w = who(G.mates[0].slot); return [w.name, w.pr]; }), ['Ombre b', 7], 'en mission, l\'invité affiche « 7 Ombre b » au-dessus de l\'hôte');
     t.eq(await A.evaluate(() => { const w = who(G.mates[0].slot); return [w.name, w.pr]; }), ['Joueur-' + bid, 4], 'et l\'hôte « 4 Joueur-… » au-dessus de l\'invité');
   } },
   { name: 'Capture à deux (cible, capture et récompense synchronisées) puis Brèche', fn: async (b, t) => {
     const [A, B] = await pair(b, t);
     await A.click('.cx-pick[data-m="capture"]'); await sleep(A, 300);
-    await A.click('#startBtn'); await wf(B, () => started && G && G.target, 'B attend 8', 8000);
+    await A.click('#startBtn'); await wf(B, () => started && G && G.target, 'B attend 8', 8000, A);
     t.eq(await B.evaluate(() => G.mode), 'capture', 'invité en Capture, cible reçue');
     // l'invité se place sur la cible, l'hôte la met à terre : la capture compte l'invité
     await A.evaluate(() => { G.target.hp = 0; G.target.downed = true; G.target.spd = 0; });
@@ -83,11 +83,11 @@ export const tests = [
     await B.evaluate(([x, y]) => { G.P.x = x + 30; G.P.y = y; }, tp);
     await wf(A, () => !!G.exitPt, 'A attend 9', 8000); await sleep(A, 500);
     t.ok(await B.evaluate(() => !!G.exitPt && G.loot.relics.length >= 1), 'extraction et relique de capture chez l\'invité');
-    await A.evaluate(() => { missionSuccess(); }); await wf(B, () => G.over, 'B attend 10', 5000);
+    await A.evaluate(() => { missionSuccess(); }); await wf(B, () => G.over, 'B attend 10', 5000, A);
     await A.click('#changeBtn').catch(() => {}); await A.evaluate(() => { $('over').hidden = true; started = false; $('intro').hidden = false; refreshMenus(); });
     await A.click('.cx-pick[data-m="breche"]'); await sleep(A, 300);
     t.eq(await A.evaluate(() => meta.mode), 'breche', 'Brèche choisie');
-    await A.evaluate(() => { $('startBtn').click(); }); await wf(B, () => started && G && !G.over, 'B attend 11', 8000);
+    await A.evaluate(() => { $('startBtn').click(); }); await wf(B, () => started && G && !G.over, 'B attend 11', 8000, A);
     t.eq(await B.evaluate(() => [G.mode, G.breche]), ['survie', true], 'invité en Brèche');
   } },
 ];

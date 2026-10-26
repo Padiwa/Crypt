@@ -191,7 +191,13 @@ function render2D(){
   {let wb=null,wd=1e9;for(const w of G.wells)if(w.on){const dd=Math.hypot(w.x-P.x,w.y-P.y);if(dd<wd){wd=dd;wb=w}}if(wb)arrow(wb.x,wb.y,'#9fdcff',(P.psnT>0||P.brnT>0?'Source ':'')+m(wb.x,wb.y))}
   if(joy.id!==null){ctx.strokeStyle='rgba(237,227,209,.25)';ctx.lineWidth=2;circle(joy.ox,joy.oy,56);ctx.stroke();ctx.fillStyle='rgba(237,227,209,.3)';circle(joy.ox+joy.vx*56,joy.oy+joy.vy*56,22);ctx.fill()}
 }
-const _el={},el=id=>_el[id]||(_el[id]=$(id));
+// Éléments du HUD, gardés en mémoire. Un élément absent (page en cache plus ancienne que les scripts) ne bloque pas le reste du HUD.
+const NOEL={style:{setProperty(){}},classList:{contains:()=>false,toggle(){}},setAttribute(){},getAttribute:()=>null,querySelector:()=>null,appendChild(){}};
+const _el={},el=id=>_el[id]||(_el[id]=$(id))||NOEL;
+// Secondes de recharge au centre d'un bouton de compétence (le texte est créé au premier besoin).
+const skTxt=(id,v)=>{const b=el(id);if(b===NOEL)return;let t=b._t;if(!t){t=b.querySelector('.skt')||document.createElement('b');t.className='skt';t.setAttribute('aria-hidden','true');b.appendChild(t);b._t=t}if(t.textContent!==v)t.textContent=v;if(b.classList.contains('cool')!==!!v)b.classList.toggle('cool',!!v)};
+// Compétence utilisée (prête → en recharge) : le bouton s'enfonce et s'éclaire un instant.
+const skFire=(id,ready)=>{const b=el(id);if(b===NOEL)return;if(b._rd&&!ready&&b.animate)b.animate([{transform:'scale(.84)',filter:'brightness(2.2)'},{transform:'scale(1)',filter:'brightness(1)'}],{duration:260,easing:'ease-out'});b._rd=ready};
 const setTx=(id,v)=>{const e=el(id);if(e._v!==v){e._v=v;e.textContent=v}};
 const setSt=(id,p,v)=>{const e=el(id),k='_s'+p;if(e[k]!==v){e[k]=v;e.style.setProperty(p,v)}};
 const setCls=(id,c,on)=>{const e=el(id);if(e.classList.contains(c)!==on)e.classList.toggle(c,on)};
@@ -228,10 +234,11 @@ function hud(){
   setSt('bNova','--cd',r3(P.novaCd/(CLS[G.cls].cd*(1-S.cdr/100))));
   setSt('bPot','--cd',G.potions?'0':'1');
   const live=started&&!G.over;
-  setCls('bDash','ready',live&&P.dashCd<=0);setCls('bNova','ready',live&&P.novaCd<=0);setCls('bPot','ready',live&&G.potions>0&&P.hp<S.hp);
+  {const rd=live&&P.dashCd<=0,rn=live&&P.novaCd<=0,rp=live&&G.potions>0&&P.hp<S.hp,sec=v=>live&&v>.05?String(Math.ceil(v)):'';
+   setCls('bDash','ready',rd);setCls('bNova','ready',rn);setCls('bPot','ready',rp);skTxt('bDash',sec(P.dashCd));skTxt('bNova',sec(P.novaCd));skFire('bDash',rd);skFire('bNova',rn);{const pb=el('bPot');if(pb!==NOEL){if(pb._n!=null&&G.potions<pb._n&&pb.animate)pb.animate([{transform:'scale(.84)',filter:'brightness(2.2)'},{transform:'scale(1)',filter:'brightness(1)'}],{duration:260,easing:'ease-out'});pb._n=G.potions}}}
   {let bh=0,bm=0,bn=0;for(const e of G.en)if(e.type==='boss'&&!e.dead){bh+=Math.max(0,e.hp);bm+=e.max;bn++}
    if(bn){setSt('bossFill','transform',`scaleX(${r3(bh/bm)})`);setTx('bossName',bn>1?`${bn} Gardiens des Cendres`:'Le Gardien des Cendres')}}
-  {const un=ultNeed(),ur=Math.min(1,(G.ult||0)/un);setSt('bUlt','--cd',r3(1-ur));setCls('bUlt','ready',live&&ur>=1);setTx('ultN',ur>=1?'':String(un-(G.ult|0)))}
+  {const un=ultNeed(),ur=Math.min(1,(G.ult||0)/un);setSt('bUlt','--cd',r3(1-ur));setCls('bUlt','ready',live&&ur>=1);skFire('bUlt',live&&ur>=1);setTx('ultN',ur>=1?'':String(un-(G.ult|0)))}
   setHid('badge',!G.fresh);setTx('badge',String(G.fresh));
 }
 

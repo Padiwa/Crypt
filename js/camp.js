@@ -70,11 +70,12 @@ function campArsenal2(){
   const tv=(k,lab,n)=>`<button class="cx-chip" role="tab" data-cact="arsv" data-arg="${k}" aria-pressed="${arsView===k}">${lab}${n!=null?` <span class="n">${n}</span>`:''}</button>`;
   const ak={rec:'craft',mine:'arms',recy:'recy'},lk=k=>ak[k]&&!isUnl(ak[k]);
   const tv2=(k,lab,n)=>lk(k)?tv(k,`<span class="lockmini" aria-hidden="true">${LOCK_SVG}</span>${lab}`).replace('class="cx-chip"','class="cx-chip is-locked"'):tv(k,lab,n);
-  const tabs=`<div class="cx-chips" role="tablist" aria-label="Armurerie">${tv('coffre','Coffre',stashN())}${tv2('rec','Recettes')}${tv2('mine','Mes armes',nOwn)}${tv2('recy','Recyclage')}</div>`;
+  const tabs=`<div class="cx-chips" role="tablist" aria-label="Armurerie">${tv('coffre','Coffre',stashN())}${tv('heros','Par héros')}${tv2('rec','Recettes')}${tv2('mine','Mes armes',nOwn)}${tv2('recy','Recyclage')}</div>`;
   if(lk(arsView))return `${campMsg}${tabs}${lockedHtml(ak[arsView])}`;
   const nc=ak[arsView]?newCard(ak[arsView]):'';
   if(arsView==='mine')return `${campMsg}${tabs}${nc}${myWeapons()}`;
   if(arsView==='coffre')return `${campMsg}${tabs}${campCoffre()}`;
+  if(arsView==='heros')return `${campMsg}${tabs}${herosView()}`;
   if(arsView==='recy')return `${campMsg}${tabs}${nc}${campRecycle()}`;
   const ready=id=>{const pc=meta.parts[id]||[0,0,0];return pc.every(x=>x>0)};
   const nReady=craftIds().filter(ready).length;
@@ -346,6 +347,7 @@ function cxMore(key,sentence,body,lab='En savoir plus'){return `<details class="
 document.addEventListener('toggle',e=>{const d=e.target;if(!d.matches||!d.matches('details[data-more]'))return;moreOpen[d.dataset.more]=d.open;try{localStorage.setItem('crypte-more',JSON.stringify(moreOpen))}catch(err){}},true);
 const subTabs=(items,cur,act)=>`<div class="cx-tabs" role="tablist">${items.map(([k,l,n])=>`<button class="cx-tab" role="tab" data-cact="${act}" data-arg="${k}" aria-selected="${cur===k}">${l}${n?`<span class="cx-tab__badge">${n}</span>`:''}</button>`).join('')}</div>`;
 const CAMP_MORE={
+  ars_heros:['Ce que porte chaque héros. Touche un objet pour voir sa fiche.','<p>Le héros joué vient en premier. Touche un objet porté par un autre héros pour le lui reprendre et l\'équiper sur le héros joué (« Équiper sur… »). Pour équiper un autre héros, choisis-le sur l\'écran d\'accueil. Un objet n\'est porté que par un héros à la fois.</p>'],
   ars_coffre:['Touche un objet pour voir sa fiche et l\'équiper.','<p>Le coffre montre aussi ce que portent tes héros : la pastille A, G ou M indique l\'Archer, le Guerrier ou le Magicien, et le filtre « Portés » n\'affiche qu\'eux. ▲ signale un objet meilleur que celui que tu portes, le cadenas un objet verrouillé (ni recyclé, ni sacrifié par une fusion, ni utilisé comme source d\'affixe). « Équiper le meilleur », en bas, choisit pour chaque emplacement l\'objet qui donne le plus de puissance et de vie.</p>'],
   equip:['L\'équipement de ce héros et ses statistiques. Touche un emplacement pour voir sa fiche.','<p>Chaque héros a son équipement ; un objet n\'est porté que par un héros à la fois. « Enregistrer l\'équipement porté » le garde pour le remettre plus tard. Le coffre (tout ce que tu possèdes, objets portés compris) est dans l\'Armurerie, comme le recyclage. « Équiper le meilleur », en bas, choisit pour chaque emplacement l\'objet du coffre qui donne le plus de puissance et de vie.</p><p>Le <b>Prestige</b>, en bas de l\'onglet, s\'ouvre quand toutes les améliorations de la Forge sont au maximum.</p>'],
   arsenal:['Fabrique les objets légendaires et plus rares avec leurs 3 fragments.','<p>Les fragments viennent des reliques, ouvertes en mission : Ossuaire (légendaires), Ancestrale (ancestraux), Sanguine (sanguins), Abyssale (abyssaux). Un objet sort au niveau d\'objet de ta plus haute mission réussie. Fabriquer une arme que tu as déjà donne un double, à fusionner à la Forge.</p><p>« Mes armes » montre tes armes, leur rang et leur DPS comparé à celle que tu portes.</p>'],
@@ -366,8 +368,8 @@ function drawCamp(){
   unlockCheck(false);
   if(campTab==='affix'){campTab='forge';forgeSub='affix'}
   if(campTab==='forge'&&forgeSub==='recy'){campTab='arsenal';arsView='recy'}
-  const fk=campTab==='forge'?'forge_'+forgeSub:campTab==='arsenal'?(arsView==='recy'?'ars_recy':arsView==='coffre'?'ars_coffre':'arsenal'):campTab;
-  {const h=document.getElementById('campHelp');if(h)h.href='aide/index.html#'+(campTab==='arsenal'&&(arsView==='coffre'||arsView==='recy')?'camp-coffre':campTab==='pets'?'familiers':campTab==='forge'?(forgeSub==='affix'?'camp-affix':forgeSub==='seals'?'camp-affix':forgeSub==='fuse'?'camp-fusion':'camp-forge'):'camp-'+campTab)}
+  const fk=campTab==='forge'?'forge_'+forgeSub:campTab==='arsenal'?(arsView==='recy'?'ars_recy':arsView==='coffre'?'ars_coffre':arsView==='heros'?'ars_heros':'arsenal'):campTab;
+  {const h=document.getElementById('campHelp');if(h)h.href='aide/index.html#'+(campTab==='arsenal'&&(arsView==='coffre'||arsView==='recy'||arsView==='heros')?'camp-coffre':campTab==='pets'?'familiers':campTab==='forge'?(forgeSub==='affix'?'camp-affix':forgeSub==='seals'?'camp-affix':forgeSub==='fuse'?'camp-fusion':'camp-forge'):'camp-'+campTab)}
   $('campGold').innerHTML=`<span class="coin"></span>${meta.gold}<span class="e"><span class="essi"></span>${meta.essence}</span>`;
   document.querySelectorAll('.tab').forEach(t=>{t.setAttribute('aria-selected',String(t.dataset.tab===campTab));const lk=tabLocked(t.dataset.tab);t.classList.toggle('is-locked',lk);if(lk)t.setAttribute('aria-description','verrouillé');else t.removeAttribute('aria-description')});
   const NC=viewNew().map(newCard).join('');
@@ -438,6 +440,7 @@ function campClick(b){
     else if(a==='tutoff'){meta.tutOff=true;toast('Parcours masqué : « Réafficher le parcours » en bas de l\'onglet Héros.')}
     else if(a==='tuton'){meta.tutOff=false}
     else if(a==='gocoffre'){campTab='arsenal';arsView='coffre';campSel=null}
+    else if(a==='goheros'){campTab='arsenal';arsView='heros';campSel=null}
     else if(a==='gorecy1'){const B={tab:campTab,sel:campSel,scroll:$('campBody').parentElement.scrollTop,label:campTab==='arsenal'?'Coffre':'Héros'};recySel=new Set([arg]);recyAsk=false;campBack=B;campTab='arsenal';arsView='recy';campSel=null}
     else if(a==='rcsel'){if(recySel.has(arg))recySel.delete(arg);else recySel.add(arg);recyAsk=false}
     else if(a==='rcr'){const r=+arg;if(recyR.has(r))recyR.delete(r);else recyR.add(r);recyAsk=false}

@@ -60,4 +60,16 @@ export const tests = [
     await p.click('[data-cact="setwear"][data-arg="0"]');
     t.ok(await p.evaluate(() => /introuvable/.test(document.getElementById('toast').textContent)), 'objet manquant signalé');
   } },
+  { name: 'Armurerie › Par héros : ce que porte chaque héros, objet repris sur le héros joué', fn: async (b, t) => {
+    const p = t.track(await newPage(b));
+    await p.evaluate(() => { heroCls = 'archer'; meta.gear.armure = rgItem('L1', 50); meta.gearBy.guerrier.bottes = rgItem('L2', 50); meta.gearBy.guerrier.bottes.slot = 'bottes'; saveMeta(); });
+    await campView(p, 'equip');
+    await p.click('[data-cact="goheros"]');
+    t.eq(await p.evaluate(() => [arsView, [...document.querySelectorAll('.hgear h3')].map((h) => h.textContent.slice(1).split(' · ')[0])]), ['heros', ['Archer', 'Guerrier', 'Magicien']], 'trois héros, le héros joué en premier');
+    t.ok(await p.evaluate(() => /Rien de porté/.test(document.querySelectorAll('.hgear')[2].textContent)), 'héros sans équipement : conseil');
+    await p.evaluate(() => document.querySelectorAll('.hgear')[1].querySelector('button[data-stash]').click());
+    t.ok(await p.evaluate(() => !$('campDock').hidden && /Porté par le Guerrier/.test($('campDock').textContent) && !!document.querySelector('#campDock [data-cact="equipoth"]')), 'fiche : porté par le Guerrier, « Équiper sur Archer »');
+    await p.click('#campDock [data-cact="equipoth"]');
+    t.eq(await p.evaluate(() => [!!meta.gearBy.archer.bottes, !!meta.gearBy.guerrier.bottes, /1 objet/.test(document.querySelectorAll('.hgear')[0].querySelector('h3').textContent)]), [true, false, false], 'objet passé à l\'Archer');
+  } },
 ];

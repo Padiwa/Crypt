@@ -75,4 +75,31 @@ export const tests = [
     await p.click('#quitBtnBag'); await p.click('#bagDock [data-bag="quitok"]');
     t.eq(await p.evaluate(() => [started, $('intro').hidden, $('camp').hidden, meta.gold, meta.stash.length]), [false, false, false, 7, 0], 'au Camp, rien gardé');
   } },
+  { name: 'compétences : secondes de recharge sur le bouton, puis prête', fn: async (b, t) => {
+    const p = t.track(await newPage(b)); await startMission(p); await sleep(p, 300);
+    const st = () => p.evaluate(() => ['bNova', 'bDash'].map((id) => { const e = $(id), x = e.querySelector('.skt'); return [e.classList.contains('ready'), e.classList.contains('cool'), x ? x.textContent : '']; }));
+    t.eq(await st(), [[true, false, ''], [true, false, '']], 'prêtes au départ');
+    await p.evaluate(() => { doNova(); doDash(); }); await sleep(p, 200);
+    const a = await st();
+    t.ok(a.every(([r, c, n]) => !r && c && /^\d+$/.test(n)), 'en recharge : secondes affichées (' + JSON.stringify(a) + ')');
+    await p.evaluate(() => { G.P.novaCd = 0; G.P.dashCd = 0; }); await sleep(p, 200);
+    t.eq(await st(), [[true, false, ''], [true, false, '']], 'de nouveau prêtes');
+  } },
+  { name: 'HUD : un élément absent de la page ne bloque pas le reste', fn: async (b, t) => {
+    const p = t.track(await newPage(b));
+    await p.evaluate(() => { $('relHud').remove(); $('quitBtnBag').remove(); });
+    await startMission(p); await sleep(p, 200);
+    await p.evaluate(() => doNova()); await sleep(p, 200);
+    t.ok(await p.evaluate(() => $('bNova').classList.contains('cool')), 'la recharge s\'affiche toujours');
+    t.eq(p.errs, [], 'aucune erreur');
+  } },
+  { name: 'pause : « Retour au Camp » en toutes lettres, avec confirmation', fn: async (b, t) => {
+    const p = t.track(await newPage(b)); await startMission(p);
+    await p.evaluate(() => openBag()); await sleep(p, 100);
+    t.eq(await p.evaluate(() => [$('quitBtnBag').textContent.trim(), $('quitBtnBag').scrollWidth <= $('quitBtnBag').clientWidth]), ['Retour au Camp', true], 'bouton lisible en entier');
+    await p.click('#quitBtnBag');
+    t.ok(await p.evaluate(() => /Retourner au Camp/.test($('bagDock').textContent)), 'confirmation');
+    await p.click('#bagDock [data-bag="quitok"]'); await sleep(p, 200);
+    t.eq(await p.evaluate(() => [started, $('camp').hidden]), [false, false], 'au Camp');
+  } },
 ];
