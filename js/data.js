@@ -1,7 +1,8 @@
 // Crypte des Cendres — data.js
 const cv=document.getElementById('cv');let ctx=cv.getContext('2d');
 const $=id=>document.getElementById(id);
-const MAP=2800, EDGE=40, GOD=location.hash==='#test'||location.hash==='#test2d',NOGL=location.hash==='#test2d',FAST=GOD||location.hash==='#rapide', LEVEL_T=FAST?24:180, BOSS_T=FAST?8:60;
+const DEF_N=3; // Défense : sortie (et Gardien) toutes les DEF_N vagues
+const MAP=2800, EDGE=40, GOD=location.hash==='#test'||location.hash==='#test2d',NOGL=location.hash==='#test2d',FAST=GOD||location.hash==='#rapide', LEVEL_T=FAST?24:120, BOSS_T=FAST?8:60;
 const rand=(a,b)=>a+Math.random()*(b-a), ri=(a,b)=>Math.floor(rand(a,b+1)), pick=a=>a[Math.floor(Math.random()*a.length)];
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
 const fmt=s=>{s=Math.max(0,Math.ceil(s));return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`};
@@ -164,8 +165,8 @@ function abyItem(aid,l){const T=ABY[aid],slot=T.slot,bk=BASE_STAT[slot];
 const abyLvl=()=>sangLvl()+10;
 function rwLabel(r){const [k,v]=r.split(':');if(k==='aby')return `${ABY[v].n} · objet abyssal exclusif`;if(k==='sang')return `${SANG[v].n} · objet exclusif`;if(k==='ess')return `Essence ×${v}`;if(k==='gold')return `${v} or`;const b=bpdef(k);return v==='*'?`${b.n} · fragment`:`${b.n} · ${b.frag[+v]}`}
 const MODES={
-  survie:{n:'Survie',d:'Tiens face aux hordes. Toutes les 3 minutes, sors ou continue. Chaque manche terminée rapporte une relique.'},
-  defense:{n:'Défense',d:'Protège le cryopode contre des vagues d\'ennemis. Toutes les 5 vagues : une relique et un équipement, puis sors ou continue.'},
+  survie:{n:'Survie',d:'Tiens face aux hordes. Toutes les 2 minutes, sors ou continue. Chaque manche terminée rapporte une relique.'},
+  defense:{n:'Défense',d:'Protège le cryopode contre des vagues d\'ennemis. Toutes les 3 vagues : une relique et un équipement, puis sors ou continue.'},
   capture:{n:'Capture',d:'Traque la cible, mets-la à terre, capture-la puis tiens 3 s dans la zone d\'extraction. Une relique et de l\'or à la clé.'},
 };
 

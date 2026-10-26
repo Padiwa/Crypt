@@ -234,7 +234,7 @@ function modAct(a,ds){
 function modsChanged(){if(started&&G&&!G.over){refreshStats();if(G.pet||petEq())G.petS=petStats()}if(!$('bag').hidden)drawBag();if(!$('camp').hidden)drawCamp()}
 
 /* ---------- Fin de niveau, extraction, mort ---------- */
-function lootSummary(){
+function lootSummary(end){
   const L=G.loot,its=L.items.length,pts=L.parts.length;
   const byR={};for(const i of L.items)byR[i.r]=(byR[i.r]||0)+1;const byT={};for(const id of L.relics){const t=RELICS[id].t;byT[t]=(byT[t]||0)+1}
   const lc=(c,n,lab)=>`<span class="lc" style="--c:${c}" title="${lab}">${n} ${lab}</span>`;
@@ -242,7 +242,7 @@ function lootSummary(){
     <div><span>Équipements</span><b>${its?`${its} · `+Object.keys(byR).sort((a,b)=>b-a).map(r=>lc(RAR[r].c,byR[r],RAR[r].n.toLowerCase()+(byR[r]>1?'s':''))).join(''):'0'}</b></div>
     <div><span>Reliques</span><b>${L.relics.length?`${L.relics.length} · `+Object.keys(byT).sort((a,b)=>b-a).map(t=>lc(RTIER[t].c,byT[t],RTIER[t].n)).join(''):'0'}</b></div>
     ${pts?`<div><span>Fragments de schéma</span><b>${pts}</b></div>`:''}
-    ${G.relQ.length?`<div><span>Reliques ouvertes</span><b>${G.opened.length} / ${G.relQ.length}${G.relic?` · ${G.react} / ${REACT_N} réactifs`:''}</b></div>`:''}<div><span>Ennemis abattus</span><b>${G.kills}</b></div><div><span>Temps de survie</span><b>${fmt(G.t)}</b></div>`;
+    ${G.relQ.length&&!end?`<div><span>Reliques ouvertes</span><b>${G.opened.length} / ${G.relQ.length}${G.relic?` · ${G.react} / ${REACT_N} réactifs`:''}</b></div>`:''}<div><span>Ennemis abattus</span><b>${G.kills}</b></div><div><span>${end?'Durée de la mission':'Temps de survie'}</span><b>${fmt(G.t)}</b></div>`;
 }
 function roundDone(){
   if(NET.on){G.hold=true;if(NET.host)netSend({t:'round'})}
@@ -271,27 +271,46 @@ function bank(full){
   sealBank(full);saveMeta();return g;
 }
 function recordBest(){if(G.t>best){best=G.t;try{localStorage.setItem('crypte-best2',String(best))}catch(e){}}}
-function showOver(title,txt,earn,rel){$('overTitle').textContent=title;$('overTxt').textContent=txt;$('earnTxt').innerHTML=earn;$('relicTxt').innerHTML=[rel,G&&G.mastMsg].filter(Boolean).join('<br>');refreshMenus();$('over').hidden=false}
+function showOver(title,txt,earn,rel){$('overTitle').textContent=title;$('overTxt').textContent=txt;$('earnTxt').innerHTML=earn;$('relicTxt').innerHTML=[rel,G&&G.mastMsg?`<p class="lead" style="font-size:13px;margin:6px 0 0">${G.mastMsg}</p>`:''].filter(Boolean).join('');refreshMenus();$('over').hidden=false}
 function grantRelic(id,rad){
   const a=meta.relics[id];if(!a||a[rad?1:0]<=0)return null;
   a[rad?1:0]--;const r=rollRelic(id,rad),rar=RW_RAR[RELICS[id].rw.indexOf(r)];
   const [k,v]=r.split(':');let si=null;if(k==='ess')meta.essence+=+v;else if(k==='gold')meta.gold+=+v;else if(k==='sang'){si=sangItem(v,sangLvl());meta.stash.push(si)}else if(k==='aby'){si=abyItem(v,abyLvl());meta.stash.push(si)}else if(v==='*')giveFrag(k);else{const p=meta.parts[k]||(meta.parts[k]=[0,0,0]);p[+v]++}
   relicQFix();
   const frag=k!=='ess'&&k!=='gold'&&k!=='sang'&&k!=='aby';
-  return {rar,html:`<b style="color:${MOD_RAR[rar].c}">${rwLabel(r)}</b> (${['commun','peu commun','rare'][rar]})`+(frag?` · fragment ${fragStatus(k)} / 3 de ${bpdef(k).n}, à fabriquer à l'Armurerie`:'')+(si?` · <b style="color:${RAR[si.r].c}">${si.name}</b> niveau ${si.lvl} rejoint ton coffre (${Object.keys(si.aff).map(q=>AFF[q].t(si.aff[q])).join(', ')})`:'')};
+  return {rar,k,v,si,frag,html:`<b style="color:${MOD_RAR[rar].c}">${rwLabel(r)}</b> (${['commun','peu commun','rare'][rar]})`+(frag?` · fragment ${fragStatus(k)} / 3 de ${bpdef(k).n}, à fabriquer à l'Armurerie`:'')+(si?` · <b style="color:${RAR[si.r].c}">${si.name}</b> niveau ${si.lvl} rejoint ton coffre (${Object.keys(si.aff).map(q=>AFF[q].t(si.aff[q])).join(', ')})`:'')};
 }
 function resolveRelic(){
-  const out=[];
-  for(const r of G.opened){const g=grantRelic(r.id,r.rad);if(!g)continue;meta.essence+=25;out.push(`Relique ${relicName(r.id)}${r.rad?' éclatante':''} : ${g.html}. +25 essence.`+(eggFromRelic(r.id)?' <b style="color:#f0cf4a">Un œuf de familier</b> était caché dedans : fais-le éclore au Camp, onglet Familier.':''))}
+  const out=[],S={n:0,ess:0,gold:0,frag:0,fragN:{},items:[],eggs:0,byT:{}};
+  for(const r of G.opened){const g=grantRelic(r.id,r.rad);if(!g)continue;meta.essence+=25;S.n++;S.ess+=25;const t=RELICS[r.id].t;S.byT[t]=(S.byT[t]||0)+1;
+    if(g.k==='ess')S.ess+=+g.v;else if(g.k==='gold')S.gold+=+g.v;else if(g.si)S.items.push(g.si);else if(g.frag){S.frag++;const n=bpdef(g.k).n;S.fragN[n]=(S.fragN[n]||0)+1}
+    const egg=eggFromRelic(r.id);if(egg)S.eggs++;
+    out.push(`${relicName(r.id)}${r.rad?' éclatante':''} : ${g.html}.`+(egg?' <b style="color:#f0cf4a">Œuf de familier.</b>':''))}
   const left=G.relQ.length-G.opened.length;
-  if(left>0)out.push(`${left} relique${left>1?'s':''} non ouverte${left>1?'s':''} faute de réactifs : ${left>1?'elles restent':'elle reste'} équipée${left>1?'s':''}, sans être consommée${left>1?'s':''}.`);
-  return out.join('<br>');
+  if(!S.n&&!left)return '';
+  const lc=(c,n,lab)=>`<span class="lc" style="--c:${c}">${n} ${lab}</span>`;
+  let h=`<div class="exsum" style="margin-top:4px">`;
+  if(S.n)h+=`<div><span>Reliques ouvertes</span><b>${S.n} · ${Object.keys(S.byT).sort((a,b)=>b-a).map(t=>lc(RTIER[t].c,S.byT[t],RTIER[t].n)).join('')}</b></div>`;
+  if(S.ess)h+=`<div><span>Essence</span><b style="color:var(--ess)">+${S.ess}</b></div>`;
+  if(S.gold)h+=`<div><span>Or des reliques</span><b style="color:var(--r2)">+${S.gold}</b></div>`;
+  if(S.frag)h+=`<div><span>Fragments de schéma</span><b>${S.frag} · ${Object.keys(S.fragN).length} schéma${Object.keys(S.fragN).length>1?'s':''}</b></div>`;
+  if(S.items.length)h+=`<div><span>Objets exclusifs</span><b>${S.items.map(i=>`<span class="lc" style="--c:${RAR[i.r].c}">${i.name}</span>`).join('')}</b></div>`;
+  if(S.eggs)h+=`<div><span>Œufs de familier</span><b style="color:#f0cf4a">${S.eggs}</b></div>`;
+  if(left)h+=`<div><span>Non ouvertes (restent équipées)</span><b>${left}</b></div>`;
+  h+='</div>';
+  if(out.length)h+=`<details class="reldet"><summary>Détail des ${out.length} relique${out.length>1?'s':''}</summary><div>${out.join('<br>')}</div></details>`;
+  return h;
 }
+// Résumé compact du butin rapporté (écran de fin) : compteurs par rareté et par niveau de relique.
+function overLoot(){const L=G.loot,byR={},byT={};for(const i of L.items)byR[i.r]=(byR[i.r]||0)+1;for(const id of L.relics){const t=RELICS[id].t;byT[t]=(byT[t]||0)+1}
+  const lc=(c,n,lab)=>`<span class="lc" style="--c:${c}">${n} ${lab}</span>`;if(!L.items.length&&!L.relics.length&&!L.parts.length)return '';
+  return `<div class="exsum"><div><span>Équipements</span><b>${L.items.length?`${L.items.length} · `+Object.keys(byR).sort((a,b)=>b-a).map(r=>lc(RAR[r].c,byR[r],RAR[r].n.toLowerCase()+(byR[r]>1?'s':''))).join(''):'0'}</b></div>
+    <div><span>Reliques ramassées</span><b>${L.relics.length?`${L.relics.length} · `+Object.keys(byT).sort((a,b)=>b-a).map(t=>lc(RTIER[t].c,byT[t],RTIER[t].n)).join(''):'0'}</b></div>${L.parts.length?`<div><span>Fragments ramassés</span><b>${L.parts.length}</b></div>`:''}</div>`}
 function missionSuccess(){SND.play('win');if(NET.host)netSend({t:'exit'});G.hold=false;
   $('extract').hidden=true;$('lvlup').hidden=true;G.over=true;const rel=resolveRelic();const g=bank(true);recordBest();
   const txt=G.mode==='capture'?`Cible capturée en ${fmt(G.t)}, ${G.kills} ennemis abattus.`:G.mode==='defense'?`Tu as tenu ${G.wave} vagues, ${G.kills} ennemis abattus.`:`Tu es sorti au niveau ${G.level} après ${fmt(G.t)}, avec ${G.kills} ennemis abattus.`;
   showOver(G.mode==='capture'?'Capture réussie':'Extraction réussie',txt+' Ton butin t\'attend au Camp.',`<span class="coin"></span>+${g} or · ${meta.gold} au total`,
-    rel);
+    `<div class="exsum">${lootSummary(true)}</div>`+rel);
 }
 function gameOver(reason){
   if(G.over)return;if(NET.host)netSend({t:'fail'});G.hold=false;SND.play('lose');G.over=true;const g=bank(false);recordBest();
@@ -304,6 +323,6 @@ function contRun(){$('extract').hidden=true;G.level++;G.hold=false;
   if(G.mode==='survie')G.tl=0;else{G.waveState='break';G.waveT=5;G.pod.hp=Math.min(G.pod.max,G.pod.hp+G.pod.max*.3)}
   paused=false;last=performance.now();toast(`<b style="color:var(--ember)">Niveau ${G.level}.</b> Les monstres se renforcent.`)}
 $('contBtn').onclick=()=>{if(NET.guest)return;if(NET.host)netSend({t:'cont'});contRun()};
-function missionToast(){if(G.breche){toast(`<b style="color:${SEAL_C}">Brèche.</b> Les Gardiens viennent par paires : abattez les deux jumeaux en moins de 8 s. Sceaux légendaires et éclats sur les Gardiens et les élites.`);return}toast(G.mode==='defense'?'<b>Défense.</b> Protège le cryopode.':G.mode==='capture'?'<b>Capture.</b> Suis la flèche dorée jusqu\'à la cible.':'<b>Survie.</b> Le portail s\'ouvre dans 3 minutes.');
+function missionToast(){if(G.breche){toast(`<b style="color:${SEAL_C}">Brèche.</b> Les Gardiens viennent par paires : abattez les deux jumeaux en moins de 8 s. Sceaux légendaires et éclats sur les Gardiens et les élites.`);return}toast(G.mode==='defense'?'<b>Défense.</b> Protège le cryopode.':G.mode==='capture'?'<b>Capture.</b> Suis la flèche dorée jusqu\'à la cible.':'<b>Survie.</b> Le portail s\'ouvre dans 2 minutes.');
   if(G.relic)setTimeout(()=>toast(`Fissure : ${G.relQ.length} relique${G.relQ.length>1?'s':''} équipée${G.relQ.length>1?'s':''}. Abats les ennemis au halo doré : ${REACT_N} réactifs ouvrent ${relicName(G.relic.id)}${G.relic.rad?' éclatante':''}, puis la suivante.`),900)}
 

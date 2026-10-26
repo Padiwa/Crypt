@@ -194,7 +194,7 @@ function hud(){
   let ok='',ov='',op=null,oc='#f0cf4a';
   if(G.mode==='survie'){const left=Math.max(0,LEVEL_T-G.tl);hot=left<=15;setTx('lvlTxt',`Niveau ${G.level}`);ok='Survie · portail dans';ov=fmt(left);op=G.tl/LEVEL_T;oc='#5fbf7a';setTx('bossTxt',`Gardien ${fmt(G.bossT)}`)}
   else if(G.mode==='defense'){setTx('lvlTxt',`Vague ${Math.max(1,G.wave)}`);if(G.waveState==='break'){ok='Défense · vague suivante';ov=fmt(G.waveT)}else{ok='Défense · ennemis restants';ov=String(G.toSpawn+G.en.length)}op=G.pod.hp/G.pod.max;oc='#8fd3e0';
-    setTx('bossTxt',`Sortie vague ${Math.ceil(Math.max(1,G.wave)/5)*5}`);setSt('objFill','transform',`scaleX(${r3(G.pod.hp/G.pod.max)})`);hot=G.pod.hp<G.pod.max*.3}
+    setTx('bossTxt',`Sortie vague ${Math.ceil(Math.max(1,G.wave)/DEF_N)*DEF_N}`);setSt('objFill','transform',`scaleX(${r3(G.pod.hp/G.pod.max)})`);hot=G.pod.hp<G.pod.max*.3}
   else{setTx('lvlTxt','Capture');const t=G.target;
     if(G.exitPt){ok=G.extT>0?'3/3 · reste dans la zone':'3/3 · rejoins l\'extraction';ov=G.extT>0?`${Math.min(100,Math.round(G.extT/EXT_T*100))} %`:dm(G.exitPt.x,G.exitPt.y);op=G.extT/EXT_T;oc='#5fbf7a';hot=true}
     else if(t&&t.downed){ok='2/3 · capture la cible';ov=`${Math.round(G.capT/2.5*100)} %`;op=G.capT/2.5}

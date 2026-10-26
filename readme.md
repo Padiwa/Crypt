@@ -1,6 +1,6 @@
 # Crypte des Cendres — specs
 
-Oct 26, 2026 · @cms · version 82
+Oct 26, 2026 · @cms · version 84
 
 ## Vue d'ensemble
 
@@ -17,8 +17,8 @@ Crypte des Cendres est un prototype jouable de survivor-like mobile en vue de de
 | Élément | Valeur |
 | --- | --- |
 | Carte | 2 800 × 2 800 unités, caméra qui suit le héros |
-| Manche de Survie | 3 min |
-| Gardien (boss) | toutes les 60 s en Survie, 90 s en Capture, toutes les 5 vagues en Défense |
+| Manche de Survie | 2 min |
+| Gardien (boss) | toutes les 60 s en Survie, 90 s en Capture, toutes les 3 vagues en Défense |
 | Ennemis simultanés | jusqu'à 150 |
 | Niveaux de mission | 1 à 50, au choix |
 
@@ -52,8 +52,8 @@ Trois modes, tous avec un niveau de mission libre de 1 à 50, choisi sur l'écra
 
 | Mode | Objectif | Fin de manche | Récompense de manche | Échec |
 | --- | --- | --- | --- | --- |
-| Survie | tenir face aux hordes | toutes les 3 min : sortir ou continuer (niveau +1) | 1 relique | mort du héros |
-| Défense | protéger le cryopode au centre (1 200 PV, dégâts reçus ×0,6) | toutes les 5 vagues : sortir ou continuer | 1 relique + 1 équipement magique ou mieux | cryopode détruit ou mort |
+| Survie | tenir face aux hordes | toutes les 2 min : sortir ou continuer (niveau +1) | 1 relique | mort du héros |
+| Défense | protéger le cryopode au centre (1 200 PV, dégâts reçus ×0,6) | toutes les 3 vagues : sortir ou continuer | 1 relique + 1 équipement magique ou mieux | cryopode détruit ou mort |
 | Capture | mettre la cible à terre, rester 2,5 s à moins de 80 unités, rester 3 s dans la zone d'extraction (la jauge redescend si on en sort) | après 3 s passées dans la zone d'extraction | 1 relique + 60 or × niveau | mort du héros |
 
 **Défense** : chaque vague compte 10 + 4 × vague (+8 par niveau au-delà du 1er) ennemis, 80 au maximum. 60 % des ennemis visent le cryopode. Pause de 4 s entre les vagues, le cryopode récupère 8 % ; 30 % quand on continue.
@@ -89,7 +89,7 @@ Les ennemis apparaissent hors écran autour du héros ; ceux qui s'éloignent tr
 | Gelée | 34 → 15 → 7 | 72 → 86 → 104 | 8 | avance par sauts vers toi ; à moins de 170, signal rouge court (0,45 / 0,38 / 0,3 s selon la taille) puis bond de 150 (×1,4 dégâts au contact), toutes les 1,4–2,4 s, plus souvent pour les petites ; à sa mort se divise en 2 petites gelées projetées sur les côtés, qui se divisent à leur tour (3 tailles : 1 → 2 → 4, soit 7 ennemis à abattre). Chaque morceau compte comme un ennemi tué (XP, or, charge de l'ultime, butin réduit) ; seule la grande peut être corrompue | après 30 s ou niveau 2 |
 | Gardien | 650 | 60 | 22 | anneaux de projectiles, charge 1 fois sur 3, invoque 3 goules toutes les 7 s sous 50 % de vie | sur minuterie |
 
-**Équilibrage (passe 1, simulée)** : 300 parties de 3 min jouées par un bot, 3 classes × profils T0 (rien) à T4 (ancestral +100, prestige 60) × niveaux 1 à 50 × difficultés. Changements : vie des monstres × 1,025^(L−1) et dégâts × 1,012^(L−1) en plus de la croissance linéaire ; Tourment vie × (1 + 0,5 t), dégâts × (1 + 0,22 t) ; butin × (1 + 0,06 (L−1)) au lieu de 0,25 ; or × (1 + 0,15 (L−1)) au lieu de 0,6 ; bonus de difficulté : ×0,15 sur la quantité d'objets, ×0,5 sur l'or ; chances d'objet par monstre divisées par 2 ; Gardien : 1 objet de plus tous les 10 niveaux (au lieu de 3), 1 relique tous les 12 (au lieu de 4) ; légendaire plafonné à 9 % (+0,6 % par palier de Tourment), rare à 30 % ; affixes Dégâts +0,6 × niveau d'objet (au lieu de 1,2), Vie +2,5 × niveau (au lieu de 4) ; prestige n : 600 + 300 n + 15 n² or, 30 + 15 n + n²/2 essence ; Archer 115 PV et 5 % d'armure, Magicien 100 PV et 5 %. Résultat visé et obtenu : T2 (rare niveau 25 +25) tient jusqu'au niveau 20–30, T3 (légendaire 60 +60) jusqu'au niveau 50 et Tourment I–V, Tourment X demande T4 ; 20 à 90 objets par manche (au lieu de 400 à 2 600) et 1 000 à 55 000 or en Normal (au lieu de 150 000). Outil : `tools/sim/` dans le dépôt.
+**Équilibrage (passe 1, simulée)** : 300 parties de 3 min (durée de manche de l'époque ; 2 min depuis v84) jouées par un bot, 3 classes × profils T0 (rien) à T4 (ancestral +100, prestige 60) × niveaux 1 à 50 × difficultés. Changements : vie des monstres × 1,025^(L−1) et dégâts × 1,012^(L−1) en plus de la croissance linéaire ; Tourment vie × (1 + 0,5 t), dégâts × (1 + 0,22 t) ; butin × (1 + 0,06 (L−1)) au lieu de 0,25 ; or × (1 + 0,15 (L−1)) au lieu de 0,6 ; bonus de difficulté : ×0,15 sur la quantité d'objets, ×0,5 sur l'or ; chances d'objet par monstre divisées par 2 ; Gardien : 1 objet de plus tous les 10 niveaux (au lieu de 3), 1 relique tous les 12 (au lieu de 4) ; légendaire plafonné à 9 % (+0,6 % par palier de Tourment), rare à 30 % ; affixes Dégâts +0,6 × niveau d'objet (au lieu de 1,2), Vie +2,5 × niveau (au lieu de 4) ; prestige n : 600 + 300 n + 15 n² or, 30 + 15 n + n²/2 essence ; Archer 115 PV et 5 % d'armure, Magicien 100 PV et 5 %. Résultat visé et obtenu : T2 (rare niveau 25 +25) tient jusqu'au niveau 20–30, T3 (légendaire 60 +60) jusqu'au niveau 50 et Tourment I–V, Tourment X demande T4 ; 20 à 90 objets par manche (au lieu de 400 à 2 600) et 1 000 à 55 000 or en Normal (au lieu de 150 000). Outil : `tools/sim/` dans le dépôt.
 
 **Barre et anneau de vie** : la barre en haut à gauche fait 22 px de haut, avec une bordure rouge vif et les PV écrits en gras blanc dans la barre (« 29 / 115 »). Le bouclier s'y superpose en bleu. Sous 30 % de PV, la bordure pulse en rouge (fixe si le système réduit les animations). La ligne dessous n'affiche que le bouclier et le niveau du héros. Autour du héros, un anneau de 6 px avec un contour noir de 9 px et une légère lueur se vide dans le sens horaire avec la vie : vert au-dessus de 50 %, jaune, puis rouge pulsant sous 25 %. Le bouclier forme un arc bleu de 3 px juste à l'extérieur. Aucun message ne s'affiche quand on ramasse un objet : seuls le flash (s'il est activé), le faisceau au sol et le son signalent les bons objets.
 
@@ -265,6 +265,10 @@ Sauvegarde : « Exporter » télécharge aussitôt crypte-sauvegarde-AAAA-MM-JJ.
 **Armurerie, deux vues (v82)** : puces Recettes (toutes les recettes, comme avant) et Mes armes (compteur = armes possédées). Mes armes liste les armes possédées de toutes les classes, héros courant en premier, de la plus rare à la moins rare : niveau +n, dégâts de base et affixes réels (amélioration et affixes ajoutées comprises), maîtrise, nombre de mods posés. Pour le héros courant : DPS estimé avec l'équipement porté et écart en % avec l'arme équipée, bouton Équiper.
 
 **Fin de manche et objectif (v81)** : le résumé de sortie affiche des compteurs au lieu de listes : équipements = total + nombre par rareté, reliques = total + nombre par niveau (Cendre, Ossuaire, Sanguine, Abysse), fragments de schéma. Dans le sac, les reliques identiques sont regroupées (×n). Un bandeau d'objectif centré sous le HUD donne l'étape, la valeur en grand et une jauge : Survie = temps avant le portail (orange pulsant sous 15 s) ; Capture = 1/3 mettre la cible à terre (distance, jauge = vie retirée), 2/3 la capturer (%), 3/3 rejoindre l'extraction (distance puis %) ; Défense = vague suivante ou ennemis restants, jauge = vie du cryopode. Les barres de Gardien et du cryopode, les messages et la bannière descendent d'un cran. Correctif : le familier agissait deux fois par image et gagnait son expérience en double (doublons introduits en v75).
+
+**Écran de fin de mission réussie (v83, Capture, Survie et Défense)** : deux encadrés de compteurs. Butin rapporté : équipements (total + par rareté), reliques ramassées (total + par niveau), fragments ramassés. Reliques ouvertes : total + par niveau, essence gagnée (25 par relique + récompenses), or des reliques, fragments (nombre et nombre de schémas différents), objets exclusifs (Sanguins et Abyssaux, par nom), œufs de familier, reliques non ouvertes. Le détail relique par relique est replié sous « Détail des n reliques » (zone défilante), puis la maîtrise. La fiche défile si elle dépasse l'écran, et les messages flottants sont masqués sur les écrans de sortie et de fin.
+
+**Rythme des sorties (v84)** : Survie, portail toutes les 2 minutes (LEVEL\_T = 120 s, 180 avant). Défense, sortie toutes les 3 vagues (DEF\_N = 3, 5 avant), avec le Gardien de la vague de sortie ; le HUD affiche « Sortie vague 3, 6, 9… ». Chaque manche rapporte toujours une relique (et un équipement magique ou mieux en Défense), donc environ 1,5 × plus de reliques de manche par heure. Moins d'expérience par manche de Survie (environ 4 niveaux sur la première). L'écran de mission réussie reprend le résumé de l'écran du portail (or, équipements par rareté, reliques par niveau, fragments, ennemis, durée de la mission), suivi du bilan des reliques ouvertes.
 
 **Objets exclusifs Sanguine** : les reliques Sanguine (Cœur noirci, Calice rouge, Veine de la Veuve, Fiole d'ichor, Cœur d'hiver) contiennent, à la place de leurs récompenses peu communes et rares, des **objets exclusifs** de rareté **Sanguin** (rouge sang, au-dessus d'Ancestral) : impossibles à fabriquer et absents du butin en jeu. Chance par ouverture : 24 % (intacte), 50 % (éclatante). L'objet arrive directement au coffre, au niveau de la mission + 20 (1 + 4 × (L−1) + 20) ; 4 affixes fixes par modèle à ×1,8 de la valeur normale (×1,3 pour un légendaire), statistique de base ×1,4. 10 modèles : Cœur du Martyr, Cuirasse de la Veuve rouge, Pas de l'Hémorragie, Anneau du Sang versé, Linceul écarlate, Œil du Calice, Grèves du Bourreau rouge, Sceau de l'Ichor, et deux de givre (Cœur gelé du Martyr, Anneau de l'Hiver sanglant). Ils sont épargnés par « Tout recycler ». Les fragments légendaires que ces reliques donnaient restent disponibles dans les reliques Abysse et par la fusion de reliques Abysse.
 

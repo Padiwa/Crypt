@@ -95,11 +95,11 @@ function spawnPack(type,n){const p=ringPos();let k=0,first=null;for(let i=0;i<n;
   const pE=Math.min(.15,.025+.012*(meta.diff|0)+.01*dif().tier);if(first&&type!=='bat'&&Math.random()<pE)makeElite(first);return k}
 function defenseTick(dt){
   if(G.waveState==='break'){G.waveT-=dt;if(G.waveT<=0){G.wave++;G.waveState='fight';G.toSpawn=Math.min(160,Math.round((10+G.wave*4+(G.level-1)*10)*1.15));G.spawnT=.5;
-      const bn=dif().cnt;SND.play('wave');toast(`<b style="color:var(--ember)">Vague ${G.wave}</b>`+(G.wave%5===0?(bn>1?` · ${bn} Gardiens l'accompagnent`:' · un Gardien l\'accompagne'):''));
-      if(G.wave%5===0)spawnBosses(true)}return}
+      const bn=dif().cnt;SND.play('wave');toast(`<b style="color:var(--ember)">Vague ${G.wave}</b>`+(G.wave%DEF_N===0?(bn>1?` · ${bn} Gardiens l'accompagnent`:' · un Gardien l\'accompagne'):''));
+      if(G.wave%DEF_N===0)spawnBosses(true)}return}
   if(G.toSpawn>0){G.spawnT-=dt;if(G.spawnT<=0){G.spawnT=Math.max(.3,.9-G.wave*.03);const [type,n]=chooseType(G.wave*18,G.level);const k=spawnPack(type,Math.min(n,G.toSpawn));G.toSpawn-=Math.max(1,k)}}
   else if(!G.en.length&&!G.spawns.length){
-    if(G.wave%5===0)roundDone();
+    if(G.wave%DEF_N===0)roundDone();
     else{G.waveState='break';G.waveT=4;G.pod.hp=Math.min(G.pod.max,G.pod.hp+G.pod.max*.08);toast(`Vague ${G.wave} repoussée`)}
   }
 }
