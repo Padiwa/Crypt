@@ -224,7 +224,7 @@ function coopWait(on){const el=$('exitBtn'),c=$('contBtn');if(!el)return;el.disa
 /* ---------- Écran de connexion ---------- */
 function loadQr(){return new Promise(res=>{if(window.qrcode)return res(true);const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';s.onload=()=>res(!!window.qrcode);s.onerror=()=>res(false);document.head.appendChild(s)})}
 function qrSvg(text){try{const q=qrcode(0,'L');q.addData(text);q.make();return q.createSvgTag({cellSize:3,margin:2,scalable:true})}catch(e){return ''}}
-function refreshCoopUi(){const b=$('coopBtn'),n=coopN();if(b)b.innerHTML=NET.on?`<span class="dot on"></span>Coop · ${n} joueur${n>1?'s':''}`:'Coop';
+function refreshCoopUi(){const b=$('coopBtn'),n=coopN();if(b)b.innerHTML=NET.on?`<span class="cx-dot"></span>Coop · ${n}`:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.2A5 5 0 0 1 21 19"/></svg>Coop';
   const sb=$('startBtn');if(sb&&NET.guest&&NET.on){sb.disabled=true;sb.textContent='En attente de l\'hôte…'}else if(sb&&sb.disabled&&!NET.guest){sb.disabled=false;refreshMenus()}}
 function codeBox(lab,code,share){return `<div class="coopcode"><span class="cx-hint" style="margin:0">${lab}</span><div class="qr" id="coopQr"></div>
   <textarea readonly id="coopOut" rows="3" aria-label="${lab}">${code}</textarea>
@@ -293,6 +293,6 @@ addEventListener('pagehide',()=>{if(NET.on)netSend({t:'bye'})});
     else if(a==='scan')coopScan(b.dataset.then);
     else if(a==='scanstop')camStop();
     else if(a==='quit'){if(NET.on)netSend({t:'bye'});netReset();drawCoop()}});
-  const btn=document.createElement('button');btn.className='btn';btn.id='coopBtn';btn.textContent='Coop';btn.onclick=openCoop;
+  const btn=document.createElement('button');btn.className='cx-btn cx-btn--sm cx-btn--ghost';btn.style.margin='0';btn.id='coopBtn';btn.innerHTML='Coop';btn.onclick=openCoop;
   const g=$('guideBtn');if(g)g.before(btn);
 })();

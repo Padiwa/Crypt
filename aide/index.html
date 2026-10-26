@@ -160,14 +160,11 @@ details.more .tbl{margin:0 14px 14px}
     <h2><small>Écran d'accueil</small>Premiers pas</h2>
     <p>Tout se règle sur l'écran d'accueil, de haut en bas :</p>
     <ul>
-      <li><b>Héros</b> : Guerrier, Archer ou Magicien (voir la section suivante).</li>
+      <li><b>Héros</b> : Guerrier, Archer ou Magicien (voir la section suivante). Une phrase le décrit ; « Compétences » déplie sa compétence et son ultime.</li>
       <li><b>Mission</b> : Survie, Défense ou Capture.</li>
-      <li><b>Biome</b> : Crypte des Cendres ou Abîmes gelés, plus durs et plus généreux.</li>
-      <li><b>Niveau</b> de départ : de 1 jusqu'au plus haut niveau déjà atteint. Plus il est haut, plus les monstres sont forts et le butin riche.</li>
-      <li><b>Difficulté</b> : Normal, Difficile, Cauchemar ou Tourment I à X.</li>
-      <li><b>Reliques équipées</b> : celles que tu veux ouvrir pendant la mission.</li>
+      <li><b>Réglages de la mission</b>, en lignes résumées : <b>Biome</b> (Crypte des Cendres ou Abîmes gelés), <b>Niveau de mission</b> (− et +), <b>Difficulté</b> (Normal, Difficile, Cauchemar ou Tourment, avec le palier I à X réglé dans la même feuille) et <b>Reliques</b> (ouvre le Camp sur les reliques). Toucher Biome ou Difficulté ouvre une feuille de choix : toucher une option la choisit et ferme la feuille.</li>
     </ul>
-    <p>En bas : <b>Entrer dans la crypte</b> lance la partie, <b>Le Camp</b> ouvre la progression permanente, <b>Coop</b> permet de jouer à plusieurs, <b>Guide</b> ouvre cette page et l'engrenage ouvre les réglages.</p>
+    <p>En haut : <b>Coop</b>, le <b>?</b> du guide et l'engrenage des réglages. En bas, toujours visibles : <b>Lancer</b> (son libellé résume le héros, la mission et le niveau) et <b>Le Camp</b>, avec ton or et une pastille du nombre de choses à voir.</p>
     <h3>Commandes</h3>
     <div class="tbl"><table>
       <thead><tr><th>Action</th><th>Téléphone</th><th>Clavier</th></tr></thead>
@@ -180,8 +177,13 @@ details.more .tbl{margin:0 14px 14px}
         <tr><td>Ultime</td><td>bouton au-dessus de la compétence, quand il est chargé</td><td><kbd>F</kbd></td></tr>
         <tr><td>Pause et butin</td><td>sac en haut à droite</td><td><kbd>I</kbd></td></tr>
         <tr><td>Choisir un bonus</td><td>toucher la carte</td><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></td></tr>
+        <tr><td>Revenir d'un niveau (fiche, feuille, Camp, Pause)</td><td>bouton Retour du téléphone</td><td><kbd>Échap</kbd></td></tr>
+        <tr><td>Camp : changer d'onglet</td><td>toucher l'onglet</td><td><kbd>1</kbd> à <kbd>6</kbd></td></tr>
+        <tr><td>Camp : objet précédent ou suivant</td><td>‹ et › dans la fiche</td><td><kbd>[</kbd> <kbd>]</kbd> ou flèches</td></tr>
+        <tr><td>Camp : équiper l'objet ouvert, chercher</td><td>boutons de la fiche, barre de recherche</td><td><kbd>Entrée</kbd>, <kbd>/</kbd></td></tr>
       </tbody>
     </table></div>
+    <p>Le retour arrière ferme un niveau à la fois : la fiche ancrée, puis la feuille, puis le Camp ou la Pause. Sur l'accueil ou en partie, un premier Retour affiche « Touche encore Retour pour quitter le jeu ». Chaque onglet du Camp garde sa position de défilement.</p>
     <p class="tip"><b>Installer le jeu.</b> Depuis le navigateur du téléphone, « Ajouter à l'écran d'accueil » l'installe comme une application, jouable même hors connexion.</p>
   </div>
   <div class="shots one">
@@ -213,7 +215,7 @@ details.more .tbl{margin:0 14px 14px}
       <li><span><b>Niveau et minuteurs</b> : niveau de mission, temps avant le prochain Gardien, et avancement de la relique en cours.</span></li>
       <li><span><b>Bandeau d'objectif</b> (au centre, sous le haut de l'écran) : ce qu'il faut faire et la valeur à surveiller, en grand, avec une jauge. Survie : temps avant le portail (orange et pulsant sous 15 s). Capture : les trois étapes, 1/3 mettre la cible à terre (distance), 2/3 la capturer (pourcentage), 3/3 rejoindre l'extraction (distance, puis pourcentage). Défense : temps avant la vague suivante ou ennemis restants, jauge = vie du cryopode.</span></li>
       <li><span><b>Or</b> ramassé pendant la mission.</span></li>
-      <li><span><b>Sac</b> : met en pause et montre le butin, tes bonus et ta fiche. Une pastille signale du nouveau butin.</span></li>
+      <li><span><b>Sac</b> : met en pause. Le butin de la partie vient en premier (▲ sur ce qui est meilleur que ton équipement, « Équiper le meilleur butin »), puis tes bonus, ton équipement, trois chiffres clés, et repliés : toutes les statistiques et les mods. Toucher un objet ouvre sa fiche en bas avec « Équiper maintenant ». En bas : Réglages, Guide et Reprendre. Une pastille signale du nouveau butin.</span></li>
       <li><span><b>Anneau de vie</b> autour du héros : vert, puis jaune, puis rouge pulsant.</span></li>
       <li><span><b>Boutons</b> : esquive, potion (avec le nombre restant), compétence, ultime (avec le nombre d'ennemis encore à abattre).</span></li>
     </ol>
@@ -339,13 +341,15 @@ details.more .tbl{margin:0 14px 14px}
 <section id="camp-equip"><div class="sec">
   <div class="txt">
     <h2><small>Camp · onglet 1</small>Héros et coffre</h2>
-    <p>Le Camp regroupe toute la progression permanente en sept onglets. Une pastille orange sur un onglet signale qu'il y a quelque chose à faire. Le bouton <b>?</b> en haut du Camp ouvre ce guide à la bonne section.</p>
-    <p>L'onglet <b>Héros</b> montre tes 5 emplacements, tes statistiques et ton <b>coffre</b> (filtrable par type, triable par rareté, amélioration, niveau ou date). Touche un objet pour voir sa fiche et le comparer.</p>
+    <p>Le Camp regroupe toute la progression permanente en six onglets : Héros, Armurerie, Reliques, Mods, Familier et Forge (avec les sous-onglets Améliorations, Affixes et Sceaux). Chaque onglet s'ouvre sur une phrase qui dit quoi faire ; « En savoir plus » déplie les règles. Une pastille orange signale quelque chose à faire. L'action principale de l'onglet (Équiper le meilleur, Tout équiper, Transférer) reste en bas de la feuille. Le bouton <b>?</b> ouvre ce guide à la bonne section.</p>
+    <p>L'onglet <b>Héros</b> montre tes 5 emplacements, trois chiffres clés (Puissance, Vie, Réduction ; « Toutes les statistiques » déplie le reste), ton <b>coffre</b> et, en bas, le <b>Prestige</b>. Le coffre a une barre collée en haut : <b>recherche</b> (dans les noms et les affixes : « vitesse », « critique »…), <b>tri</b> (rareté, amélioration, niveau, récents), filtres par emplacement et un compteur des objets meilleurs que ton équipement (▲). La grille défile d'un bloc, sans pages. Filtre, tri et recherche sont partagés avec Forge › Affixes.</p>
+    <p>Toucher un objet ouvre sa <b>fiche ancrée en bas</b>, sans fermer la grille : ‹ et › passent à l'objet précédent ou suivant, la comparaison ▲ / ▼ montre ce qui change, et le bouton principal dit ce qu'il remplace (« Équiper · remplace Grèves »). La fiche propose aussi :</p>
     <ul>
-      <li><b>Équiper le meilleur</b> remplit chaque emplacement avec l'objet le plus fort du coffre.</li>
-      <li><b>Améliorer</b> : chaque objet monte de +0 à +100 avec de l'essence, chaque niveau ajoute 2 % de ses valeurs (×3 à +100).</li>
-      <li><b>Verrouiller</b> : le cadenas protège un objet du recyclage.</li>
-      <li><b>Recycler</b> transforme un objet en essence. « Tout recycler » garde les objets verrouillés, améliorés, Prime, Sanguins et Abyssaux.</li>
+      <li><b>Améliorer</b> (+1 ou +10) : chaque objet monte de +0 à +100 avec de l'essence, chaque niveau ajoute 2 % de ses valeurs (×3 à +100).</li>
+      <li><b>Verrouiller</b> : le cadenas protège un objet du recyclage et du transfert d'affixe.</li>
+      <li><b>Prendre une affixe</b> / <b>Recevoir une affixe</b> : ouvre Forge › Affixes avec l'objet déjà en source (ou en cible) ; une puce <b>Retour à Héros</b> ramène exactement où tu étais.</li>
+      <li><b>Recycler</b> transforme l'objet en essence tout de suite. Un message « Annuler » reste 5 s si tu t'es trompé (de même pour verrouiller ou retirer un mod). « Tout recycler » garde les objets verrouillés, améliorés, Prime, Sanguins et Abyssaux, et demande une confirmation.</li>
+      <li><b>Équiper le meilleur</b>, en bas de l'onglet, remplit chaque emplacement avec l'objet le plus fort du coffre.</li>
     </ul>
     <p class="tip"><b>Essence</b> (losange bleu) : la deuxième monnaie, gagnée en recyclant, en ouvrant des reliques et sur les Gardiens. Elle sert aux améliorations, aux mods, au raffinage et aux fusions.</p>
   </div>
@@ -502,8 +506,8 @@ details.more .tbl{margin:0 14px 14px}
 
 <section id="camp-affix"><div class="sec">
   <div class="txt">
-    <h2><small>Camp · onglet 6</small>Affixes</h2>
-    <p>Cet onglet sert à déplacer les meilleures propriétés d'un objet à l'autre.</p>
+    <h2><small>Camp · Forge › Affixes</small>Affixes</h2>
+    <p>Ce sous-onglet de la Forge sert à déplacer les meilleures propriétés d'un objet à l'autre. On y arrive aussi depuis la fiche d'un objet (« Prendre une affixe », « Recevoir une affixe ») : les étapes s'affichent en haut (1 Source, 2 Affixe, 3 Cible) et la barre du bas dit quoi toucher ensuite. « Chercher par affixe » et les « Alertes de butin » sont en bas du sous-onglet.</p>
     <h3>Transfert</h3>
     <ol>
       <li>Touche <b>Source</b> puis un objet : celui qui sera détruit.</li>
@@ -529,8 +533,8 @@ details.more .tbl{margin:0 14px 14px}
 
 <section id="camp-forge"><div class="sec">
   <div class="txt">
-    <h2><small>Camp · onglet 7</small>Forge et prestige</h2>
-    <p>La Forge vend des améliorations permanentes avec l'or. Chaque niveau coûte 1,7 fois le précédent.</p>
+    <h2><small>Camp · onglet 6</small>Forge et prestige</h2>
+    <p>La Forge a trois sous-onglets : <b>Améliorations</b>, <b>Affixes</b> et <b>Sceaux</b>. Les améliorations permanentes s'achètent avec l'or ; chaque niveau coûte 1,7 fois le précédent.</p>
     <div class="tbl"><table>
       <thead><tr><th>Amélioration</th><th>Effet par niveau</th><th>Niveaux</th></tr></thead>
       <tbody>
@@ -546,10 +550,10 @@ details.more .tbl{margin:0 14px 14px}
     </table></div>
     <p>On y achète aussi les <b>3 talents</b> de chaque héros (150, 300 et 500 or).</p>
     <h3>Prestige</h3>
-    <p>Quand les 8 améliorations sont au maximum, le <b>prestige</b> s'ouvre pour chaque héros, sans limite de niveau. Chaque niveau coûte de l'or et de l'essence et donne 1 point à placer dans 12 statistiques (vie, dégâts, critique, portée des compétences, rayon d'explosion…). Les points se redistribuent gratuitement.</p>
+    <p>Quand les 8 améliorations sont au maximum, le <b>prestige</b> (en bas de l'onglet Héros) s'ouvre pour chaque héros, sans limite de niveau. Chaque niveau coûte de l'or et de l'essence et donne 1 point à placer dans 12 statistiques (vie, dégâts, critique, portée des compétences, rayon d'explosion…). Les points se redistribuent gratuitement.</p>
     <details class="more"><summary>Les 12 statistiques de prestige</summary><p>Le prestige s'ouvre quand les 8 améliorations de la Forge sont au maximum. Chaque niveau coûte un peu plus d'or et d'essence que le précédent. Les plafonds généraux s'appliquent toujours : critique 75 %, réduction des dégâts 60 %, recharge 50 %.</p><div class="tbl"><table><thead><tr><th>Statistique</th><th>Par point</th><th>Plafond</th></tr></thead><tbody><tr><td><b>Vitalité</b></td><td>+2 % de vie maximale</td><td>—</td></tr><tr><td><b>Puissance</b></td><td>+2 % de dégâts</td><td>—</td></tr><tr><td><b>Vivacité</b></td><td>+1 % de vitesse d&#x27;attaque</td><td>—</td></tr><tr><td><b>Acuité</b></td><td>+0,5 % de chances de critique</td><td>40 points</td></tr><tr><td><b>Brutalité</b></td><td>+3 % de dégâts critiques</td><td>—</td></tr><tr><td><b>Arcanes</b></td><td>+3 % de dégâts de compétence</td><td>—</td></tr><tr><td><b>Ténacité</b></td><td>−0,5 % de dégâts subis</td><td>40 points</td></tr><tr><td><b>Sang-froid</b></td><td>−0,5 % de temps de recharge</td><td>30 points</td></tr><tr><td><b>Foulée</b></td><td>+0,5 % de vitesse de déplacement</td><td>30 points</td></tr><tr><td><b>Opulence</b></td><td>+2 % d&#x27;or ramassé</td><td>—</td></tr><tr><td><b>Envergure</b></td><td>+3 % de portée des compétences</td><td>50 points</td></tr><tr><td><b>Déflagration</b></td><td>+3 % de rayon d&#x27;explosion</td><td>50 points</td></tr></tbody></table></div></details>
     <h3>Sauvegarde</h3>
-    <p>Ta progression est enregistrée dans le navigateur. En bas de la Forge, <b>Exporter</b> télécharge aussitôt un fichier <code>crypte-sauvegarde-AAAA-MM-JJ.json</code> (ou le partage sur téléphone avec <b>Partager le fichier</b>). Sur l'autre appareil, ou après une réinstallation : <b>Importer</b>, puis <b>Depuis un fichier</b>, choisis ce fichier et confirme. Le jeu montre l'or, l'essence, les mods et les reliques des deux sauvegardes avant de remplacer.</p>
+    <p>Ta progression est enregistrée dans le navigateur. Dans les <b>Réglages</b> (l'engrenage), <b>Exporter</b> télécharge aussitôt un fichier <code>crypte-sauvegarde-AAAA-MM-JJ.json</code> (ou le partage sur téléphone avec <b>Partager le fichier</b>). Sur l'autre appareil, ou après une réinstallation : <b>Importer</b>, puis <b>Depuis un fichier</b>, choisis ce fichier et confirme. Le jeu montre l'or, l'essence, les mods et les reliques des deux sauvegardes avant de remplacer.</p>
   </div>
   <div class="shots one">
     <figure><button class="shot" type="button"><img src="img/camp_forge.jpg" alt="La Forge : améliorations permanentes et prestige" width="780" height="1688" loading="lazy"></button><figcaption>Les améliorations de la Forge.</figcaption></figure>
@@ -648,7 +652,7 @@ details.more .tbl{margin:0 14px 14px}
 
 </main>
 
-<footer class="wrap">Crypte des Cendres · guide à jour de la version 86 du jeu. <a href="../index.html">Retour au jeu</a></footer>
+<footer class="wrap">Crypte des Cendres · guide à jour de la version 87 du jeu. <a href="../index.html">Retour au jeu</a></footer>
 
 <dialog id="zoom" aria-label="Capture agrandie"><button type="button" id="zoomX" aria-label="Fermer">×</button><img id="zoomImg" alt=""></dialog>
 

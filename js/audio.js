@@ -64,4 +64,4 @@ const SND=(()=>{
       bellT=setTimeout(bell,3500+Math.random()*4500)};bellT=setTimeout(bell,2500)}
   return {play,vol,unlock};
 })();
-addEventListener('click',e=>{if(e.target.closest('.btn,.cx-btn,.chip,.cx-chip,.tab,.cls,.cx-cell,.cx-slot,.cell,.mod,.rtile,.cx-role'))SND.play('ui')},true);
+addEventListener('click',e=>{if(e.target.closest('.btn,.cx-btn,.chip,.cx-chip,.tab,.cls,.cx-cell,.cx-slot,.cell,.mod,.rtile,.cx-role,.cx-pick,.cx-row,.cx-tab,.cx-mod'))SND.play('ui')},true);

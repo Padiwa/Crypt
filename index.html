@@ -53,59 +53,51 @@
   <section class="cx-sheet" role="dialog" aria-label="Pause">
     <div class="cx-sheet__grip"></div>
     <header class="cx-sheet__head"><h2 class="cx-sheet__title">Pause</h2><div class="cx-sheet__aside"><button class="cx-icon-btn cx-icon-btn--ghost" id="closeBagX" aria-label="Reprendre la partie"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></header>
-    <div class="cx-sheet__body">
-    <div class="slots" id="slots"></div>
-    <div class="statgrid" id="statgrid"></div>
-    <h3 id="runUpsTitle">Bonus de la partie</h3>
-    <div class="runups" id="runUps"></div>
-    <h3>Butin de la partie</h3>
-    <p class="empty" style="font-size:13px">Touche un objet pour l'équiper tout de suite. Le reste rejoint le coffre du Camp si tu sors, et il est perdu si tu meurs.</p>
-    <div class="col" id="runLoot"></div>
-    <h3>Mods de l'arme</h3>
-    <div id="modsBag" class="col"></div>
-    <h3>Affichage</h3>
-    <div class="cx-actions" style="align-items:center"><span class="cx-hint" id="rendTxt" style="margin:0;flex:1 1 140px"></span><button class="cx-btn cx-btn--sm" id="rendBtn" style="flex:0 0 auto">Rendu standard</button><a class="cx-btn cx-btn--sm" id="guideBtnBag" href="aide/index.html#partie" target="_blank" rel="noopener" style="flex:0 0 auto">Guide</a><button class="cx-btn cx-btn--sm" id="setBtnBag" style="flex:0 0 auto">Réglages</button></div>
+    <div class="cx-sheet__body" id="bagBody" style="gap:var(--space-4)">
+      <section class="cx-section"><h3 class="cx-section__label" id="lootTitle">Butin de la partie</h3><div class="col" id="runLoot"></div></section>
+      <section class="cx-section"><h3 class="cx-section__label" id="runUpsTitle">Bonus de la partie</h3><div class="runups" id="runUps"></div></section>
+      <section class="cx-section"><h3 class="cx-section__label">Équipement</h3><div class="slots" id="slots"></div></section>
+      <div id="bagKey"></div>
+      <details class="cx-more" data-more="bag_stats"><summary><span>Toutes les statistiques</span><span class="cx-more__toggle"><span class="o">Afficher</span><span class="c">Masquer</span></span></summary><div class="cx-more__body"><div class="statgrid" id="statgrid"></div></div></details>
+      <details class="cx-more" data-more="bag_mods"><summary><span id="bagModsT">Mods</span><span class="cx-more__toggle"><span class="o">Afficher</span><span class="c">Masquer</span></span></summary><div class="cx-more__body"><div id="modsBag" class="col"></div></div></details>
+      <span hidden><span id="rendTxt"></span><button id="rendBtn"></button></span>
     </div>
-    <footer class="cx-sheet__foot"><button class="cx-btn cx-btn--primary" id="closeBag">Reprendre</button></footer>
+    <div class="cx-dock" id="bagDock" role="region" aria-label="Objet choisi" hidden></div>
+    <footer class="cx-sheet__foot" id="bagFoot"><button class="cx-icon-btn" id="setBtnBag" aria-label="Réglages"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></button><a class="cx-icon-btn" id="guideBtnBag" href="aide/index.html#partie" target="_blank" rel="noopener" aria-label="Guide"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.2-2.5 3.9"/><path d="M12 17h.01"/></svg></a><button class="cx-btn cx-btn--primary" id="closeBag" style="flex:1">Reprendre</button></footer>
   </section>
 </div>
 
-<div class="overlay center" id="intro">
-  <div class="sheet">
-    <h1 class="title"><em>Prototype</em>Crypte des Cendres</h1>
-    <p class="lead">Choisis ton héros et ta mission. Ramasse des reliques, ouvre-les pour obtenir des fragments de schémas, fabrique ton équipement.</p>
-    <h3 class="ilab">Héros</h3>
-    <div class="classes" role="radiogroup" aria-label="Choisis ton héros">
-      <button class="cls" data-c="guerrier" role="radio" aria-checked="false" style="--cc:#d9a48a"><svg viewBox="0 0 24 24"><path d="M19 3 8.5 13.5M19 3h-4.5M19 3v4.5M6 11l7 7M4.5 19.5 8 16"/></svg><b>Guerrier</b><span>Mêlée</span></button>
-      <button class="cls" data-c="archer" role="radio" aria-checked="false" style="--cc:#a9cbc0"><svg viewBox="0 0 24 24"><path d="M7 3c8 3 8 15 0 18M7 3v18M3 12h16M16 9l3 3-3 3"/></svg><b>Archer</b><span>Distance</span></button>
-      <button class="cls" data-c="magicien" role="radio" aria-checked="false" style="--cc:#b9a6f0"><svg viewBox="0 0 24 24"><path d="M5 21 14.5 9.5"/><circle cx="17" cy="7" r="3"/><path d="M17 1.5V3M22.5 7H21M13 7h-1M20.5 3.5l-1 1"/></svg><b>Magicien</b><span>Magie</span></button>
-    </div>
-    <p class="desc" id="clsDesc"></p>
-    <h3 class="ilab">Mission</h3>
-    <div class="classes" role="radiogroup" aria-label="Choisis ta mission">
-      <button class="cls" data-m="survie" role="radio" aria-checked="false" style="--cc:#e8853b"><svg viewBox="0 0 24 24"><path d="M6 3h12M6 21h12M7 3c0 5 10 6 10 9s-10 4-10 9M17 3c0 5-10 6-10 9"/></svg><b>Survie</b><span>Hordes</span></button>
-      <button class="cls" data-m="defense" role="radio" aria-checked="false" style="--cc:#8fd3e0"><svg viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z"/><path d="M12 7l3 5-3 5-3-5z"/></svg><b>Défense</b><span>Cryopode</span></button>
-      <button class="cls" data-m="capture" role="radio" aria-checked="false" style="--cc:#f0cf4a"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg><b>Capture</b><span>Traque</span></button>
-    </div>
-    <p class="desc" id="modeDesc" style="min-height:3em"></p>
-    <h3 class="ilab">Biome</h3>
-    <div class="diffrow" id="bioSel" role="radiogroup" aria-label="Biome"></div>
-    <p class="desc" id="bioDesc" style="min-height:0;font-size:13px;color:var(--muted)"></p>
-    <div class="relicpick"><span>Niveau de mission</span><span class="lvsel"><button class="btn" id="lvMinus" aria-label="Baisser le niveau">−</button><input id="lvIn" type="number" min="1" max="50" inputmode="numeric" aria-label="Niveau de mission"><button class="btn" id="lvPlus" aria-label="Monter le niveau">+</button></span></div>
-    <p class="desc" id="lvDesc" style="min-height:0;font-size:13px;color:var(--muted)"></p>
-    <h3 class="ilab">Difficulté</h3>
-    <div class="diffrow" id="diffSel" role="radiogroup" aria-label="Difficulté"></div>
-    <div class="relicpick" id="tormSel" hidden><span>Palier</span><span class="cx-stepper"><button type="button" id="tormMinus" aria-label="Baisser le palier de Tourment">−</button><b id="tormVal" style="min-width:8.5em;display:grid;place-items:center;font:700 16px/1 var(--font-body);color:#ff6a3a;border-left:1px solid var(--line);border-right:1px solid var(--line)">Tourment I</b><button type="button" id="tormPlus" aria-label="Monter le palier de Tourment">+</button></span></div>
-    <p class="desc" id="diffDesc" style="min-height:0;font-size:13px;color:var(--muted)"></p>
-    <div class="relicpick"><span>Reliques équipées</span><button class="btn" id="relicBtn">Aucune · Équiper</button></div>
-    <div class="btnrow">
-      <button class="btn main" id="startBtn" style="padding:12px 22px;font-size:17px">Entrer dans la crypte</button>
-      <button class="btn" id="campBtn">Le Camp · <span class="coin"></span><span id="introGold">0</span></button>
-      <a class="btn guidebtn" id="guideBtn" href="aide/index.html" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.2-2.5 3.9"/><path d="M12 17h.01"/></svg>Guide</a>
-      <button class="btn" id="setBtn" aria-label="Réglages"><svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>Réglages</button>
-    </div>
-    <p class="lead" id="bestTxt" style="font-size:13px"></p>
+<div class="cx-screen" id="intro">
+  <header class="cx-screen__head"><h1 class="cx-screen__brand"><small>Prototype</small>Crypte des Cendres</h1>
+    <a class="cx-icon-btn cx-icon-btn--ghost" id="guideBtn" href="aide/index.html" target="_blank" rel="noopener" aria-label="Guide"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.2-2.5 3.9"/><path d="M12 17h.01"/></svg></a>
+    <button class="cx-icon-btn cx-icon-btn--ghost" id="setBtn" aria-label="Réglages"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></button></header>
+  <div class="cx-screen__body">
+    <section class="cx-section"><h3 class="cx-section__label">Héros</h3>
+      <div class="cx-picks" role="radiogroup" aria-label="Choisis ton héros">
+        <button class="cx-pick" data-c="guerrier" role="radio" aria-checked="false" style="--cc:#d9a48a"><svg viewBox="0 0 24 24"><path d="M19 3 8.5 13.5M19 3h-4.5M19 3v4.5M6 11l7 7M4.5 19.5 8 16"/></svg><b>Guerrier</b><span>Mêlée</span></button>
+        <button class="cx-pick" data-c="archer" role="radio" aria-checked="false" style="--cc:#a9cbc0"><svg viewBox="0 0 24 24"><path d="M7 3c8 3 8 15 0 18M7 3v18M3 12h16M16 9l3 3-3 3"/></svg><b>Archer</b><span>Distance</span></button>
+        <button class="cx-pick" data-c="magicien" role="radio" aria-checked="false" style="--cc:#b9a6f0"><svg viewBox="0 0 24 24"><path d="M5 21 14.5 9.5"/><circle cx="17" cy="7" r="3"/><path d="M17 1.5V3M22.5 7H21M13 7h-1M20.5 3.5l-1 1"/></svg><b>Magicien</b><span>Magie</span></button>
+      </div>
+      <div id="clsDesc"></div></section>
+    <section class="cx-section"><h3 class="cx-section__label">Mission</h3>
+      <div class="cx-picks" role="radiogroup" aria-label="Choisis ta mission">
+        <button class="cx-pick" data-m="survie" role="radio" aria-checked="false" style="--cc:#e8853b"><svg viewBox="0 0 24 24"><path d="M6 3h12M6 21h12M7 3c0 5 10 6 10 9s-10 4-10 9M17 3c0 5-10 6-10 9"/></svg><b>Survie</b><span>Hordes</span></button>
+        <button class="cx-pick" data-m="defense" role="radio" aria-checked="false" style="--cc:#8fd3e0"><svg viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z"/><path d="M12 7l3 5-3 5-3-5z"/></svg><b>Défense</b><span>Cryopode</span></button>
+        <button class="cx-pick" data-m="capture" role="radio" aria-checked="false" style="--cc:#f0cf4a"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg><b>Capture</b><span>Traque</span></button>
+      </div>
+      <p class="cx-hint" id="modeDesc" style="margin:0"></p></section>
+    <section class="cx-section"><h3 class="cx-section__label">Réglages de la mission</h3><div class="cx-rows">
+      <button class="cx-row" id="rowBio"><span class="cx-row__k">Biome</span><span class="cx-row__v" id="bioVal"></span></button>
+      <div class="cx-row"><span class="cx-row__k">Niveau de mission<small id="lvDesc">Plus haut : plus de butin, monstres plus forts</small></span><span class="cx-stepper"><button type="button" id="lvMinus" aria-label="Baisser le niveau">−</button><input id="lvIn" type="number" min="1" max="50" inputmode="numeric" aria-label="Niveau de mission"><button type="button" id="lvPlus" aria-label="Monter le niveau">+</button></span></div>
+      <button class="cx-row" id="rowDiff"><span class="cx-row__k">Difficulté<small id="diffDesc"></small></span><span class="cx-row__v" id="diffVal"></span></button>
+      <button class="cx-row" id="relicBtn"><span class="cx-row__k">Reliques<small>S'ouvrent pendant la mission</small></span><span class="cx-row__v" id="relicVal"></span></button>
+    </div></section>
+    <p class="cx-hint" id="bestTxt" style="margin:0;text-align:center"></p>
   </div>
+  <footer class="cx-screen__foot">
+    <button class="cx-btn cx-btn--primary cx-btn--lg cx-btn--block" id="startBtn">Lancer</button>
+    <button class="cx-btn cx-btn--block cx-btn--cost" id="campBtn" style="margin:0">Le Camp <span style="display:inline-flex;gap:10px;align-items:center"><span class="cx-price"><i class="cx-coin"></i><span id="introGold">0</span></span><span class="cx-tab__badge" id="campBadge" style="position:static" hidden></span></span></button>
+  </footer>
 </div>
 
 <div class="overlay center" id="extract" hidden>
@@ -156,10 +148,19 @@
     <div class="cx-sheet__grip"></div>
     <header class="cx-sheet__head"><h2 class="cx-sheet__title">Le Camp</h2><div class="cx-sheet__aside"><span class="purse" id="campGold"></span><a class="cx-icon-btn cx-icon-btn--ghost" id="campHelp" href="aide/index.html#camp-equip" target="_blank" rel="noopener" aria-label="Aide sur cet onglet"><svg viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.2-2.5 3.9"/><path d="M12 17h.01"/></svg></a><button class="cx-icon-btn cx-icon-btn--ghost" id="closeCamp" aria-label="Fermer le Camp"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></header>
     <div class="cx-sheet__body">
-      <div class="cx-tabs cx-tabs--icons" role="tablist" aria-label="Le Camp"><button class="tab cx-tab" role="tab" data-tab="equip" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M5 13a7 7 0 0 1 14 0v6h-4v-4H9v4H5z"/><path d="M12 6V3"/></svg><span>Héros</span></button><button class="tab cx-tab" role="tab" data-tab="arsenal" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M5 19 19 5M13 5h6v6M7 11l6 6M4 14l6 6"/></svg><span>Armurerie</span></button><button class="tab cx-tab" role="tab" data-tab="relics" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M6 3h12l3 6-9 12L3 9z"/><path d="M3 9h18"/></svg><span>Reliques</span></button><button class="tab cx-tab" role="tab" data-tab="mods" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M12 2l8.5 5v10L12 22l-8.5-5V7z"/><circle cx="12" cy="12" r="3"/></svg><span>Mods</span></button><button class="tab cx-tab" role="tab" data-tab="pets" aria-selected="false"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="15.5" rx="4.5" ry="3.8"/><circle cx="6" cy="10" r="1.8"/><circle cx="9.5" cy="6.5" r="1.8"/><circle cx="14.5" cy="6.5" r="1.8"/><circle cx="18" cy="10" r="1.8"/></svg><span>Familier</span></button><button class="tab cx-tab" role="tab" data-tab="affix" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M4 8h14l-4-4M20 16H6l4 4"/></svg><span>Affixes</span></button><button class="tab cx-tab" role="tab" data-tab="forge" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M4 9h12a4 4 0 0 0 4-4H8"/><path d="M8 9v3a3 3 0 0 0 3 3h2a3 3 0 0 0 3-3V9M9 21h6M12 15v6"/></svg><span>Forge</span></button></div>
+      <div class="cx-tabs cx-tabs--icons" role="tablist" aria-label="Le Camp"><button class="tab cx-tab" role="tab" data-tab="equip" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M5 13a7 7 0 0 1 14 0v6h-4v-4H9v4H5z"/><path d="M12 6V3"/></svg><span>Héros</span></button><button class="tab cx-tab" role="tab" data-tab="arsenal" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M5 19 19 5M13 5h6v6M7 11l6 6M4 14l6 6"/></svg><span>Armurerie</span></button><button class="tab cx-tab" role="tab" data-tab="relics" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M6 3h12l3 6-9 12L3 9z"/><path d="M3 9h18"/></svg><span>Reliques</span></button><button class="tab cx-tab" role="tab" data-tab="mods" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M12 2l8.5 5v10L12 22l-8.5-5V7z"/><circle cx="12" cy="12" r="3"/></svg><span>Mods</span></button><button class="tab cx-tab" role="tab" data-tab="pets" aria-selected="false"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="15.5" rx="4.5" ry="3.8"/><circle cx="6" cy="10" r="1.8"/><circle cx="9.5" cy="6.5" r="1.8"/><circle cx="14.5" cy="6.5" r="1.8"/><circle cx="18" cy="10" r="1.8"/></svg><span>Familier</span></button><button class="tab cx-tab" role="tab" data-tab="forge" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M4 9h12a4 4 0 0 0 4-4H8"/><path d="M8 9v3a3 3 0 0 0 3 3h2a3 3 0 0 0 3-3V9M9 21h6M12 15v6"/></svg><span>Forge</span></button></div>
       <div class="col" id="campBody"></div>
     </div>
+    <div class="cx-dock" id="campDock" role="region" aria-label="Objet choisi" hidden></div>
     <footer class="cx-sheet__foot" id="campFoot" hidden></footer>
+  </section>
+</div>
+
+<div class="overlay" id="pickSheet" hidden style="z-index:45">
+  <section class="cx-sheet" role="dialog" aria-labelledby="pickTitle" style="height:auto;max-height:86dvh">
+    <div class="cx-sheet__grip"></div>
+    <header class="cx-sheet__head"><h2 class="cx-sheet__title" id="pickTitle">Choisir</h2><div class="cx-sheet__aside"><button class="cx-icon-btn cx-icon-btn--ghost" id="pickClose" aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></header>
+    <div class="cx-sheet__body" id="pickBody" style="gap:var(--space-3)"></div>
   </section>
 </div>
 
@@ -169,6 +170,7 @@
 <script src="js/render.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/camp.js"></script>
+<script src="js/inv.js"></script>
 <script src="js/seal.js"></script>
 <script src="js/pet.js"></script>
 <script src="js/settings.js"></script>
@@ -176,5 +178,6 @@
 <script src="js/net.js"></script>
 <script src="js/main.js"></script>
 <script src="js/update.js"></script>
+<script src="js/nav.js"></script>
 </body>
 </html>

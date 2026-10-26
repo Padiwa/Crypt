@@ -19,22 +19,6 @@ function stashView(){
     ${pageItems.length?`<div class="grid">${pageItems.map(it=>cellHtml(it,'stash',campSel&&campSel.stash===it.id,better(it))).join('')}</div>`:`<p class="empty">${meta.stash.length?'Aucun objet de ce type.':'Ton coffre est vide. Sors vivant d\'une mission pour y ramener les objets trouvés.'}</p>`}
     ${pages>1?`<div class="pager"><button class="btn" data-cact="spage" data-arg="-1" ${stP===0?'disabled':''} aria-label="Page précédente">‹</button><span>Page ${stP+1} / ${pages}</span><button class="btn" data-cact="spage" data-arg="1" ${stP>=pages-1?'disabled':''} aria-label="Page suivante">›</button></div>`:''}`;
 }
-function campEquip(){
-  const eq=curEq(),St=stats(eq),rec=meta.stash.filter(i=>!(i.type==='Prime'||i.type==='Sanguin'||i.type==='Abyssal'||i.up||i.lock)),ess=rec.reduce((a,i)=>a+RAR[i.r].shard*2,0);
-  let det='<p class="empty" style="font-size:13px">Touche un emplacement ou un objet du coffre. ▲ signale une amélioration, le cadenas un objet verrouillé.</p>';
-  if(campSel&&campSel.slot){const it=eq[campSel.slot];det=it?card(it,'worn'):'<p class="empty">Emplacement vide. Équipe un objet depuis le coffre.</p>'}
-  else if(campSel&&campSel.stash){const it=meta.stash.find(i=>i.id===campSel.stash);if(it)det=card(it,'stash')}
-  const recBtn=!rec.length?'':recyConfirm
-    ?`<div class="card"><p class="empty" style="font-size:13px">Recycler ${rec.length} objet${rec.length>1?'s':''} du coffre contre ${ess} essence ? Les objets verrouillés, améliorés, Prime, Sanguins et Abyssaux sont gardés.</p><div class="actions"><button class="btn danger" data-cact="recyall">Tout recycler</button><button class="btn" data-cact="recycancel">Annuler</button></div></div>`
-    :`<button class="btn danger" data-cact="recyask" style="align-self:flex-start">Tout recycler · ${rec.length} objet${rec.length>1?'s':''} · +${ess} essence</button>`;
-  const plan=bestPlan(eq,meta.stash),pn=Object.keys(plan).length;
-  return `${campMsg}<h3>${CLS[heroCls].n} · équipement</h3><div class="slots">${slotsHtml(eq,true,campSel&&campSel.slot)}</div>
-    <div class="actions" style="margin:0"><button class="btn${pn?' main':''}" data-cact="bestall" ${pn?'':'disabled'}>${pn?`Équiper le meilleur · ${pn} changement${pn>1?'s':''}`:'Ton équipement est déjà le meilleur'}</button></div><div class="statgrid">${statRows(St)}</div>
-    ${det}
-    <h3>Coffre · ${meta.stash.length} objet${meta.stash.length>1?'s':''}</h3>${recBtn}
-    ${stashView()}
-    <h3>Fragments de schéma</h3>${fragInv()}`;
-}
 function fragInv(){
   const ids=[...WPN.archer,...WPN.guerrier,...WPN.magicien,...GEAR_BP].map(x=>x.id).filter(id=>(meta.parts[id]||[]).some(n=>n>0));
   if(!ids.length)return '<p class="empty" style="font-size:13px">Aucun fragment. Ouvre des reliques pour en obtenir, puis fabrique l\'équipement à l\'Armurerie.</p>';
@@ -165,7 +149,7 @@ function rwInfo(r){const [k,v]=r.split(':');if(k==='ess'||k==='gold')return {cur
   return {b,have,n,built,completes:!have&&n===2&&!built}}
 function campRelics(){
   relicQFix();const all=Object.keys(RELICS),own=all.filter(id=>{const a=meta.relics[id];return a&&(a[0]||a[1])}),Q=meta.relicQ;
-  let h=`${campMsg}<p class="cx-hint" style="margin:0">Équipe des reliques : en mission, ${REACT_N} réactifs (ennemis au halo doré) ouvrent la première de la liste, puis la suivante. Récompense et +25 essence par relique ouverte, à la réussite de la mission.</p>`;
+  let h=`${campMsg}`;
   if(!own.length)return h+'<p class="empty">Aucune relique pour l\'instant. Les monstres en lâchent parfois, et chaque manche réussie en rapporte une.</p>';
   const tot=own.reduce((n,id)=>n+meta.relics[id][0]+meta.relics[id][1],0);
   // file d'ouverture (affichée après la collection)
@@ -180,7 +164,7 @@ function campRelics(){
   const list=own.filter(id=>relMatch(id)).sort((x,y)=>RELICS[x].t-RELICS[y].t);
   if(relSel&&!own.includes(relSel))relSel=null;
   h+=`<section class="cx-section"><h3 class="cx-section__label">Tes reliques · ${tot}</h3><div class="cx-chips">${tchip('all','Toutes')}${tiers.map(t=>tchip(t,RTIER[t].n,RTIER[t].c)).join('')}${own.some(id=>RELICS[id].bio)?tchip('g','Givre','#9fd0ff'):''}${own.some(id=>RELICS[id].fz)?tchip('f','Forgées',RTIER[3].c):''}</div>
-    ${(()=>{const ne=relToEquip(relTier),nq=relInQ(relTier),sh=relTier==='g'?'Givre':relTier==='f'?'Forgées':relTier==='all'?'':RTIER[+relTier].n;return `<div class="actions" style="margin:0"><button class="btn${ne?' main':''}" data-cact="rqtype" ${ne?'':'disabled'}>${ne?`Tout équiper${relTier==='all'?'':' · '+sh} (${ne})`:`${relTier==='all'?'Tout':sh} : déjà équipé`}</button>${relTier!=='all'&&nq?`<button class="btn danger" data-cact="rqtypeoff">Retirer · ${sh} (${nq})</button>`:''}</div>`})()}
+    ${(()=>{const ne=relToEquip(relTier),nq=relInQ(relTier),sh=relTier==='g'?'Givre':relTier==='f'?'Forgées':relTier==='all'?'':RTIER[+relTier].n;return relTier!=='all'&&nq?`<div class="actions" style="margin:0"><button class="btn danger" data-cact="rqtypeoff">Retirer · ${sh} (${nq})</button></div>`:(ne?'':`<p class="cx-hint" style="margin:0">${relTier==='all'?'Toutes tes reliques':sh} : déjà équipées.</p>`)})()}
     <div class="rtiles">${list.map(id=>{const R=RELICS[id],a=meta.relics[id],c=RTIER[R.t].c,nq=relicQN(id,false)+relicQN(id,true),comp=R.rw.some(r=>rwInfo(r).completes);
       return `<button class="rtile${relSel===id?' sel':''}" data-cact="rsel" data-arg="${id}" style="--tc:${c}" aria-pressed="${relSel===id}" aria-label="${relicName(id)}, ${a[0]} intacte${a[0]>1?'s':''}, ${a[1]} éclatante${a[1]>1?'s':''}${nq?`, ${nq} équipée${nq>1?'s':''}`:''}">
         <span class="rgem${a[1]?' rad':''}">${RELIC_SVG}</span><b>${R.n}</b><span class="rt">${RTIER[R.t].n}</span>
@@ -212,7 +196,7 @@ function parseCode(t){t=(t||'').trim();if(t.startsWith('CRYPTE1:'))t=t.slice(8);
   if(!d||typeof d!=='object'||!d.meta||typeof d.meta.gold!=='number')return null;return d}
 const sumOf=m=>`${m.gold} or, ${m.essence||0} essence, ${Object.keys(m.mods||{}).length} mods, ${Object.values(m.relics||{}).reduce((a,r)=>a+(r[0]||0)+(r[1]||0),0)} reliques`;
 function saveSection(){
-  let h=`<h3>Sauvegarde</h3><p class="empty" style="font-size:13px"><b>Exporter</b> enregistre un fichier .json de ta progression, prêt à réimporter. Pour la restaurer, ici ou sur un autre appareil : <b>Importer</b>, puis <b>Depuis un fichier</b> (ou colle le JSON).</p>
+  let h=`<h3 class="cx-section__label">Sauvegarde</h3><p class="empty" style="font-size:13px;margin:0"><b>Exporter</b> enregistre un fichier .json de ta progression, prêt à réimporter. Pour la restaurer, ici ou sur un autre appareil : <b>Importer</b>, puis <b>Depuis un fichier</b> (ou colle le JSON).</p>
     <div class="actions"><button class="btn${saveMode==='exp'?' main':''}" data-cact="exp">Exporter</button><button class="btn${saveMode==='imp'?' main':''}" data-cact="impopen">Importer</button></div>`;
   if(saveMode==='exp')h+=`${saveMsgOk?`<p class="empty" style="font-size:13px;color:var(--heal)">${esc(saveMsgOk)}</p>`:''}<div class="actions"><button class="btn main" data-cact="savedl">Télécharger le fichier</button>${canShareFile()?'<button class="btn" data-cact="saveshare">Partager le fichier</button>':''}<button class="btn" data-cact="copy">Copier le JSON</button></div>
     <details class="savemore"><summary>Voir le JSON</summary><textarea id="saveOut" class="savebox" readonly rows="8">${esc(exportCode())}</textarea></details>`;
@@ -224,7 +208,8 @@ function saveSection(){
   if(saveMsg)h+=`<p class="empty" style="font-size:13px;color:var(--blood)">${saveMsg}</p>`;
   return h;
 }
-function campForge(){return campForge0()+saveSection()}
+let forgeSub='up';
+function campForge(){return campForge0()}
 let xf={src:'',k:'',dst:'',rep:''};
 const wclsOf=id=>Object.keys(WPN).find(c=>WPN[c].some(w=>w.id===id));
 function xfGet(key){if(!key)return null;const t=key[0],v=key.slice(2);
@@ -299,7 +284,7 @@ function campAffix(){
   let s=xfGet(xf.src);if(xf.src&&(!s||s.lock)){xf={src:'',k:'',dst:'',rep:'',pick:'src'};s=null}
   if(s&&xf.k&&s.aff[xf.k]==null)xf.k='';
   const d=xfGet(xf.dst),wlab=k=>k[0]==='w'?'arme':k[0]==='g'?'équipé':'coffre';
-  let h=`<p class="cx-hint" style="margin:0">Touche Source ou Cible, puis un objet. Touche ensuite l'affixe à prendre sur la source.</p>`;
+  let h=backChip()+xfSteps();
   h+=`<div class="cx-roles"><button class="cx-role cx-role--src" data-cact="xfpick" data-arg="src" aria-pressed="${xf.pick==='src'}"><span class="cx-role__k"><i>−</i>Source · détruite</span><span class="cx-role__v${s?'':' is-empty'}" ${s?`style="color:${RARV[s.r]}"`:''}>${s?esc(itemName(s)):'Choisir un objet'}</span></button>
     <button class="cx-role cx-role--dst" data-cact="xfpick" data-arg="dst" aria-pressed="${xf.pick==='dst'}"><span class="cx-role__k"><i>+</i>Cible</span><span class="cx-role__v${d?'':' is-empty'}" ${d?`style="color:${RARV[d.r]}"`:''}>${d?esc(itemName(d)):'Choisir un objet'}</span></button></div>`;
   const st=xfState();
@@ -319,22 +304,16 @@ function campAffix(){
       if(!Object.keys(d.aff).length&&!(st&&st.mode==='add'))tLines+='<li class="cx-line cx-line--base">Aucune affixe</li>';}
     h+=`<div class="cx-diff">${xfDiffCard('src',s,s?wlab(xf.src):'',sLines,st&&st.ok)}${xfDiffCard('dst',d,d?wlab(xf.dst):'',tLines,st&&st.ok?true:null)}</div>`;
   }
-  h+=affFinder();h+=wishSection();
   const eqW=meta.wpn[heroCls]&&ownedW(meta.wpn[heroCls])?meta.wpn[heroCls]:WPN[heroCls][0].id;
   h+=`<section class="cx-section"><h3 class="cx-section__label">Équipé · ${CLS[heroCls].n}</h3><div class="cx-slots">${xfSlot('w:'+eqW,weaponItem(heroCls,eqW),'Arme')}${['armure','amulette','bottes','anneau'].map(k=>xfSlot('g:'+k,meta.gear[k],SLOT[k])).join('')}</div></section>`;
   const ow=Object.keys(WPN).flatMap(c=>WPN[c].filter(w=>ownedW(w.id)&&w.id!==eqW).map(w=>[c,w]));
   if(ow.length)h+=`<section class="cx-section"><h3 class="cx-section__label">Autres armes</h3><div class="cx-slots">${ow.map(([c,w])=>xfSlot('w:'+w.id,weaponItem(c,w.id),`Arme · ${CLS[c].n}`,true)).join('')}</div></section>`;
-  const counts={all:meta.stash.length};for(const it of meta.stash)counts[it.slot]=(counts[it.slot]||0)+1;
-  const list=meta.stash.filter(i=>afF==='all'||i.slot===afF).sort((a,b)=>b.r-a.r||(b.up||0)-(a.up||0)||b.lvl-a.lvl);
-  const pages=Math.max(1,Math.ceil(list.length/ST_PAGE));afP=clamp(afP,0,pages-1);
-  const fChip=(k,lab)=>`<button class="cx-chip cx-chip--sm" data-cact="afilter" data-arg="${k}" aria-pressed="${afF===k}">${lab} <span class="n">${counts[k]||0}</span></button>`;
-  h+=`<section class="cx-section"><h3 class="cx-section__label">Coffre · ${meta.stash.length} objet${meta.stash.length>1?'s':''}</h3><div class="cx-chips">${fChip('all','Tout')}${['armure','amulette','bottes','anneau'].map(k=>fChip(k,SLOT[k])).join('')}</div>
-    ${list.length?`<div class="cx-cells">${list.slice(afP*ST_PAGE,afP*ST_PAGE+ST_PAGE).map(it=>xfCell('s:'+it.id,it)).join('')}</div>`:`<p class="cx-hint" style="margin:0">${meta.stash.length?'Aucun objet de ce type.':'Ton coffre est vide.'}</p>`}
-    ${pages>1?`<div class="cx-pager"><button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-cact="apage" data-arg="-1" ${afP===0?'disabled':''} aria-label="Page précédente"><svg viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg></button><span>Page ${afP+1} / ${pages}</span><button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-cact="apage" data-arg="1" ${afP>=pages-1?'disabled':''} aria-label="Page suivante"><svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></button></div>`:''}</section>`;
+  {const list=invList();h+=`<section class="cx-section"><h3 class="cx-section__label">Coffre · ${meta.stash.length} objet${meta.stash.length>1?'s':''}</h3>${meta.stash.length?invToolbar(list,'affix'):''}<div id="invGrid">${invGrid(list,'affix')}</div></section>`}
+  h+=affFinder();h+=cxMore('wish','Alertes de butin : un flash quand une affixe recherchée tombe.',wishSection(),'Régler');
   return h;
 }
 function affixFoot(){const st=xfState(),s=xfGet(xf.src);
-  if(!st)return xf.src&&xf.dst&&!xf.k?'<p class="cx-hint">Touche l\'affixe à prendre sur la source.</p>':'';
+  if(!st){const hn=campBack?xfStepHint():'';return hn?`<p class="cx-hint">${hn}</p>`:xf.src&&xf.dst&&!xf.k?'<p class="cx-hint">Touche l\'affixe à prendre sur la source.</p>':''}
   if(!st.ok)return `<p class="cx-hint">${st.full?'Touche l\'affixe à remplacer sur la cible.':st.msg}</p>`;
   const cost=st.cost||xfCost(s),poor=meta.essence<cost,both=st.fuseOk&&st.canUp;
   return `${both?`<div class="cx-chips" role="radiogroup" aria-label="Mode" style="justify-content:center"><button class="cx-chip cx-chip--sm" role="radio" data-cact="xfop" data-arg="fuse" aria-checked="${st.mode==='fuse'}">Fusionner (additionner)</button><button class="cx-chip cx-chip--sm" role="radio" data-cact="xfop" data-arg="up" aria-checked="${st.mode==='up'}">Remplacer</button></div>`:''}<div class="row"><button class="cx-btn cx-btn--ghost" data-cact="xfcancel">Annuler</button><button class="cx-btn cx-btn--primary cx-btn--cost" data-cact="xfok" ${poor?'disabled':''}>${st.mode==='fuse'?'Fusionner':'Transférer'} <span class="cx-price"><i class="cx-ess"></i>${cost}</span></button></div>
@@ -368,7 +347,7 @@ function campForge0(){
   const tals=TAL[heroCls].map(t=>{const own=hasTal(t.k);
     return `<div class="tal${own?' own':''}"><b>${t.n}</b><p>${t.d}</p>${own?'<span class="owned">Acquis</span>':`<button class="btn buy" data-cact="tal" data-arg="${t.k}" ${meta.gold<t.cost?'disabled':''}><span class="coin"></span>${t.cost}</button>`}</div>`}).join('');
   
-  return `<h3>Améliorations permanentes</h3><div class="ups">${ups}</div>${prestSection()}<h3>Talents · ${CLS[heroCls].n}</h3><div class="tals">${tals}</div>`;
+  return `<h3>Améliorations permanentes</h3><div class="ups">${ups}</div><h3>Talents · ${CLS[heroCls].n}</h3><div class="tals">${tals}</div>`;
 }
 function tabBadges(){
   const bp=[...Object.values(WPN).flat().filter((w,i)=>!/0$/.test(w.id)),...GEAR_BP];
@@ -380,23 +359,55 @@ function tabBadges(){
   const B={equip:best?{n:best,t:`${best} amélioration${best>1?'s':''} d'équipement`}:null,arsenal:craft?{n:craft,t:`${craft} objet${craft>1?'s':''} à fabriquer`}:null,
     relics:relFree&&!meta.relicQ.length?{n:relFree,t:`${relFree} relique${relFree>1?'s':''} non équipée${relFree>1?'s':''}`}:null,
     pets:meta.eggs>0?{n:meta.eggs,t:`${meta.eggs} œuf${meta.eggs>1?'s':''} à faire éclore`}:null,
-    pets:meta.eggs>0?{n:meta.eggs,t:`${meta.eggs} œuf${meta.eggs>1?'s':''} à faire éclore`}:null,
     forge:(ups+pr+prBuy)?{n:pr?pr:ups+prBuy,t:pr?`${pr} point${pr>1?'s':''} de prestige à placer`:`${ups+prBuy} amélioration${ups+prBuy>1?'s':''} achetable${ups+prBuy>1?'s':''}`}:null};
-  document.querySelectorAll('.tab').forEach(t=>{let el=t.querySelector('.tbadge');const b=B[t.dataset.tab];
-    if(!b){if(el)el.remove();return}if(!el){el=document.createElement('span');el.className='tbadge';t.appendChild(el)}el.textContent=b.n>9?'9+':b.n;el.title=b.t;el.setAttribute('aria-label',b.t)})}
-function drawCamp(){{const h=document.getElementById('campHelp');if(h)h.href=campTab==='pets'?'aide/index.html#familiers':'aide/index.html#camp-'+campTab}
+  document.querySelectorAll('.tab').forEach(t=>{let el=t.querySelector('.cx-tab__badge');const b=B[t.dataset.tab];
+    if(!b){if(el)el.remove();return}if(!el){el=document.createElement('span');el.className='cx-tab__badge';t.appendChild(el)}el.textContent=b.n>9?'9+':b.n;el.title=b.t;el.setAttribute('aria-label',b.t)})}
+// Texte repliable (Disclosure) : une phrase, le détail derrière « En savoir plus ». L'état ouvert est retenu par clé.
+let moreOpen={};try{moreOpen=JSON.parse(localStorage.getItem('crypte-more')||'{}')}catch(e){}
+function cxMore(key,sentence,body,lab='En savoir plus'){return `<details class="cx-more" data-more="${key}"${moreOpen[key]?' open':''}><summary><span>${sentence}</span><span class="cx-more__toggle"><span class="o">${lab}</span><span class="c">Masquer</span></span></summary><div class="cx-more__body">${body}</div></details>`}
+document.addEventListener('toggle',e=>{const d=e.target;if(!d.matches||!d.matches('details[data-more]'))return;moreOpen[d.dataset.more]=d.open;try{localStorage.setItem('crypte-more',JSON.stringify(moreOpen))}catch(err){}},true);
+const subTabs=(items,cur,act)=>`<div class="cx-tabs" role="tablist">${items.map(([k,l,n])=>`<button class="cx-tab" role="tab" data-cact="${act}" data-arg="${k}" aria-selected="${cur===k}">${l}${n?`<span class="cx-tab__badge">${n}</span>`:''}</button>`).join('')}</div>`;
+const CAMP_MORE={
+  equip:['Touche un objet pour voir sa fiche et l\'équiper.','<p>▲ signale un objet meilleur que celui que tu portes, le cadenas un objet verrouillé (ni recyclé ni utilisé comme source d\'affixe). « Équiper le meilleur » choisit pour chaque emplacement l\'objet qui donne le plus de puissance et de vie.</p><p>Le <b>Prestige</b>, en bas de l\'onglet, s\'ouvre quand toutes les améliorations de la Forge sont au maximum.</p>'],
+  arsenal:['Fabrique tes armes et objets Prime avec leurs 3 fragments.','<p>Les fragments viennent des reliques, ouvertes en mission. « Recettes » liste tout ce qui se fabrique, avec où trouver les fragments ; « Mes armes » montre tes armes et leur DPS comparé à celle que tu portes.</p>'],
+  relics:['Équipe des reliques : elles s\'ouvrent pendant la mission.',`<p>En mission, ${REACT_N} réactifs (ennemis au halo doré) ouvrent la première relique de la liste, puis la suivante. Chaque relique ouverte rapporte sa récompense et +25 essence, à la réussite de la mission.</p><p>Trois reliques d\'un même niveau fusionnent en une relique du niveau au-dessus. Le raffinage (50 essence) rend une relique éclatante : ses récompenses rares deviennent plus probables.</p>`],
+  mods:['Place tes mods dans les cases du héros et de l\'arme.','<p>Chaque mod coûte de la capacité ; la maîtrise, gagnée en mission, en ajoute. Une case alignée sur une polarité divise par deux le coût des mods de cette polarité. Un mod au rang maximum se surcharge avec ses copies (jusqu\'à 5 étoiles).</p>'],
+  pets:['Ton familier te suit en mission ; fais éclore tes œufs ici.','<p>Les œufs tombent parfois en ouvrant une relique (Ossuaire 8 %, Sanguine 15 %, Abysse 25 %). Deux familiers identiques de même rang fusionnent en un seul du rang au-dessus (★★★★★ au maximum). Un familier équipé gagne des niveaux (jusqu\'à 20) avec les ennemis abattus.</p>'],
+  forge_up:['L\'or du Camp achète des améliorations permanentes et des talents.','<p>Chaque rang s\'applique à tous tes héros ; les talents sont propres au héros. Quand toutes les améliorations sont au maximum, le <b>Prestige</b> s\'ouvre dans l\'onglet Héros.</p><p>La sauvegarde (exporter, importer) se trouve maintenant dans <b>Réglages</b>.</p>'],
+  forge_affix:['Touche Source ou Cible, puis un objet, puis l\'affixe à prendre.','<p>La source est détruite ; son affixe passe sur la cible, qui la gagne, la renforce ou la remplace. Le coût en essence dépend de la rareté de la source. Une affixe déjà plus forte sur la cible ne peut pas être remplacée par une plus faible.</p>'],
+  forge_seals:['Pose un sceau légendaire sur un objet porté.','<p>Les sceaux tombent seulement en Brèche (le mode à plusieurs), sur les Gardiens et les élites ; 100 éclats s\'échangent contre un sceau au hasard. Un sceau par objet, en plus de ses affixes.</p>']};
+function drawCamp(){
+  if(campTab==='affix'){campTab='forge';forgeSub='affix'}
+  const fk=campTab==='forge'?'forge_'+forgeSub:campTab;
+  {const h=document.getElementById('campHelp');if(h)h.href='aide/index.html#'+(campTab==='pets'?'familiers':campTab==='forge'?(forgeSub==='affix'?'camp-affix':forgeSub==='seals'?'camp-affix':'camp-forge'):'camp-'+campTab)}
   $('campGold').innerHTML=`<span class="coin"></span>${meta.gold}<span class="e"><span class="essi"></span>${meta.essence}</span>`;
   document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.tab===campTab)));
-  const body=$('campBody');
-  body.innerHTML=campTab==='affix'?campSeals()+campAffix():campTab==='equip'?campEquip():campTab==='arsenal'?campArsenal2():campTab==='relics'?campRelics():campTab==='mods'||campTab==='pets'?'<div id="modsCamp" class="col"></div>':campForge();
+  const body=$('campBody'),M=CAMP_MORE[fk],more=M?cxMore(fk,M[0],M[1]):'';
+  let h='';
+  if(campTab==='forge'){h=subTabs([['up','Améliorations'],['affix','Affixes'],['seals','Sceaux',SEAL_IDS.some(id=>meta.seals[id]>0)&&!Object.values(meta.gear).some(i=>i&&i.seal)?1:0]],forgeSub,'fsub')+more+(forgeSub==='affix'?campAffix():forgeSub==='seals'?campSeals():campForge())}
+  else if(campTab==='mods'||campTab==='pets')h=more+'<div id="modsCamp" class="col"></div>';
+  else h=more+(campTab==='equip'?campEquip()+prestSection():campTab==='arsenal'?campArsenal2():campTab==='relics'?campRelics():'');
+  body.innerHTML=h;
   if(campTab==='pets'){if(modTab!=='p'){modTab='p';modSel=null;modSF=null;modPF='all';alSel=null}renderMods('modsCamp')}
   else if(campTab==='mods'){if(modTab==='p'){modTab='h';modSel=null;modSF=null;modPF='all';alSel=null}renderMods('modsCamp')}
   tabBadges();
-  const ft=campTab==='affix'?affixFoot():'';$('campFoot').innerHTML=ft;$('campFoot').hidden=!ft;$('campFoot').className='cx-sheet__foot'+(ft.includes('cx-hint')?' stack':'');
+  const dk=typeof campDockHtml==='function'?campDockHtml():'';$('campDock').innerHTML=dk;$('campDock').hidden=!dk;
+  const ft=dk?'':campFootHtml();$('campFoot').innerHTML=ft;$('campFoot').hidden=!ft;$('campFoot').className='cx-sheet__foot'+(ft.includes('cx-hint')?' stack':'');
 }
-document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{campTab=t.dataset.tab;campSel=null;campMsg='';recyConfirm=false;drawCamp();$('campBody').parentElement.scrollTop=0});
+// L'action principale de l'onglet, collée en bas de la feuille.
+function campFootHtml(){
+  if(campTab==='forge'&&forgeSub==='affix')return affixFoot();
+  if(campTab==='equip'){const pn=Object.keys(bestPlan(curEq(),meta.stash)).length;return pn?`<button class="cx-btn cx-btn--primary" data-cact="bestall">Équiper le meilleur · ${pn}</button>`:''}
+  if(campTab==='relics'){relicQFix();const ne=relToEquip(relTier);if(!ne)return '';const sh=relTier==='g'?'Givre':relTier==='f'?'Forgées':relTier==='all'?'':RTIER[+relTier].n;return `<button class="cx-btn cx-btn--primary" data-cact="rqtype">Tout équiper${sh?' · '+sh:''} · ${ne}</button>`}
+  return '';
+}
+const campScroll={};
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{const sc=$('campBody').parentElement;campScroll[campTab]=sc.scrollTop;campTab=t.dataset.tab;campSel=null;campBack=null;campMsg='';recyConfirm=false;drawCamp();sc.scrollTop=campScroll[campTab]||0});
 $('campSheet').addEventListener('click',e=>{
-  const b=e.target.closest('button');if(!b||b.disabled||b.closest('#modsCamp')||!b.closest('#campBody,#campFoot'))return;
+  {const b=e.target.closest('#campDock [data-act]');if(b&&!b.disabled){modAct(b.dataset.act,b.dataset);return}}
+  const b=e.target.closest('button');if(!b||b.disabled||b.closest('#modsCamp')||!b.closest('#campBody,#campFoot,#campDock'))return;campClick(b)});
+// Actions du Camp (aussi appelées depuis Réglages pour la sauvegarde).
+function campClick(b){
   const d=b.dataset;
   if(d.slot)campSel={slot:d.slot};
   else if(d.stash)campSel={stash:+d.stash};
@@ -416,15 +427,15 @@ $('campSheet').addEventListener('click',e=>{
     else if(a==='sfilter'){stF=arg;stP=0}
     else if(a==='ssort'){stS=arg;stP=0}
     else if(a==='spage'){stP+=+arg}
-    else if(a==='lock'){const it=campSel&&campSel.stash?meta.stash.find(i=>i.id===campSel.stash):campSel&&campSel.slot?meta.gear[campSel.slot]:null;if(it){it.lock=!it.lock;toast(it.lock?'Objet verrouillé':'Objet déverrouillé')}}
+    else if(a==='lock'){const it=campSel&&campSel.stash?meta.stash.find(i=>i.id===campSel.stash):campSel&&campSel.slot?meta.gear[campSel.slot]:null;if(it){it.lock=!it.lock;cxUndo(`${esc(itemName(it))} ${it.lock?'verrouillé':'déverrouillé'}`,()=>{it.lock=!it.lock})}}
     else if(a==='recyask')recyConfirm=true;
     else if(a==='recycancel')recyConfirm=false;
     else if(a==='recyall'){const rec=meta.stash.filter(i=>!(i.type==='Prime'||i.type==='Sanguin'||i.type==='Abyssal'||i.up||i.lock));let e=0;for(const it of rec)e+=RAR[it.r].shard*2;meta.stash=meta.stash.filter(i=>i.type==='Prime'||i.type==='Sanguin'||i.type==='Abyssal'||i.up||i.lock);meta.essence+=e;recyConfirm=false;campSel=null;toast(`${rec.length} objet${rec.length>1?'s':''} recyclé${rec.length>1?'s':''} · +${e} essence`)}
     if(a==='bestall'){const plan=bestPlan(curEq(),meta.stash),names=[];for(const sl in plan){const it=plan[sl];meta.stash=meta.stash.filter(i=>i!==it);const old=meta.gear[sl];if(old)meta.stash.push(old);meta.gear[sl]=it;names.push(`<span style="color:${RAR[it.r].c}">${esc(itemName(it))}</span>`)}campSel=null;if(names.length)toast('Équipé : '+names.join(', '))}
     if(a==='equip'){const it=meta.stash.find(i=>i.id===campSel.stash);if(it){meta.stash=meta.stash.filter(i=>i!==it);const old=meta.gear[it.slot];if(old)meta.stash.push(old);meta.gear[it.slot]=it;campSel={slot:it.slot}}}
-    else if(a==='recycle'){const it=meta.stash.find(i=>i.id===campSel.stash);if(it&&!it.lock){meta.stash=meta.stash.filter(i=>i!==it);const pb=primeBp(it);
-      if(pb){const e=primeRecyEss(it);meta.essence+=e;const i=giveFrag(pb);toast(`<b style="color:${RAR[it.r].c}">${esc(it.name)}</b> recyclé : +${e} essence et le fragment ${bpdef(pb).frag[i]}`)}
-      else meta.essence+=RAR[it.r].shard*2+Math.floor(upInvested(it.up)/2);campSel=null}}
+    else if(a==='recycle'){const it=meta.stash.find(i=>i.id===campSel.stash);if(it&&!it.lock){const L=invList(),li=L.indexOf(it),nx=L[li+1]||L[li-1];meta.stash=meta.stash.filter(i=>i!==it);const pb=primeBp(it),e=recyGain(it);meta.essence+=e;let fi=-1;
+      if(pb)fi=giveFrag(pb);campSel=nx?{stash:nx.id}:null;
+      cxUndo(`<b>${esc(itemName(it))}</b> recyclé · +${e} essence${pb?` · fragment ${bpdef(pb).frag[fi]}`:''}`,()=>{meta.stash.push(it);meta.essence-=e;if(pb&&fi>=0&&meta.parts[pb])meta.parts[pb][fi]=Math.max(0,meta.parts[pb][fi]-1);campSel={stash:it.id}})}}
     else if(a==='upg'){const k=+arg;let it=null,isW=false,wid=null;
       if(campSel&&campSel.slot==='arme'){isW=true;wid=meta.wpn[heroCls]&&ownedW(meta.wpn[heroCls])?meta.wpn[heroCls]:WPN[heroCls][0].id}
       else if(campSel&&campSel.slot)it=meta.gear[campSel.slot];else if(campSel&&campSel.stash)it=meta.stash.find(i=>i.id===campSel.stash);
@@ -434,6 +445,12 @@ $('campSheet').addEventListener('click',e=>{
     else if(a==='toarsenal'){campTab='arsenal';campSel=null}
     else if(a==='wequip'){if(ownedW(arg))meta.wpn[heroCls]=arg}
     else if(a==='arsv'){arsView=arg}
+    else if(a==='fsub'){forgeSub=arg;campSel=null}
+    else if(a==='dclose'){campSel=null}
+    else if(a==='dnav'){const L=invList(),i=L.findIndex(x=>campSel&&x.id===campSel.stash),n=L[i+(+arg)];if(n)campSel={stash:n.id}}
+    else if(a==='xftake'||a==='xfrecv'){const sc=$('campBody').parentElement.scrollTop;campBack={tab:campTab,sel:campSel,scroll:sc,label:{equip:'Héros',arsenal:'Armurerie'}[campTab]||'Héros',mode:a==='xfrecv'?'recv':'take'};
+      xf=a==='xftake'?{src:arg,k:'',dst:'',rep:'',pick:'dst'}:{src:'',k:'',dst:arg,rep:'',pick:'src'};campTab='forge';forgeSub='affix';campSel=null;drawCamp();$('campBody').parentElement.scrollTop=0;return}
+    else if(a==='goback'){const B=campBack;campBack=null;if(B){campTab=B.tab;campSel=B.sel;drawCamp();$('campBody').parentElement.scrollTop=B.scroll||0;return}}
     else if(a==='wrecy'){wRecy=arg}
     else if(a==='wrecyno'){wRecy=null}
     else if(a==='wrecyok'){const b=bpdef(arg);if(b&&ownedW(arg)&&b.bp>0&&(meta.wpn[b.cls]||WPN[b.cls][0].id)!==arg){const e=wRecyEss(b);delete meta.built[arg];delete meta.wlv[arg];if(meta.waff)delete meta.waff[arg];meta.essence+=e;const i=giveFrag(arg);
@@ -490,39 +507,51 @@ $('campSheet').addEventListener('click',e=>{
     else if(a==='start'){meta.start=+arg}
     saveMeta();syncEq();
   }
-  drawCamp();
-});
+  drawCamp();if(!$('settings').hidden)drawSettings();
+}
 $('campBody').addEventListener('input',e=>{if(e.target.id==='saveIn')saveDraft=e.target.value});
 $('campBody').addEventListener('change',e=>{if(e.target.id==='xfSrc'){xf={src:e.target.value,k:'',dst:xf.dst===e.target.value?'':xf.dst,rep:''};drawCamp()}else if(e.target.id==='xfDst'){xf.dst=e.target.value;xf.rep='';drawCamp()}});
 $('campBody').addEventListener('change',e=>{if(e.target.id!=='saveFile'||!e.target.files[0])return;const r=new FileReader();
   r.onload=()=>{saveDraft=String(r.result);const dd=parseCode(saveDraft);if(dd){savePending=dd;saveMsg=''}else saveMsg='Ce fichier ne contient pas de sauvegarde JSON valide.';drawCamp()};r.readAsText(e.target.files[0])});
 function openCamp(){$('camp').hidden=false;campSel=null;campMsg='';recyConfirm=false;drawCamp()}
 function closeCamp(){$('camp').hidden=true;if(!started)newGame();refreshMenus()}
+// Accueil : lignes résumées (Biome, Niveau, Difficulté, Reliques) ; Lancer et le Camp restent en bas.
+function diffLine(i){const D=i===3?dif3():DIFF[i],iv=Math.round(D.iv*(meta.mode==='capture'?1.5:1));
+  return (i===3?`Monstres : vie ×${fmtN(D.hp)}, dégâts ×${fmtN(D.dm)} · affixes +${Math.round(D.aq*100)} % · `:'')+`${D.cnt>1?`${D.cnt} Gardiens`:'1 Gardien'} toutes les ${iv} s · ${D.loot?`butin et or +${Math.round(D.loot*100)} %`:'butin normal'}`}
+const dif3=()=>{const sv=meta.diff;meta.diff=3;const D=dif();meta.diff=sv;return D};
 function refreshMenus(){
   $('introGold').textContent=meta.gold;
-  const st=clamp(meta.start|0||1,1,LV_MAX);$('startBtn').textContent=`Lancer · ${MODES[meta.mode].n} · niveau ${st}${meta.diff?` · ${dif().n}`:''}${meta.biome?' · '+BIOMES[meta.biome].n:''}`;
-  if(document.activeElement!==$('lvIn'))$('lvIn').value=st;
-  const lm=lootMul(st);$('lvDesc').innerHTML=st===1?'Niveau de base. Monte le niveau pour plus de butin, mais des monstres plus nombreux et plus forts.'
-    :`Butin ×${lm.toFixed(2).replace(/\.?0+$/,'').replace('.',',')} (équipements, reliques, fragments) · or ×${goldMul(st).toFixed(1).replace('.',',')} · monstres : vie ×${fmtN((1+.75*(st-1))*Math.pow(1.025,st-1))}, dégâts ×${fmtN((1+.35*(st-1))*Math.pow(1.012,st-1))}, plus nombreux`;
-  $('bestTxt').textContent=best?`Ton record : ${fmt(best)} en mission`:'';
-  document.querySelectorAll('.cls[data-m]').forEach(b=>b.setAttribute('aria-checked',String(b.dataset.m===meta.mode)));
+  {let n=0;try{tabBadges();document.querySelectorAll('#camp .cx-tab__badge').forEach(b=>{n+=parseInt(b.textContent)||0})}catch(e){}const cb=$('campBadge');if(cb){cb.hidden=!n;cb.textContent=n>9?'9+':n;cb.setAttribute('aria-label',`${n} à voir`)}}
+  const st=clamp(meta.start|0||1,1,LV_MAX);$('startBtn').textContent=`Lancer · ${MODES[meta.mode].n} · niveau ${st}`;
+  if(document.activeElement!==$('lvIn'))$('lvIn').value=st;$('lvMinus').disabled=st<=1;$('lvPlus').disabled=st>=LV_MAX;
+  const lm=lootMul(st);$('lvDesc').textContent=st===1?'Plus haut : plus de butin, monstres plus forts':`Butin ×${lm.toFixed(2).replace(/\.?0+$/,'').replace('.',',')} · or ×${goldMul(st).toFixed(1).replace('.',',')} · monstres plus forts`;
+  $('bestTxt').textContent=best?`Meilleure survie : ${fmt(best)}`:'';
+  document.querySelectorAll('.cx-pick[data-m]').forEach(b=>b.setAttribute('aria-checked',String(b.dataset.m===meta.mode)));
   $('modeDesc').textContent=MODES[meta.mode].d;
-  {const bi=Math.max(0,Math.min(BIOMES.length-1,meta.biome|0));$('bioSel').innerHTML=BIOMES.map((b,i)=>`<button class="chip" role="radio" data-bio="${i}" aria-checked="${i===bi}" aria-pressed="${i===bi}">${i?'❄ ':''}${b.n}</button>`).join('');$('bioDesc').textContent=BIOMES[bi].d}
+  {const bi=Math.max(0,Math.min(BIOMES.length-1,meta.biome|0));$('bioVal').textContent=(bi?'❄ ':'')+BIOMES[bi].n}
   relicQFix();const rn=meta.relicQ.length,rt=Object.values(meta.relics).reduce((n,a)=>n+(a[0]||0)+(a[1]||0),0);
-  $('relicBtn').textContent=rn?`${rn} · Gérer`:rt?'Aucune · Équiper':'Aucune relique';$('relicBtn').disabled=!rt;
+  $('relicVal').textContent=rn?`${rn} équipée${rn>1?'s':''}`:'Aucune';$('relicVal').style.color=rn?'':'var(--muted)';
   const D=dif(),di=Math.max(0,Math.min(3,meta.diff|0));
-  $('diffSel').innerHTML=DIFF.map((d,i)=>`<button class="chip" role="radio" data-d="${i}" aria-checked="${i===di}" aria-pressed="${i===di}" style="${i===di?`border-color:${d.c};color:${d.c}`:''}">${d.n}</button>`).join('');
-  const iv=Math.round(D.iv*(meta.mode==='capture'?1.5:1));
-  $('tormSel').hidden=di!==3;if(di===3){$('tormVal').textContent=`Tourment ${ROM[D.tier-1]}`;$('tormMinus').disabled=D.tier<=1;$('tormPlus').disabled=D.tier>=10}
-  $('diffDesc').innerHTML=(di===3?`Monstres : vie ×${fmtN(D.hp)}, dégâts ×${fmtN(D.dm)} · affixes +${Math.round(D.aq*100)} % · objets ancestraux ${fmtN(D.anc*100)} % · `:'')+`${D.cnt>1?`${D.cnt} Gardiens`:'1 Gardien'} toutes les ${iv} s${meta.mode==='defense'?` (Défense : ${D.cnt>1?`${D.cnt} Gardiens`:'1 Gardien'} toutes les 5 vagues)`:''} · ${D.loot?`butin et or +${Math.round(D.loot*100)} %`:'butin normal'}`;
+  $('diffVal').textContent=D.n;$('diffVal').style.color=di?DIFF[di].c:'';
+  $('diffDesc').textContent=di?diffLine(di):'';
 }
+// Feuille de choix (SettingRow → Sheet + Choice) : toucher une option la choisit et ferme la feuille.
+let pickOnClose=null;
+function openPick(title,opts,onPick,extra){$('pickTitle').textContent=title;
+  $('pickBody').innerHTML=`<div class="cx-choices" role="radiogroup" aria-label="${title}">${opts.map((o,i)=>`<button class="cx-choice" role="radio" data-pick="${i}" aria-checked="${!!o.on}" style="--cc:${o.c||'var(--ink)'}"><span class="cx-choice__key">${i+1}</span><span class="cx-choice__name">${o.n}</span><p class="cx-choice__desc">${o.d||''}</p><span class="cx-choice__go" aria-hidden="true">›</span></button>`).join('')}</div>${extra?extra():''}`;
+  $('pickBody').onclick=e=>{const b=e.target.closest('[data-pick]');if(b){const keep=onPick(+b.dataset.pick);if(keep)openPick(title,keep.opts||opts,onPick,extra);else closePick();return}
+    const t=e.target.closest('[data-torm]');if(t){setTorm((meta.torm|0||1)+(+t.dataset.torm));openPick(title,diffOpts(),onPick,extra)}};
+  $('pickSheet').hidden=false}
+function closePick(){$('pickSheet').hidden=true}
+$('pickClose').onclick=closePick;$('pickSheet').addEventListener('click',e=>{if(e.target.id==='pickSheet')closePick()});
+const diffOpts=()=>DIFF.map((d,i)=>({n:i===3?`${d.n} · ${dif3().n.replace('Tourment ','palier ')}`:d.n,d:diffLine(i),c:i?d.c:'var(--ink)',on:i===(meta.diff|0)}));
+const tormExtra=()=>(meta.diff|0)===3?`<div class="cx-rows"><div class="cx-row"><span class="cx-row__k" style="color:var(--ink)">Palier de Tourment<small>Plus haut : monstres plus forts, plus d'objets ancestraux</small></span><span class="cx-stepper"><button type="button" data-torm="-1" ${dif().tier<=1?'disabled':''} aria-label="Baisser le palier">−</button><b style="min-width:3.2em;display:grid;place-items:center;font:700 16px/1 var(--font-body);color:#ff6a3a">${ROM[dif().tier-1]}</b><button type="button" data-torm="1" ${dif().tier>=10?'disabled':''} aria-label="Monter le palier">+</button></span></div></div>`:'<p class="cx-hint" style="margin:0">Toucher une difficulté la choisit et ferme la feuille.</p>';
+$('rowDiff').onclick=()=>openPick('Difficulté',diffOpts(),i=>{meta.diff=i;saveMeta();newGame();refreshMenus();return i===3?{opts:diffOpts()}:null},tormExtra);
+$('rowBio').onclick=()=>openPick('Biome',BIOMES.map((b,i)=>({n:(i?'❄ ':'')+b.n,d:b.d,c:i?'#9fd0ff':'var(--ink)',on:i===(meta.biome|0)})),i=>{meta.biome=i;saveMeta();newGame();refreshMenus()});
 const setLv=v=>{meta.start=clamp(Math.round(+v)||1,1,LV_MAX);saveMeta();newGame();refreshMenus()};
 $('lvMinus').onclick=()=>setLv((meta.start|0||1)-1);$('lvPlus').onclick=()=>setLv((meta.start|0||1)+1);
 $('lvIn').addEventListener('change',e=>{setLv(e.target.value);e.target.value=meta.start});
 $('relicBtn').onclick=()=>{campTab='relics';openCamp()};
-$('bioSel').addEventListener('click',e=>{const b=e.target.closest('[data-bio]');if(!b)return;meta.biome=+b.dataset.bio;saveMeta();newGame();refreshMenus()});
 const setTorm=v=>{meta.torm=Math.max(1,Math.min(10,v));saveMeta();newGame();refreshMenus()};
-$('tormMinus').onclick=()=>setTorm((meta.torm|0||1)-1);$('tormPlus').onclick=()=>setTorm((meta.torm|0||1)+1);
-$('diffSel').addEventListener('click',e=>{const b=e.target.closest('[data-d]');if(!b)return;meta.diff=+b.dataset.d;saveMeta();newGame();refreshMenus()});
-document.querySelectorAll('.cls[data-m]').forEach(b=>b.onclick=()=>{meta.mode=b.dataset.m;saveMeta();newGame();refreshMenus()});
+document.querySelectorAll('.cx-pick[data-m]').forEach(b=>b.onclick=()=>{meta.mode=b.dataset.m;saveMeta();newGame();refreshMenus()});
 

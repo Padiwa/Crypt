@@ -22,12 +22,12 @@ function drawSettings(){
       ${tog('dmgNum','Chiffres de dégâts','Nombres au-dessus des ennemis touchés')}
       ${tog('vib','Vibrations','Quand tu es touché ou qu\'un légendaire tombe (téléphones Android)')}</section>
     <section class="cx-section"><h3 class="cx-section__label">Rendu</h3>
-      <div class="setrow"><div><b>${PX?'WebGL (PixiJS)':'Standard (Canvas)'}</b><span>WebGL est plus fluide ; le rendu standard sert de secours.</span></div><button class="cx-btn cx-btn--sm" id="setRend">${PX?'Passer au standard':'Essayer WebGL'}</button></div></section>`+(typeof updSection==='function'?updSection():'');
+      <div class="setrow"><div><b>${PX?'WebGL (PixiJS)':'Standard (Canvas)'}</b><span>WebGL est plus fluide ; le rendu standard sert de secours.</span></div><button class="cx-btn cx-btn--sm" id="setRend">${PX?'Passer au standard':'Essayer WebGL'}</button></div></section>`+`<section class="cx-section setsave">${typeof saveSection==='function'?saveSection():''}</section>`+(typeof updSection==='function'?updSection():'');
 }
 document.addEventListener('DOMContentLoaded',()=>{});
 (function wireSettings(){
   const body=$('setBody');
-  body.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  body.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.cact){if(!b.disabled)campClick(b);return}
     if(b.dataset.set){const k=b.dataset.set;SET[k]=!SET[k];if(k==='vib'&&SET.vib&&navigator.vibrate)navigator.vibrate(30)}
     else if(b.dataset.shake!=null){SET.shake=+b.dataset.shake;if(G)G.hshake=6}
     else if(b.dataset.hand){SET.hand=b.dataset.hand;applyHand()}
@@ -36,8 +36,10 @@ document.addEventListener('DOMContentLoaded',()=>{});
     else if(b.id==='setUpd'){UPD.check();return}
     else if(b.id==='setUpdGo'){location.reload();return}
     saveSet();drawSettings();SND.play('ui')});
-  body.addEventListener('input',e=>{const k=e.target.dataset.vol;if(!k)return;SET[k]=+e.target.value/100;$('sv_'+k).textContent=e.target.value+' %';SND.vol();saveSet()});
+  body.addEventListener('input',e=>{if(e.target.id==='saveIn'){saveDraft=e.target.value;return}const k=e.target.dataset.vol;if(!k)return;SET[k]=+e.target.value/100;$('sv_'+k).textContent=e.target.value+' %';SND.vol();saveSet()});
   body.addEventListener('change',e=>{if(e.target.dataset.vol==='sfx')SND.play('pick2')});
+  body.addEventListener('change',e=>{if(e.target.id!=='saveFile'||!e.target.files[0])return;const r=new FileReader();
+    r.onload=()=>{saveDraft=String(r.result);const dd=parseCode(saveDraft);if(dd){savePending=dd;saveMsg=''}else saveMsg='Ce fichier ne contient pas de sauvegarde JSON valide.';drawSettings()};r.readAsText(e.target.files[0])});
   $('closeSet').onclick=closeSettings;$('closeSetX').onclick=closeSettings;
   $('setBtn').onclick=()=>openSettings('intro');$('setBtnBag').onclick=()=>openSettings('bag');
 })();

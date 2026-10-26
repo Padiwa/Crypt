@@ -87,19 +87,27 @@ function petDrawPx(f,Q,alpha){if(!Q)return;const c=parseInt(PETS[Q.t].c.slice(1)
 
 /* ---------- Camp › Familier : collection, œufs, fusion ---------- */
 let petMsg='';
+let petColl=false;
+// Onglet Familier : le familier équipé d'abord, puis Œufs et Collection en lignes résumées.
 function petPanel(){const eq=petEq();
   const groups={};for(const p of meta.pets){const k=p.t+'|'+p.rk;(groups[k]||(groups[k]=[])).push(p)}
-  let h=`<section class="cx-section petsec"><h3 class="cx-section__label">Familiers</h3>
-    <p class="cx-hint" style="margin:0">Un familier te suit en mission. Les œufs donnent un familier au hasard ; ils tombent parfois en ouvrant une relique (Ossuaire 8 %, Sanguine 15 %, Abysse 25 %). Deux familiers identiques de même rang fusionnent en un seul du rang au-dessus (${RKS.repeat(PET_RK)} au maximum). Un familier gagne des niveaux (jusqu'à ${PET_LV}) avec les ennemis abattus quand il est équipé.</p>
-    <div class="actions" style="margin:0;align-items:center"><span class="cx-hint" style="margin:0;flex:1">Œufs : <b>${meta.eggs}</b></span><button class="btn${meta.eggs?' main':''}" data-pet="hatch" ${meta.eggs?'':'disabled'}>Faire éclore un œuf</button></div>`;
-  if(petMsg)h+=`<p class="empty" style="font-size:13px;color:var(--heal)">${petMsg}</p>`;
-  if(!meta.pets.length)h+=`<p class="cx-hint" style="margin:0">Aucun familier : fais éclore ton premier œuf.</p>`;
-  h+=`<ul class="petl">${meta.pets.slice().sort((a,b)=>(b.uid===meta.petEq)-(a.uid===meta.petEq)||b.rk-a.rk||b.lv-a.lv).map(p=>{const P=PETS[p.t],g=groups[p.t+'|'+p.rk],canF=p.rk<PET_RK&&g.length>=2,on=p.uid===meta.petEq,ps=petRkMul(p.rk)*petLvMul(p.lv);
-    return `<li class="${on?'on':''}"><span class="petic" style="--pc:${P.c}">${p.t==='corbeau'?'▲':p.t==='golem'?'■':p.t==='furet'?'⬮':'●'}</span><div class="petinfo"><b style="color:${P.c}">${P.n}</b> <span class="pstar">${RKS.repeat(p.rk)}</span><span class="cx-hint" style="margin:0">${P.role} · niveau ${p.lv} / ${PET_LV}${p.lv<PET_LV?` · ${p.xp|0} / ${petNeed(p.lv)}`:''} · puissance ×${fmtN(ps)}</span><span class="cx-hint" style="margin:0">${P.d}</span></div>
-      <div class="actions" style="margin:0">${on?'<span class="owned">Équipé</span>':`<button class="btn main" data-pet="eq" data-arg="${p.uid}">Équiper</button>`}${canF?`<button class="btn buy" data-pet="fuse" data-arg="${p.uid}" ${meta.essence<PET_FUSE(p.rk)?'disabled':''}>Fusionner ${RKS.repeat(p.rk)}+${RKS.repeat(p.rk)} → ${RKS.repeat(p.rk+1)} · <span class="essi"></span>${PET_FUSE(p.rk)}</button>`:''}${on?`<button class="btn" data-pet="uneq">Retirer</button>`:''}</div></li>`}).join('')}</ul>`;
-  h+=eq?`<p class="cx-hint" style="margin:0">Build du familier ci-dessous : ${eq.rk>=3?4:3} cases (4 dès ${RKS.repeat(3)}), capacité ${8+2*eq.rk} + niveau / 2. Les mods marqués d'un nom de familier ne fonctionnent qu'avec lui.</p>`:'';
-  return h+'</section>'}
+  const fusN=Object.values(groups).filter(g=>g.length>=2&&g[0].rk<PET_RK).length;
+  let h='';
+  if(eq){const P=PETS[eq.t],ps=petRkMul(eq.rk)*petLvMul(eq.lv),need=petNeed(eq.lv);
+    h+=`<article class="cx-card" style="border-color:var(--heal-line)"><div class="cx-card__head"><h4 class="cx-card__title" style="color:${P.c}">${P.n}</h4><span style="color:var(--gold);font-size:13px">${RKS.repeat(eq.rk)}</span><span class="cx-tag cx-tag--heal" style="margin-left:auto">Équipé</span></div>
+      <div class="cx-card__meta">${P.role} · puissance ×${fmtN(ps)}</div>
+      <div class="cx-meter"><div class="cx-meter__top"><span>Niveau ${eq.lv} / ${PET_LV}${eq.lv<PET_LV?' · expérience':''}</span><b>${eq.lv<PET_LV?`${eq.xp|0} / ${need}`:'max'}</b></div><div class="cx-meter__bar"><i style="--v:${eq.lv<PET_LV?Math.min(100,(eq.xp|0)/need*100):100}%"></i></div></div>
+      <p class="cx-hint" style="margin:0">${P.d}</p></article>`}
+  else h+=`<p class="cx-hint" style="margin:0">${meta.pets.length?'Aucun familier équipé : choisis-en un dans ta collection.':'Aucun familier : fais éclore ton premier œuf.'}</p>`;
+  if(petMsg)h+=`<p class="cx-hint" style="margin:0;color:var(--heal)">${petMsg}</p>`;
+  h+=`<div class="cx-rows"><div class="cx-row"><span class="cx-row__k" style="color:var(--ink)">Œufs · ${meta.eggs}<small>Un familier au hasard</small></span><button class="cx-btn cx-btn--sm${meta.eggs?' cx-btn--primary':''}" data-pet="hatch" style="margin:0" ${meta.eggs?'':'disabled'}>Faire éclore</button></div>
+    <button class="cx-row" data-pet="coll" aria-expanded="${petColl}"><span class="cx-row__k">Collection</span><span class="cx-row__v">${meta.pets.length} familier${meta.pets.length>1?'s':''}${fusN?` · ${fusN} fusion${fusN>1?'s':''} possible${fusN>1?'s':''}`:''}</span></button></div>`;
+  if(petColl&&meta.pets.length)h+=`<ul class="petl">${meta.pets.slice().sort((a,b)=>(b.uid===meta.petEq)-(a.uid===meta.petEq)||b.rk-a.rk||b.lv-a.lv).map(p=>{const P=PETS[p.t],g=groups[p.t+'|'+p.rk],canF=p.rk<PET_RK&&g.length>=2,on=p.uid===meta.petEq,ps=petRkMul(p.rk)*petLvMul(p.lv);
+    return `<li class="${on?'on':''}"><span class="petic" style="--pc:${P.c}">${p.t==='corbeau'?'▲':p.t==='golem'?'■':p.t==='furet'?'⬮':'●'}</span><div class="petinfo"><b style="color:${P.c}">${P.n}</b> <span class="pstar">${RKS.repeat(p.rk)}</span><span class="cx-hint" style="margin:0">${P.role} · niveau ${p.lv} / ${PET_LV} · puissance ×${fmtN(ps)}</span></div>
+      <div class="cx-actions" style="margin:0">${on?`<button class="cx-btn cx-btn--sm cx-btn--ghost" data-pet="uneq">Retirer</button>`:`<button class="cx-btn cx-btn--sm" data-pet="eq" data-arg="${p.uid}">Équiper</button>`}${canF?`<button class="cx-btn cx-btn--sm cx-btn--cost" data-pet="fuse" data-arg="${p.uid}" ${meta.essence<PET_FUSE(p.rk)?'disabled':''}>Fusionner → ${RKS.repeat(p.rk+1)} <span class="cx-price ess"><i class="cx-ess"></i>${PET_FUSE(p.rk)}</span></button>`:''}</div></li>`}).join('')}</ul>`;
+  return h}
 function petAct(a,arg){petMsg='';
+  if(a==='coll'){petColl=!petColl;modsChanged();return}
   if(a==='hatch'){if(meta.eggs<=0)return;meta.eggs--;const t=pick(PET_IDS),p={uid:petUid++,t,rk:1,lv:1,xp:0};meta.pets.push(p);if(!meta.petEq)meta.petEq=p.uid;petMsg=`L'œuf éclot : ${PETS[t].n} ${RKS} !`;SND.play('leg')}
   else if(a==='eq'){meta.petEq=+arg}
   else if(a==='uneq'){meta.petEq=null}

@@ -47,7 +47,7 @@ function card(it,mode){
 
 /* ---------- Pause ---------- */
 let runSel=null;
-function openBag(){if(G.over)return;paused=true;resetJoy();$('bag').hidden=false;runSel=null;G.fresh=0;$('rendTxt').textContent=PX?'Rendu WebGL (PixiJS)':'Rendu standard';$('rendBtn').textContent=PX?'Passer au rendu standard':'Essayer WebGL';drawBag()}
+function openBag(){if(G.over)return;paused=true;resetJoy();$('bag').hidden=false;runSel=null;modSel=null;G.fresh=0;$('bag').querySelectorAll('details[data-more]').forEach(d=>d.open=!!(typeof moreOpen!=='undefined'&&moreOpen[d.dataset.more]));$('rendTxt').textContent=PX?'Rendu WebGL (PixiJS)':'Rendu standard';$('rendBtn').textContent=PX?'Passer au rendu standard':'Essayer WebGL';drawBag()}
 function closeBag(){$('bag').hidden=true;paused=false;last=performance.now()}
 $('bagBtn').addEventListener('click',()=>{if(started&&!G.over&&$('extract').hidden&&$('lvlup').hidden)$('bag').hidden?openBag():closeBag()});
 $('closeBag').addEventListener('click',closeBag);$('closeBagX').addEventListener('click',closeBag);
@@ -55,22 +55,35 @@ $('rendBtn').addEventListener('click',()=>{if(PX){dropPixi('choix du joueur');tr
 function drawBag(){
   $('slots').innerHTML=slotsHtml(G.eq,false);
   $('statgrid').innerHTML=statRows(S);
+  $('bagKey').innerHTML=typeof keyStats==='function'?keyStats(S):'';
   $('runUpsTitle').textContent=`Bonus de la partie · héros niveau ${G.hl}`;
   const ru=RUP.filter(u=>G.run[u.k]);
-  $('runUps').innerHTML=ru.length?ru.map(u=>`<span style="border-color:${u.c}">${u.n} <b>${G.run[u.k]>=u.max?'max':`${G.run[u.k]} / ${u.max}`}</b></span>`).join(''):'<p class="empty" style="font-size:13px">Ramasse les cristaux d\'expérience pour monter de niveau et choisir des bonus.</p>';
-  const L=G.loot;
-  const rplan=L.items.length?bestPlan(G.eq,L.items):{},rpn=Object.keys(rplan).length;
-  $('runLoot').innerHTML=(L.items.length||L.parts.length||L.relics.length)
-    ?(rpn?`<div class="actions" style="margin:0 0 8px"><button class="btn" id="bestRun">Équiper le meilleur butin · ${rpn}</button></div>`:'')+(L.items.length?`<div class="grid">${L.items.map(it=>cellHtml(it,'run',runSel===it.id,better(it))).join('')}</div>`:'')
-      +(runSel&&L.items.some(i=>i.id===runSel)?card(L.items.find(i=>i.id===runSel),'run'):'')
+  $('runUps').innerHTML=ru.length?ru.map(u=>`<span style="border-color:${u.c}">${u.n} <b>${G.run[u.k]>=u.max?'max':`${G.run[u.k]} / ${u.max}`}</b></span>`).join(''):'<p class="cx-hint" style="margin:0">Ramasse les cristaux d\'expérience pour monter de niveau et choisir des bonus.</p>';
+  const L=G.loot,n=L.items.length;
+  $('lootTitle').textContent=`Butin de la partie · ${n+L.relics.length+L.parts.length}`;
+  const rplan=n?bestPlan(G.eq,L.items):{},rpn=Object.keys(rplan).length;
+  if(runSel&&!L.items.some(i=>i.id===runSel))runSel=null;
+  $('runLoot').innerHTML=(n||L.parts.length||L.relics.length)
+    ?(rpn?`<button class="cx-btn cx-btn--block" id="bestRun" style="margin:0 0 3px">Équiper le meilleur butin · ${rpn}</button>`:'')+(n?`<div class="grid">${L.items.map(it=>cellHtml(it,'run',runSel===it.id,better(it))).join('')}</div><p class="cx-hint" style="margin:0">▲ : meilleur que ce que tu portes. Ce que tu n'équipes pas part au coffre si tu sors, et se perd si tu meurs.</p>`:'')
       +(L.relics.length?(()=>{const g={};for(const id of L.relics)g[id]=(g[id]||0)+1;return `<ul class="partlist">${Object.keys(g).sort((a,b)=>RELICS[b].t-RELICS[a].t).map(id=>`<li>Relique <b style="color:${RTIER[RELICS[id].t].c}">${relicName(id)}</b>${g[id]>1?` ×${g[id]}`:''}</li>`).join('')}</ul>`})():'')
       +(L.parts.length?`<ul class="partlist">${L.parts.map(p=>`<li>${partLabel(p)}</li>`).join('')}</ul>`:'')
-    :'<p class="empty">Rien pour l\'instant. Les monstres lâchent parfois des équipements et des reliques, les Gardiens toujours.</p>';
-  $('runLoot').querySelectorAll('[data-run]').forEach(b=>b.onclick=()=>{runSel=+b.dataset.run;drawBag()});
-  $('runLoot').querySelectorAll('[data-ract]').forEach(b=>b.onclick=()=>equipRun(+b.dataset.ract));
+    :'<p class="cx-hint" style="margin:0">Rien pour l\'instant. Les monstres lâchent parfois des équipements et des reliques, les Gardiens toujours.</p>';
+  $('runLoot').querySelectorAll('[data-run]').forEach(b=>b.onclick=()=>{const id=+b.dataset.run;runSel=runSel===id?null:id;modSel=null;drawBag()});
   if($('bestRun'))$('bestRun').onclick=()=>{const plan=bestPlan(G.eq,G.loot.items);for(const sl in plan){const it=plan[sl];G.loot.items=G.loot.items.filter(i=>i!==it);const old=meta.gear[sl];if(old)meta.stash.push(old);meta.gear[sl]=it;G.eq[sl]=it}saveMeta();refreshStats();runSel=null;toast(`${Object.keys(plan).length} objet${Object.keys(plan).length>1?'s':''} équipé${Object.keys(plan).length>1?'s':''}`);drawBag()};
+  if(modTab==='p'&&!petEq())modTab='h';
+  const bb=build(modTab==='p'?'h':modTab);$('bagModsT').textContent=`Mods · ${bActive(build('w')).length+bActive(build('h')).length} actifs`;
   renderMods('modsBag');
+  // fiche ancrée : objet du butin choisi (prioritaire sur le détail d'un mod)
+  if(runSel){const it=L.items.find(i=>i.id===runSel),cur=G.eq[it.slot];
+    $('bagDock').innerHTML=`<div class="cx-dock__head"><h3 class="cx-dock__title" style="color:${RAR[it.r].c}">${esc(itemName(it))}</h3><button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-bag="close" aria-label="Fermer le détail"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+      <span class="cx-dock__meta">${RAR[it.r].n} · ${SLOT[it.slot]} · niveau ${it.lvl} · ${cur?`remplace ${esc(itemName(cur))}`:'remplace un emplacement vide'}</span>
+      <ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.35"><li>${baseTxtOf(it.slot,fmtN(it.base.v))}</li>${Object.keys(it.aff).map(k=>`<li>${AFF[k].t(NOSCALE[k]?it.aff[k]:fmtN(it.aff[k]))}</li>`).join('')}</ul>
+      ${typeof cmpRows==='function'?cmpRows(G.eq,it):''}<button class="cx-btn cx-btn--primary cx-btn--block" data-bag="equip" data-arg="${it.id}" style="margin-top:4px">Équiper maintenant</button><p class="cx-hint" style="margin:0">Un objet équipé est gardé même si tu meurs. L'ancien part au coffre du Camp.</p>`;
+    $('bagDock').hidden=false;$('bagFoot').hidden=true}
+  else if(!modSel){$('bagDock').hidden=true;$('bagFoot').hidden=false}
 }
+$('bagDock').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;
+  if(b.dataset.bag==='close'){runSel=null;drawBag()}else if(b.dataset.bag==='equip')equipRun(+b.dataset.arg);else if(b.dataset.act)modAct(b.dataset.act,b.dataset)});
 /* ---------- Montée de niveau ---------- */
 function gainXp(v){
   // En coopération chacun reçoit l'expérience de tous les monstres, plus nombreux : on la divise d'autant pour garder le rythme du solo.
@@ -124,23 +137,23 @@ function modDetail(id){
   const where=k==='w'?`l'arme (${b.name})`:k==='p'?'le familier':'le héros';
   if(isA){
     costLine=`Aura du héros · rapporte +${m.cap+rk} de capacité`;
-    act=eq?'<button class="btn" data-act="unequip">Retirer</button>':`<button class="btn main" data-act="equip">${b.aura?'Remplacer l\'aura':'Équiper l\'aura'}</button>`;
+    act=eq?'<button class="cx-btn" data-act="unequip">Retirer</button>':`<button class="cx-btn cx-btn--primary" data-act="equip">${b.aura?'Remplacer l\'aura':'Équiper l\'aura'}</button>`;
     if(eq&&u>cap-(m.cap+rk)){why='Retirer cette aura ferait dépasser la capacité du héros : les mods en trop deviendraient inactifs.'}
   }else{
     const p=POL[MOD_POL[id]],bs0=bBest(b,id,rk),bs=(modSF!=null&&modSF<b.slots&&!b.load[modSF]&&b.kind===bKind(id))?{i:modSF,d:bDrain(b,id,rk,modSF)}:bs0,fits=bs.i>=0&&u+bs.d<=cap;
     costLine=`Mod ${k==='w'?'d\'arme':k==='p'?'de familier':'de héros'} · <span style="color:${p.c}">${p.s} ${p.n}</span> · `+(eq?`coûte ${bDrain(b,id,rk,slot)} dans la case ${slot+1}`:`coûte ${modDrain(id,rk)}, ${Math.ceil(modDrain(id,rk)/2)} dans une case ${p.n}`);
     if(!ok){why=`Réservé à : ${m.cls.map(x=>CLS[x].n).join(', ')}.`}
-    else if(m.pt&&!eq&&(!petEq()||petEq().t!==m.pt)){why=`Ne fonctionne qu'avec le ${PETS[m.pt].n}.`;act=`<button class="btn" data-act="equip" ${!fits?'disabled':''}>Équiper quand même</button>`}
-    else if(eq)act='<button class="btn" data-act="unequip">Retirer</button>';
-    else{act=`<button class="btn main" data-act="equip" ${!fits?'disabled':''}>Équiper${bs.i>=0?` · case ${bs.i+1}`:''}</button>`;
+    else if(m.pt&&!eq&&(!petEq()||petEq().t!==m.pt)){why=`Ne fonctionne qu'avec le ${PETS[m.pt].n}.`;act=`<button class="cx-btn" data-act="equip" ${!fits?'disabled':''}>Équiper quand même</button>`}
+    else if(eq)act='<button class="cx-btn" data-act="unequip">Retirer</button>';
+    else{act=`<button class="cx-btn cx-btn--primary" data-act="equip" ${!fits?'disabled':''}>Équiper${bs.i>=0?` · case ${bs.i+1}`:''}</button>`;
       why=bs.i<0?`Toutes les cases de ${where} sont prises. Retire un mod d'abord.`:!fits?`Capacité insuffisante : il faut ${bs.d} points, il en reste ${Math.max(0,cap-u)}.`:''}
     fuseBlocked=eq&&u-bDrain(b,id,rk,slot)+bDrain(b,id,rk+1,slot)>cap;
   }
-  const fuse=maxed?'<span class="owned" style="align-self:center;flex:1;text-align:center">Rang max</span>':`<button class="btn buy" data-act="fuse" ${meta.essence<fc||fuseBlocked?'disabled':''}>Fusionner · ${fc} essence</button>`;
+  const fuse=maxed?'<span class="owned" style="align-self:center;flex:1;text-align:center">Rang max</span>':`<button class="cx-btn cx-btn--cost" data-act="fuse" ${meta.essence<fc||fuseBlocked?'disabled':''}>Fusionner <span class="cx-price ess"><i class="cx-ess"></i>${fc}</span></button>`;
   if(!why&&fuseBlocked&&!maxed)why='Monter ce mod de rang dépasserait la capacité.';
-  return `<div class="card"><div class="nm" style="color:${c}">${m.n}</div><div class="meta">${MOD_RAR[m.r].n} · ${costLine} · rang ${rk} / ${m.max}</div>
-    <ul><li>${m.t(modVal(id,rk))}</li>${maxed?'':`<li style="color:var(--muted)">Rang ${rk+1} : ${m.t(modVal(id,rk+1))}</li>`}</ul>
-    <div class="actions">${act}${fuse}</div>${why?`<p class="empty" style="font-size:13px">${why}</p>`:''}${starBlock(id,b,k,slot)}</div>`;
+  return `<span class="cx-dock__meta">${MOD_RAR[m.r].n} · ${costLine} · rang ${rk} / ${m.max}</span>
+    <p>${m.t(modVal(id,rk))}${maxed?'':` <span style="color:var(--muted)">· rang ${rk+1} : ${m.t(modVal(id,rk+1))}</span>`}</p>
+    <div class="cx-actions">${act}${fuse}</div>${why?`<p class="cx-hint" style="margin:0">${why}</p>`:''}${modCanStar(id)?cxMore('star','Surcharge · '+'★'.repeat(modSt(id))+'☆'.repeat(MOD_ST_MAX-modSt(id))+(meta.modCp[id]?` · ${meta.modCp[id]} copie${meta.modCp[id]>1?'s':''}`:''),starBlock(id,b,k,slot),'Ouvrir'):''}`;
 }
 const polD=(b,id,i,d0)=>{const p=b.pol[i];return !p?d0:p===MOD_POL[id]?Math.ceil(d0/2):Math.ceil(d0*1.25)};
 function starBlock(id,b,k,slot){const m=MODS[id],rk=meta.mods[id],st=modSt(id),cp=meta.modCp[id]|0,maxed=rk>=m.max;
@@ -168,6 +181,10 @@ function alignPanel(b){
   }
   return h;
 }
+// Tuile de mod (ModCard du design system) : polarité, coût, nom, losanges de rang.
+function modTile(id,cls='',i,b){const m=MODS[id],rk=meta.mods[id],isA=modKind(id)==='a',p=isA?{c:AURA_C,s:'✦',n:'Aura'}:POL[MOD_POL[id]];
+  const d=isA?`+${MODS[id].cap+rk}`:(b&&i!==undefined?bDrain(b,id,rk,i):modDrain(id,rk)),st=modSt(id);
+  return `<button class="cx-mod${cls}" data-mod="${id}" style="--mc:${MOD_RAR[m.r].c}" aria-label="${m.n}, rang ${rk}, ${isA?'aura':'polarité '+p.n}, coût ${d}"><span class="cx-mod__pol" style="color:${p.c}">${p.s}</span><span class="cx-mod__cost">${d}</span><b>${m.n}</b>${st?`<span class="mst">${'★'.repeat(st)}</span>`:''}${meta.modCp[id]?`<span class="mcp" title="Copies">×${meta.modCp[id]}</span>`:''}<span class="cx-mod__pips">${'<i class="on"></i>'.repeat(rk)}${'<i></i>'.repeat(m.max-rk)}</span></button>`}
 function renderMods(rootId){
   const root=$(rootId);if(!root)return;const inCamp=rootId==='modsCamp';
   const b=build(modTab),u=bUsed(b),cap=bCap(b),act=bActive(b),mt=b.mast;
@@ -184,37 +201,40 @@ function renderMods(rootId){
     :(x,y)=>(modOk(y,heroCls)-modOk(x,heroCls))||(modKind(y)==='a')-(modKind(x)==='a')||MODS[y].r-MODS[x].r);
   const pchip=(k,lab,c)=>`<button class="cx-chip cx-chip--sm" data-act="polf" data-p="${k}" aria-pressed="${modSF==null&&modPF===k}"${c&&!(modSF==null&&modPF===k)?` style="color:${c}"`:''}>${lab} <span class="n">${pcount[k]||0}</span></button>`;
   const filt=`<div class="cx-chips" role="group" aria-label="Filtrer les mods par polarité">${pchip('all','Tous')}${Object.keys(POL).map(k=>pchip(k,`${POL[k].s} ${POL[k].n}`,POL[k].c)).join('')}${modTab==='h'&&pcount.a?pchip('a','✦ Aura',AURA_C):''}</div>
-    ${modSF!=null?`<p class="cx-hint" style="margin:0">Case ${modSF+1} · ${sp?`<b style="color:${POL[sp].c}">${POL[sp].s} ${POL[sp].n}</b> : seuls les mods ${POL[sp].n} (coût divisé par 2)`:'neutre : tous les mods'}, du moins cher au plus cher dans cette case${b.load[modSF]?'':' ; « Équiper » les place dans cette case'}. <button class="cx-btn cx-btn--ghost cx-btn--sm" data-act="slotf" data-i="${modSF}" style="margin:0">Retirer le filtre</button></p>`:'<p class="cx-hint" style="margin:0">Touche le nom de polarité au-dessus d\'une case pour voir les mods qui lui conviennent le mieux.</p>'}`;
+    ${modSF!=null?`<p class="cx-hint" style="margin:0">Case ${modSF+1} · ${sp?`<b style="color:${POL[sp].c}">${POL[sp].s} ${POL[sp].n}</b> : seuls les mods ${POL[sp].n} (coût divisé par 2)`:'neutre : tous les mods'}, du moins cher au plus cher. <button class="cx-btn cx-btn--ghost cx-btn--sm" data-act="slotf" data-i="${modSF}" style="margin:0">Retirer le filtre</button></p>`:''}`;
   const slotsN=modTab==='h'?HSLOT_MAX:4;
-  const slotHtml=i=>{if(i>=b.slots){const nx=i===b.slots;return `<div class="mslot"><span class="sp" style="color:var(--muted)">Verrouillée</span><div class="mod empty lockd">${b.kind==='p'?'Familier ★★★':nx?`${HSLOT_COST[b.slots-3]} fragments`:'—'}</div></div>`}
-    const id=b.load[i],p=b.pol[i];return `<div class="mslot${modSF===i?' fsel':''}"><button class="sp" data-act="slotf" data-i="${i}" aria-pressed="${modSF===i}" aria-label="Filtrer les mods pour la case ${i+1} (${p?POL[p].n:'neutre'})" style="color:${p?POL[p].c:'var(--muted)'}">${p?POL[p].s+' '+POL[p].n:'Neutre'}</button>${id?modCard(id,(modSel===id?' sel':'')+(act.includes(id)?'':' off'),i,b):'<div class="mod empty">Libre</div>'}</div>`};
+  const slotHtml=i=>{if(i>b.slots)return '';if(i>=b.slots){const nx=i===b.slots;return `<div class="cx-modslot"><span class="cx-modslot__pol" style="cursor:default">Verrouillée</span><div class="cx-mod cx-mod--empty cx-mod--locked"><b>${b.kind==='p'?'Familier ★★★':nx?`${HSLOT_COST[b.slots-3]} fragments`:'—'}</b></div></div>`}
+    const id=b.load[i],p=b.pol[i];return `<div class="cx-modslot${modSF===i?' fsel':''}"><button class="cx-modslot__pol" data-act="slotf" data-i="${i}" aria-pressed="${modSF===i}" aria-label="Filtrer les mods pour la case ${i+1} (${p?POL[p].n:'neutre'})" style="color:${p?POL[p].c:'var(--muted)'}">${p?POL[p].s+' '+POL[p].n:'Neutre'}</button>${id?modTile(id,(modSel===id?' is-sel':'')+(act.includes(id)?'':' off'),i,b):'<div class="cx-mod cx-mod--empty"><b>Libre</b></div>'}</div>`};
   const buyBox=modTab==='h'&&b.slots<HSLOT_MAX&&inCamp?(()=>{const c=HSLOT_COST[b.slots-3],have=fragTotal();
-    return `<div class="card"><p style="margin:0;font-size:14px">Débloquer la case ${b.slots+1} du héros : <b>${c} fragments de schéma</b>, pris parmi ceux que tu as en plus grand nombre. Tu en as ${have}.</p><div class="actions"><button class="btn buy" data-act="slotbuy" ${have<c?'disabled':''}>Débloquer · ${c} fragments</button></div></div>`})():'';
-  const petTab=inCamp&&campTab==='pets';
-  root.innerHTML=`${petTab?petPanel()+'<h3 class="cx-section__label" style="margin:4px 0 0">Mods du familier</h3>':`<div class="alrow"><button class="chip" data-act="mtab" data-t="h" aria-pressed="${modTab==='h'}">Héros · ${CLS[heroCls].n}</button><button class="chip" data-act="mtab" data-t="w" aria-pressed="${modTab==='w'}">Arme · ${wdef(curWid()).n}</button>${inCamp?'':`<button class="chip" data-act="mtab" data-t="p" aria-pressed="${modTab==='p'}">Familier${petEq()?' · '+PETS[petEq().t].n:''}</button>`}</div>`}
-    <div class="modhead"><span>Capacité <b class="${u>cap?'over':''}">${u} / ${cap}</b></span><span>Essence <b>${meta.essence}</b></span>
-      ${b.kind==='p'?`<span>Bonus de niveau <b>+${mt.r}</b></span>`:`<span>Maîtrise ${b.kind==='w'?'arme':'héros'} <b>${mt.r} / 10</b>${mt.r<10?` · ${mt.xp} / ${mastNeed(mt.r)}`:''}</span>`}</div>
-    ${u>cap?'<p class="empty" style="font-size:13px;color:var(--blood)">Capacité dépassée : les mods en trop sont inactifs (grisés). Regagne de la maîtrise en mission (le familier : des niveaux) ou retire un mod.</p>':''}
-    ${modTab==='h'?`<div class="aurarow"><div class="mslot"><span class="sp" style="color:${AURA_C}">✦ Aura</span>${b.aura?modCard(b.aura,modSel===b.aura?' sel':''):'<div class="mod empty">Aura libre</div>'}</div><p class="empty" style="font-size:13px">Une aura rapporte de la capacité au héros au lieu d'en coûter, et donne un effet permanent.</p></div>`:''}
-    <div class="modslots${slotsN>4?' six':''}">${Array.from({length:slotsN},(_,i)=>slotHtml(i)).join('')}</div>
+    return `<div class="cx-rows"><div class="cx-row"><span class="cx-row__k" style="color:var(--ink)">Case ${b.slots+1} du héros<small>${c} fragments de schéma, pris parmi ceux que tu as en plus grand nombre · tu en as ${have}</small></span><button class="cx-btn cx-btn--sm" data-act="slotbuy" style="margin:0" ${have<c?'disabled':''}>Débloquer</button></div></div>`})():'';
+  const petTab=inCamp&&campTab==='pets',bn=modTab==='h'?`Build ${deCls(heroCls)}`:modTab==='w'?`Build ${b.de}`:'Build du familier';
+  const over=u>cap;
+  root.innerHTML=`${petTab?petPanel():`<div class="cx-tabs" role="tablist"><button class="cx-tab" role="tab" data-act="mtab" data-t="h" aria-selected="${modTab==='h'}">Héros · ${CLS[heroCls].n}</button><button class="cx-tab" role="tab" data-act="mtab" data-t="w" aria-selected="${modTab==='w'}">Arme · ${wdef(curWid()).n}</button>${inCamp?'':`<button class="cx-tab" role="tab" data-act="mtab" data-t="p" aria-selected="${modTab==='p'}">Familier</button>`}</div>`}
+    <div class="cx-meter${over?' is-over':''}"><div class="cx-meter__top"><span>Capacité</span><b>${u} / ${cap}</b></div><div class="cx-meter__bar"><i style="--v:${Math.min(100,cap?u/cap*100:0)}%"></i></div></div>
+    <p class="cx-hint" style="margin:0">${over?'<span style="color:var(--blood-ink)">Capacité dépassée : les mods en trop sont inactifs (grisés). Retire un mod ou regagne de la maîtrise.</span>':b.kind==='p'?`Bonus de niveau du familier +${mt.r} · capacité qui monte avec son rang et son niveau`:`Maîtrise ${b.kind==='w'?'arme':'héros'} ${mt.r} / 10${mt.r<10?` · ${mt.xp} / ${mastNeed(mt.r)}`:''} · gagne de la capacité en mission`}</p>
+    ${modTab==='h'?`<div class="aurarow"><div class="cx-modslot"><span class="cx-modslot__pol" style="color:${AURA_C};cursor:default">✦ Aura</span>${b.aura?modTile(b.aura,modSel===b.aura?' is-sel':''):'<div class="cx-mod cx-mod--empty"><b>Aura libre</b></div>'}</div><p class="cx-hint" style="margin:0">Une aura rapporte de la capacité au lieu d'en coûter, et donne un effet permanent.</p></div>`:''}
+    <section class="cx-section"><h3 class="cx-section__label">${bn} · ${b.load.slice(0,b.slots).filter(Boolean).length} / ${b.slots} cases</h3><div class="cx-build">${Array.from({length:slotsN},(_,i)=>slotHtml(i)).join('')}</div></section>
     ${buyBox}
-    ${filt}
-    <div class="modlist">${rest.map(id=>modCard(id,(modSel===id?' sel':'')+(modOk(id,heroCls)&&!ptOff(id)?'':' lock'),modSF!=null&&modKind(id)!=='a'?modSF:undefined,modSF!=null?b:undefined)).join('')||`<p class="empty" style="grid-column:1/-1">${pool.length?'Aucun mod pour ce filtre.':`Aucun autre mod ${modTab==='w'?'d\'arme':modTab==='p'?'de familier':'de héros'}.`} Les monstres en laissent parfois tomber, les Gardiens toujours.</p>`}</div>
-    ${modSel?modDetail(modSel):`<p class="empty" style="font-size:13px">${modTab==='p'?'Les mods de familier renforcent le familier équipé ; certains ne servent qu\'à un familier précis.':modTab==='w'?'Les mods d\'arme restent attachés à cette arme : chaque arme a son propre build.':'Les mods de héros servent à la survie, au déplacement et aux compétences.'} Le symbole en haut à gauche d'un mod est sa polarité, le chiffre son coût.</p>`}
-    ${inCamp?alignPanel(b):''}`;
-  root.querySelectorAll('[data-mod]').forEach(x=>x.onclick=()=>{modSel=x.dataset.mod;modsChanged()});
+    <section class="cx-section"><h3 class="cx-section__label">Tes mods · ${pool.length}</h3>${filt}
+    <div class="cx-mods">${rest.map(id=>modTile(id,(modSel===id?' is-sel':'')+(modOk(id,heroCls)&&!ptOff(id)?'':' lock'),modSF!=null&&modKind(id)!=='a'?modSF:undefined,modSF!=null?b:undefined)).join('')||`<p class="cx-hint" style="grid-column:1/-1;margin:0">${pool.length?'Aucun mod pour ce filtre.':`Aucun autre mod ${modTab==='w'?'d\'arme':modTab==='p'?'de familier':'de héros'}.`} Les monstres en laissent parfois tomber, les Gardiens toujours.</p>`}</div></section>
+    ${inCamp?cxMore('align_'+b.kind,'Alignement des cases',alignPanel(b),'Ouvrir'):''}`;
+  root.querySelectorAll('[data-mod]').forEach(x=>x.onclick=()=>{modSel=modSel===x.dataset.mod?null:x.dataset.mod;runSel=null;modsChanged()});
   root.querySelectorAll('[data-act]').forEach(x=>x.onclick=()=>modAct(x.dataset.act,x.dataset));
   root.querySelectorAll('[data-pet]').forEach(x=>x.onclick=()=>petAct(x.dataset.pet,x.dataset.arg));
+  if(!inCamp){const dk=$('bagDock');if(dk){const h=modSel?modDock(modSel):'';dk.innerHTML=h;dk.hidden=!h;if($('bagFoot'))$('bagFoot').hidden=!!h||!!runSel}}
 }
+// Détail d'un mod, ancré en bas de la feuille (cx-dock).
+function modDock(id){const html=modDetail(id);return `<div class="cx-dock__head"><h3 class="cx-dock__title" style="color:${MOD_RAR[MODS[id].r].c}">${MODS[id].n}</h3><button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-act="mclose" aria-label="Fermer le détail"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>${html}`}
 function modAct(a,ds){
   const id=modSel,rk=id?meta.mods[id]:0;
-  if(a==='mtab'){modTab=ds.t;modSel=null;alSel=null;modSF=null;modPF='all'}
+  if(a==='mclose'){modSel=null}
+  else if(a==='mtab'){modTab=ds.t;modSel=null;alSel=null;modSF=null;modPF='all'}
   else if(a==='polf'){modPF=ds.p;modSF=null}
   else if(a==='slotf'){const i=+ds.i;modSF=modSF===i?null:i}
   else if(a==='equip'||a==='unequip'||a==='fuse'){
     const k=modKind(id),b=build(bKind(id));
     if(a==='equip'){if(!modOk(id,heroCls))return;if(k==='a')meta.aura[heroCls]=id;else{let bs=bBest(b,id,rk);if(modSF!=null&&modSF<b.slots&&!b.load[modSF]&&bKind(id)===modTab)bs={i:modSF,d:bDrain(b,id,rk,modSF)};if(bs.i<0||bUsed(b)+bs.d>bCap(b))return;b.load[bs.i]=id}}
-    else if(a==='unequip'){if(k==='a'){if(meta.aura[heroCls]===id)meta.aura[heroCls]=null}else{const i=b.load.indexOf(id);if(i>=0)b.load[i]=null}}
+    else if(a==='unequip'){if(k==='a'){if(meta.aura[heroCls]===id){meta.aura[heroCls]=null;const hc=heroCls;cxUndo(`${MODS[id].n} retiré`,()=>{meta.aura[hc]=id;modSel=id;modsChanged()})}}else{const i=b.load.indexOf(id);if(i>=0){b.load[i]=null;cxUndo(`${MODS[id].n} retiré de la case ${i+1}`,()=>{if(!b.load[i])b.load[i]=id;modSel=id;modsChanged()})}}}
     else{const c=fuseCost(id,rk);if(meta.essence<c||rk>=MODS[id].max)return;if(k!=='a'){const i=b.load.indexOf(id);if(i>=0&&bUsed(b)-bDrain(b,id,rk,i)+bDrain(b,id,rk+1,i)>bCap(b))return}meta.essence-=c;meta.mods[id]=rk+1}
   }
   else if(a==='star'){const k=modKind(id),b=build(bKind(id)),m=MODS[id],st=modSt(id),c=starCost(id,st);
