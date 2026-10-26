@@ -451,7 +451,7 @@ function renderPixi(){
 function dropPixi(err){
   if(!PX)return;noteErr('WebGL désactivé',err);
   try{clearTimeout(PX.lostT);PX.R.view.remove();PX.R.destroy()}catch(e){}
-  PX=null;floorPat=null;resize();toast('Rendu WebGL interrompu : le jeu passe au rendu standard (modifiable dans les réglages).');
+  PX=null;floorPat=null;resize();toast('Rendu WebGL interrompu : le jeu passe au rendu standard (modifiable dans les réglages).',true);
 }
 const glLost=()=>{try{return !!(PX&&(PX.lost||(PX.R.gl&&PX.R.gl.isContextLost&&PX.R.gl.isContextLost())))}catch(e){return false}};
 function render(){

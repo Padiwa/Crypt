@@ -46,7 +46,7 @@ function wireDc(dc,peer){
       // Mission déjà lancée (l'hôte a touché Lancer pendant la connexion) : le joueur rejoint en cours de route.
       if(started&&G&&!G.over){netStartFor(peer);if(!NET.tick){clearInterval(NET.tick);NET.tick=setInterval(netTick,50);clearInterval(NET.htick);NET.htick=setInterval(netHeroTick,33)}toast(`<b style="color:${SLOT_C[peer.slot]}">Joueur ${peer.slot+1}</b> rejoint la mission.`)}}
     else{NET.on=true;NET.lastRx=performance.now();NET.state='connected';netSend({t:'hello',v:NET_V,cls:heroCls,relic:myRelic()})}
-    pingOn();SND.play('relic');toast('<b style="color:#8fd3e0">Coopération connectée.</b>');refreshCoopUi();drawCoop()};
+    pingOn();SND.play('relic');toast('<b style="color:#8fd3e0">Coopération connectée.</b>',true);refreshCoopUi();drawCoop()};
   dc.onclose=()=>peer?netPeerLost(peer):netLost();dc.onerror=()=>{};
   dc.onmessage=e=>{if(peer)peer.lastRx=performance.now();else NET.lastRx=performance.now();let m;try{m=JSON.parse(e.data)}catch(x){return}
     try{peer?netRecvHost(peer,m):netRecvGuest(m)}catch(err){typeof noteErr==='function'&&noteErr('coop',err)}}}
@@ -85,11 +85,11 @@ function netSend(m){if(NET.host){const s=JSON.stringify(m);for(const p of NET.pe
 function netPeerLost(peer,silent){if(!NET.peers.includes(peer))return;const was=peer.state==='open';closePeer(peer);NET.peers=NET.peers.filter(p=>p!==peer);
   if(G&&G.mates)G.mates=G.mates.filter(q=>q.slot!==peer.slot);
   NET.on=NET.peers.some(p=>p.state==='open');
-  if(was&&!silent)toast(`<b style="color:#e0474b">Joueur ${peer.slot+1} déconnecté.</b>`+(started&&G&&!G.over?(NET.on?' La partie continue.':' Tu continues seul.'):''));
+  if(was&&!silent)toast(`<b style="color:#e0474b">Joueur ${peer.slot+1} déconnecté.</b>`+(started&&G&&!G.over?(NET.on?' La partie continue.':' Tu continues seul.'):''),true);
   sendRoster();if(started&&G&&!G.over)coopCheckFail();refreshCoopUi();drawCoop()}
 // Invité : l'hôte est parti.
 function netLost(){if(NET.state==='idle')return;const was=NET.on,wasGuest=NET.guest;netReset();
-  if(was){toast('<b style="color:#e0474b">Hôte déconnecté.</b>'+(started&&G&&!G.over&&wasGuest?' La mission se termine : tu gardes ton butin.':''));
+  if(was){toast('<b style="color:#e0474b">Hôte déconnecté.</b>'+(started&&G&&!G.over&&wasGuest?' La mission se termine : tu gardes ton butin.':''),true);
     if(wasGuest&&started&&G&&!G.over){G.hold=false;missionSuccess()}}}
 
 /* ---------- Démarrage de la mission ---------- */

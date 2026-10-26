@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded',()=>{});
 })();
 /* Bannière : événements importants, un à la fois, au centre en haut */
 const BN={q:[],busy:false};
-function banner(html,col='#f0cf4a',prio=1){
+function banner(html,col='#f0cf4a',prio=1,keep){if(inMission()&&!keep)return;
   if(BN.q.length>=3){const i=BN.q.findIndex(x=>x.prio<prio);if(i<0)return;BN.q.splice(i,1)}
   BN.q.push({html,col,prio});BN.q.sort((a,b)=>b.prio-a.prio);if(!BN.busy)nextBanner()}
 function nextBanner(){const m=BN.q.shift(),el=$('banner');if(!m){BN.busy=false;el.hidden=true;return}

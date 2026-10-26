@@ -95,7 +95,7 @@ function spawnPack(type,n){const p=ringPos();let k=0,first=null;for(let i=0;i<n;
   const pE=Math.min(.15,.025+.012*(meta.diff|0)+.01*dif().tier);if(first&&type!=='bat'&&Math.random()<pE)makeElite(first);return k}
 function defenseTick(dt){
   if(G.waveState==='break'){G.waveT-=dt;if(G.waveT<=0){G.wave++;G.waveState='fight';G.toSpawn=Math.min(160,Math.round((10+G.wave*4+(G.level-1)*10)*1.15));G.spawnT=.5;
-      const bn=dif().cnt;SND.play('wave');toast(`<b style="color:var(--ember)">Vague ${G.wave}</b>`+(G.wave%DEF_N===0?(bn>1?` · ${bn} Gardiens l'accompagnent`:' · un Gardien l\'accompagne'):''));
+      const bn=dif().cnt;SND.play('wave');if(G.wave%DEF_N===0)banner(`Vague ${G.wave} · ${bn>1?bn+' Gardiens arrivent':'un Gardien arrive'}`,'#b06ae0',2,true);
       if(G.wave%DEF_N===0)spawnBosses(true)}return}
   if(G.toSpawn>0){G.spawnT-=dt;if(G.spawnT<=0){G.spawnT=Math.max(.3,.9-G.wave*.03);const [type,n]=chooseType(G.wave*18,G.level);const k=spawnPack(type,Math.min(n,G.toSpawn));G.toSpawn-=Math.max(1,k)}}
   else if(!G.en.length&&!G.spawns.length){
@@ -106,11 +106,11 @@ function defenseTick(dt){
 function bossIv(){return dif().iv*(BOSS_T/60)*(meta.mode==='capture'?1.5:1)}
 function spawnBosses(quiet){let n=dif().cnt;if(G.breche)n=Math.max(2,n+(n%2));const k0=G.en.length;for(let i=0;i<n;i++){const p=ringPos(40);spawnEnemy({type:'boss',x:p.x,y:p.y})}
   if(G.breche){const nb=G.en.slice(k0).filter(e=>e.type==='boss');for(let i=0;i+1<nb.length;i+=2){nb[i].twin=nb[i+1].id;nb[i+1].twin=nb[i].id}}
-  SND.play('boss');if(!quiet)banner(G.breche?'Gardiens jumeaux : abattez-les ensemble':n>1?`${n} Gardiens surgissent des ténèbres`:'Un Gardien surgit des ténèbres',G.breche?SEAL_C:'#b06ae0',2);G.shake=6+2*(n-1)}
+  SND.play('boss');if(!quiet)banner(G.breche?'Gardiens jumeaux : abattez-les ensemble':n>1?`${n} Gardiens surgissent des ténèbres`:'Un Gardien surgit des ténèbres',G.breche?SEAL_C:'#b06ae0',2,true);G.shake=6+2*(n-1)}
 // Brèche : un Gardien jumeau abattu revient (sans butin) si son jumeau n'est pas tombé dans les 8 s.
-function twinDied(e){const o=G.en.find(x=>x.id===e.twin&&!x.dead);if(!o)return;G.twinQ.push({x:e.x,y:e.y,max:e.max,mate:o.id,t:8});banner(`<span style="color:${SEAL_C}">Son jumeau doit tomber en 8 s</span>, sinon il se relève`,SEAL_C,2)}
-function twinTick(dt){if(!G.twinQ.length)return;for(const q of G.twinQ){const o=G.en.find(x=>x.id===q.mate&&!x.dead);if(!o){q.done=1;banner('Jumeaux abattus ensemble',SEAL_C,2);continue}
-    q.t-=dt;if(q.t<=0){q.done=1;spawnEnemy({type:'boss',x:q.x,y:q.y});const b=G.en[G.en.length-1];if(b&&b.type==='boss'){b.max=q.max;b.hp=q.max*.5;b.noLoot=true;b.twin=o.id;o.twin=b.id}banner('Le jumeau se relève !',SEAL_C,2);$('bossBar').hidden=false}}
+function twinDied(e){const o=G.en.find(x=>x.id===e.twin&&!x.dead);if(!o)return;G.twinQ.push({x:e.x,y:e.y,max:e.max,mate:o.id,t:8});banner(`<span style="color:${SEAL_C}">Son jumeau doit tomber en 8 s</span>, sinon il se relève`,SEAL_C,2,true)}
+function twinTick(dt){if(!G.twinQ.length)return;for(const q of G.twinQ){const o=G.en.find(x=>x.id===q.mate&&!x.dead);if(!o){q.done=1;banner('Jumeaux abattus ensemble',SEAL_C,2,true);continue}
+    q.t-=dt;if(q.t<=0){q.done=1;spawnEnemy({type:'boss',x:q.x,y:q.y});const b=G.en[G.en.length-1];if(b&&b.type==='boss'){b.max=q.max;b.hp=q.max*.5;b.noLoot=true;b.twin=o.id;o.twin=b.id}banner('Le jumeau se relève !',SEAL_C,2,true);$('bossBar').hidden=false}}
   G.twinQ=G.twinQ.filter(q=>!q.done)}
 function spawner(dt){
   if(G.mode==='defense'){defenseTick(dt);return}
@@ -143,7 +143,9 @@ function buildTile(bi){
 /* ---------- Effets ---------- */
 function burst(x,y,n,col,sp=160,size=3){if(G.parts.length>450)return;for(let i=0;i<n;i++){const a=rand(0,6.28),v=rand(.3,1)*sp;G.parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:rand(.3,.7),max:.7,col,size:rand(1,size)})}}
 function ftext(x,y,txt,col,size=16){if(G.texts.length<70)G.texts.push({x,y,txt,col,size,t:0})}
-function toast(html){const d=document.createElement('div');d.innerHTML=html;$('toast').appendChild(d);setTimeout(()=>d.remove(),2400);while($('toast').children.length>3)$('toast').firstChild.remove()}
+// En mission, seuls les messages marqués (alertes de Gardien, réseau) s'affichent.
+const inMission=()=>typeof started!=='undefined'&&started&&typeof G!=='undefined'&&G&&!G.over;
+function toast(html,keep){if(inMission()&&!keep)return;const d=document.createElement('div');d.innerHTML=html;$('toast').appendChild(d);setTimeout(()=>d.remove(),2400);while($('toast').children.length>3)$('toast').firstChild.remove()}
 
 /* ---------- Combat ---------- */
 const CS_N=8,CS_W=5;
