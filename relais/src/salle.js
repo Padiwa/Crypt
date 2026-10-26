@@ -11,8 +11,10 @@ export const MAX_MSG = 16384;  // taille maximale d'un message, en caractères
 export const GARDE = { max: 20, win: 10 * 60 * 1000 };
 export function gardeMaj(f, now, echec) { f = (f || []).filter((t) => now - t < GARDE.win); if (echec) f.push(now); return { f, bloque: f.length >= GARDE.max }; }
 // Sites autorisés (variable ORIGINES du Worker, séparés par des virgules ; « *.exemple.com » vaut pour ses sous-domaines). Vide : tous.
+// Une adresse avec un chemin (https://moi.github.io/Crypt/) compte pour son site (https://moi.github.io) : le navigateur n'envoie que le site.
+const siteOf = (x) => { if (x.startsWith('*.')) return x; try { return new URL(/^[a-z]+:\/\//.test(x) ? x : 'https://' + x).origin; } catch (e) { return x; } };
 export function originOk(origin, list) {
-  const L = String(list || '').split(',').map((s) => s.trim().toLowerCase().replace(/\/+$/, '')).filter(Boolean);
+  const L = String(list || '').split(',').map((s) => siteOf(s.trim().toLowerCase())).filter((x) => x && x !== 'null');
   if (!L.length) return true;
   const o = String(origin || '').toLowerCase(); if (!o || o === 'null') return false;
   let host = ''; try { host = new URL(o).host; } catch (e) { return false; }

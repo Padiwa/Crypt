@@ -146,6 +146,14 @@ const craftIds=()=>[...Object.values(WPN).flat().filter(w=>w.r>=3).map(w=>w.id),
 const RTIER=[{n:'Ossuaire',c:'#ff8a24',r:3},{n:'Ancestrale',c:'#ff5a7a',r:4},{n:'Sanguine',c:'#e8383f',r:5},{n:'Abyssale',c:'#b07cff',r:6}];
 const RELICS={os:{t:0,n:'Relique Ossuaire'},an:{t:1,n:'Relique Ancestrale'},sa:{t:2,n:'Relique Sanguine'},ab:{t:3,n:'Relique Abyssale'}};
 const REACT_N=BAL.reactN;
+// Tourment : il faut moins de réactifs pour ouvrir une relique (chaque palier, puis le séjour dans la mission),
+// et les reliques tombent plus souvent à mesure qu'on reste. Une tranche de séjour = 2 minutes de mission.
+const SEJ_STEP=120;
+const sejN=()=>typeof G!=='undefined'&&G?Math.floor((G.t||0)/SEJ_STEP):0;
+function tormBoost(){const t=typeof tormT==='function'?tormT():0;if(!t)return {t:0,s:0,react:0,relic:0};const s=sejN();
+  const react=Math.min(BAL.reactCutMax||0,t*(BAL.tormReact||0)+Math.min(BAL.sejReactMax||0,s*(BAL.sejReact||0)));
+  return {t,s,react,relic:Math.min(BAL.sejRelicMax||0,s*(BAL.sejRelic||0))}}
+const reactNeed=()=>Math.max(1,Math.round(REACT_N*(1-tormBoost().react)));
 // Chance d'œuf de familier par relique ouverte, selon sa rareté (× BAL.eggMul).
 const EGG_CH=[.08,.12,.15,.25];
 const REL_SRC=['Normal, Difficile et Cauchemar (et plus haut sous le niveau requis)',`Tourment I et plus, niveau ${BAL.relicLv[0]}+`,`Tourment VI et plus, niveau ${BAL.relicLv[1]}+`,`Tourment VI et plus, niveau ${BAL.relicLv[2]}+, plus rare`];

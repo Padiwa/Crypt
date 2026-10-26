@@ -102,4 +102,30 @@ export const tests = [
     await p.click('#bagDock [data-bag="quitok"]'); await sleep(p, 200);
     t.eq(await p.evaluate(() => [started, $('camp').hidden]), [false, false], 'au Camp');
   } },
+  { name: 'Tourment : moins de réactifs par palier et avec le séjour, plus de reliques avec le séjour', fn: async (b, t) => {
+    const p = t.track(await newPage(b));
+    await p.evaluate(() => { meta.relics.os = [3, 0]; meta.relicQ = [{ id: 'os', rad: false }, { id: 'os', rad: false }]; saveMeta(); });
+    await startMission(p, { diff: 3, torm: 10, level: 30 });
+    const r = await p.evaluate(() => { const a = [REACT_N, reactNeed(), tormBoost().relic]; G.t = 6 * 120 + 5; const b2 = [reactNeed(), +tormBoost().relic.toFixed(2)]; G.t = 50 * 120; const c = [reactNeed(), +tormBoost().relic.toFixed(2)]; return [a, b2, c]; });
+    t.eq(r, [[30, 18, 0], [9, 0.6], [9, 0.6]], 'palier X : 18 réactifs au départ ; après 12 min, 9 réactifs et reliques +60 % ; plafonds tenus');
+    // ramasser le nombre réduit de réactifs ouvre bien la relique
+    const opened = await p.evaluate(() => { G.t = 0; const n = reactNeed(); for (let i = 0; i < n; i++) G.drops.push({ kind: 'react', x: G.P.x, y: G.P.y, t: 0, age: 1, mt: 0 }); return n; });
+    await sleep(p, 600);
+    t.eq(await p.evaluate(() => G.opened.length), 1, opened + ' réactifs ouvrent la relique');
+    t.ok(await p.evaluate(() => /réactifs −40 %/.test(diffLine(3))), 'accueil : la ligne du Tourment annonce −40 % de réactifs au palier X');
+  } },
+  { name: 'hors Tourment : le nombre de réactifs ne change pas', fn: async (b, t) => {
+    const p = t.track(await newPage(b)); await startMission(p, { diff: 2 });
+    t.eq(await p.evaluate(() => { G.t = 1000; return [reactNeed(), tormBoost().relic]; }), [30, 0], 'Cauchemar : 30 réactifs, pas de bonus');
+  } },
+  { name: 'changer d\'appli : la mission se met en pause, le rendu repart au retour', fn: async (b, t) => {
+    const p = t.track(await newPage(b)); await startMission(p); await sleep(p, 200);
+    const vis = (s) => p.evaluate((s) => { Object.defineProperty(document, 'visibilityState', { value: s, configurable: true }); Object.defineProperty(document, 'hidden', { value: s === 'hidden', configurable: true }); document.dispatchEvent(new Event('visibilitychange')); }, s);
+    await vis('hidden');
+    t.eq(await p.evaluate(() => [!$('bag').hidden, paused]), [true, true], 'en arrière-plan : pause, sac ouvert');
+    await vis('visible'); await sleep(p, 200);
+    t.ok(await p.evaluate(() => !$('bag').hidden && started && !G.over), 'au retour : toujours en pause, mission intacte');
+    const t0 = await p.evaluate(() => { closeBag(); return G.t; }); await sleep(p, 400);
+    t.ok(await p.evaluate((t0) => G.t > t0, t0), 'Reprendre relance la mission');
+  } },
 ];

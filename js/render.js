@@ -222,8 +222,8 @@ function hud(){
   setTx('objK',ok);setTx('timeTxt',ov);setHid('objBox',!ok);setSt('objFill2','transform',`scaleX(${op==null?0:r3(Math.max(0,Math.min(1,op)))})`);setSt('objFill2','--c',oc);setCls('objBox','hot',hot);
   // Reliques : icône à la couleur de la relique en cours (anneau = réactifs ramassés) et nombre de reliques ouvertes
   setHid('relHud',!G.relQ.length);if(G.relQ.length){const r=G.relic||G.opened[G.opened.length-1]||G.relQ[0];setTx('relN',String(G.opened.length));
-    setSt('relHud','--tc',RTIER[RELICS[r.id].t].c);setSt('relRing','--p',G.relic?(G.react/REACT_N).toFixed(3):'1');
-    const lab=`${G.opened.length} relique${G.opened.length>1?'s':''} ouverte${G.opened.length>1?'s':''} sur ${G.relQ.length}`+(G.relic?`, ${G.react} réactifs sur ${REACT_N}`:'');const e=el('relHud');if(e.getAttribute('aria-label')!==lab)e.setAttribute('aria-label',lab)}
+    setSt('relHud','--tc',RTIER[RELICS[r.id].t].c);setSt('relRing','--p',G.relic?Math.min(1,G.react/reactNeed()).toFixed(3):'1');
+    const lab=`${G.opened.length} relique${G.opened.length>1?'s':''} ouverte${G.opened.length>1?'s':''} sur ${G.relQ.length}`+(G.relic?`, ${G.react} réactifs sur ${reactNeed()}`:'');const e=el('relHud');if(e.getAttribute('aria-label')!==lab)e.setAttribute('aria-label',lab)}
   setTx('potN',String(G.potions));
   setHid('stP',!(P.psnT>0));if(P.psnT>0)setTx('stP',`Poison ×${P.psn} · ${Math.ceil(P.psnT)} s`);
   setHid('stF',!(P.frzT>0));if(P.frzT>0)setTx('stF',`Gelure · ${Math.ceil(P.frzT)} s`);
@@ -480,6 +480,13 @@ function dropPixi(err){
   try{clearTimeout(PX.lostT);PX.R.view.remove();PX.R.destroy()}catch(e){}
   PX=null;floorPat=null;resize();toast('Rendu WebGL interrompu : le jeu passe au rendu standard (modifiable dans les réglages).',true);
 }
+// Retour au premier plan : un téléphone peut avoir effacé ou perdu le rendu WebGL pendant l'absence (écran noir).
+// On reconstruit le moteur de rendu à neuf (nouveau contexte, textures refaites) ; s'il n'y arrive pas, le jeu passe au rendu standard.
+function renewRender(){floorPat=null;
+  if(!PX){resize();return}
+  try{clearTimeout(PX.lostT);PX.R.view.remove();PX.R.destroy()}catch(e){}
+  PX=null;let ok=false;try{ok=initPixi()}catch(err){noteErr('rendu',err)}
+  resize();if(ok){try{if(G)buildStatic()}catch(err){dropPixi(err)}}else toast('Rendu WebGL indisponible au retour : le jeu passe au rendu standard.',true)}
 const glLost=()=>{try{return !!(PX&&(PX.lost||(PX.R.gl&&PX.R.gl.isContextLost&&PX.R.gl.isContextLost())))}catch(e){return false}};
 function render(){
   if(PX&&!PX.lost&&glLost())dropPixi('contexte WebGL perdu');

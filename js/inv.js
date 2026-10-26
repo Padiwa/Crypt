@@ -50,7 +50,7 @@ function herosView(){const order=[heroCls,...Object.keys(CLS).filter(c=>c!==hero
       ${n?'':`<p class="cx-hint" style="margin:0">${me?'Rien de porté : touche « Équiper le meilleur » dans l\'onglet Héros.':`Rien de porté : choisis le ${CLS[c].n} sur l'écran d'accueil, puis « Équiper le meilleur » dans l'onglet Héros.`}</p>`}</section>`}).join('')}
 const stashN=()=>meta.stash.length+allWorn().length+invWeapons(true).length;
 function campEquip(){
-  const eq=curEq(),St=stats(eq),pn=Object.keys(bestPlan(eq,meta.stash)).length,n=stashN();
+  const eq=curEq(),St=stats(eq),pn=Object.keys(bestPlan(eq,meta.stash,true)).length,n=stashN();
   return `${campMsg}${tutCard()}<section class="cx-section"><h3 class="cx-section__label">${CLS[heroCls].n} · équipement</h3><div class="slots">${slotsHtml(eq,true,campSel&&campSel.slot)}</div>
     ${pn?'':'<p class="cx-hint" style="margin:0">Ton équipement est déjà le meilleur que tu possèdes.</p>'}
     <div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-cact="gocoffre">Ouvrir le coffre · ${n} objet${n>1?'s':''}</button><button class="cx-btn cx-btn--sm" data-cact="goheros">Équipement des héros</button></div></section>

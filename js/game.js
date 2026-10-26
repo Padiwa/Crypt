@@ -214,13 +214,13 @@ function kill(e){
   }else{
     const t=e.type;
     if(Math.random()<({ghoul:.006,bat:.002,archer:.008,poison:.008,pyro:.008,brute:.035,slime:.0035,givrin:.007})[t]*lm)push({kind:'item',item:genItem(itemLvl())});
-    if(Math.random()<({ghoul:.003,bat:.001,archer:.004,poison:.004,pyro:.004,brute:.025,slime:.0018,givrin:.0035})[t]*BAL.relicMob)push({kind:'relic',id:relicDrop()});
+    if(Math.random()<({ghoul:.003,bat:.001,archer:.004,poison:.004,pyro:.004,brute:.025,slime:.0018,givrin:.0035})[t]*BAL.relicMob*(1+tormBoost().relic))push({kind:'relic',id:relicDrop()});
     if(L>1&&Math.random()<({ghoul:.0015,bat:.0005,archer:.002,poison:.002,pyro:.002,brute:.012,slime:.0009,givrin:.0018})[t]*(lm-1))push({kind:'part',part:rollPart()});
     if(e.corr)push({kind:'react'},6);
     if(Math.random()<({ghoul:.006,bat:.002,archer:.008,poison:.008,pyro:.008,brute:.06,slime:.004,givrin:.007})[t])push({kind:'mod',id:rollMod(false)});
     if(Math.random()<(t==='brute'?.05:.005))push({kind:'potion'});
   }
-  if(e.elite){push({kind:'item',item:genItem(itemLvl(),1)},30);if(Math.random()<.4)push({kind:'item',item:genItem(itemLvl(),1)},30);if(Math.random()<BAL.relicElite)push({kind:'relic',id:relicDrop()},30);
+  if(e.elite){push({kind:'item',item:genItem(itemLvl(),1)},30);if(Math.random()<.4)push({kind:'item',item:genItem(itemLvl(),1)},30);if(Math.random()<BAL.relicElite*(1+tormBoost().relic))push({kind:'relic',id:relicDrop()},30);
     if(e.elite==='explosif'&&!NET.guest)G.lobs.push({x0:e.x,y0:e.y,tx:e.x,ty:e.y,t:0,T:.7,kind:'pyro',r:95,dps:2*diff().ds});
     burst(e.x,e.y,30,ELITE[e.elite].c,240,4);SND.play('bossdie');toast(`<b style="color:${ELITE[e.elite].c}">Élite ${ELITE[e.elite].n} vaincue</b>`)}
   const gv=({ghoul:1,bat:.6,archer:1.5,poison:1.5,pyro:1.5,brute:5,boss:50,slime:.8,givrin:1.2})[e.type]*goldMul(L)*dl*(e.elite?5:1),n=boss?8:e.elite?5:(Math.random()<Math.min(1,(e.type==='bat'?.35:.65)*(1+.05*(L-1)))?1:0);
@@ -370,6 +370,8 @@ function compact(arr,alive){let j=0;for(let i=0;i<arr.length;i++){const o=arr[i]
 function update(dt){
   if(NET.guest)netApplySnap();
   G.t+=dt;G.tl+=dt;
+  // Tourment : toutes les 2 minutes de séjour, le bonus des reliques grandit (annoncé tant qu'il augmente)
+  {const s=sejN();if(s>(G.sejSeen|0)){G.sejSeen=s;const b=tormBoost();if(b.t&&G.relQ.length&&(s*(BAL.sejReact||0)<=(BAL.sejReactMax||0)+1e-9||s*(BAL.sejRelic||0)<=(BAL.sejRelicMax||0)+1e-9))toast(`<b style="color:#ff6a3a">Séjour prolongé.</b> ${reactNeed()} réactifs par relique, reliques +${Math.round(b.relic*100)} %.`,true)}}
   if(!NET.guest&&G.mode==='survie'&&G.tl>=LEVEL_T){G.tl=LEVEL_T;roundDone();return}
   if(G.pod)G.pod.flash=Math.max(0,G.pod.flash-dt*6);
   const P=G.P;
@@ -556,7 +558,7 @@ function update(dt){
       else if(d.kind==='mod'){SND.play('pick2');gainMod(d.id)}
       else if(d.kind==='seal'){SND.play('leg');(G.loot.seals||(G.loot.seals=[])).push(d.id);G.fresh++}
       else if(d.kind==='relic'){SND.play('pick3');G.loot.relics.push(d.id);G.fresh++}
-      else if(d.kind==='react'){if(G.relic){G.react++;if(G.react>=REACT_N){const r=G.relic;G.opened.push(r);G.relI++;G.react=0;G.relic=G.relQ[G.relI]||null;G.shake=6;
+      else if(d.kind==='react'){if(G.relic){G.react++;if(G.react>=reactNeed()){const r=G.relic;G.opened.push(r);G.relI++;G.react=0;G.relic=G.relQ[G.relI]||null;G.shake=6;
           SND.play('relic');}}}
       else if(d.kind==='potion'){SND.play('pick');if(G.potions<potMax()){G.potions++}else d.gone=false}
       else if(d.kind==='item'){SND.play(d.item.r>=3?'pick3':d.item.r>=2?'pick2':'pick');G.loot.items.push(d.item);G.fresh++;if(d.item.r===3)G.shake=6}

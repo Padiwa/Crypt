@@ -31,7 +31,7 @@ npx wrangler deploy     # envoie le relais ; si ton compte n'a pas encore de sou
 
 ## Protections
 
-- **Sites autorisés.** Dans le tableau de bord Cloudflare : Workers & Pages › crypte-relais › Settings › Variables and Secrets › Add. Type *Text*, nom `ORIGINES`, valeur : l'adresse de ton jeu, sans chemin, par exemple `https://ton-nom.github.io`. Plusieurs adresses se séparent par des virgules ; `*.exemple.com` vaut pour tous ses sous-domaines. Le relais refuse alors les autres sites, et le jeu affiche l'adresse refusée pour que tu puisses l'ajouter. Sans `ORIGINES`, tous les sites sont acceptés. `keep_vars = true`, dans `wrangler.toml`, garde cette variable à chaque déploiement.
+- **Sites autorisés.** Dans le tableau de bord Cloudflare : Workers & Pages › crypte-relais › Settings › Variables and Secrets › Add. Type *Text*, nom `ORIGINES`, valeur : l'adresse de ton jeu, par exemple `https://ton-nom.github.io` (un chemin comme `/Crypt/` est ignoré : le navigateur n'envoie que le site). Plusieurs adresses se séparent par des virgules ; `*.exemple.com` vaut pour tous ses sous-domaines. Le relais refuse alors les autres sites, et le jeu affiche l'adresse refusée pour que tu puisses l'ajouter. Sans `ORIGINES`, tous les sites sont acceptés. `keep_vars = true`, dans `wrangler.toml`, garde cette variable à chaque déploiement.
 - **Frein des codes faux.** Un réseau (une adresse IP) qui tape plus de 20 codes sans partie en 10 minutes ne peut plus rejoindre de partie pendant 10 minutes. Trouver un code de 4 chiffres par hasard prendrait alors des jours. Les réglages sont dans `src/salle.js` (`GARDE`).
 - **Dans le jeu**, l'hôte est prévenu de chaque arrivée et peut retirer un joueur, changer de code ou fermer l'accès.
 

@@ -9,6 +9,13 @@ function frame(now){
   requestAnimationFrame(frame);
   try{step(now)}catch(err){noteErr('boucle',err)}
 }
+// Changer d'appli : la mission se met en pause (le sac s'ouvre). Au retour, le rendu est reconstruit :
+// certains téléphones perdent le rendu WebGL en arrière-plan, ce qui laissait un écran noir.
+let hiddenAt=0;
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden'){hiddenAt=performance.now();if(started&&G&&!G.over&&$('bag').hidden&&$('lvlup').hidden&&$('extract').hidden)openBag();return}
+  last=performance.now();if(hiddenAt){hiddenAt=0;try{renewRender()}catch(err){noteErr('rendu',err)}}});
+addEventListener('pageshow',e=>{if(e.persisted){last=performance.now();try{renewRender()}catch(err){noteErr('rendu',err)}}});
 function step(now){
   const dt=Math.min(.1,(now-last)/1000);last=now;
   const run=()=>started&&!G.over&&!G.hold&&(!paused||NET.on);

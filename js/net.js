@@ -82,7 +82,8 @@ async function netAddPeer(){if(!NET.host)return;
   if(1+NET.peers.length>=NET_MAX){NET.err=`La partie est complète (${NET_MAX} joueurs).`;return drawCoop()}
   const peer=await newPeer(null);if(peer)peer.state='waitAnswer';drawCoop()}
 async function netAnswerIn(code){const peer=NET.peers.find(p=>p.state==='waitAnswer');if(!peer)return;
-  try{await peer.pc.setRemoteDescription(await unpackSdp(code));peer.state='connecting'}catch(err){NET.err='Code de réponse invalide : '+err.message}drawCoop()}
+  // (la liaison peut s'ouvrir avant la fin de setRemoteDescription : on ne repasse jamais un joueur « ouvert » en « connexion »)
+  try{await peer.pc.setRemoteDescription(await unpackSdp(code));if(peer.state==='waitAnswer')peer.state='connecting'}catch(err){NET.err='Code de réponse invalide : '+err.message}drawCoop()}
 function netCancelPending(){const p=NET.peers.find(q=>q.state!=='open'&&!q.rid);if(p){closePeer(p);NET.peers=NET.peers.filter(q=>q!==p)}if(!NET.peers.length&&!RL.ws)netReset();drawCoop()}
 // Invité : la réponse à l'offre de l'hôte (code SDP), qui ouvre la connexion directe.
 async function guestAnswer(code){const pc=new RTCPeerConnection({iceServers:ICE});NET.pc=pc;pc.ondatachannel=e=>e.channel.label==='fast'?wireFast(e.channel,null):wireDc(e.channel,null);
@@ -124,7 +125,7 @@ function relayHostMsg(m){
   if(RELAY_WHY[m.t]){relayClose();NET.relay='off';NET.err=RELAY_WHY[m.t]();refreshCoopUi();drawCoop();return}
   if(m.t==='taken'){if(++RL.tries>8){NET.relay='off';NET.err='Aucun code libre pour l\'instant : réessaie dans un moment.';drawCoop();return}relayHost(rnd4());return}
   if(m.t==='join'){relayGuestIn(m.id);return}
-  if(m.t==='answer'){const p=NET.peers.find(q=>q.rid===m.from);if(p&&p.state==='sent')unpackSdp(m.sdp).then(d=>p.pc.setRemoteDescription(d)).then(()=>{p.state='connecting';drawCoop()}).catch(()=>netPeerLost(p,true));return}
+  if(m.t==='answer'){const p=NET.peers.find(q=>q.rid===m.from);if(p&&p.state==='sent')unpackSdp(m.sdp).then(d=>p.pc.setRemoteDescription(d)).then(()=>{if(p.state==='sent')p.state='connecting';drawCoop()}).catch(()=>netPeerLost(p,true));return}
   if(m.t==='left'){const p=NET.peers.find(q=>q.rid===m.id);if(p&&p.state!=='open')netPeerLost(p,true)}}
 async function relayGuestIn(rid){if(!NET.host||NET.peers.some(p=>p.rid===rid))return;
   if(1+NET.peers.length>=NET_MAX){relaySend({to:rid,t:'full'});return}

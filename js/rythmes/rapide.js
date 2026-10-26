@@ -9,6 +9,12 @@ const RYTHME={
   bossRelicEvery:0,    // relique en plus sur un Gardien tous les N niveaux de mission (0 = jamais ; chaque Gardien en donne toujours une)
   abyss:[.03,.01],     // part d'Abyssales parmi les reliques du Tourment VI, puis en plus par palier (v105 : 15 % puis +5 %)
   reactN:30,           // réactifs pour ouvrir une relique en mission
+  tormReact:.04,       // Tourment : réactifs en moins par palier (−4 % au palier I, −40 % au palier X)
+  sejReact:.05,        // Tourment : réactifs en moins par tranche de séjour dans la mission (2 min)
+  sejReactMax:.3,      // … jusqu'à −30 %
+  reactCutMax:.7,      // réduction totale maximale des réactifs (il en faut toujours au moins 30 %)
+  sejRelic:.1,         // Tourment : reliques sur les monstres et les élites +10 % par tranche de séjour
+  sejRelicMax:.6,      // … jusqu'à +60 %
   corrupt:.1,          // part des ennemis corrompus (porteurs de réactif) quand une relique est équipée
   tormIv:[40,30],      // Tourment : secondes entre deux vagues de Gardiens, au palier I puis au palier X
   tormCnt:[2,3],       // Tourment : Gardiens par vague, paliers I–V puis VI–X

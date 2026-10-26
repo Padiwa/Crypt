@@ -14,10 +14,15 @@ const cellHtml=(it,attr,sel,up)=>`<button class="cell${sel?' sel':''}${up?' up':
 const itemScore=e=>{const x=stats(e);let d=dps(x)*(1+x.abSoul*.06)*(1+x.abExec*.015)*(1+x.crit/100*x.abRift/100*2.1)*(1+x.abHunt*.0025)+x.dmg*x.abPulse/100*.8;d*=1+x.execute*.003+x.bossDmg*.0015+x.lowDmg*.001+x.shock*.01+x.chill*.003+x.ultPct*.001+x.fury*.002;// Attaque et survie pèsent ensemble (moyenne géométrique) : gagner 10 % de vie vaut à peu près gagner 12 % de dégâts, quel que soit le niveau.
   const v=(x.hp+x.abWard*8)/(1-Math.min(60,x.armor)/200)*(1+x.lowArmor*.003+x.potHeal*.001+x.antidote*.001+x.auraSlow*.003)+x.regen*15;
   return Math.pow(Math.max(1,d),.55)*Math.pow(Math.max(1,v),.45)};
-function bestPlan(e,pool){const cur={...e},pick={};
+// Meilleur équipement : pour chaque emplacement, l'objet qui donne le meilleur score (puissance et vie).
+// wpn (au Camp) : compare aussi les armes possédées du héros, chacune avec ses propres mods et sa maîtrise.
+function bestPlan(e,pool,wpn){const cur={...e},pick={};
   for(let pass=0;pass<2;pass++)for(const sl of Object.keys(e).filter(k=>k!=='arme')){let best=cur[sl],bs=itemScore(cur);
     for(const it of pool){if(it.slot!==keySlot(sl)||Object.values(cur).includes(it)&&cur[sl]!==it||Object.values(pick).includes(it)&&pick[sl]!==it)continue;const sc=itemScore({...cur,[sl]:it});if(sc>bs+1e-6){bs=sc;best=it}}
     if(best!==cur[sl]){cur[sl]=best;pick[sl]=best}}
+  if(wpn&&!started){const c=heroCls,w0=meta.wpn[c],now=curWid(c);let bs=itemScore(cur),bw=null;
+    try{for(const w of WPN[c])if(w.id!==now&&ownedW(w.id)){meta.wpn[c]=w.id;const sc=itemScore({...cur,arme:weaponItem(c,w.id)});if(sc>bs+1e-6){bs=sc;bw=w.id}}}finally{meta.wpn[c]=w0}
+    if(bw)pick.arme=weaponItem(c,bw)}
   return pick}
 /* ---------- Pause ---------- */
 let runSel=null;
@@ -257,7 +262,7 @@ function lootSummary(end){
     <div><span>Reliques</span><b>${L.relics.length?`${L.relics.length} · `+Object.keys(byT).sort((a,b)=>b-a).map(t=>lc(RTIER[t].c,byT[t],RTIER[t].n)).join(''):'0'}</b></div>
     ${(()=>{const W=L.parts.filter(p=>!p.hf),H=L.parts.length-W.length,b={};for(const p of W){const r=wdef(p.w).r;b[r]=(b[r]||0)+1}
       return (W.length?`<div><span>Armes</span><b>${W.length} · `+Object.keys(b).sort((x,y)=>y-x).map(r=>lc(RAR[r].c,b[r],RAR[r].n.toLowerCase()+(b[r]>1?'s':''))).join('')+`</b></div>`:'')+(H?`<div><span>Fragments de harnais</span><b style="color:var(--rar-aby)">${H}</b></div>`:'')})()}
-    ${G.relQ.length&&!end?`<div><span>Reliques ouvertes</span><b>${G.opened.length} / ${G.relQ.length}${G.relic?` · ${G.react} / ${REACT_N} réactifs`:''}</b></div>`:''}<div><span>Ennemis abattus</span><b>${G.kills}</b></div><div><span>${end?'Durée de la mission':'Temps de survie'}</span><b>${fmt(G.t)}</b></div>`;
+    ${G.relQ.length&&!end?`<div><span>Reliques ouvertes</span><b>${G.opened.length} / ${G.relQ.length}${G.relic?` · ${G.react} / ${reactNeed()} réactifs`:''}</b></div>`:''}<div><span>Ennemis abattus</span><b>${G.kills}</b></div><div><span>${end?'Durée de la mission':'Temps de survie'}</span><b>${fmt(G.t)}</b></div>`;
 }
 function roundDone(){
   if(NET.on){G.hold=true;if(NET.host)netSend({t:'round'})}
@@ -267,7 +272,8 @@ function roundDone(){
   const r=relicDrop();G.loot.relics.push(r);let extra='';
   if(G.mode==='defense'){const it=genItem(itemLvl(),1);G.loot.items.push(it);extra=` et <span style="color:${RAR[it.r].c}">${it.name}</span>`}
   $('exTitle').textContent=G.mode==='defense'?`Vague ${G.wave} repoussée`:`Niveau ${G.level} terminé`;
-  $('exLead').innerHTML=(G.mode==='defense'?'Le cryopode tient. ':'Un portail s\'ouvre. ')+`Récompense de manche : relique <b style="color:${RTIER[RELICS[r].t].c}">${relicName(r)}</b>${extra}. Sors pour tout garder, ou continue : au niveau ${G.level+1}, les monstres seront plus forts.`+(unlock?` Tu peux désormais commencer au niveau ${nl}.`:'');
+  $('exLead').innerHTML=(G.mode==='defense'?'Le cryopode tient. ':'Un portail s\'ouvre. ')+`Récompense de manche : relique <b style="color:${RTIER[RELICS[r].t].c}">${relicName(r)}</b>${extra}. Sors pour tout garder, ou continue : au niveau ${G.level+1}, les monstres seront plus forts.`+(unlock?` Tu peux désormais commencer au niveau ${nl}.`:'')
+    +(()=>{const b=tormBoost();if(!b.t||!G.relQ.length)return '';return `<br><span style="color:#ff6a3a">Bonus du Tourment</span> : ${reactNeed()} réactifs par relique au lieu de ${REACT_N}${b.relic?`, reliques +${Math.round(b.relic*100)} %`:''}. Il grandit toutes les 2 minutes passées dans la mission.`})();
   $('exSum').innerHTML=lootSummary();
   $('contBtn').textContent=`Continuer · niveau ${G.level+1}`;
   $('extract').hidden=false;
@@ -337,5 +343,5 @@ function contRun(){$('extract').hidden=true;G.level++;G.hold=false;
   paused=false;last=performance.now();toast(`<b style="color:var(--ember)">Niveau ${G.level}.</b> Les monstres se renforcent.`)}
 $('contBtn').onclick=()=>{if(NET.guest)return;if(NET.host)netSend({t:'cont'});contRun()};
 function missionToast(){if(G.breche){toast(`<b style="color:${SEAL_C}">Brèche.</b> Les Gardiens viennent par paires : abattez les deux jumeaux en moins de 8 s. Sceaux légendaires et éclats sur les Gardiens et les élites.`);return}toast(G.mode==='defense'?'<b>Défense.</b> Protège le cryopode.':G.mode==='capture'?'<b>Capture.</b> Suis la flèche dorée jusqu\'à la cible.':'<b>Survie.</b> Le portail s\'ouvre dans 2 minutes.');
-  if(G.relic)setTimeout(()=>toast(`Fissure : ${G.relQ.length} relique${G.relQ.length>1?'s':''} équipée${G.relQ.length>1?'s':''}. Abats les ennemis au halo doré : ${REACT_N} réactifs ouvrent ${relicName(G.relic.id)}${G.relic.rad?' éclatante':''}, puis la suivante.`),900)}
+  if(G.relic)setTimeout(()=>toast(`Fissure : ${G.relQ.length} relique${G.relQ.length>1?'s':''} équipée${G.relQ.length>1?'s':''}. Abats les ennemis au halo doré : ${reactNeed()} réactifs ouvrent ${relicName(G.relic.id)}${G.relic.rad?' éclatante':''}, puis la suivante.`),900)}
 

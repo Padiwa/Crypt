@@ -72,4 +72,13 @@ export const tests = [
     await p.click('#campDock [data-cact="equipoth"]');
     t.eq(await p.evaluate(() => [!!meta.gearBy.archer.bottes, !!meta.gearBy.guerrier.bottes, /1 objet/.test(document.querySelectorAll('.hgear')[0].querySelector('h3').textContent)]), [true, false, false], 'objet passé à l\'Archer');
   } },
+  { name: 'Équiper le meilleur prend aussi la meilleure arme possédée du héros', fn: async (b, t) => {
+    const p = t.track(await newPage(b));
+    await p.evaluate(() => { heroCls = 'archer'; meta.wpn.archer = 'a0'; meta.built.a2 = true; meta.built.g2 = true; saveMeta(); });
+    await campView(p, 'equip');
+    t.ok(await p.evaluate(() => /Équiper le meilleur · 1/.test($('campFoot').textContent)), 'le bouton compte l\'arme');
+    await p.click('#campFoot [data-cact="bestall"]');
+    t.eq(await p.evaluate(() => [meta.wpn.archer, meta.wpn.guerrier || 'g0', /Arc long du Corbeau/.test($('toast').textContent)]), ['a2', 'g0', true], 'Arc long du Corbeau équipé, les autres héros inchangés');
+    t.ok(await p.evaluate(() => !/Équiper le meilleur/.test($('campFoot').textContent)), 'plus rien de mieux');
+  } },
 ];

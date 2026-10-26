@@ -46,6 +46,7 @@ export const tests = [
     if (typeof WebSocket === 'undefined') { t.ok(true); return; }
     const { originOk, GARDE } = await import('../../../relais/src/salle.js');
     t.eq([originOk('https://moi.github.io', 'https://moi.github.io/'), originOk('https://autre.github.io', 'https://moi.github.io'), originOk('https://a.claudeusercontent.com', '*.claudeusercontent.com'), originOk('null', 'https://moi.github.io'), originOk('https://x.y', '')], [true, false, true, false, true], 'règles des sites autorisés');
+    t.eq([originOk('https://padiwa.github.io', 'https://padiwa.github.io/Crypt/'), originOk('https://padiwa.github.io', 'padiwa.github.io'), originOk('https://padiwa.github.io', ' https://Padiwa.github.io/Crypt , https://autre.fr'), originOk('https://autre.github.io', 'https://padiwa.github.io/Crypt/')], [true, true, true, false], 'adresse avec chemin, sans https, majuscules : comptent pour leur site');
     const R = await startRelay({ origins: 'https://moi.github.io' });
     try {
       const X = await client(R.url + '/r/1111?role=h&k=s', 'https://pirate.example'); await wait(60);

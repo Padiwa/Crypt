@@ -1,6 +1,6 @@
 # Crypte des Cendres — specs
 
-Oct 26, 2026 · @cms · version 113
+Oct 26, 2026 · @cms · version 116
 
 ## Vue d'ensemble
 
@@ -60,7 +60,18 @@ Trois modes, tous avec un niveau de mission libre de 1 à 50, choisi sur l'écra
 
 **Capture** : la cible (260 PV × difficulté) fuit quand le héros est à moins de 480 unités et se téléporte à 330 unités toutes les 4 à 6 s s'il est à moins de 260. Une flèche dorée indique sa direction et sa distance.
 
-Fissure (ouverture de reliques) : on équipe au Camp (onglet Reliques, ou ligne Reliques de l'écran de départ) autant de reliques qu'on veut, dans l'ordre choisi (Tout équiper, Tout retirer). Depuis v94, la file du Camp est regroupée par relique et par état (« Relique Ossuaire ×8 », « éclatante ×2 »), dans l'ordre de la première de chaque groupe : ↑ ↓ déplacent le groupe entier, − et + retirent ou ajoutent une relique du groupe. Tant qu'il reste une relique à ouvrir, 18 % des ennemis sont corrompus (halo doré, +30 % de vie) et lâchent un réactif. 10 réactifs ouvrent la relique en cours, puis le compteur repart à 0 pour la suivante (« Relique 2/5 · 4/10 » en haut). Depuis v95, l'ouverture ne montre plus ni bannière ni message : seuls le son, la secousse et le compteur la signalent. À la réussite, chaque relique ouverte donne 1 fragment d'un objet de sa rareté (2 si éclatante) et 25 essence. Les reliques non ouvertes, ou toutes en cas d'échec, ne sont pas consommées et restent équipées.
+Fissure (ouverture de reliques) : on équipe au Camp (onglet Reliques, ou ligne Reliques de l'écran de départ) autant de reliques qu'on veut, dans l'ordre choisi (Tout équiper, Tout retirer). Depuis v94, la file du Camp est regroupée par relique et par état (« Relique Ossuaire ×8 », « éclatante ×2 »), dans l'ordre de la première de chaque groupe : ↑ ↓ déplacent le groupe entier, − et + retirent ou ajoutent une relique du groupe. Tant qu'il reste une relique à ouvrir, 10 % des ennemis sont corrompus (BAL.corrupt, rythme rapide) (halo doré, +30 % de vie) et lâchent un réactif. 30 réactifs (BAL.reactN ; moins en Tourment, voir Bonus du Tourment) ouvrent la relique en cours, puis le compteur repart à 0 pour la suivante (icône de relique avec l'anneau des réactifs et nombre de reliques ouvertes, en haut). Depuis v95, l'ouverture ne montre plus ni bannière ni message : seuls le son, la secousse et le compteur la signalent. À la réussite, chaque relique ouverte donne 1 fragment d'un objet de sa rareté (2 si éclatante) et 25 essence. Les reliques non ouvertes, ou toutes en cas d'échec, ne sont pas consommées et restent équipées.
+
+**Bonus du Tourment** (v116, réglages dans `js/rythmes/`) : en Tourment, il faut moins de réactifs pour ouvrir une relique, et les reliques tombent plus souvent à mesure qu'on reste dans la mission. Une tranche de séjour = 2 minutes de mission (`G.t`).
+
+| Réglage (rythme rapide) | Valeur | Effet |
+| --- | --- | --- |
+| `tormReact` | 4 % par palier | réactifs en moins : −4 % au palier I, −40 % au palier X (18 au lieu de 30) |
+| `sejReact`, `sejReactMax` | 5 % par tranche, 30 % au plus | réactifs en moins avec le séjour |
+| `reactCutMax` | 70 % | réduction totale maximale : il faut toujours au moins 9 réactifs |
+| `sejRelic`, `sejRelicMax` | +10 % par tranche, +60 % au plus | chance de relique sur les monstres et les élites |
+
+Le rythme long : 3 % par palier, 4 % par tranche (24 % au plus), 60 % au total, reliques +8 % par tranche (48 % au plus). Un message (gardé en mission) annonce chaque hausse ; l'écran de fin de manche rappelle le bonus (« 20 réactifs par relique au lieu de 30, reliques +20 % ») ; la ligne Tourment de l'accueil affiche « réactifs −X %, plus en restant ». En coopération, chacun calcule son bonus avec le palier de l'hôte et son propre temps de mission.
 
 **Sortie et mort** : sortir garde tout le butin. Mourir garde la moitié de l'or ramassé, les mods et l'équipement déjà équipé ; les objets et reliques trouvés sont perdus.
 
@@ -181,7 +192,7 @@ Au niveau L, les chances d'équipement, de relique et d'arme sont multipliées p
 | Sanguin | 6 | 1,8 | 1,4 | fragments, relique Sanguine | 1 000 or |
 | Abyssal | 6 + 1 pouvoir | 2,1 | 1,5 | fragments, relique Abyssale | 1 500 or |
 
-**Reliques** : une par rareté, selon la difficulté seulement : Ossuaire en Normal, Difficile, Cauchemar ; Ancestrale en Tourment I à V ; Sanguine en Tourment VI à X, avec 10 % + 5 % par palier au-delà du V de chances d'être Abyssale (15 % en VI, 35 % en X). Chaque relique ouverte en mission (Fissure inchangée : 10 réactifs) donne, à la réussite, 1 fragment d'un objet de sa rareté (2 si éclatante, raffinage 50 essence), pris parmi les armes du héros de cette rareté et les objets des reliques de cette rareté ; les objets de givre seulement si la relique est ouverte dans les Abîmes gelés. Tirage pondéré 1 + 0,5 × fragments déjà réunis ; le fragment donné est un manquant s'il en reste. +25 essence par relique, œufs 8 / 12 / 15 / 25 %. **Reliques forgées** : 3 reliques d'un même type (20, 40, 80, 150 essence) → 1 relique forgée de ce type, pour l'objet choisi, qui garantit un fragment de cet objet. La fusion vers le type au-dessus est supprimée.
+**Reliques** : une par rareté, selon la difficulté seulement : Ossuaire en Normal, Difficile, Cauchemar ; Ancestrale en Tourment I à V ; Sanguine en Tourment VI à X, avec 10 % + 5 % par palier au-delà du V de chances d'être Abyssale (15 % en VI, 35 % en X). Chaque relique ouverte en mission (Fissure : 30 réactifs, moins en Tourment) donne, à la réussite, 1 fragment d'un objet de sa rareté (2 si éclatante, raffinage 50 essence), pris parmi les armes du héros de cette rareté et les objets des reliques de cette rareté ; les objets de givre seulement si la relique est ouverte dans les Abîmes gelés. Tirage pondéré 1 + 0,5 × fragments déjà réunis ; le fragment donné est un manquant s'il en reste. +25 essence par relique, œufs 8 / 12 / 15 / 25 %. **Reliques forgées** : 3 reliques d'un même type (20, 40, 80, 150 essence) → 1 relique forgée de ce type, pour l'objet choisi, qui garantit un fragment de cet objet. La fusion vers le type au-dessus est supprimée.
 
 **Objets des reliques** (RGEAR, 36) : 2 modèles par emplacement et par rareté, affixes fixes, valeurs tirées au niveau de fabrication : Légendaire L1–L8 (4 affixes), Ancestral N1–N8 (5), Sanguin S1–S10 (6, dont 2 de givre), Abyssal B1–B10 (6 + pouvoir, dont 2 de givre). Un objet fabriqué prend le niveau d'objet de la plus haute mission réussie : 1 + (meta.maxL − 1) × 4 ; meta.maxL monte à chaque sortie réussie.
 
@@ -225,6 +236,28 @@ Au niveau L, les chances d'équipement, de relique et d'arme sont multipliées p
 **v106 · Rythme de progression réglable.** Tous les réglages de vitesse de progression sont regroupés dans `BAL_PRESETS` (haut de `js/data.js`), avec deux rythmes : `rapide` (par défaut) et `long` (environ 80 h). C'est un réglage de développement, pas un choix du joueur (aucun écran ne le propose) : on change de rythme en modifiant la ligne `BAL_MODE`.
 
 **v107 · Rythmes dans des fichiers.** Chaque rythme est un fichier : `js/rythmes/rapide.js` (rythme publié, par défaut) et `js/rythmes/long.js` (fin de jeu visée vers 80 h). Chacun définit `RYTHME` avec les valeurs du tableau ci-dessous, commentées ; `BAL_PRESETS` et `BAL_MODE` disparaissent de `data.js`. Le rythme chargé est celui de la balise `<script src="js/rythmes/….js">` d'`index.html`, placée avant `data.js` (et la liste `CORE` de `sw.js`). Pour un nouveau rythme, on copie un fichier et on change ses valeurs. Le simulateur charge n'importe quel fichier : `--rythme long` ou un chemin. Le joueur ne choisit toujours pas le rythme.
+
+**v116 · Bonus du Tourment, retour d'une autre appli.**
+
+- Tourment : moins de réactifs par palier et avec le séjour dans la mission, plus de reliques avec le séjour (voir Bonus du Tourment, section Missions). Accélère la fin de jeu ; le simulateur n'a pas été relancé.
+- Changer d'appli ou éteindre l'écran ouvre le sac en mission (pause ; en coopération le monde continue pour les autres). Au retour (`visibilitychange`, `pageshow`), le moteur WebGL est reconstruit à neuf (`renewRender` : nouveau contexte, textures et décor refaits), sinon rendu standard : corrige l'écran noir après un passage en arrière-plan.
+- Tests : 78.
+
+**v115 · Meilleure arme, course de connexion.**
+
+- « Équiper le meilleur » (Camp) prend aussi la meilleure arme possédée du héros, chacune comparée avec ses propres mods et sa maîtrise (`bestPlan(e, pool, true)`) ; la pastille de l'onglet Héros la compte. Une arme trouvée n'est toujours pas équipée toute seule.
+- Correctif coopération : si la liaison s'ouvrait avant la fin de `setRemoteDescription`, l'hôte repassait le joueur de « ouvert » à « connexion » ; il lançait alors la mission sans lui, l'invité restant « en attente ». L'état « connexion » ne remplace plus un joueur déjà ouvert (QR codes et code à 4 chiffres). C'était la cause des échecs intermittents des tests de coopération.
+- Relais : `ORIGINES` accepte une adresse avec chemin, sans `https://` ou en majuscules (elle compte pour son site).
+- Tests : 75.
+
+**v114 · Coupures expliquées, reconnexion automatique.**
+
+- Le relais du jeu est le mode par défaut même si `js/relais.js` manque ou est vide (`RELAY_CF` dans `js/net.js`) ; `js/relais.js` peut le remplacer, ou mettre `off` pour les QR codes seuls.
+- Raison de chaque déconnexion (`bye` : jeu fermé ou rechargé ; `end` : l'hôte a fermé la partie ; `close`/`failed` : liaison coupée ; `timeout` : 20 s sans nouvelles en mission), affichée dans Coop (« Dernière déconnexion, à HH:MM : … »). Chaque appareil signale son passage en arrière-plan (message `bg`) pour expliquer une coupure qui suit (écran en veille, autre appli).
+- Invité venu par un code : reconnexion automatique à la même partie après une coupure (jusqu'à 6 essais espacés), sauf si l'hôte a fermé la partie ou l'a retiré.
+- Rechargement (mise à jour, page rechargée) : la partie est gardée pour l'onglet 10 minutes (`sessionStorage`) ; l'hôte rouvre sa salle sous le même code (même secret), l'invité la rejoint.
+- Correctif : une liaison `failed` chez un invité connecté le laissait « connecté » à tort ; elle déclenche maintenant la déconnexion et la reconnexion.
+- Tests : 74.
 
 **v113 · Relais en ligne.** Le relais est déployé sur Cloudflare (Workers Builds depuis le dépôt GitHub, dossier racine `relais`, nom du Worker `crypte-relais` identique à `wrangler.toml`) à l'adresse `crypte-relais.cryptcendre.workers.dev`, branchée dans `js/relais.js`. À régler dans le tableau de bord : la variable `ORIGINES` avec l'adresse GitHub Pages du jeu. Tests : 72.
 
