@@ -8,10 +8,12 @@ function slotsHtml(eq,click,selSlot){
   return Object.keys(SLOT).map(k=>{if(!slotOpen(k))return `<div class="slot locked" aria-disabled="true"><span>${SLOT[k]}</span><strong style="color:var(--muted)">Verrouillé</strong></div>`;const it=eq[k],tag=click?'button':'div';
     return `<${tag} class="slot${selSlot===k?' sel':''}"${click?` data-slot="${k}"`:''}><span>${SLOT[k]}</span><strong style="color:${it?RAR[it.r].c:'var(--muted)'}">${it?itemName(it):'Vide'}${it&&it.lock?`<span class="li" aria-label="verrouillé">${LOCK_SVG}</span>`:''}</strong></${tag}>`}).join('');
 }
-function better(it){const e=curEq(),k=tgtKey(e,it);if(!k)return false;const a=stats(e),b=stats({...e,[k]:it});return dps(b)+b.hp*.3>dps(a)+a.hp*.3}
+function better(it){const e=curEq(),k=tgtKey(e,it);if(!k)return false;return itemScore({...e,[k]:it})>itemScore(e)*1.0001}
 const LOCK_SVG='<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 const cellHtml=(it,attr,sel,up)=>`<button class="cell${sel?' sel':''}${up?' up':''}${it.lock?' locked':''}" data-${attr}="${it.id}" style="border-color:${RAR[it.r].c};color:${RAR[it.r].c}" aria-label="${itemName(it)}${it.lock?', verrouillé':''}">${it.lock?`<span class="lk">${LOCK_SVG}</span>`:''}${it.up?`<span class="cup">R${it.up+1}</span>`:''}${GLYPH[it.slot]}</button>`;
-const itemScore=e=>{const x=stats(e);let d=dps(x)*(1+x.abSoul*.06)*(1+x.abExec*.015)*(1+x.crit/100*x.abRift/100*2.1)*(1+x.abHunt*.0025)+x.dmg*x.abPulse/100*.8;d*=1+x.execute*.003+x.bossDmg*.0015+x.lowDmg*.001+x.shock*.01+x.chill*.003+x.ultPct*.001+x.fury*.002;return d+(x.hp+x.abWard*8)*.3*(1+x.armor/100+x.lowArmor*.003+x.potHeal*.001+x.antidote*.001+x.auraSlow*.003)};
+const itemScore=e=>{const x=stats(e);let d=dps(x)*(1+x.abSoul*.06)*(1+x.abExec*.015)*(1+x.crit/100*x.abRift/100*2.1)*(1+x.abHunt*.0025)+x.dmg*x.abPulse/100*.8;d*=1+x.execute*.003+x.bossDmg*.0015+x.lowDmg*.001+x.shock*.01+x.chill*.003+x.ultPct*.001+x.fury*.002;// Attaque et survie pèsent ensemble (moyenne géométrique) : gagner 10 % de vie vaut à peu près gagner 12 % de dégâts, quel que soit le niveau.
+  const v=(x.hp+x.abWard*8)/(1-Math.min(60,x.armor)/200)*(1+x.lowArmor*.003+x.potHeal*.001+x.antidote*.001+x.auraSlow*.003)+x.regen*15;
+  return Math.pow(Math.max(1,d),.55)*Math.pow(Math.max(1,v),.45)};
 function bestPlan(e,pool){const cur={...e},pick={};
   for(let pass=0;pass<2;pass++)for(const sl of Object.keys(e).filter(k=>k!=='arme')){let best=cur[sl],bs=itemScore(cur);
     for(const it of pool){if(it.slot!==keySlot(sl)||Object.values(cur).includes(it)&&cur[sl]!==it||Object.values(pick).includes(it)&&pick[sl]!==it)continue;const sc=itemScore({...cur,[sl]:it});if(sc>bs+1e-6){bs=sc;best=it}}
@@ -19,8 +21,19 @@ function bestPlan(e,pool){const cur={...e},pick={};
   return pick}
 /* ---------- Pause ---------- */
 let runSel=null;
-function openBag(){if(G.over)return;paused=true;resetJoy();$('bag').hidden=false;runSel=null;modSel=null;G.fresh=0;$('bag').querySelectorAll('details[data-more]').forEach(d=>d.open=!!(typeof moreOpen!=='undefined'&&moreOpen[d.dataset.more]));$('rendTxt').textContent=PX?'Rendu WebGL (PixiJS)':'Rendu standard';$('rendBtn').textContent=PX?'Passer au rendu standard':'Essayer WebGL';drawBag()}
-function closeBag(){$('bag').hidden=true;paused=false;last=performance.now()}
+function openBag(){if(G.over)return;paused=true;resetJoy();$('bag').hidden=false;runSel=null;modSel=null;quitAsk=false;G.fresh=0;$('bag').querySelectorAll('details[data-more]').forEach(d=>d.open=!!(typeof moreOpen!=='undefined'&&moreOpen[d.dataset.more]));$('rendTxt').textContent=PX?'Rendu WebGL (PixiJS)':'Rendu standard';$('rendBtn').textContent=PX?'Passer au rendu standard':'Essayer WebGL';drawBag()}
+function closeBag(){$('bag').hidden=true;paused=false;quitAsk=false;last=performance.now()}
+/* ---------- Pause › Retour au Camp : abandonne la mission ----------
+   Tout ce qui a été trouvé dans ce niveau est perdu (objets, reliques, armes, or, expérience) ; les reliques équipées ne sont pas consommées.
+   En coopération : un invité quitte la mission (les autres continuent) ; l'hôte l'arrête pour tous, les invités gardent leur butin. */
+let quitAsk=false;
+function abandonRun(){if(!G||G.over)return;
+  if(NET.on){if(NET.guest)netSend({t:'leave'});else if(NET.host)netSend({t:'exit'})}
+  G.over=true;G.hold=false;started=false;paused=false;quitAsk=false;resetJoy();
+  ['bag','lvlup','extract','over'].forEach(id=>$(id).hidden=true);$('bossBar').hidden=true;$('objBar').hidden=true;
+  newGame();$('intro').hidden=false;refreshMenus();refreshCoopUi();campTab='equip';openCamp();
+  toast('Mission abandonnée : retour au Camp, le butin du niveau est perdu.')}
+$('quitBtnBag').addEventListener('click',()=>{quitAsk=true;drawBag()});
 $('bagBtn').addEventListener('click',()=>{if(started&&!G.over&&$('extract').hidden&&$('lvlup').hidden)$('bag').hidden?openBag():closeBag()});
 $('closeBag').addEventListener('click',closeBag);$('closeBagX').addEventListener('click',closeBag);
 $('rendBtn').addEventListener('click',()=>{if(PX){dropPixi('choix du joueur');try{localStorage.setItem('crypte-nogl','1')}catch(e){}}else{try{localStorage.removeItem('crypte-nogl')}catch(e){}location.reload()}});
@@ -43,17 +56,26 @@ function drawBag(){
   $('runLoot').querySelectorAll('[data-run]').forEach(b=>b.onclick=()=>{const id=+b.dataset.run;runSel=runSel===id?null:id;modSel=null;drawBag()});
   if($('bestRun'))$('bestRun').onclick=()=>{const plan=bestPlan(G.eq,G.loot.items);for(const sl in plan){const it=plan[sl];G.loot.items=G.loot.items.filter(i=>i!==it);const old=meta.gear[sl];if(old)meta.stash.push(old);meta.gear[sl]=it;G.eq[sl]=it}saveMeta();refreshStats();runSel=null;toast(`${Object.keys(plan).length} objet${Object.keys(plan).length>1?'s':''} équipé${Object.keys(plan).length>1?'s':''}`);drawBag()};
   if(modTab==='p'&&!petEq())modTab='h';
+  {const d=$('bagModsT').closest('details');if(d)d.hidden=!isUnl('mods')}
   const bb=build(modTab==='p'?'h':modTab);$('bagModsT').textContent=`Mods · ${bActive(build('w')).length+bActive(build('h')).length} actifs`;
   renderMods('modsBag');
   // fiche ancrée : objet du butin choisi (prioritaire sur le détail d'un mod)
+  if(quitAsk){runSel=null;modSel=null}
   if(runSel){const it=L.items.find(i=>i.id===runSel),cur=G.eq[tgtKey(G.eq,it)];
     $('bagDock').innerHTML=`<div class="cx-dock__head"><h3 class="cx-dock__title" style="color:${RAR[it.r].c}">${esc(itemName(it))}</h3><button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-bag="close" aria-label="Fermer le détail"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
       <span class="cx-dock__meta">${RAR[it.r].n} · ${SLOT[it.slot]} · niveau ${it.lvl}</span>
       ${(()=>{const k='r:'+it.id;if(k!==cmpKey){cmpKey=k;cmpPage=0}return cmpObjet(G.eq,it)})()}<button class="cx-btn cx-btn--primary cx-btn--block" data-bag="equip" data-arg="${it.id}" style="margin-top:4px">Équiper maintenant${cur?` · remplace ${esc(itemName(cur))}`:''}</button><p class="cx-hint" style="margin:0">Un objet équipé est gardé même si tu meurs. L'ancien part au coffre du Camp.</p>`;
     $('bagDock').hidden=false;$('bagFoot').hidden=true}
+  else if(quitAsk){const L=G.loot,no=L.items.length+L.parts.length,nr=L.relics.length,pl=(n,w)=>`${n} ${w}${n>1?'s':''}`,lostL=[no?pl(no,'objet'):'',nr?pl(nr,'relique'):'',G.gold?`${G.gold} or`:''].filter(Boolean),lost=lostL.length;
+    $('bagDock').innerHTML=`<div class="cx-dock__head"><h3 class="cx-dock__title">Retourner au Camp ?</h3></div>
+      <p style="margin:0">Tu abandonnes la mission et tu perds tout ce que tu as accumulé dans ce niveau${lost?` (${lostL.join(', ')})`:''}, ainsi que l'expérience. Tes reliques équipées ne sont pas consommées.</p>
+      ${NET.on?`<p class="cx-hint" style="margin:0">${NET.host?'Coopération : la mission s\'arrête pour tout le monde, tes partenaires gardent leur butin.':'Coopération : tes partenaires continuent sans toi ; tu les rejoindras à la prochaine mission.'}</p>`:''}
+      <div class="cx-actions" style="margin:0"><button class="cx-btn" data-bag="quitno">Continuer la mission</button><button class="cx-btn cx-btn--danger" data-bag="quitok">Retour au Camp</button></div>`;
+    $('bagDock').hidden=false;$('bagFoot').hidden=true}
   else if(!modSel){$('bagDock').hidden=true;$('bagFoot').hidden=false}
 }
 $('bagDock').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;
+  if(b.dataset.bag==='quitno'){quitAsk=false;drawBag();return}if(b.dataset.bag==='quitok'){abandonRun();return}
   if(b.dataset.bag==='close'){runSel=null;drawBag()}else if(b.dataset.bag==='equip')equipRun(+b.dataset.arg);else if(b.dataset.act)modAct(b.dataset.act,b.dataset)});
 /* ---------- Montée de niveau ---------- */
 function gainXp(v){
@@ -156,6 +178,7 @@ function modTile(id,cls='',i,b){const m=MODS[id],rk=meta.mods[id],isA=modKind(id
   return `<button class="cx-mod${cls}" data-mod="${id}" style="--mc:${MOD_RAR[m.r].c}" aria-label="${m.n}, rang ${rk}, ${isA?'aura':'polarité '+p.n}, coût ${d}"><span class="cx-mod__pol" style="color:${p.c}">${p.s}</span><span class="cx-mod__cost">${d}</span><b>${m.n}</b>${st?`<span class="mst">${'★'.repeat(st)}</span>`:''}${meta.modCp[id]?`<span class="mcp" title="Copies">×${meta.modCp[id]}</span>`:''}<span class="cx-mod__pips">${'<i class="on"></i>'.repeat(rk)}${'<i></i>'.repeat(m.max-rk)}</span></button>`}
 function renderMods(rootId){
   const root=$(rootId);if(!root)return;const inCamp=rootId==='modsCamp';
+  if(modTab==='h'&&!isUnl('hmods')){modTab='w';modSel=null;modSF=null;alSel=null} // mods du héros : débloqués plus tard
   const b=build(modTab),u=bUsed(b),cap=bCap(b),act=bActive(b),mt=b.mast;
   const owned=Object.keys(MODS).filter(id=>meta.mods[id]!=null);
   if(modSel&&meta.mods[modSel]==null)modSel=null;
@@ -178,7 +201,7 @@ function renderMods(rootId){
     return `<div class="cx-rows"><div class="cx-row"><span class="cx-row__k" style="color:var(--ink)">Case ${b.slots+1} du héros<small>${c} fragments de relique, pris parmi ceux que tu as en plus grand nombre · tu en as ${have}</small></span><button class="cx-btn cx-btn--sm" data-act="slotbuy" style="margin:0" ${have<c?'disabled':''}>Débloquer</button></div></div>`})():'';
   const petTab=inCamp&&campTab==='pets',bn=modTab==='h'?`Build ${deCls(heroCls)}`:modTab==='w'?`Build ${b.de}`:'Build du familier';
   const over=u>cap;
-  root.innerHTML=`${petTab?petPanel():`<div class="cx-tabs" role="tablist"><button class="cx-tab" role="tab" data-act="mtab" data-t="h" aria-selected="${modTab==='h'}">Héros · ${CLS[heroCls].n}</button><button class="cx-tab" role="tab" data-act="mtab" data-t="w" aria-selected="${modTab==='w'}">Arme · ${wdef(curWid()).n}</button>${inCamp?'':`<button class="cx-tab" role="tab" data-act="mtab" data-t="p" aria-selected="${modTab==='p'}">Familier</button>`}</div>`}
+  root.innerHTML=`${petTab?petPanel():`<div class="cx-tabs" role="tablist"><button class="cx-tab${isUnl('hmods')?'':' is-locked'}" role="tab" data-act="mtab" data-t="h" aria-selected="${modTab==='h'}">${isUnl('hmods')?'':`<span class="lockmini" aria-hidden="true">${LOCK_SVG}</span>`}Héros · ${CLS[heroCls].n}</button><button class="cx-tab" role="tab" data-act="mtab" data-t="w" aria-selected="${modTab==='w'}">Arme · ${wdef(curWid()).n}</button>${inCamp?'':`<button class="cx-tab" role="tab" data-act="mtab" data-t="p" aria-selected="${modTab==='p'}">Familier</button>`}</div>`}
     <div class="cx-meter${over?' is-over':''}"><div class="cx-meter__top"><span>Capacité</span><b>${u} / ${cap}</b></div><div class="cx-meter__bar"><i style="--v:${Math.min(100,cap?u/cap*100:0)}%"></i></div></div>
     <p class="cx-hint" style="margin:0">${over?'<span style="color:var(--blood-ink)">Capacité dépassée : les mods en trop sont inactifs (grisés). Retire un mod ou regagne de la maîtrise.</span>':b.kind==='p'?`Bonus de niveau du familier +${mt.r} · capacité qui monte avec son rang et son niveau`:`Maîtrise ${b.kind==='w'?'arme':'héros'} ${mt.r} / 10${mt.r<10?` · ${mt.xp} / ${mastNeed(mt.r)}`:''} · gagne de la capacité en mission`}</p>
     ${modTab==='h'?`<div class="aurarow"><div class="cx-modslot"><span class="cx-modslot__pol" style="color:${AURA_C};cursor:default">✦ Aura</span>${b.aura?modTile(b.aura,modSel===b.aura?' is-sel':''):'<div class="cx-mod cx-mod--empty"><b>Aura libre</b></div>'}</div><p class="cx-hint" style="margin:0">Une aura rapporte de la capacité au lieu d'en coûter, et donne un effet permanent.</p></div>`:''}
@@ -186,7 +209,7 @@ function renderMods(rootId){
     ${buyBox}
     <section class="cx-section"><h3 class="cx-section__label">Tes mods · ${pool.length}</h3>${filt}
     <div class="cx-mods">${rest.map(id=>modTile(id,(modSel===id?' is-sel':'')+(modOk(id,heroCls)&&!ptOff(id)?'':' lock'),modSF!=null&&modKind(id)!=='a'?modSF:undefined,modSF!=null?b:undefined)).join('')||`<p class="cx-hint" style="grid-column:1/-1;margin:0">${pool.length?'Aucun mod pour ce filtre.':`Aucun autre mod ${modTab==='w'?'d\'arme':modTab==='p'?'de familier':'de héros'}.`} Les monstres en laissent parfois tomber, les Gardiens toujours.</p>`}</div></section>
-    ${inCamp?cxMore('align_'+b.kind,'Alignement des cases',alignPanel(b),'Ouvrir'):''}`;
+    ${inCamp&&isUnl('align')?cxMore('align_'+b.kind,'Alignement des cases',alignPanel(b),'Ouvrir'):''}`;
   root.querySelectorAll('[data-mod]').forEach(x=>x.onclick=()=>{modSel=modSel===x.dataset.mod?null:x.dataset.mod;runSel=null;modsChanged()});
   root.querySelectorAll('[data-act]').forEach(x=>x.onclick=()=>modAct(x.dataset.act,x.dataset));
   root.querySelectorAll('[data-pet]').forEach(x=>x.onclick=()=>petAct(x.dataset.pet,x.dataset.arg));
@@ -197,7 +220,7 @@ function modDock(id){const html=modDetail(id);return `<div class="cx-dock__head"
 function modAct(a,ds){
   const id=modSel,rk=id?meta.mods[id]:0;
   if(a==='mclose'){modSel=null}
-  else if(a==='mtab'){modTab=ds.t;modSel=null;alSel=null;modSF=null;modPF='all'}
+  else if(a==='mtab'){if(ds.t==='h'&&!isUnl('hmods')){toast(`${UNL_BY.hmods.n} : ${UNL_BY.hmods.need.replace(/^./,c=>c.toLowerCase())}`);return}modTab=ds.t;modSel=null;alSel=null;modSF=null;modPF='all'}
   else if(a==='polf'){modPF=ds.p;modSF=null}
   else if(a==='slotf'){const i=+ds.i;modSF=modSF===i?null:i}
   else if(a==='equip'||a==='unequip'||a==='fuse'){
@@ -262,7 +285,7 @@ function bank(full){
   sealBank(full);saveMeta();return g;
 }
 function recordBest(){if(G.t>best){best=G.t;try{localStorage.setItem('crypte-best2',String(best))}catch(e){}}}
-function showOver(title,txt,earn,rel){$('overTitle').textContent=title;$('overTxt').textContent=txt;$('earnTxt').innerHTML=earn;$('relicTxt').innerHTML=[rel,G&&G.mastMsg?`<p class="lead" style="font-size:13px;margin:6px 0 0">${G.mastMsg}</p>`:''].filter(Boolean).join('');refreshMenus();$('over').hidden=false}
+function showOver(title,txt,earn,rel){$('overTitle').textContent=title;$('overTxt').textContent=txt;$('earnTxt').innerHTML=earn;$('relicTxt').innerHTML=[rel,G&&G.mastMsg?`<p class="lead" style="font-size:13px;margin:6px 0 0">${G.mastMsg}</p>`:'',typeof unlockOverHtml==='function'?unlockOverHtml():''].filter(Boolean).join('');refreshMenus();$('over').hidden=false}
 // Ouvre une relique : un fragment d'un objet de sa rareté (deux si éclatante ; la relique forgée vise son objet).
 function grantRelic(id,rad){
   const a=meta.relics[id],R=RELICS[id];if(!R||!a||a[rad?1:0]<=0)return null;

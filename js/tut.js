@@ -2,8 +2,8 @@
 // Les détails de chaque étape sont dans le guide, section « Bien débuter » (#debuter).
 meta.wins=meta.wins|0;meta.bestDiff=meta.bestDiff|0;meta.bestTorm=meta.bestTorm|0;meta.relOpened=meta.relOpened|0;
 if(meta.tutV!==1){meta.tutV=1;if(!meta.wins&&(meta.maxL>1||meta.stash.length))meta.wins=1}
-const ownedRar=r=>[...meta.stash,...Object.values(meta.gear)].some(i=>i&&i.r>=r&&i.rid)||Object.values(WPN).flat().some(w=>w.r>=r&&ownedW(w.id));
-const anyRank=()=>[...meta.stash,...Object.values(meta.gear)].some(i=>i&&(i.up|0)>=1)||Object.values(meta.wlv||{}).some(v=>v>=1);
+const ownedRar=r=>[...meta.stash,...allWorn()].some(i=>i&&i.r>=r&&i.rid)||Object.values(WPN).flat().some(w=>w.r>=r&&ownedW(w.id));
+const anyRank=()=>[...meta.stash,...allWorn()].some(i=>i&&(i.up|0)>=1)||Object.values(meta.wlv||{}).some(v=>v>=1);
 const TUT=[
   {n:'Premiers pas',tip:'Survie en Normal, niveau 1. Sors au premier portail : un butin ramené vaut mieux qu\'une manche de trop. En pause, équipe ce qui porte ▲.',
     o:[['Réussis ta première mission',()=>meta.wins>=1],['Porte une armure, une amulette, des bottes et un anneau',()=>['armure','amulette','bottes','anneau'].every(k=>meta.gear[k])]]},
@@ -20,7 +20,7 @@ const TUT=[
 ];
 const tutStep=()=>TUT.findIndex(s=>!s.o.every(([,f])=>f()));
 // Appelé à la réussite d'une mission (bank).
-function tutWin(){meta.wins=(meta.wins|0)+1;const d=meta.diff|0;if(d>(meta.bestDiff|0))meta.bestDiff=d;if(d===3)meta.bestTorm=Math.max(meta.bestTorm|0,tormT())}
+function tutWin(){meta.wins=(meta.wins|0)+1;const d=dsel().d;if(d>(meta.bestDiff|0))meta.bestDiff=d;if(d===3)meta.bestTorm=Math.max(meta.bestTorm|0,tormT())}
 function tutCard(){if(meta.tutOff)return '';const i=tutStep();if(i<0)return '';const S=TUT[i],done=S.o.filter(([,f])=>f()).length;
   return `<section class="cx-card tutc"><div class="cx-card__head"><div><h4 class="cx-card__title">Parcours · étape ${i+1} / ${TUT.length} : ${S.n}</h4><div class="cx-card__meta">${done} / ${S.o.length} objectif${S.o.length>1?'s':''}</div></div></div>
     <ul class="tutl">${S.o.map(([t,f])=>{const ok=f();return `<li class="${ok?'ok':''}"><span aria-hidden="true">${ok?'✓':'○'}</span>${t}</li>`}).join('')}</ul>

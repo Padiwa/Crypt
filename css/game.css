@@ -957,6 +957,15 @@ li.abyp{color:#cdb2ff;font-weight:600;border-left:2px solid #b07cff;padding-left
 .coopros li{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--panel2);border:1px solid var(--line);border-radius:8px}
 .coopros li .cx-hint{margin-left:auto}
 .coopros .dotc{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
+/* niveau de prestige devant le nom d'un joueur (salon, messages, au-dessus des partenaires) */
+.prb{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:18px;padding:0 5px;box-sizing:border-box;border:1px solid #f0cf4a;border-radius:5px;background:rgba(20,14,8,.6);color:#f0cf4a;font:800 11px/1 var(--font-body);font-variant-numeric:tabular-nums;flex:0 0 auto;vertical-align:1px;margin-right:6px}
+.coopros .prb{margin-right:-2px}
+.coopros .coopname{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.coopros .cooptag{font:400 12px/1.3 var(--font-body);color:var(--muted);white-space:nowrap}
+.coopros .cooptag:empty{display:none}
+.setname{flex:0 1 13em;min-width:0;box-sizing:border-box;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:7px 9px;font:600 15px/1.3 var(--font-body);color:var(--ink)}
+.setname:focus{outline:none;border-color:var(--ember-hi)}
+.setname::placeholder{color:var(--muted);font-weight:400}
 
 .coopcode .actions{flex-wrap:wrap}
 
@@ -1099,3 +1108,44 @@ body:has(#camp:not([hidden])) .toast,body:has(#bag:not([hidden])) .toast{top:cal
 .tutc{display:flex;flex-direction:column;gap:8px}.tutl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:14px}.tutl li{display:flex;gap:8px;align-items:baseline}.tutl li span{width:1.1em;color:var(--muted)}.tutl li.ok{color:var(--muted);text-decoration:line-through}.tutl li.ok span{color:var(--heal);text-decoration:none}
 .tutl li::before{display:none!important;content:none!important}.tutl li{padding-left:0!important}.tutc .cx-card__title{font-size:19px;line-height:1.2}
 @media (pointer:fine){#cv{cursor:crosshair}}
+
+/* v106 : héros qui porte l'objet (coffre), équipements enregistrés, reliques ouvertes dans le HUD */
+.cell .cwho{position:absolute;bottom:-6px;right:-6px;min-width:17px;height:17px;padding:0 3px;border-radius:9px;background:var(--wc);color:#1b0f06;font:800 10px/17px var(--font-body);text-align:center;box-shadow:0 0 0 2px var(--panel)}
+.cx-set .cx-row__k{gap:3px}
+.cx-setname{width:100%;max-width:16em;box-sizing:border-box;background:transparent;border:1px solid transparent;border-radius:6px;padding:2px 4px;margin-left:-5px;font:600 14px/1.3 var(--font-body);color:var(--ink)}
+.cx-setname:hover{border-color:var(--line)}
+.cx-setname:focus{outline:none;border-color:var(--ember-hi);background:var(--panel-2)}
+.cx-set.is-on .cx-setname{color:var(--heal)}
+.sdots{display:inline-flex;gap:4px;vertical-align:middle}
+.sdot{width:9px;height:9px;border-radius:50%;background:var(--c);display:inline-block}
+.sdot.miss{background:transparent;box-shadow:inset 0 0 0 1.5px var(--blood-ink)}
+.cx-set__act{display:flex;align-items:center;gap:4px;flex:0 0 auto}
+@media (max-width:560px){.cx-set{flex-wrap:wrap;row-gap:6px;padding-block:8px}.cx-set .cx-row__k{flex-basis:100%}.cx-set__act{width:100%;justify-content:flex-end}.cx-set__act .cx-btn--primary,.cx-set__act .cx-btn[disabled]{flex:1}}
+.room .roomsub{display:flex;align-items:center;gap:6px;min-height:16px}
+.room .relhud{display:inline-flex;align-items:center;gap:3px;font:700 12px/1 var(--font-body);color:var(--ink);font-variant-numeric:tabular-nums}
+.relhud .rring{--p:0;width:16px;height:16px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--tc) calc(var(--p)*1turn),rgba(255,255,255,.14) 0)}
+.relhud .rring i{width:12px;height:12px;border-radius:50%;background:rgba(15,12,18,.85);display:grid;place-items:center}
+.relhud svg{width:9px;height:9px;fill:none;stroke:var(--tc);stroke-width:2.2;stroke-linejoin:round}
+.room .relhud b{font:700 12px/1 var(--font-body);letter-spacing:0;color:var(--ink)}
+
+/* v106 : quatre missions (Brèche à plusieurs), retour au Camp depuis la pause */
+.cx-picks--4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:359px){.cx-picks--4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.cx-pick.is-locked{opacity:.45}
+
+/* v108 : déblocages progressifs du Camp */
+.cx-tab.is-locked,.cx-chip.is-locked{opacity:.55}
+.lockmini{display:inline-grid;place-items:center;width:13px;height:13px;margin-right:4px;vertical-align:-1px}
+.lockmini svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.cx-choice.is-locked{opacity:.55}
+.cx-choice.is-locked .cx-choice__desc b{color:var(--ink)}
+.lockc{border-style:dashed}
+.lockc__ico{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--panel-2);color:var(--muted);flex:0 0 auto}
+.lockc__ico svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.lockc .cx-card__head{display:flex;gap:12px;align-items:center}
+.newc{border-color:var(--ember);box-shadow:inset 0 0 0 1px var(--ember-soft)}
+.newc .cx-card__title{color:var(--ember-hi)}
+.unlover{margin-top:10px;padding:10px 12px;border:1px solid var(--ember);border-radius:10px;background:var(--ember-soft);display:flex;flex-direction:column;gap:6px;text-align:left}
+.unlover>b{font:700 12px/1 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--ember-hi)}
+.unlover p{margin:0;font-size:13px;line-height:1.35;color:var(--muted)}
+.unlover p span{display:block;font-weight:700;color:var(--ink)}

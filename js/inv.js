@@ -7,23 +7,30 @@ const norm=t=>String(t).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
 function invMatch(it,q){if(!q)return true;const n=norm(q);
   if(norm(itemName(it)).includes(n)||norm(it.type||'').includes(n)||norm(SLOT[it.slot]).includes(n)||norm(RAR[it.r].n).includes(n))return true;
   for(const k in it.aff){if(norm(AFF_NAME[k]||k).includes(n)||norm(AFF[k].t(it.aff[k])).includes(n))return true}return false}
-// Armes possédées non portées, présentées comme des objets du coffre (verrouillables, fusionnables, recyclables).
-function invWeapons(){const out=[];for(const c of [heroCls,...Object.keys(CLS).filter(x=>x!==heroCls)])for(const w of WPN[c])if(ownedW(w.id)&&curWid(c)!==w.id)out.push(weaponItem(c,w.id));return out}
-const selOf=it=>it.wid?{wpn:it.wid}:{stash:it.id};
-const isSel=it=>!!campSel&&(it.wid?campSel.wpn===it.wid:campSel.stash===it.id);
-function invList(kind){const st=meta.stash.filter(i=>(stF==='all'||i.slot===stF)&&invMatch(i,invQ));const ws=kind==='affix'||!(stF==='all'||stF==='arme')?[]:invWeapons().filter(i=>invMatch(i,invQ));
+// Armes possédées, présentées comme des objets du coffre (verrouillables, fusionnables, recyclables). worn : avec celles que portent les héros.
+function invWeapons(worn){const out=[];for(const c of [heroCls,...Object.keys(CLS).filter(x=>x!==heroCls)])for(const w of WPN[c])if(ownedW(w.id)&&(worn||curWid(c)!==w.id))out.push(weaponItem(c,w.id));return out}
+// Sélection d'un objet du coffre : dans le coffre, porté par le héros choisi (slot), porté par un autre héros (oth = « classe|emplacement »), ou arme.
+const selOf=it=>{if(it.wid)return {wpn:it.wid};const c=wornBy(it);if(c){const k=wornSlot(it,c);return c===heroCls?{slot:k}:{oth:c+'|'+k}}return {stash:it.id}};
+const isSel=it=>{if(!campSel)return false;const s=selOf(it);return Object.keys(s).length===Object.keys(campSel).length&&Object.keys(s).every(k=>campSel[k]===s[k])};
+// Coffre de l'Armurerie : tout ce que tu possèdes, objets portés compris (marqués du héros qui les porte). Filtre « Portés » : seulement ceux-là.
+// kind : 'equip' (coffre, objets portés compris), 'recy' (recyclage : rien de porté), 'affix' (Forge › Affixes : le coffre seul).
+function invList(kind){const all=kind==='equip',F=!all&&stF==='porte'?'all':stF,pool=all?[...meta.stash,...allWorn()]:meta.stash;
+  const slotOk=i=>F==='all'||(F==='porte'?!!wornBy(i):i.slot===F);
+  const st=pool.filter(i=>slotOk(i)&&invMatch(i,invQ));const ws=kind==='affix'||!(F==='all'||F==='arme'||F==='porte')?[]:invWeapons(all).filter(i=>(F!=='porte'||!!wornBy(i))&&invMatch(i,invQ));
   const nid=i=>i.wid?-1:i.id;const f=invSortFn[stS]||invSortFn.rar;return [...st,...ws].sort(stS==='new'?(a,b)=>nid(b)-nid(a):f)}
-function invCountTxt(list){const nb=list.filter(better).length;return `${list.length} objet${list.length>1?'s':''}${nb?` · ▲ ${nb} meilleur${nb>1?'s':''} que ton équipement`:''}`}
+function invCountTxt(list){const nb=list.filter(i=>!wornBy(i)&&better(i)).length,nw=list.filter(i=>wornBy(i)).length;return `${list.length} objet${list.length>1?'s':''}${nw?` · ${nw} porté${nw>1?'s':''}`:''}${nb?` · ▲ ${nb} meilleur${nb>1?'s':''} que ton équipement`:''}`}
+// Pastille du héros qui porte l'objet (initiale à sa couleur).
+const whoTag=c=>c?`<span class="cwho" style="--wc:${CLS[c].col}" title="Porté : ${CLS[c].n}">${CLS[c].n[0]}</span>`:'';
 // Barre collée : recherche, tri, filtres par emplacement, compteur. kind = 'equip' (Héros) ou 'affix' (Forge › Affixes).
-function invToolbar(list,kind){const W=kind==='affix'?[]:invWeapons(),counts={all:meta.stash.length+W.length,arme:W.length};for(const it of meta.stash)counts[it.slot]=(counts[it.slot]||0)+1;
+function invToolbar(list,kind){const all=kind==='equip',W=kind==='affix'?[]:invWeapons(all),G2=all?[...meta.stash,...allWorn()]:meta.stash,counts={all:G2.length+W.length,arme:W.length,porte:allWorn().length+W.filter(w=>wornBy(w)).length};for(const it of G2)counts[it.slot]=(counts[it.slot]||0)+1;
   const ch=(k,l)=>`<button class="cx-chip cx-chip--sm" data-cact="sfilter" data-arg="${k}" aria-pressed="${stF===k}">${l} <span class="n">${counts[k]||0}</span></button>`;
   return `<div class="cx-toolbar"><div class="cx-toolbar__row"><label class="cx-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input type="search" data-inv="q" value="${esc(invQ)}" placeholder="Chercher une affixe : vitesse, critique…" aria-label="Chercher dans le coffre" enterkeyhint="search"></label>
     <select class="cx-sort" data-inv="sort" aria-label="Trier le coffre">${Object.keys(SORT_N).map(k=>`<option value="${k}"${stS===k?' selected':''}>${SORT_N[k]}</option>`).join('')}</select></div>
-    <div class="cx-chips">${ch('all','Tout')}${kind==='affix'?'':ch('arme','Arme')}${['armure','amulette','bottes','anneau',...(counts.dos?['dos']:[])].map(k=>ch(k,SLOT[k])).join('')}</div>
+    <div class="cx-chips">${ch('all','Tout')}${all?ch('porte','Portés'):''}${kind==='affix'?'':ch('arme','Arme')}${['armure','amulette','bottes','anneau',...(counts.dos?['dos']:[])].map(k=>ch(k,SLOT[k])).join('')}</div>
     <span class="cx-count" id="invCount">${invCountTxt(list)}</span></div>`}
 function invGrid(list,kind){if(!list.length)return `<p class="cx-hint" style="margin:0">${meta.stash.length?(invQ?'Aucun objet ne correspond à ta recherche.':'Aucun objet de ce type.'):'Ton coffre est vide. Sors vivant d\'une mission pour y ramener les objets trouvés.'}</p>`;
   if(kind==='affix')return `<div class="cx-cells">${list.map(it=>xfCell('s:'+it.id,it)).join('')}</div>`;
-  return `<div class="grid">${list.map(it=>it.wid?cellHtml(it,'wsel',isSel(it),it.cls===heroCls&&better(it)).replace(`data-wsel="${it.id}"`,`data-wsel="${it.wid}"`):cellHtml(it,'stash',isSel(it),better(it))).join('')}</div>`}
+  return `<div class="grid">${list.map(it=>{const w=wornBy(it),tag=whoTag(w);return (it.wid?cellHtml(it,'wsel',isSel(it),!w&&it.cls===heroCls&&better(it)).replace(`data-wsel="${it.id}"`,`data-wsel="${it.wid}"`):cellHtml(it,'stash',isSel(it),!w&&better(it))).replace('</button>',tag+'</button>')}).join('')}</div>`}
 function invRefresh(){const g=$('invGrid');if(!g)return;if(isRecy()){g.innerHTML=recyCells();return}const kind=campTab==='forge'?'affix':'equip',list=invList(kind);g.innerHTML=invGrid(list,kind);const c=$('invCount');if(c)c.textContent=invCountTxt(list)}
 $('campBody').addEventListener('input',e=>{if(e.target.dataset.inv==='q'){invQ=e.target.value;invRefresh()}});
 $('campBody').addEventListener('change',e=>{if(e.target.dataset.inv==='sort'){stS=e.target.value;drawCamp()}});
@@ -32,25 +39,35 @@ $('campBody').addEventListener('change',e=>{if(e.target.dataset.inv==='sort'){st
 function keyStats(St){return `<div class="cx-keystats"><div><span>Puissance</span><b>${Math.round(dps(St))}</b></div><div><span>Vie</span><b>${Math.round(St.hp)}</b></div><div><span>Réduction</span><b>${Math.round(St.armor)} %</b></div></div>`}
 // Vues de l'Armurerie qui montrent le coffre (fiche ancrée) ou le recyclage.
 const isCoffre=()=>campTab==='arsenal'&&arsView==='coffre',isRecy=()=>campTab==='arsenal'&&arsView==='recy';
-const stashN=()=>meta.stash.length+invWeapons().length;
+const stashN=()=>meta.stash.length+allWorn().length+invWeapons(true).length;
 function campEquip(){
   const eq=curEq(),St=stats(eq),pn=Object.keys(bestPlan(eq,meta.stash)).length,n=stashN();
   return `${campMsg}${tutCard()}<section class="cx-section"><h3 class="cx-section__label">${CLS[heroCls].n} · équipement</h3><div class="slots">${slotsHtml(eq,true,campSel&&campSel.slot)}</div>
     ${pn?'':'<p class="cx-hint" style="margin:0">Ton équipement est déjà le meilleur que tu possèdes.</p>'}
     <div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-cact="gocoffre">Ouvrir le coffre · ${n} objet${n>1?'s':''}</button></div></section>
-    ${slotUnlockHtml()}
+    ${setsHtml()}${slotUnlockHtml()}
     ${keyStats(St)}${cxMore('equip_stats','Toutes les statistiques',`<div class="statgrid">${statRows(St)}</div>`,'Afficher')}
     <section class="cx-section"><h3 class="cx-section__label">Fragments des reliques</h3>${fragInv()}</section>${meta.tutOff&&tutStep()>=0?'<div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm cx-btn--ghost" data-cact="tuton">Réafficher le parcours</button></div>':''}`;
 }
+// Héros › Équipements enregistrés : jusqu'à SET_MAX par héros ; « Porter » reprend chaque objet dans le coffre ou sur un autre héros.
+function setsHtml(){if(!isUnl('sets'))return '';const L=setsOf(),eq=curEq();
+  const same=s=>GEAR_KEYS().every(k=>!(k in s.g)||(s.g[k]==null?!eq[k]:eq[k]&&eq[k].id===s.g[k]))&&s.w===curWid();
+  const dots=s=>[s.w?`<i class="sdot" style="--c:${ownedW(s.w)?RAR[wdef(s.w).r].c:'var(--muted)'}" title="${esc(wdef(s.w).n)}"></i>`:'',...GEAR_KEYS().filter(k=>k in s.g).map(k=>{const it=s.g[k]==null?null:findItem(s.g[k]);return `<i class="sdot${s.g[k]!=null&&!it?' miss':''}" style="--c:${it?RAR[it.r].c:'var(--line)'}" title="${SLOT[k]}${it?' : '+esc(itemName(it)):s.g[k]!=null?' : introuvable':' : vide'}"></i>`})].join('');
+  const rows=L.map((s,i)=>{const on=same(s),wb=[...new Set(GEAR_KEYS().map(k=>s.g[k]!=null?findItem(s.g[k]):null).filter(Boolean).map(wornBy).filter(c=>c&&c!==heroCls))];
+    return `<div class="cx-row cx-set${on?' is-on':''}"><span class="cx-row__k"><input class="cx-setname" data-setname="${i}" value="${esc(s.n)}" maxlength="24" aria-label="Nom de l'équipement ${i+1}"><small><span class="sdots">${dots(s)}</span>${on?' · porté':wb.length?` · objets portés ${wb.map(parCls).join(' et ')}`:''}</small></span>
+      <span class="cx-set__act"><button class="cx-btn cx-btn--sm${on?'':' cx-btn--primary'}" data-cact="setwear" data-arg="${i}" ${on?'disabled':''}>Porter</button><button class="cx-btn cx-btn--sm cx-btn--ghost" data-cact="setsave" data-arg="${i}" aria-label="Remplacer ${esc(s.n)} par l'équipement actuel">Remplacer</button><button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-cact="setdel" data-arg="${i}" aria-label="Supprimer ${esc(s.n)}">${XSVG.x}</button></span></div>`}).join('');
+  return `<section class="cx-section"><h3 class="cx-section__label">Équipements enregistrés · ${L.length} / ${SET_MAX}</h3>${rows?`<div class="cx-rows">${rows}</div>`:''}
+    <div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-cact="setsave" data-arg="" ${L.length>=SET_MAX?'disabled':''}>Enregistrer l'équipement porté</button></div>
+    <p class="cx-hint" style="margin:0">${L.length?'Chaque héros a ses équipements. « Porter » prend les objets dans le coffre ou sur un autre héros ; touche le nom pour le changer.':'Enregistre l\'arme et les objets portés pour les remettre plus tard en un geste. Chaque héros a ses équipements.'}</p></section>`}
 // Héros › Emplacements à débloquer (fragments de harnais, lâchés par les Gardiens).
-function slotUnlockHtml(){const next=SLOT_U.filter(u=>!slotOpen(u.k));if(!next.length)return '';const hf=meta.hfrag|0;
+function slotUnlockHtml(){if(!isUnl('slots'))return '';const next=SLOT_U.filter(u=>!slotOpen(u.k));if(!next.length)return '';const hf=meta.hfrag|0;
   return `<section class="cx-section"><h3 class="cx-section__label">Emplacements · ${hf} fragment${hf>1?'s':''} de harnais</h3><div class="cx-rows">${next.map(u=>{const ok=!u.need||slotOpen(u.need),can=ok&&hf>=u.hf&&meta.gold>=u.gold;
     return `<div class="cx-row"><span class="cx-row__k" style="color:var(--ink)">${u.n}<small>${ok?`${u.hf} fragments de harnais et ${u.gold} or · tu as ${hf} fragment${hf>1?'s':''}`:`Après l'${SLOT_U.find(x=>x.k===u.need).n}`}</small></span><button class="cx-btn cx-btn--sm${can?' cx-btn--primary':''}" data-cact="slotopen" data-arg="${u.k}" style="margin:0" ${can?'':'disabled'}>Débloquer</button></div>`}).join('')}</div>
     <p class="cx-hint" style="margin:0">Les fragments de harnais tombent seulement sur les Gardiens (3 % en Normal, jusqu'à 11 % en Tourment X).</p></section>`}
-// Armurerie › Coffre : tout ce que tu possèdes et ne portes pas, armes comprises.
+// Armurerie › Coffre : tout ce que tu possèdes, armes et objets portés compris (pastille du héros qui les porte).
 function campCoffre(){const list=invList('equip'),n=stashN();
   return `<section class="cx-section"><h3 class="cx-section__label">Coffre · ${n} objet${n>1?'s':''}</h3>
-    ${n?invToolbar(list,'equip'):''}<div id="invGrid">${invGrid(list,'equip')}</div>${n?'<p class="cx-hint" style="margin:0">Pour recycler : puce Recyclage, en haut de l\'Armurerie.</p>':''}</section>`}
+    ${n?invToolbar(list,'equip'):''}<div id="invGrid">${invGrid(list,'equip')}</div>${n?`<p class="cx-hint" style="margin:0">La pastille A, G ou M montre le héros qui porte l'objet (Archer, Guerrier, Magicien).${isUnl('recy')?' Pour recycler : puce Recyclage, en haut de l\'Armurerie.':''}</p>`:''}</section>`}
 
 /* ---------- Fiche ancrée (cx-dock) ---------- */
 const XSVG={x:'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',prev:'<svg viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg>',next:'<svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>',
@@ -101,12 +118,14 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-cmp]');if(
 function campDockHtml(){
   if((campTab==='mods'||campTab==='pets')&&modSel&&meta.mods[modSel]!=null)return modDock(modSel);
   if(!(campTab==='equip'||isCoffre())||!campSel)return '';
-  const eq=curEq();let it=null,key='',worn=false;
+  const eq=curEq();let it=null,key='',worn=false,othC=null;
   if(campSel.wpn){const c=wclsOf(campSel.wpn);if(c&&ownedW(campSel.wpn)){it=weaponItem(c,campSel.wpn);key='w:'+campSel.wpn;if(curWid(heroCls)===campSel.wpn){worn=true}}}
   else if(campSel.stash){it=meta.stash.find(i=>i.id===campSel.stash);key='s:'+campSel.stash}
   else if(campSel.slot){it=eq[campSel.slot];worn=true;key=campSel.slot==='arme'?'w:'+curWid():'g:'+campSel.slot}
+  else if(campSel.oth){const [c,k]=campSel.oth.split('|');it=(meta.gearBy[c]||{})[k]||null;othC=c;key='o:'+(it&&it.id)}
   if(!it)return '';
-  const list=invList('equip'),idx=(campSel.stash||campSel.wpn)?list.findIndex(isSel):-1,r=RAR[it.r];
+  const list=invList('equip'),idx=(isCoffre()||campSel.stash||campSel.wpn)?list.findIndex(isSel):-1,r=RAR[it.r];
+  const wc=it.wid?wornBy(it):null,whoW=othC||(wc&&wc!==heroCls?wc:null);
   const nav=idx>=0?`<span class="cx-dock__nav"><button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-cact="dnav" data-arg="-1" ${idx>0?'':'disabled'} aria-label="Objet précédent">${XSVG.prev}</button><button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-cact="dnav" data-arg="1" ${idx<list.length-1?'':'disabled'} aria-label="Objet suivant">${XSVG.next}</button></span>`:'';
   const n=it.up||0;
   const affs=`<ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.35"><li>${baseTxtOf(it.slot,fmtN(it.base.v*upMul(it.up)))}</li>${Object.keys(it.aff).map(kk=>`<li${AFF[kk].aby?' class="abyp"':''}>${AFF[kk].t(NOSCALE[kk]?it.aff[kk]:fmtN(it.aff[kk]*upMul(it.up)))}</li>`).join('')}${it.seal&&SEALS[it.seal]?`<li class="sealp">${sealTxt(it.seal)}</li>`:''}</ul>`;
@@ -115,21 +134,25 @@ function campDockHtml(){
   const btn=(cls,act,arg,svg,lab,dis)=>`<button class="cx-btn${cls}" data-cact="${act}"${arg!=null?` data-arg="${arg}"`:''} ${dis?'disabled':''}>${svg}${lab}</button>`;
   const other=it.wid&&it.cls!==heroCls,wb=it.wid?bpdef(it.wid):null;
   if(!worn&&it.wid)main=other?`<p class="cx-hint" style="margin:0">Arme ${deCls(it.cls)} : change de héros pour l'équiper.</p>`:`<button class="cx-btn cx-btn--primary cx-btn--block" data-cact="wequip" data-arg="${it.wid}">Équiper · remplace ${esc(itemName(cur))}</button>`;
+  else if(othC)main=tk?`<button class="cx-btn cx-btn--primary cx-btn--block" data-cact="equipoth">Équiper sur ${esc(CLS[heroCls].n)} · retiré ${parCls(othC).replace('par ','à ').replace("à le ","au ")}</button>`:`<p class="cx-hint" style="margin:0">Emplacement ${SLOT[it.slot]} verrouillé.</p>`;
   else if(!worn&&!tk)main=`<p class="cx-hint" style="margin:0">Emplacement ${SLOT[it.slot]} verrouillé : débloque-le dans l'onglet Héros (fragments de harnais).</p>`;
   else if(!worn)main=`<button class="cx-btn cx-btn--primary cx-btn--block" data-cact="equip">Équiper${cur?` · remplace ${esc(itemName(cur))}`:''}</button>`;
   // Fusion de rang : un double identique libre (objet) ou les doubles de l'arme.
   let fuse='';
-  if(it.wid){const p=wFusePlan(it.wid),sp=wSpares(it.wid).length;if(p.n)fuse=btn(' cx-btn--block','wfuse',it.wid,XSVG.up,`Fusionner ${sp} double${sp>1?'s':''} · ${rkTxt(n)} → ${rkTxt(p.R)}`);else if(n<UP_MAX)fuse=`<p class="cx-hint" style="margin:0">${rkTxt(n)} · ${sp?`${sp} double${sp>1?'s':''} de rang trop bas pour fusionner`:'aucun double'} : trouve ou fabrique la même arme pour monter de rang.</p>`}
-  else{const p=fusePartner(it);if(p)fuse=btn(' cx-btn--block','fuse1',key,XSVG.up,`Fusionner avec un double · ${rkTxt(n)} → ${rkTxt(n+1)}`);else if(n<UP_MAX)fuse=`<p class="cx-hint" style="margin:0">${rkTxt(n)} · un exemplaire identique (${esc(it.rid?it.name:it.type)}, ${RAR[it.r].n.toLowerCase()}, ${rkTxt(n)}) le fait monter de rang.</p>`}
+  const gp=c=>` <span class="cx-price"><span class="coin"></span>${c}</span>`,cap=rankCap(it);
+  if(!isUnl('fuse'))fuse='';
+  else if(n>=cap)fuse=`<p class="cx-hint" style="margin:0">${rkTxt(n)} : rang maximum${cap<UP_MAX?` pour un objet ${RAR[it.r].n.toLowerCase()} (rang ${cap+1}). Les objets des reliques et les armes légendaires et au-dessus montent jusqu'au rang 10.`:'.'}</p>`;
+  else if(it.wid){const p=wFusePlan(it.wid),sp=wSpares(it.wid).length;if(p.n)fuse=btn(' cx-btn--block','wfuse',it.wid,XSVG.up,`Fusionner ${sp} double${sp>1?'s':''} · ${rkTxt(n)} → ${rkTxt(p.R)}`+gp(p.cost));else if(p.need)fuse=btn(' cx-btn--block','wfuse',it.wid,XSVG.up,`Fusionner · or insuffisant`+gp(p.need),true);else fuse=`<p class="cx-hint" style="margin:0">${rkTxt(n)} · ${sp?`${sp} double${sp>1?'s':''} de rang trop bas pour fusionner`:'aucun double'} : trouve ou fabrique la même arme pour monter de rang.</p>`}
+  else{const p=fusePartner(it),c=fuseGold(it.r,n,it.lvl);if(p)fuse=btn(' cx-btn--block','fuse1',key,XSVG.up,`Fusionner avec un double · ${rkTxt(n)} → ${rkTxt(n+1)}`+gp(c),meta.gold<c);else fuse=`<p class="cx-hint" style="margin:0">${rkTxt(n)} · un exemplaire identique (${esc(it.rid?it.name:it.type)}, ${RAR[it.r].n.toLowerCase()}, ${rkTxt(n)}) le fait monter de rang, pour <span class="coin"></span>${c} or.</p>`}
   more.push(btn('','lock',null,XSVG.lock,it.lock?'Déverrouiller':'Verrouiller'));
   if(worn&&it.slot!=='arme')more.push(btn('','unequip',null,XSVG.out,'Retirer au coffre'));
-  if(xfSrcOk(key)&&Object.keys(it.aff).length)more.push(btn('','xftake',key,XSVG.take,'Prendre une affixe'));
-  more.push(btn('','xfrecv',key,XSVG.take,'Recevoir une affixe'));
-  if(!worn&&(!it.wid||(wb&&!wb.start)))more.push(btn('','gorecy1',key,XSVG.recy,'Recycler',it.lock));
+  if(!othC&&isUnl('affix')){if(xfSrcOk(key)&&Object.keys(it.aff).length)more.push(btn('','xftake',key,XSVG.take,'Prendre une affixe'));
+    more.push(btn('','xfrecv',key,XSVG.take,'Recevoir une affixe'))}
+  if(isUnl('recy')&&!worn&&!othC&&!whoW&&(!it.wid||(wb&&!wb.start)))more.push(btn('','gorecy1',key,XSVG.recy,'Recycler',it.lock));
   const sk=key;if(sk!==cmpKey){cmpKey=sk;cmpPage=0}
   return `<div class="cx-dock__head"><h3 class="cx-dock__title" style="color:${r.c}">${esc(itemName(it))}${it.lock?` <span class="lockchip">${LOCK_SVG}</span>`:''}</h3>${nav}<button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-cact="dclose" aria-label="Fermer la fiche">${XSVG.x}</button></div>
-    <span class="cx-dock__meta">${r.n} · ${SLOT[it.slot]}${it.wid?' · fabriquée':` · niveau ${it.lvl}`}${` · ${rkTxt(n)}`}${worn?' · <b style="color:var(--heal)">Porté</b>':''}${idx>=0?` · ${idx+1} / ${list.length}`:''}</span>
-    ${worn||other?affs:cmpObjet(eq,it)}${main}${fuse}
+    <span class="cx-dock__meta">${r.n} · ${SLOT[it.slot]}${it.wid?' · fabriquée':` · niveau ${it.lvl}`}${` · ${rkTxt(n)}`}${worn?' · <b style="color:var(--heal)">Porté</b>':''}${whoW?` · <b style="color:${CLS[whoW].col}">Porté ${parCls(whoW)}</b>`:''}${idx>=0?` · ${idx+1} / ${list.length}`:''}</span>
+    ${worn||other?affs:cmpObjet(eq,it)}${main}${fuse}${othC?`<p class="cx-hint" style="margin:0">Un objet n'est porté que par un héros à la fois : l'équiper ici le retire ${parCls(othC).replace('par ','à ').replace("à le ","au ")}.</p>`:''}
     <div class="cx-actions" style="gap:6px"><button class="cx-btn cx-btn--sm" data-cact="dmore" aria-expanded="${dockMore}">${dockMore?'Moins d\'actions':'Plus d\'actions'}</button>${worn?'':`<button class="cx-btn cx-btn--sm" data-cact="dall" aria-pressed="${dockAll}">${dockAll?'Masquer les statistiques':'Toutes les statistiques'}</button>`}</div>
     ${dockMore?`<div class="cx-dock__more">${more.join('')}</div>`:''}${it.lock&&!worn?'<p class="cx-hint" style="margin:0">Verrouillé : ni recyclé, ni sacrifié par une fusion, ni utilisé comme source d\'affixe.</p>':''}`;
 }
@@ -156,7 +179,7 @@ function cxUndo(html,undo){let el=$('undoToast');if(!el){el=document.createEleme
 let recySel=new Set(),recyR=new Set(),recyAsk=false;
 const recyKey=it=>it.wid?'w:'+it.wid:'s:'+it.id;
 const recyEss=it=>it.wid?wRecyEss(bpdef(it.wid)):recyGain(it);
-function recyAll(){return invList('equip').filter(it=>!it.wid||!wdef(it.wid).start)}
+function recyAll(){return invList('recy').filter(it=>!wornBy(it)&&(!it.wid||!wdef(it.wid).start))}
 function recyList(){return recyAll().filter(it=>!recyR.size||recyR.has(it.r))}
 function recyPicked(){const all=recyAll();return [...recySel].map(k=>all.find(it=>recyKey(it)===k)).filter(it=>it&&!it.lock)}
 function recyCell(it){const k=recyKey(it),on=recySel.has(k);return `<button class="cx-cell${on?' is-src':''}" data-cact="rcsel" data-arg="${k}" ${it.lock?'aria-disabled="true"':''} style="--rar:${RARV[it.r]}" aria-pressed="${on}" aria-label="${esc(itemName(it))}${it.lock?', verrouillé':''}${on?', choisi':''}">${it.lock?`<span class="cx-cell__lock">${LOCK_SVG}</span>`:''}${GLYPH[it.slot]}${it.up?`<span class="cx-cell__up">R${it.up+1}</span>`:''}${on?'<span class="cx-pin cx-pin--src">−</span>':''}</button>`}
@@ -166,7 +189,7 @@ function campRecycle(){const all=recyAll(),list=recyList();for(const k of [...re
   const rch=r=>`<button class="cx-chip cx-chip--sm" data-cact="rcr" data-arg="${r}" aria-pressed="${recyR.has(r)}" style="${recyR.has(r)?'':`color:${RAR[r].c}`}">${RAR[r].n} <span class="n">${cnt[r]}</span></button>`;
   const sel=list.filter(it=>!it.lock).length;
   return `${backChip()}<section class="cx-section"><h3 class="cx-section__label">Rareté à recycler</h3><div class="cx-chips"><button class="cx-chip cx-chip--sm" data-cact="rcrall" aria-pressed="${!recyR.size}">Toutes <span class="n">${all.length}</span></button>${rs.map(rch).join('')}</div></section>
-    <section class="cx-section"><h3 class="cx-section__label">Objets · ${list.length}</h3>${all.length?invToolbar(list,'equip').replace('<span class="cx-count" id="invCount">','<span class="cx-count">'):''}
+    <section class="cx-section"><h3 class="cx-section__label">Objets · ${list.length}</h3>${all.length?invToolbar(list,'recy').replace('<span class="cx-count" id="invCount">','<span class="cx-count">'):''}
     <div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-cact="rcall" ${sel?'':'disabled'}>Tout sélectionner · ${sel}</button><button class="cx-btn cx-btn--sm cx-btn--ghost" data-cact="rcnone" ${recySel.size?'':'disabled'}>Tout désélectionner</button></div>
     <div id="invGrid">${recyCells()}</div>
     <p class="cx-hint" style="margin:0">Les objets portés ne sont pas listés ; les objets verrouillés (cadenas) ne se recyclent pas.</p></section>`}

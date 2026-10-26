@@ -28,7 +28,7 @@ function newGame(){
   G.cam={x:G.P.x,y:G.P.y};
   genMap();
   G.biome=clamp(meta.biome|0,0,BIOMES.length-1);if(floorPat&&floorPat.__b!==G.biome)floorPat=null;
-  G.mode=meta.mode;G.relic=null;G.react=0;G.cracked=false;G.ult=0;G.bossT=bossIv();G.pod=null;G.target=null;G.exitPt=null;G.capT=0;G.extT=0;
+  G.mode=meta.mode==='breche'?'survie':meta.mode;G.relic=null;G.react=0;G.cracked=false;G.ult=0;G.bossT=bossIv();G.pod=null;G.target=null;G.exitPt=null;G.capT=0;G.extT=0;
   relicQFix();G.relQ=meta.relicQ.map(q=>({id:q.id,rad:!!q.rad}));G.relI=0;G.opened=[];G.relic=G.relQ[0]||null;
   if(G.mode==='defense'){const m=1200*(1+.5*(L-1));G.pod={x:MAP/2,y:MAP/2,r:28,hp:m,max:m,flash:0};G.pillars.push(G.pod);G.P.y+=110;G.cam.y=G.P.y;G.wave=0;G.waveState='break';G.waveT=3;G.toSpawn=0}
   if(G.mode==='capture'){spawnTarget()}
@@ -62,14 +62,14 @@ const lootMul=L=>1+.06*(L-1);
 const goldMul=L=>1+.15*(L-1);
 function diff(){const L=G.level,f=G.mode==='defense'?Math.max(0,((G.wave||1)-1)%5)/5:Math.min(1.5,G.tl/LEVEL_T);const D=dif();return {hs:1.2*biome().hp*D.hp*(1+.75*(L-1))*Math.pow(1.025,L-1)*(1+.35*f),ds:1.15*biome().dm*D.dm*(1+.35*(L-1))*Math.pow(1.012,L-1)*(1+.15*f)}}
 function spawnEnemy(s){
-  const d=ETYPE[s.type],{hs,ds}=diff(),bm=s.type==='boss'?(1+.25*G.bossN):1;
+  const d=ETYPE[s.type],{hs,ds}=diff(),bm=s.type==='boss'?(1+.25*G.bossN)*(dif().tier?BAL.tormBossHp:1):1;
   const gn=s.type==='slime'?(s.gen||0):0,gr=[1,.66,.45][gn],gh=[1,.45,.2][gn],gs=[1,1.2,1.45][gn];
   const e={type:s.type,gen:gn,x:s.x,y:s.y,r:d.r*gr,hp:d.hp*hs*bm*gh,max:d.hp*hs*bm*gh,spd:d.spd*gs*rand(.92,1.08),dmg:d.dmg*ds,col:d.col,flash:0,hitCd:0,kx:0,ky:0,burnT:0,burnDps:0,burnAcc:0,
     state:'walk',slow:0,timer:rand(1,2.5),side:Math.random()<.5?-1:1,cycle:0,rot:0,sum:4,ang:0,shown:0,wob:rand(0,6)};
   if(s.type==='boss'){$('bossBar').hidden=false;G.bossN++}
   if(G.pod&&s.type!=='boss'&&Math.random()<.6)e.tgtPod=true;
   if(s.kx){e.kx=s.kx;e.ky=s.ky}if(s.tgtPod!=null)e.tgtPod=s.tgtPod;
-  if((G.relic||(NET.host&&NET.peers.some(p=>p.relic)))&&!G.cracked&&s.type!=='boss'&&!s.split&&Math.random()<.18){e.corr=true;e.hp*=1.3;e.max*=1.3}
+  if((G.relic||(NET.host&&NET.peers.some(p=>p.relic)))&&!G.cracked&&s.type!=='boss'&&!s.split&&Math.random()<BAL.corrupt){e.corr=true;e.hp*=1.3;e.max*=1.3}
   e.id=++G.eid;if(NET.host&&NET.on){const k=coopHp()*(G.breche?1.25:1);e.hp*=k;e.max*=k}
   G.en.push(e);
   if(s.fx)burst(s.x,s.y,10,'#9a6bc4',120);
@@ -92,7 +92,7 @@ const ELITE={rapide:{n:'Rapide',c:'#8fd3e0'},bouclier:{n:'Bouclier',c:'#c8d6e6'}
 function makeElite(e){const k=pick(Object.keys(ELITE));e.elite=k;e.hp*=4;e.max*=4;e.r*=1.25;e.dmg*=1.3;if(k==='rapide')e.spd*=1.55;e.corr=false;
   SND.play('elite');banner(`Élite ${ELITE[k].n} en approche`,ELITE[k].c,1)}
 function spawnPack(type,n){const p=ringPos();let k=0,first=null;for(let i=0;i<n;i++){const q={x:clamp(p.x+rand(-40,40),EDGE+30,MAP-EDGE-30),y:clamp(p.y+rand(-40,40),EDGE+30,MAP-EDGE-30)};if(!blocked(q.x,q.y,14)){spawnEnemy({type,...q});if(!first)first=G.en[G.en.length-1];k++}}
-  const pE=Math.min(.15,.025+.012*(meta.diff|0)+.01*dif().tier);if(first&&type!=='bat'&&Math.random()<pE)makeElite(first);return k}
+  const pE=Math.min(.15,.025+.012*dsel().d+.01*dif().tier);if(first&&type!=='bat'&&Math.random()<pE)makeElite(first);return k}
 function defenseTick(dt){
   if(G.waveState==='break'){G.waveT-=dt;if(G.waveT<=0){G.wave++;G.waveState='fight';G.toSpawn=Math.min(160,Math.round((10+G.wave*4+(G.level-1)*10)*1.15));G.spawnT=.5;
       const bn=dif().cnt;SND.play('wave');if(G.wave%DEF_N===0)banner(`Vague ${G.wave} · ${bn>1?bn+' Gardiens arrivent':'un Gardien arrive'}`,'#b06ae0',2,true);
@@ -103,7 +103,7 @@ function defenseTick(dt){
     else{G.waveState='break';G.waveT=4;G.pod.hp=Math.min(G.pod.max,G.pod.hp+G.pod.max*.08);toast(`Vague ${G.wave} repoussée`)}
   }
 }
-function bossIv(){return dif().iv*(BOSS_T/60)*(meta.mode==='capture'?1.5:1)}
+function bossIv(){return dif().iv*(BOSS_T/60)*(((G&&G.mode)||meta.mode)==='capture'?1.5:1)}
 function spawnBosses(quiet){let n=dif().cnt;if(G.breche)n=Math.max(2,n+(n%2));const k0=G.en.length;for(let i=0;i<n;i++){const p=ringPos(40);spawnEnemy({type:'boss',x:p.x,y:p.y})}
   if(G.breche){const nb=G.en.slice(k0).filter(e=>e.type==='boss');for(let i=0;i+1<nb.length;i+=2){nb[i].twin=nb[i+1].id;nb[i+1].twin=nb[i].id}}
   SND.play('boss');if(!quiet)banner(G.breche?'Gardiens jumeaux : abattez-les ensemble':n>1?`${n} Gardiens surgissent des ténèbres`:'Un Gardien surgit des ténèbres',G.breche?SEAL_C:'#b06ae0',2,true);G.shake=6+2*(n-1)}
@@ -176,7 +176,7 @@ function dmgEnemy(e,d,crit,dot){
   if(e.type==='cible'){if(e.hp<=0){e.hp=0;if(!e.downed){e.downed=true;burst(e.x,e.y,20,'#f0cf4a',160);toast('<b style="color:var(--r2)">La cible est à terre.</b> Reste près d\'elle pour la capturer.')}}}
   else if(e.hp<=0&&!e.dead)kill(e);
 }
-function podHurt(d){const p=G.pod;if(!p||G.over||GOD)return;d*=.6;p.hp-=d;p.flash=1;if(p.hp<=0){p.hp=0;gameOver('pod')}}
+function podHurt(d){const p=G.pod;if(!p||G.over||GOD||NET.guest)return;d*=.6;p.hp-=d;p.flash=1;if(p.hp<=0){p.hp=0;gameOver('pod')}}
 const itemLvl=()=>1+(G.level-1)*4+Math.floor(G.tl/45);
 function wishBest(k){let b=null;const eq=(G&&G.eq)||curEq();for(const x of Object.values(eq))if(x&&x.aff&&x.aff[k]!=null){const v=NOSCALE[k]?x.aff[k]:x.aff[k]*upMul(x.up);if(b==null||v>b)b=v}return b}
 function wishMatch(it){const W=meta.wish||{},hit=Object.keys(it.aff).filter(k=>{if(!(W.aff&&W.aff[k]))return false;const cur=wishBest(k),v=NOSCALE[k]?it.aff[k]:it.aff[k]*upMul(it.up);return cur==null||v>cur+1e-9});
@@ -205,7 +205,7 @@ function kill(e){
   if(boss){
     push({kind:'item',item:genItem(itemLvl(),2)},40);push({kind:'item',item:genItem(itemLvl(),1)},40);push({kind:'relic',id:relicDrop()},40);push({kind:'potion'},40);
     for(let i=0;i<Math.floor((L-1)/10);i++)push({kind:'item',item:genItem(itemLvl(),1)},50);
-    for(let i=0;i<Math.floor((L-1)/12);i++)push({kind:'relic',id:relicDrop()},50);
+    if(BAL.bossRelicEvery)for(let i=0;i<Math.floor((L-1)/BAL.bossRelicEvery);i++)push({kind:'relic',id:relicDrop()},50);
     if(Math.random()<Math.min(1,.15*lm))push({kind:'part',part:rollPart()},40);
     if(Math.random()<hfChance())push({kind:'part',part:{hf:1}},40);
     for(let i=0;i<2;i++)push({kind:'mod',id:rollMod(true)},40);
@@ -214,13 +214,13 @@ function kill(e){
   }else{
     const t=e.type;
     if(Math.random()<({ghoul:.006,bat:.002,archer:.008,poison:.008,pyro:.008,brute:.035,slime:.0035,givrin:.007})[t]*lm)push({kind:'item',item:genItem(itemLvl())});
-    if(Math.random()<({ghoul:.003,bat:.001,archer:.004,poison:.004,pyro:.004,brute:.025,slime:.0018,givrin:.0035})[t]*lm)push({kind:'relic',id:relicDrop()});
+    if(Math.random()<({ghoul:.003,bat:.001,archer:.004,poison:.004,pyro:.004,brute:.025,slime:.0018,givrin:.0035})[t]*BAL.relicMob)push({kind:'relic',id:relicDrop()});
     if(L>1&&Math.random()<({ghoul:.0015,bat:.0005,archer:.002,poison:.002,pyro:.002,brute:.012,slime:.0009,givrin:.0018})[t]*(lm-1))push({kind:'part',part:rollPart()});
     if(e.corr)push({kind:'react'},6);
     if(Math.random()<({ghoul:.006,bat:.002,archer:.008,poison:.008,pyro:.008,brute:.06,slime:.004,givrin:.007})[t])push({kind:'mod',id:rollMod(false)});
     if(Math.random()<(t==='brute'?.05:.005))push({kind:'potion'});
   }
-  if(e.elite){push({kind:'item',item:genItem(itemLvl(),1)},30);if(Math.random()<.4)push({kind:'item',item:genItem(itemLvl(),1)},30);if(Math.random()<.3*lm)push({kind:'relic',id:relicDrop()},30);
+  if(e.elite){push({kind:'item',item:genItem(itemLvl(),1)},30);if(Math.random()<.4)push({kind:'item',item:genItem(itemLvl(),1)},30);if(Math.random()<BAL.relicElite)push({kind:'relic',id:relicDrop()},30);
     if(e.elite==='explosif'&&!NET.guest)G.lobs.push({x0:e.x,y0:e.y,tx:e.x,ty:e.y,t:0,T:.7,kind:'pyro',r:95,dps:2*diff().ds});
     burst(e.x,e.y,30,ELITE[e.elite].c,240,4);SND.play('bossdie');toast(`<b style="color:${ELITE[e.elite].c}">Élite ${ELITE[e.elite].n} vaincue</b>`)}
   const gv=({ghoul:1,bat:.6,archer:1.5,poison:1.5,pyro:1.5,brute:5,boss:50,slime:.8,givrin:1.2})[e.type]*goldMul(L)*dl*(e.elite?5:1),n=boss?8:e.elite?5:(Math.random()<Math.min(1,(e.type==='bat'?.35:.65)*(1+.05*(L-1)))?1:0);
@@ -263,6 +263,9 @@ function explode(s,primary,frost){
 }
 function fireE(e,a,sp,d,r=7){G.eb.push({id:++G.bid,x:e.x+Math.cos(a)*e.r,y:e.y+Math.sin(a)*e.r,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,d,r,life:4})}
 function ring(e,n,sp){e.rot+=.27;for(let i=0;i<n;i++)fireE(e,e.rot+i/n*Math.PI*2,sp,e.dmg*.55,8)}
+// Récompense de capture (chaque joueur reçoit la sienne).
+function capReward(){const r=relicDrop();G.loot.relics.push(r);G.fresh++;G.gold+=60*G.level;
+  toast(`<b style="color:var(--r2)">Cible capturée.</b> Relique ${relicName(r)} et ${60*G.level} or. Rejoins l'extraction.`)}
 function blocked(x,y,r){
   if(x<EDGE+r||x>MAP-EDGE-r||y<EDGE+r||y>MAP-EDGE-r)return true;
   for(const p of G.pillars){if(p===G.pod)continue;const m=p.r+r;if(Math.abs(p.x-x)<m&&Math.abs(p.y-y)<m&&Math.hypot(p.x-x,p.y-y)<m)return true}
@@ -409,13 +412,13 @@ function update(dt){
   else{P.x+=iv.x/(iv.m||1)*sp*dt;P.y+=iv.y/(iv.m||1)*sp*dt}
   resolve(P);
   G.cam.x+=(P.x-G.cam.x)*Math.min(1,dt*8);G.cam.y+=(P.y-G.cam.y)*Math.min(1,dt*8);
-  if(G.mode==='capture'){
-    const t=G.target;
-    if(t&&t.downed){if(Math.hypot(t.x-P.x,t.y-P.y)<80){G.capT+=dt;if(G.capT>=2.5){G.en=G.en.filter(e=>e!==t);G.target=null;burst(t.x,t.y,36,'#f0cf4a',220);
-        G.exitPt=farPoint(1000);const r=relicDrop();G.loot.relics.push(r);G.fresh++;G.gold+=60*G.level;
-        toast(`<b style="color:var(--r2)">Cible capturée.</b> Relique ${relicName(r)} et ${60*G.level} or. Rejoins l'extraction.`)}}
+  // Capture : décidée par l'hôte (en coopération, n'importe quel héros debout compte pour capturer et pour l'extraction).
+  if(G.mode==='capture'&&!NET.guest){
+    const t=G.target,heroes=[P,...(G.mates||[])].filter(h=>!h.down),near=(x,y,r)=>heroes.some(h=>Math.hypot(x-h.x,y-h.y)<r);
+    if(t&&t.downed){if(near(t.x,t.y,80)){G.capT+=dt;if(G.capT>=2.5){G.en=G.en.filter(e=>e!==t);G.target=null;burst(t.x,t.y,36,'#f0cf4a',220);
+        G.exitPt=farPoint(1000);capReward();if(NET.host)netSend({t:'cap'})}}
       else G.capT=Math.max(0,G.capT-dt)}
-    if(G.exitPt){const inZ=Math.hypot(G.exitPt.x-P.x,G.exitPt.y-P.y)<55;
+    if(G.exitPt){const inZ=near(G.exitPt.x,G.exitPt.y,55);
       if(inZ){if(G.extT===0)toast('Reste <b>3 s</b> dans la zone pour t\'extraire.');G.extT+=dt;if(G.extT>=EXT_T){missionSuccess();return}}
       else G.extT=Math.max(0,G.extT-dt*1.5)}
   }

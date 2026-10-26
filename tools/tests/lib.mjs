@@ -16,7 +16,8 @@ export async function loadPlaywright() {
 }
 
 // Une page neuve (stockage vide). hash : '#test2d' (rendu 2D, accéléré, invincible) ou '#test' (WebGL).
-export async function newPage(browser, { hash = '#test2d', w = 390, h = 844, downloads = false, keep = false } = {}) {
+// locked : garde le Camp verrouillé comme pour un joueur neuf (par défaut, tout est débloqué pour tester chaque écran).
+export async function newPage(browser, { hash = '#test2d', w = 390, h = 844, downloads = false, keep = false, locked = false } = {}) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, acceptDownloads: downloads });
   const p = await ctx.newPage();
   p.errs = [];
@@ -24,7 +25,7 @@ export async function newPage(browser, { hash = '#test2d', w = 390, h = 844, dow
   // pas de réseau en test : polices et CDN coupés
   await p.route(/fonts\.googleapis|fonts\.gstatic|cdn\.jsdelivr|cdnjs/, (r) => r.abort());
   await p.goto(GAME + hash);
-  if (!keep) { await p.evaluate(() => localStorage.clear()); await p.reload(); }
+  if (!keep) { await p.evaluate(() => localStorage.clear()); await p.reload(); if (!locked) await p.evaluate(() => unlockAll()); }
   p.ctx = ctx;
   return p;
 }

@@ -12,8 +12,14 @@ let dpr=1;
 const RAR=[{n:'Commun',c:'#bdb6a8',aff:1,shard:1},{n:'Magique',c:'#7b95ff',aff:2,shard:2},{n:'Rare',c:'#f0cf4a',aff:3,shard:4},{n:'Légendaire',c:'#ff8a24',aff:4,shard:8},{n:'Ancestral',c:'#ff5a7a',aff:5,shard:16},{n:'Sanguin',c:'#e8383f',aff:6,shard:24},{n:'Abyssal',c:'#b07cff',aff:7,shard:36}];
 // Force selon la rareté : multiplicateur des affixes (RK) et de la statistique de base (RB). Commun → Abyssal.
 const RK=[1,1.1,1.2,1.35,1.55,1.8,2.1],RB=[1,1.05,1.1,1.2,1.3,1.4,1.5];
+/* ---------- Rythme de progression ----------
+   Les réglages de vitesse de progression viennent du fichier de rythme chargé avant data.js (index.html) :
+   js/rythmes/rapide.js (rythme publié) ou js/rythmes/long.js. Le joueur ne choisit pas le rythme.
+   window.BAL_OVERRIDE : réglages d'essai injectés par le simulateur de progression (tools/progression). */
+const BAL=Object.assign({},typeof RYTHME!=='undefined'?RYTHME:{},(typeof window!=='undefined'&&window.BAL_OVERRIDE)||{});
+if(typeof RYTHME==='undefined')console.error('Rythme de progression manquant : charger js/rythmes/rapide.js avant js/data.js');
 // Coût en or de la fabrication (Légendaire et au-dessus : fragments des reliques).
-const CRAFT_G=[0,0,0,300,600,1000,1500];
+const CRAFT_G=[0,0,0,300,600,1000,1500].map(g=>Math.round(g*BAL.craftMul));
 const SLOT={arme:'Arme',armure:'Armure',amulette:'Amulette',bottes:'Bottes',anneau:'Anneau',anneau2:'Anneau 2',dos:'Dos'};
 /* Emplacements à débloquer avec des fragments de harnais (Gardiens) : d'abord le 2e anneau, puis le dos. */
 const SLOT_U=[{k:'anneau2',n:'Anneau 2',hf:12,gold:2000},{k:'dos',n:'Dos',hf:25,gold:5000,need:'anneau2'}];
@@ -25,7 +31,7 @@ function tgtKey(eq,it){const ks=GEAR_KEYS().filter(k=>keySlot(k)===it.slot);if(!
   for(const k of ks)if(eq[k]===it)return k;for(const k of ks)if(!eq[k])return k;if(ks.length===1)return ks[0];
   let best=ks[0],bs=-1e18;for(const k of ks){const v=itemScore({...eq,[k]:it});if(v>bs){bs=v;best=k}}return best}
 // Fragments de harnais : seulement sur les Gardiens, plus souvent dans les difficultés hautes.
-const hfChance=()=>{const D=dif();return .03*(1+.5*Math.min(3,meta.diff|0))*(1+.05*(D.tier||0))};
+const hfChance=()=>{const D=dif();return .03*BAL.hfMul*(1+.5*Math.min(3,dsel().d))*(1+.05*(D.tier||0))};
 const BIOMES=[
   {id:'crypte',n:'Crypte des Cendres',d:'La crypte d\'origine : braseros, sang séché, monstres connus.',hp:1,dm:1,loot:1,
    tile:{h:285,s:9,l:12.5},stain:'110,25,30',chip:'214,204,180',pil:['#4a4050','#231d27'],wall:['#211a26','#3d3440'],rune:'232,133,59',light:'255,140,60',flame:'255,190,90',tint:0xff8c3c},
@@ -44,7 +50,7 @@ const GLYPH={
   dos:'<svg viewBox="0 0 24 24"><path d="M8 3h8l1 3 3 15H4L7 6z"/><path d="M8 3c1 2 7 2 8 0M12 6v15"/></svg>',
   anneau:'<svg viewBox="0 0 24 24"><circle cx="12" cy="14" r="6"/><path d="m9 7 3-4 3 4z"/></svg>'};
 const CLS={
-  archer:{n:'Archer',skill:'Volée',cd:7,ult:'Pluie d\'acier',uicon:'<path d="M6 3v12M12 3v15M18 3v12M3.5 12.5 6 15l2.5-2.5M9.5 15.5 12 18l2.5-2.5M15.5 12.5 18 15l2.5-2.5M5 21h14"/>',base:{dmg:8,aps:1.8,hp:115,crit:5,speed:0,armor:5,cdr:0},
+  archer:{n:'Archer',skill:'Volée',cd:7,ult:'Pluie d\'acier',uicon:'<path d="M6 3v12M12 3v15M18 3v12M3.5 12.5 6 15l2.5-2.5M9.5 15.5 12 18l2.5-2.5M15.5 12.5 18 15l2.5-2.5M5 21h14"/>',base:{dmg:8,aps:1.8,hp:130,crit:5,speed:0,armor:8,cdr:0},
     cloak:'#2d4c50',rim:'#a9cbc0',inner:'#14232a',col:'#e8853b',
     hint:'Glisse pour bouger.<br>Tir automatique, plus rapide à l\'arrêt.',
     desc:'Tire des carreaux automatiquement, plus vite à l\'arrêt. Rapide et précis. <b>Volée</b> : 24 carreaux perforants dans toutes les directions. <b>Ultime, Pluie d\'acier</b> : 3 s de flèches qui s\'abattent sur les ennemis proches.',
@@ -54,7 +60,7 @@ const CLS={
     hint:'Glisse pour bouger.<br>Il frappe tout ce qui l\'approche.',
     desc:'Frappe au corps à corps tout ce qui l\'approche. Beaucoup de vie et d\'armure. <b>Tourbillon</b> : tournoie en frappant tout autour, dégâts subis réduits de moitié. <b>Ultime, Colère du Titan</b> : onde de choc géante et 3 s d\'invulnérabilité.',
     icon:'<path d="M12 4a8 8 0 1 1-8 8"/><path d="M12 8a4 4 0 1 1-4 4"/><path d="M4 12 2.5 9M4 12l3-1"/>'},
-  magicien:{n:'Magicien',skill:'Nova de givre',cd:7,ult:'Pluie de météores',uicon:'<circle cx="15" cy="15" r="5"/><path d="M11.5 11.5 3 3M14 9.8 8 3.5M9.8 14 3.5 8"/>',base:{dmg:12,aps:1.25,hp:100,crit:8,speed:-2,armor:5,cdr:10},
+  magicien:{n:'Magicien',skill:'Nova de givre',cd:7,ult:'Pluie de météores',uicon:'<circle cx="15" cy="15" r="5"/><path d="M11.5 11.5 3 3M14 9.8 8 3.5M9.8 14 3.5 8"/>',base:{dmg:12,aps:1.25,hp:115,crit:8,speed:-2,armor:8,cdr:10},
     cloak:'#3c2c63',rim:'#b9a6f0',inner:'#17122b',col:'#9fd0ff',
     hint:'Glisse pour bouger.<br>Orbes automatiques, plus rapides à l\'arrêt.',
     desc:'Lance des orbes qui explosent à l\'impact, plus vite à l\'arrêt. Fragile, redoutable contre les groupes. <b>Nova de givre</b> : blesse, ralentit et dissipe les projectiles. <b>Ultime, Pluie de météores</b> : 3 météores sur les ennemis proches.',
@@ -139,10 +145,14 @@ const craftIds=()=>[...Object.values(WPN).flat().filter(w=>w.r>=3).map(w=>w.id),
    Ouvrir une relique en mission donne un fragment d'un objet de sa rareté (deux si éclatante). */
 const RTIER=[{n:'Ossuaire',c:'#ff8a24',r:3},{n:'Ancestrale',c:'#ff5a7a',r:4},{n:'Sanguine',c:'#e8383f',r:5},{n:'Abyssale',c:'#b07cff',r:6}];
 const RELICS={os:{t:0,n:'Relique Ossuaire'},an:{t:1,n:'Relique Ancestrale'},sa:{t:2,n:'Relique Sanguine'},ab:{t:3,n:'Relique Abyssale'}};
-const REACT_N=10;
-const REL_SRC=['Normal, Difficile et Cauchemar','Tourment I à V','Tourment VI à X','Tourment VI à X, plus rare'];
+const REACT_N=BAL.reactN;
+// Chance d'œuf de familier par relique ouverte, selon sa rareté (× BAL.eggMul).
+const EGG_CH=[.08,.12,.15,.25];
+const REL_SRC=['Normal, Difficile et Cauchemar (et plus haut sous le niveau requis)',`Tourment I et plus, niveau ${BAL.relicLv[0]}+`,`Tourment VI et plus, niveau ${BAL.relicLv[1]}+`,`Tourment VI et plus, niveau ${BAL.relicLv[2]}+, plus rare`];
 // Reliques forgées : 3 reliques d'un même type donnent une relique forgée du même type, qui garantit un fragment de l'objet choisi.
-function relicTierNow(){const D=dif();if(!D.tier)return 0;if(D.tier<=5)return 1;return Math.random()<.1+.05*(D.tier-5)?3:2}
+// La rareté dépend du palier de Tourment, plafonnée par le niveau de mission (BAL.relicLv) : sous le niveau requis, la relique du dessous.
+function relicTierNow(){const D=dif();if(!D.tier)return 0;let t=D.tier<=5?1:Math.random()<BAL.abyss[0]+BAL.abyss[1]*(D.tier-6)?3:2;
+  const L=(typeof G!=='undefined'&&G&&G.level)||1;while(t>0&&L<BAL.relicLv[t-1])t--;return t}
 const relicName=id=>RELICS[id].n;
 // Contenu d'une relique : les objets de sa rareté (armes du héros comprises). Objets de givre seulement dans les Abîmes gelés.
 function relPool(t,cls=heroCls){const r=t+3,frost=typeof G!=='undefined'&&G&&G.biome===1;
@@ -189,6 +199,7 @@ const relicItemLvl=()=>1+(maxL()-1)*4;
 const MODES={
   survie:{n:'Survie',d:'Tiens face aux hordes. Toutes les 2 minutes, sors ou continue. Chaque manche terminée rapporte une relique.'},
   defense:{n:'Défense',d:'Protège le cryopode contre des vagues d\'ennemis. Toutes les 3 vagues : une relique et un équipement, puis sors ou continue.'},
+  breche:{n:'Brèche',coop:1,d:'À plusieurs seulement. Survie où les Gardiens viennent par paires de jumeaux : abattez les deux en moins de 8 s, sinon le premier se relève. Monstres +25 % de vie ; sceaux légendaires et éclats sur les Gardiens et les élites.'},
   capture:{n:'Capture',d:'Traque la cible, mets-la à terre, capture-la puis tiens 3 s dans la zone d\'extraction. Une relique et de l\'or à la clé.'},
 };
 
@@ -200,16 +211,27 @@ try{const m=JSON.parse(localStorage.getItem('crypte-meta')||'null');if(m)meta=Ob
 if(!meta.v2){meta.cp=1;meta.start=1;meta.v2=1}
 meta.modSt=meta.modSt||{};meta.modCp=meta.modCp||{};
 if(!meta.v3){for(const id in meta.bp||{}){const w=wdef(id);if(w&&!meta.built[id])meta.gold+=w.bp||0}meta.bp={};meta.v3=1;meta.relics={lA1:[1,0],...(meta.relics||{})}}
-if(!MODES[meta.mode])meta.mode='survie';
+if(!MODES[meta.mode]||meta.mode==='breche')meta.mode='survie'; // la Brèche se choisit une fois la coopération connectée
 if(!Array.isArray(meta.relicQ))meta.relicQ=[];if(meta.relicSel){if(!meta.relicQ.length)meta.relicQ=[meta.relicSel];meta.relicSel=null}
 const saveMeta=()=>{try{localStorage.setItem('crypte-meta',JSON.stringify(meta))}catch(e){}};
+// Compte : un identifiant unique tiré une fois (gardé dans la sauvegarde) et un nom choisi dans Réglages › Compte.
+// En coopération, chaque joueur apparaît sous ce nom, précédé du niveau de prestige du héros qu'il joue.
+if(!meta.pid||!/^[A-Z2-9]{5}$/.test(meta.pid)){const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',r=new Uint8Array(5);try{crypto.getRandomValues(r)}catch(e){for(let i=0;i<5;i++)r[i]=Math.random()*256}
+  meta.pid=[...r].map(x=>A[x%A.length]).join('');saveMeta()}
+const NAME_MAX=16;
+const cleanName=s=>String(s||'').normalize('NFC').replace(/[^\p{L}\p{N} _\-'.]/gu,'').replace(/\s+/g,' ').trim().slice(0,NAME_MAX);
+const defName=()=>'Joueur-'+meta.pid;
+const myName=()=>cleanName(meta.pname)||defName();
+const myPr=()=>prOf(heroCls).lv|0;
 function relicQFix(){const used={};meta.relicQ=(meta.relicQ||[]).filter(q=>{const a=q&&meta.relics[q.id];if(!a||!RELICS[q.id])return false;q.rad=!!q.rad;const k=q.id+'|'+(q.rad?1:0);used[k]=(used[k]||0)+1;return used[k]<=(a[q.rad?1:0]||0)})}
 const relicQN=(id,rad)=>meta.relicQ.filter(q=>q.id===id&&!!q.rad===rad).length;
 const DIFF=[{n:'Normal',iv:60,cnt:1,loot:0,c:'#bdb6a8'},{n:'Difficile',iv:45,cnt:2,loot:.5,c:'#7b95ff'},{n:'Cauchemar',iv:35,cnt:3,loot:1,c:'#f0cf4a'},{n:'Tourment',iv:25,cnt:4,loot:2,c:'#ff6a3a'}];
 const ROM=['I','II','III','IV','V','VI','VII','VIII','IX','X'];
-const tormT=()=>(meta.diff|0)===3?Math.max(1,Math.min(10,meta.torm|0||1)):0;
-const dif=()=>{const i=Math.max(0,Math.min(3,meta.diff|0)),D=DIFF[i];if(i<3)return Object.assign({hp:1,dm:1,aq:0,anc:0,tier:0},D);
-  const t=tormT();return {n:`Tourment ${ROM[t-1]}`,iv:Math.max(16,26-t),cnt:t>=6?5:4,loot:2+.5*(t-1),c:D.c,hp:1+.5*t,dm:1+.22*t,aq:.05*t,anc:0,tier:t}};
+// Difficulté en cours : la sienne, ou en coopération celle de l'hôte pendant la mission (G.nd = {d, t}).
+const dsel=()=>{const n=typeof G!=='undefined'&&G&&G.nd&&typeof started!=='undefined'&&started?G.nd:null;return n||{d:meta.diff|0,t:meta.torm|0}};
+const tormT=()=>{const s=dsel();return s.d===3?Math.max(1,Math.min(10,s.t||1)):0};
+const dif=()=>{const i=Math.max(0,Math.min(3,dsel().d)),D=DIFF[i];if(i<3)return Object.assign({hp:1,dm:1,aq:0,anc:0,tier:0},D);
+  const t=tormT();return {n:`Tourment ${ROM[t-1]}`,iv:Math.round(BAL.tormIv[0]+(BAL.tormIv[1]-BAL.tormIv[0])*(t-1)/9),cnt:t>=6?BAL.tormCnt[1]:BAL.tormCnt[0],loot:2+.5*(t-1),c:D.c,hp:1+.5*t,dm:1+.22*t,aq:.05*t,anc:0,tier:t}};
 const ULT_N=60;
 const lv=k=>meta.up[k]||0, hasTal=k=>!!meta.tal[k];
 const ownedW=id=>{const w=wdef(id);return !!w&&(!!w.start||!!meta.built[id])};
@@ -223,7 +245,7 @@ const UPG=[
   {k:'cat',n:'Catalyseur',d:l=>`Capacité de mods d'arme ${10+l*3}`,max:4,cost:100},
   {k:'rea',n:'Réacteur',d:l=>`Capacité de mods de héros ${10+l*3}`,max:4,cost:100},
 ];
-const upCost=u=>Math.round(u.cost*Math.pow(1.7,lv(u.k)));
+const upCost=u=>Math.round(u.cost*BAL.forgeMul*Math.pow(1.7,lv(u.k)));
 /* ---------- Prestige du héros ---------- */
 const PREST=[
   {k:'hp',n:'Vitalité',per:2,t:'% de vie maximale'},
@@ -332,7 +354,7 @@ const MODS={
 const MOD_ST_MAX=5,MOD_ST_K=.12;
 const modSt=id=>(meta.modSt&&meta.modSt[id])|0;
 const modCanStar=id=>MODS[id].k!=='pierce';
-const starCost=(id,st)=>({cp:st+1,ess:50*(MODS[id].r+1)*(st+1)});
+const starCost=(id,st)=>({cp:Math.ceil((st+1)*BAL.starCopies),ess:50*(MODS[id].r+1)*(st+1)});
 const modVal=(id,rk,st=modSt(id))=>{const x=MODS[id].v*(rk+1)*(1+MOD_ST_K*st);return x>=10?Math.round(x):x>=1?+x.toFixed(1):+x.toFixed(2)};
 const modDrain=(id,rk,st=modSt(id))=>MODS[id].drain+rk+Math.floor(st/2);
 const fuseCost=(id,rk)=>10*Math.pow(2,rk)*(MODS[id].r+1);
@@ -425,7 +447,7 @@ const AFF={
 function affPick(pool){let t=0;for(const k of pool)t+=AFF[k].wt||1;let x=Math.random()*t;for(const k of pool){x-=AFF[k].wt||1;if(x<=0)return k}return pool[pool.length-1]}
 const BASE_STAT={arme:'dmg',armure:'hp',amulette:'crit',bottes:'speed',anneau:'dmgPct',dos:'armor'};
 const baseTxtOf=(slot,v)=>slot==='dos'?`−${v} % de dégâts subis`:slot==='arme'?`${v} dégâts de base`:slot==='armure'?`+${v} points de vie`:slot==='bottes'?`+${v} % de vitesse de déplacement`:slot==='anneau'?`+${v} % de dégâts`:`+${v} % de chances de critique`;
-let uid=1+Math.max(0,...meta.stash.map(i=>i.id),...Object.values(meta.gear).filter(Boolean).map(i=>i.id));
+let uid=1+Math.max(0,...meta.stash.map(i=>i.id),...Object.values(meta.gear||{}).filter(Boolean).map(i=>i.id),...Object.values(meta.gearBy||{}).flatMap(g=>Object.values(g||{})).filter(Boolean).map(i=>i.id));
 // Butin des monstres : Commun, Magique ou Rare. Le Tourment rend le Rare plus fréquent.
 function rollRarity(l){const tb=(typeof G!=='undefined'&&G)?dif().tier*1.5:0,x=Math.random()*100,rare=Math.min(30,8+l*.15)+tb;return x<rare?2:x<rare+32?1:0}
 function genItem(l,minR=0){
@@ -444,7 +466,14 @@ function genItem(l,minR=0){
 }
 /* Rang (1 à 10) : deux exemplaires identiques de même rang fusionnent en un seul du rang au-dessus, +10 % de statistiques par rang.
    Stocké dans it.up (et meta.wlv pour les armes) : 0 = rang 1, 9 = rang 10. */
-const UP_MAX=9,upMul=n=>1+.1*(n||0),NOSCALE={multi:1,pierce:1,abSoul:1,abWard:1,abPulse:1,abExec:1,abRift:1,abHunt:1};
+const UP_MAX=9;
+// Rang maximum (0 = rang 1) : 10 pour les objets des reliques et les armes Légendaire et au-dessus, BAL.mobRankMax pour le butin des monstres.
+const rankCap=it=>it.wid?wRankCap(it.wid):(it.rid||it.r>=3)?UP_MAX:Math.min(UP_MAX,BAL.mobRankMax[it.r]-1);
+const wRankCap=id=>{const w=wdef(id);return !w||w.r>=3?UP_MAX:Math.min(UP_MAX,BAL.mobRankMax[w.r]-1)};
+// Prix en or d'une fusion qui fait passer du rang n au rang n+1 : grandit avec la rareté, le rang et le niveau de l'objet
+// (une arme compte pour le niveau d'objet de ta plus haute mission).
+const fuseGold=(r,n,l=1)=>Math.round(BAL.fuseGold*Math.pow(2,n|0)*(r+1)*(1+(l|0)/20));
+const upMul=n=>1+.1*(n||0),NOSCALE={multi:1,pierce:1,abSoul:1,abWard:1,abPulse:1,abExec:1,abRift:1,abHunt:1};
 const fmtN=x=>(Math.round(x*10)/10).toLocaleString('fr-FR');
 const rkTxt=n=>`rang ${(n||0)+1}`;
 const itemName=it=>it.name+(it.up?` · R${it.up+1}`:'');
@@ -493,3 +522,38 @@ if(!meta.v5){
   meta.essence=(meta.essence|0)+ess;meta.maxL=Math.max(meta.maxL|0,meta.start|0,meta.cp|0,1);meta.wcp=meta.wcp||{};meta.v5=1;if(ess)meta.v5ess=ess;saveMeta();
 }
 meta.wcp=meta.wcp||{};meta.slotU=meta.slotU||{};meta.hfrag=meta.hfrag|0;
+/* ---------- v106 : chaque héros a son équipement ----------
+   meta.gearBy[classe] = ses emplacements ; meta.gear désigne toujours celui du héros choisi (propriété calculée, non sauvegardée).
+   Une ancienne sauvegarde donne son équipement au dernier héros joué. Un objet n'est porté que par un héros à la fois. */
+const curCls=()=>{try{if(typeof heroCls!=='undefined'&&CLS[heroCls])return heroCls}catch(e){}let c=null;try{c=localStorage.getItem('crypte-cls')}catch(e){}return CLS[c]?c:'archer'};
+function defGear(m){
+  if(!m.gearBy){const d=Object.getOwnPropertyDescriptor(m,'gear'),old=d&&'value' in d?d.value:null;m.gearBy={[curCls()]:old||{}}}
+  for(const c in CLS)m.gearBy[c]=m.gearBy[c]||{};
+  delete m.gear;
+  Object.defineProperty(m,'gear',{get(){return m.gearBy[curCls()]},set(v){m.gearBy[curCls()]=v||{}},enumerable:false,configurable:true});
+  m.sets=m.sets||{};
+}
+defGear(meta);
+// Qui porte cet objet (classe), à quel emplacement ; tous les objets portés, tous héros confondus.
+const wornBy=it=>{if(!it)return null;if(it.wid){const c=wclsOfD(it.wid);return c&&curWid(c)===it.wid?c:null}for(const c in CLS){const g=meta.gearBy[c];for(const k in g)if(g[k]===it)return c}return null};
+const wornSlot=(it,c)=>{const g=meta.gearBy[c]||{};for(const k in g)if(g[k]===it)return k;return null};
+const allWorn=()=>Object.keys(CLS).flatMap(c=>Object.values(meta.gearBy[c]||{}).filter(Boolean));
+// « par l'Archer », « par le Guerrier »…
+const parCls=c=>/^[AEIOUÉ]/.test(CLS[c].n)?`par l'${CLS[c].n}`:`par le ${CLS[c].n}`;
+const findItem=id=>meta.stash.find(i=>i.id===id)||allWorn().find(i=>i.id===id)||null;
+// Retire l'objet au héros qui le porte (s'il en a un) ; renvoie la classe du héros dépouillé.
+function unwear(it){const c=wornBy(it);if(!c||it.wid)return null;const k=wornSlot(it,c);meta.gearBy[c][k]=null;return c}
+/* Équipements enregistrés : meta.sets[classe] = [{n, g:{emplacement: id d'objet ou null}, w: arme}], 6 par héros au plus. */
+const SET_MAX=6;
+const setsOf=(c=heroCls)=>meta.sets[c]||(meta.sets[c]=[]);
+function setSave(i,c=heroCls){const L=setsOf(c),g={};for(const k of GEAR_KEYS())g[k]=meta.gearBy[c][k]?meta.gearBy[c][k].id:null;
+  const s={n:L[i]?L[i].n:`Équipement ${L.length+1}`,g,w:curWid(c)};if(L[i])L[i]=s;else if(L.length<SET_MAX)L.push(s);return s}
+// Porte un équipement enregistré : chaque objet est pris dans le coffre ou sur un autre héros. Renvoie {done, miss, from}.
+function setWear(i,c=heroCls){const s=setsOf(c)[i];if(!s)return null;const g=meta.gearBy[c];let done=0,miss=0;const from=new Set();
+  for(const k of GEAR_KEYS()){if(!(k in s.g))continue;const id=s.g[k],cur=g[k]||null;if(cur&&cur.id===id)continue;
+    if(id==null){if(cur){meta.stash.push(cur);g[k]=null;done++}continue}
+    const it=findItem(id);if(!it||keySlot(k)!==it.slot){miss++;continue}
+    const o=unwear(it);if(o)from.add(o);meta.stash=meta.stash.filter(x=>x!==it);if(cur)meta.stash.push(cur);g[k]=it;done++}
+  if(s.w&&ownedW(s.w)&&wclsOfD(s.w)===c&&meta.wpn[c]!==s.w){meta.wpn[c]=s.w;done++}else if(s.w&&!ownedW(s.w))miss++;
+  return {done,miss,from:[...from]}}
+

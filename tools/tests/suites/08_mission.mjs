@@ -1,6 +1,7 @@
 // En mission : HUD, messages, Capture, ouverture de relique, réussite et butin rapporté.
 import { newPage, startMission, sleep } from '../lib.mjs';
 
+const RTIER_C1 = '#ff5a7a';
 const hudBoss = (p) => p.evaluate(() => [$('bossTxt').hidden, $('bossTxt').textContent]);
 
 export const tests = [
@@ -13,6 +14,24 @@ export const tests = [
     const p = t.track(await newPage(b)); await startMission(p, { mode: 'defense' });
     await p.evaluate(() => { G.wave = 2; G.waveState = 'break'; G.waveT = 3; }); await sleep(p, 150); t.eq((await hudBoss(p))[1], 'Gardien en approche', 'avant vague 3');
     await p.evaluate(() => { G.wave = 3; G.waveState = 'break'; G.waveT = 3; }); await sleep(p, 150); t.eq((await hudBoss(p))[1], 'Sortie vague 6', 'après avoir continué');
+  } },
+  { name: 'Capture : pas de minuteur de Gardien, seulement l\'alerte', fn: async (b, t) => {
+    const p = t.track(await newPage(b)); await startMission(p, { mode: 'capture' });
+    await p.evaluate(() => { G.bossT = 40; }); await sleep(p, 150); t.eq(await hudBoss(p), [true, ''], 'pas de minuteur');
+    await p.evaluate(() => { G.bossT = 5; }); await sleep(p, 150); t.eq(await hudBoss(p), [false, 'Gardien en approche'], 'alerte');
+  } },
+  { name: 'HUD : icône de relique et nombre de reliques ouvertes', fn: async (b, t) => {
+    const p = t.track(await newPage(b));
+    await p.evaluate(() => { meta.relics = { an: [3, 0] }; meta.relicQ = [0, 1, 2].map(() => ({ id: 'an', rad: false })); saveMeta(); });
+    await startMission(p);
+    t.eq(await p.evaluate(() => [$('relHud').hidden, $('relN').textContent]), [false, '0'], 'affichée, 0 ouverte');
+    await p.evaluate(() => { G.react = REACT_N - 1; G.drops.push({ kind: 'react', x: G.P.x, y: G.P.y, t: 0, age: 1, mt: 0 }); }); await sleep(p, 300);
+    t.eq(await p.evaluate(() => [$('relN').textContent, getComputedStyle($('relHud')).getPropertyValue('--tc').trim()]), ['1', RTIER_C1], 'une ouverte, couleur ancestrale');
+    t.ok(await p.evaluate(() => !document.getElementById('relTxt')), 'ancien texte retiré');
+  } },
+  { name: 'HUD : pas d\'icône sans relique équipée', fn: async (b, t) => {
+    const p = t.track(await newPage(b)); await startMission(p);
+    t.ok(await p.evaluate(() => $('relHud').hidden), 'masquée');
   } },
   { name: 'messages : seules les alertes de Gardien s\'affichent en mission', fn: async (b, t) => {
     const p = t.track(await newPage(b)); await startMission(p);
@@ -45,5 +64,15 @@ export const tests = [
     await sleep(p, 300);
     const r = await p.evaluate(() => [meta.built.a6, meta.hfrag, meta.maxL, meta.wins, meta.bestDiff, meta.relOpened, Object.keys(meta.parts).length > 0, meta.stash.length > 0]);
     t.eq(r, [true, 1, 33, 1, 3, 1, true, true], 'banque');
+  } },
+  { name: 'pause › Retour au Camp : confirmation, butin du niveau perdu', fn: async (b, t) => {
+    const p = t.track(await newPage(b)); await startMission(p);
+    await p.evaluate(() => { G.loot.items.push(genItem(10)); G.gold = 500; meta.gold = 7; openBag(); });
+    await p.click('#quitBtnBag');
+    t.ok(await p.evaluate(() => /Retourner au Camp/.test($('bagDock').textContent) && started), 'confirmation, mission en pause');
+    await p.click('#bagDock [data-bag="quitno"]');
+    t.ok(await p.evaluate(() => $('bagDock').hidden && started && !G.over), 'annulé');
+    await p.click('#quitBtnBag'); await p.click('#bagDock [data-bag="quitok"]');
+    t.eq(await p.evaluate(() => [started, $('intro').hidden, $('camp').hidden, meta.gold, meta.stash.length]), [false, false, false, 7, 0], 'au Camp, rien gardé');
   } },
 ];

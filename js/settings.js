@@ -12,7 +12,10 @@ function drawSettings(){
   const tog=(k,lab,hint)=>`<div class="setrow"><div><b>${lab}</b>${hint?`<span>${hint}</span>`:''}</div><button class="cx-chip cx-chip--sm" role="switch" aria-checked="${!!SET[k]}" data-set="${k}">${SET[k]?'Activé':'Désactivé'}</button></div>`;
   const sl=(k,lab)=>`<label class="setrow"><div><b>${lab}</b><span id="sv_${k}">${pct(SET[k])} %</span></div><input type="range" min="0" max="100" step="5" value="${pct(SET[k])}" data-vol="${k}" aria-label="${lab}"></label>`;
   const sh=[[1,'Normal'],[.5,'Réduit'],[0,'Désactivé']];
-  $('setBody').innerHTML=`<section class="cx-section"><h3 class="cx-section__label">Son</h3>${sl('sfx','Effets sonores')}${sl('music','Musique')}
+  $('setBody').innerHTML=`<section class="cx-section"><h3 class="cx-section__label">Compte</h3>
+      <label class="setrow"><div><b>Nom de joueur</b><span>Affiché en coopération, précédé du niveau de prestige du héros que tu joues. Laisse vide pour garder ton identifiant.</span></div><input type="text" class="setname" id="setName" maxlength="${NAME_MAX}" autocomplete="off" autocapitalize="words" spellcheck="false" enterkeyhint="done" value="${cleanName(meta.pname)}" placeholder="${defName()}" aria-label="Nom de joueur"></label>
+      <p class="cx-hint" style="margin:0">Identifiant : <b>${meta.pid}</b>. Il est gardé dans ta sauvegarde, avec ton nom.</p></section>
+    <section class="cx-section"><h3 class="cx-section__label">Son</h3>${sl('sfx','Effets sonores')}${sl('music','Musique')}
       <div class="setrow"><div><b>Sons de ramassage</b><span>Importants : seulement rare et mieux, mods, reliques, fragments et sceaux (pas l'or ni les objets communs ou magiques). Les sons de combat ne changent pas.</span></div><div class="cx-chips" role="radiogroup" aria-label="Sons de ramassage">${[['all','Tous'],['imp','Importants'],['off','Aucun']].map(([v,l])=>`<button class="cx-chip cx-chip--sm" role="radio" aria-checked="${(SET.pickSnd||'imp')===v}" data-pick="${v}">${l}</button>`).join('')}</div></div>
       <p class="cx-hint" style="margin:0">Le son démarre à ton premier geste dans le jeu (règle des navigateurs).</p></section>
     <section class="cx-section"><h3 class="cx-section__label">Écran</h3>
@@ -38,8 +41,11 @@ document.addEventListener('DOMContentLoaded',()=>{});
     else if(b.id==='setUpd'){UPD.check();return}
     else if(b.id==='setUpdGo'){location.reload();return}
     saveSet();drawSettings();SND.play('ui')});
-  body.addEventListener('input',e=>{if(e.target.id==='saveIn'){saveDraft=e.target.value;return}const k=e.target.dataset.vol;if(!k)return;SET[k]=+e.target.value/100;$('sv_'+k).textContent=e.target.value+' %';SND.vol();saveSet()});
-  body.addEventListener('change',e=>{if(e.target.dataset.vol==='sfx')SND.play('pick2')});
+  body.addEventListener('input',e=>{if(e.target.id==='saveIn'){saveDraft=e.target.value;return}
+    if(e.target.id==='setName'){meta.pname=cleanName(e.target.value);saveMeta();return}const k=e.target.dataset.vol;if(!k)return;SET[k]=+e.target.value/100;$('sv_'+k).textContent=e.target.value+' %';SND.vol();saveSet()});
+  body.addEventListener('change',e=>{if(e.target.dataset.vol==='sfx')SND.play('pick2');
+    if(e.target.id==='setName'){meta.pname=cleanName(e.target.value);e.target.value=meta.pname;saveMeta();if(typeof netMe==='function')netMe()}});
+  body.addEventListener('keydown',e=>{if(e.target.id==='setName'&&e.key==='Enter')e.target.blur()});
   body.addEventListener('change',e=>{if(e.target.id!=='saveFile'||!e.target.files[0])return;const r=new FileReader();
     r.onload=()=>{saveDraft=String(r.result);const dd=parseCode(saveDraft);if(dd){savePending=dd;saveMsg=''}else saveMsg='Ce fichier ne contient pas de sauvegarde JSON valide.';drawSettings()};r.readAsText(e.target.files[0])});
   $('closeSet').onclick=closeSettings;$('closeSetX').onclick=closeSettings;

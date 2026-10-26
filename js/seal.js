@@ -37,7 +37,7 @@ let sealSel=null,sealMsg='';
 function sealTargets(){const out=[];for(const sl of GEAR_KEYS()){const it=meta.gear[sl];if(it)out.push({it,w:'porté'})}
   for(const it of meta.stash)if(it&&it.slot!=='arme')out.push({it,w:'coffre'});
   return out.sort((a,b)=>(a.w==='porté'?0:1)-(b.w==='porté'?0:1)||b.it.r-a.it.r||b.it.lvl-a.it.lvl)}
-function campSeals(){const inv=SEAL_IDS.filter(id=>meta.seals[id]>0),sh=meta.lshard|0,worn=new Set(Object.values(meta.gear).filter(i=>i&&i.seal).map(i=>i.seal));
+function campSeals(){const inv=SEAL_IDS.filter(id=>meta.seals[id]>0),sh=meta.lshard|0,worn=new Set(allWorn().filter(i=>i.seal).map(i=>i.seal));
   let h=`<section class="cx-section sealsec"><h3 class="cx-section__label" style="color:${SEAL_C}">Sceaux légendaires</h3>
     <p class="cx-hint" style="margin:0">Très rares, ils tombent seulement en <b>Brèche</b>, le mode à plusieurs, sur les Gardiens et les élites. Un sceau s'ajoute à un objet en plus de ses affixes (un par objet), et fonctionne aussi en solo. Chaque Gardien ou élite de Brèche donne aussi un éclat : ${SEAL_SHARDS} éclats valent un sceau au hasard.</p>
     <div class="shardbar"><span style="width:${Math.min(100,sh/SEAL_SHARDS*100)}%"></span></div>
@@ -51,7 +51,7 @@ function campSeals(){const inv=SEAL_IDS.filter(id=>meta.seals[id]>0),sh=meta.lsh
   const sealed=sealTargets().filter(x=>x.it.seal);
   if(sealed.length)h+=`<h3 class="cx-section__label">Objets scellés</h3><ul class="seall">${sealed.map(({it,w})=>`<li><div class="sealrow"><span><b style="color:${RAR[it.r].c}">${esc(itemName(it))}</b> · ${w}<br><span style="color:${SEAL_C}">${SEALS[it.seal].n}</span></span><button class="btn" data-seal="off" data-arg="${it.id}" ${meta.essence<SEAL_UNSEAT?'disabled':''}>Retirer · <span class="essi"></span>${SEAL_UNSEAT}</button></div></li>`).join('')}</ul>`;
   return h+'</section>'}
-const sealItem=id=>{for(const k in meta.gear)if(meta.gear[k]&&String(meta.gear[k].id)===String(id))return meta.gear[k];return meta.stash.find(i=>String(i.id)===String(id))};
+const sealItem=id=>{for(const it of allWorn())if(String(it.id)===String(id))return it;return meta.stash.find(i=>String(i.id)===String(id))};
 $('campBody').addEventListener('click',e=>{const b=e.target.closest('[data-seal]');if(!b)return;const a=b.dataset.seal,arg=b.dataset.arg;sealMsg='';
   if(a==='sel')sealSel=sealSel===arg?null:arg;
   else if(a==='trade'){if((meta.lshard|0)<SEAL_SHARDS)return;meta.lshard-=SEAL_SHARDS;const id=pick(SEAL_IDS);meta.seals[id]=(meta.seals[id]|0)+1;sealSel=id;sealMsg=`Tu obtiens le sceau ${SEALS[id].n}.`;SND.play('leg')}

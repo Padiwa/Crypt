@@ -17,6 +17,8 @@ Action-RPG de crypte en hordes, jouable au pouce sur mobile et au clavier. Site 
 | `js/seal.js` | Forge › Affixes (Source / Cible, sceaux) |
 | `js/pet.js` | Familiers |
 | `js/tut.js` | Parcours du joueur nouveau |
+| `js/unlock.js` | Déblocages progressifs du Camp et des choix de mission (conditions, cartes « Nouveau ») |
+| `js/rythmes/` | Rythmes de progression (`rapide.js` publié, `long.js`) |
 | `js/net.js` | Coopération à deux (WebRTC) |
 | `js/update.js` | Détection des nouvelles versions |
 | `js/nav.js` | Navigation clavier et manette dans les menus |
@@ -39,6 +41,10 @@ Modifie les fichiers, puis incrémente `VERSION` en haut de `sw.js` (ex. `crypte
 
 L'appli détecte toute seule le changement de `VERSION` (au lancement, au retour au premier plan et toutes les 30 min, voir `js/update.js`) : un bandeau « Nouvelle version du jeu · Mettre à jour » s'affiche hors mission (accueil, pause, Camp, fin de partie). Réglages › Application montre la version installée et un bouton Rechercher.
 
+## Rythme de progression
+Les réglages qui fixent la vitesse de progression sont dans des fichiers de rythme, `js/rythmes/` : `rapide.js` (rythme publié, par défaut) et `long.js` (fin de jeu visée vers 80 h). Chacun définit `RYTHME`, chaque valeur commentée : reliques (monstres, élites, Gardiens, part d'Abyssales), réactifs, Gardiens du Tourment, niveau requis pour chaque rareté de relique, coûts en or (fusion de rang, fabrication, Bonus de la Forge), rang maximum du butin des monstres, étoiles de mod, œufs, fragments de harnais.
+Le rythme chargé est celui de la balise `<script src="js/rythmes/….js">` d'`index.html`, avant `data.js` (penser aussi à la liste `CORE` de `sw.js`). C'est un réglage de développement : le joueur ne le choisit pas. Pour un nouveau rythme, copier un fichier et changer ses valeurs. Le simulateur le mesure avant publication : `node tools/progression/run.mjs --rythme long --cls guerrier` (nom ou chemin d'un fichier), `--bal '{"relicMob":0.15}'` pour essayer une valeur seule.
+
 ## Tester en local
 `python3 -m http.server 8000` dans ce dossier, puis http://localhost:8000. Adresses de test : `#test` (invincible, rapide), `#test2d` (idem en rendu Canvas), `#rapide` (manches courtes).
 
@@ -48,7 +54,7 @@ Une suite unique vérifie le jeu dans un vrai navigateur (Chromium sans affichag
 npm i playwright && npx playwright install chromium
 node tools/tests/run.mjs            # tout (≈ 45 s)
 node tools/tests/run.mjs --quick    # sans la coopération
-node tools/tests/run.mjs fusion     # seulement les tests dont le nom contient « fusion »
+node tools/tests/run.mjs fusion     # seulement les suites dont le fichier contient « fusion »
 ```
 Chaque fichier de `tools/tests/suites/` exporte une liste `tests`. Toute erreur JavaScript dans la page fait échouer le test. **À lancer avant chaque nouvelle version** : la commande sort en erreur si un test échoue.
 
@@ -58,15 +64,17 @@ Android (Chrome) : menu ⋮ → « Installer l'application ». iPhone (Safari) :
 ## Sauvegarde
 Progression dans le stockage du navigateur (`crypte-meta`), réglages dans `crypte-set`. Camp → Forge → Sauvegarde pour exporter ou importer en JSON.
 
-## Banc d'essai d'équilibrage
-`tools/sim/` lance de vraies parties sans affichage, pilotées par un bot (esquive, compétences, potions, bonus de niveau), avec des profils d'équipement T0 à T4.
+## Simulateur de progression
+`tools/progression/` joue des carrières complètes dans un vrai navigateur sans affichage. Un bot joue des missions de Survie avec les règles du jeu ; entre deux missions, il passe au Camp comme le conseille le Parcours (fusion, fabrication, meilleur équipement, recyclage, Bonus, talents, prestige, emplacements, mods, familier, reliques). Il monte d'un niveau après chaque sortie d'au moins deux manches, change de palier au plafond prévu et redescend de trois niveaux après une mission perdue.
 ```
-npm i playwright && npx playwright install chromium
-node tools/sim/run.mjs tools/sim/exemple.json resultats.json
+node tools/progression/run.mjs --cls archer --missions 150 --seed 1 --out resultats/archer_1.jsonl
+node tools/progression/report.mjs resultats/*.jsonl --notes analyse.html --out rapport.html
+node tools/progression/ablate.mjs resultats/archer_1_etat.json
 ```
-Chaque entrée du JSON : `{"cls":"archer","tier":3,"level":30,"diff":3,"torm":1,"rounds":1}`. Sortie : survie, durée, ennemis tués, dégâts subis par seconde, or, objets par rareté, niveau de héros.
-
+`run.mjs` écrit une ligne par mission (palier, niveau, mort, butin, puissance, économie), les jalons et l'état de la sauvegarde. `--caps 5,1,1,...` change le niveau à atteindre sur chaque palier avant de passer au suivant (13 paliers, de Normal à Tourment X). `report.mjs` trace les courbes et les tableaux ; `ablate.mjs` montre d'où vient la puissance du héros en retirant une source à la fois. Même graine, même carrière. Compter 5 à 15 s par mission.
 
 ## Coopération
 
 `js/net.js` relie deux appareils en pair à pair (WebRTC, canal de données) sans serveur : les codes d'offre et de réponse (SDP compressé) s'échangent par QR code ou copier-coller. L'hôte simule les monstres et envoie un instantané 20 fois par seconde ; chaque joueur simule son héros, ses tirs (coups envoyés à l'hôte) et son propre butin. Le QR code utilise `qrcode-generator` (jsDelivr), chargé seulement à l'ouverture de l'écran Coopération. Fonctionne sur GitHub Pages (https) ; même réseau conseillé (un serveur STUN public est aussi indiqué).
+
+Chaque joueur se présente (message `hello`, protocole `NET_V`) avec son héros, son nom et le niveau de prestige de ce héros ; l'hôte renvoie la liste à tous (`roster`) à chaque changement. Le nom vient de `meta.pname` (Réglages › Compte, nettoyé par `cleanName`, 16 signes) ou, par défaut, de l'identifiant `meta.pid` tiré une fois (`Joueur-XXXXX`). Les deux font partie de la sauvegarde.

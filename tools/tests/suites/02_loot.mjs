@@ -41,13 +41,16 @@ export const tests = [
   { name: 'reliques selon la difficulté', fn: async (b, t) => {
     const p = t.track(await newPage(b));
     const r = await p.evaluate(() => {
-      const roll = (d, tm) => { meta.diff = d; meta.torm = tm; const c = {}; for (let i = 0; i < 2000; i++) { const x = ['os', 'an', 'sa', 'ab'][relicTierNow()]; c[x] = (c[x] || 0) + 1; } return c; };
-      return [roll(0, 1), roll(2, 1), roll(3, 3), roll(3, 6), roll(3, 10)];
+      const roll = (d, tm, L = 50) => { meta.diff = d; meta.torm = tm; G.level = L; const c = {}; for (let i = 0; i < 2000; i++) { const x = ['os', 'an', 'sa', 'ab'][relicTierNow()]; c[x] = (c[x] || 0) + 1; } return c; };
+      return [roll(0, 1), roll(2, 1), roll(3, 3), roll(3, 6), roll(3, 10), roll(3, 10, BAL.relicLv[0] - 1), roll(3, 10, BAL.relicLv[2] - 1), BAL.abyss];
     });
+    t.eq(Object.keys(r[5]), ['os'], 'Tourment X sous le niveau des Ancestrales : Ossuaire');
+    t.ok(!r[6].ab && r[6].sa > 0, 'Tourment X sous le niveau des Abyssales : pas d\'Abyssale');
     t.eq(Object.keys(r[0]), ['os'], 'Normal : Ossuaire'); t.eq(Object.keys(r[1]), ['os'], 'Cauchemar : Ossuaire');
     t.eq(Object.keys(r[2]), ['an'], 'Tourment III : Ancestrale');
     const ab6 = (r[3].ab || 0) / 2000, ab10 = (r[4].ab || 0) / 2000;
-    t.ok(ab6 > .08 && ab6 < .22, 'Tourment VI : ~15 % Abyssale (' + ab6 + ')'); t.ok(ab10 > .27 && ab10 < .43, 'Tourment X : ~35 % Abyssale (' + ab10 + ')');
+    const e6 = r[7][0], e10 = r[7][0] + 4 * r[7][1];
+    t.ok(Math.abs(ab6 - e6) < .03, `Tourment VI : ~${Math.round(e6 * 100)} % Abyssale (${ab6})`); t.ok(Math.abs(ab10 - e10) < .04, `Tourment X : ~${Math.round(e10 * 100)} % Abyssale (${ab10})`);
   } },
   { name: 'armes tombées : classe du héros, rareté ≤ Rare', fn: async (b, t) => {
     const p = t.track(await newPage(b));

@@ -44,7 +44,7 @@ function craftOne(id){const b=bpdef(id),pc=meta.parts[id];if(!b||b.r<3||!pc||!pc
   if(b.kind==='arme'){const g=gainWeapon(id);if(g==='new'&&b.cls===heroCls)meta.wpn[heroCls]=id;return g}
   const it=rgItem(id,relicItemLvl());meta.stash.push(it);return it}
 function arsBar(){const cp=craftPlan();
-  let h=`<div class="actions" style="margin:0"><button class="btn${cp.plan.length?' main':''}" data-cact="craftask" ${cp.plan.length?'':'disabled'}>Tout fabriquer${cp.plan.length?` · ${cp.plan.length}`:''}</button><button class="btn" data-cact="gofuse">Fusionner à la Forge</button></div>`;
+  let h=`<div class="actions" style="margin:0"><button class="btn${cp.plan.length?' main':''}" data-cact="craftask" ${cp.plan.length?'':'disabled'}>Tout fabriquer${cp.plan.length?` · ${cp.plan.length}`:''}</button>${isUnl('fuse')?'<button class="btn" data-cact="gofuse">Fusionner à la Forge</button>':''}</div>`;
   if(arsAsk==='craft'&&cp.plan.length){const cnt={};for(const id of cp.plan)cnt[id]=(cnt[id]||0)+1;
     h+=`<div class="card"><p style="margin:0;font-size:14px">Fabriquer ${cp.plan.length} objet${cp.plan.length>1?'s':''} pour <b><span class="coin"></span> ${cp.cost} or</b> : ${Object.keys(cnt).map(id=>`<b style="color:${RAR[bpdef(id).r].c}">${esc(bpdef(id).n)}</b>${cnt[id]>1?' ×'+cnt[id]:''}`).join(', ')}.</p><div class="actions"><button class="btn main" data-cact="craftall">Fabriquer</button><button class="btn" data-cact="arsno">Annuler</button></div></div>`}
   return h}
@@ -63,15 +63,19 @@ function myWeapons(){const order=[heroCls,...Object.keys(CLS).filter(c=>c!==hero
         <div class="meta">${r.n} · ${fmtN(w.dmg*m)} dégâts de base · maîtrise ${mt} / 10 · ${mods} mod${mods>1?'s':''}${sp?` · ${sp} double${sp>1?'s':''}`:''}</div>
         <ul>${Object.keys(it.aff).map(k=>`<li${AFF[k].aby?' class="abyp"':''}>${AFF[k].t(NOSCALE[k]?it.aff[k]:fmtN(it.aff[k]*m))}</li>`).join('')||'<li>Aucun bonus</li>'}</ul>
         ${mine?`<div class="meta">DPS estimé <b style="color:var(--ink)">${fmtN(Math.round(d))}</b>${eq?'':` · <b style="color:${diff>=0?'var(--heal)':'var(--blood)'}">${diff>=0?'+':''}${diff} %</b> par rapport à l'arme équipée`}</div>`:''}
-        <div class="wfoot">${eq?`<span class="owned">Équipée${mine?'':' · '+CLS[c].n}</span>`:mine?`<button class="btn main" data-cact="wequip" data-arg="${w.id}">Équiper</button>`:`<span class="owned">${CLS[c].n}</span>`}${fp.n?`<button class="btn" data-cact="wfuse" data-arg="${w.id}">Fusionner · ${rkTxt(fp.R)}</button>`:''}</div></div>`}).join('')}
+        <div class="wfoot">${eq?`<span class="owned">Équipée${mine?'':' · '+CLS[c].n}</span>`:mine?`<button class="btn main" data-cact="wequip" data-arg="${w.id}">Équiper</button>`:`<span class="owned">${CLS[c].n}</span>`}${fp.n?`<button class="btn" data-cact="wfuse" data-arg="${w.id}">Fusionner · ${rkTxt(fp.R)} · <span class="coin"></span>${fp.cost}</button>`:fp.need?`<button class="btn" disabled>Fusionner · <span class="coin"></span>${fp.need}</button>`:''}</div></div>`}).join('')}
   return h}
 function campArsenal2(){
   const nOwn=Object.values(WPN).flat().filter(w=>ownedW(w.id)).length;
   const tv=(k,lab,n)=>`<button class="cx-chip" role="tab" data-cact="arsv" data-arg="${k}" aria-pressed="${arsView===k}">${lab}${n!=null?` <span class="n">${n}</span>`:''}</button>`;
-  const tabs=`<div class="cx-chips" role="tablist" aria-label="Armurerie">${tv('coffre','Coffre',stashN())}${tv('rec','Recettes')}${tv('mine','Mes armes',nOwn)}${tv('recy','Recyclage')}</div>`;
-  if(arsView==='mine')return `${campMsg}${tabs}${myWeapons()}`;
+  const ak={rec:'craft',mine:'arms',recy:'recy'},lk=k=>ak[k]&&!isUnl(ak[k]);
+  const tv2=(k,lab,n)=>lk(k)?tv(k,`<span class="lockmini" aria-hidden="true">${LOCK_SVG}</span>${lab}`).replace('class="cx-chip"','class="cx-chip is-locked"'):tv(k,lab,n);
+  const tabs=`<div class="cx-chips" role="tablist" aria-label="Armurerie">${tv('coffre','Coffre',stashN())}${tv2('rec','Recettes')}${tv2('mine','Mes armes',nOwn)}${tv2('recy','Recyclage')}</div>`;
+  if(lk(arsView))return `${campMsg}${tabs}${lockedHtml(ak[arsView])}`;
+  const nc=ak[arsView]?newCard(ak[arsView]):'';
+  if(arsView==='mine')return `${campMsg}${tabs}${nc}${myWeapons()}`;
   if(arsView==='coffre')return `${campMsg}${tabs}${campCoffre()}`;
-  if(arsView==='recy')return `${campMsg}${tabs}${campRecycle()}`;
+  if(arsView==='recy')return `${campMsg}${tabs}${nc}${campRecycle()}`;
   const ready=id=>{const pc=meta.parts[id]||[0,0,0];return pc.every(x=>x>0)};
   const nReady=craftIds().filter(ready).length;
   const ch=(k,lab,c,n)=>`<button class="cx-chip cx-chip--sm" data-cact="arsr" data-arg="${k}" aria-pressed="${arsR===k}"${c&&arsR!==k?` style="color:${c}"`:''}>${lab}${n!=null?` <span class="n">${n}</span>`:''}</button>`;
@@ -320,7 +324,7 @@ function campForge0(){
   return `<h3>Améliorations permanentes</h3><div class="ups">${ups}</div><h3>Talents · ${CLS[heroCls].n}</h3><div class="tals">${tals}</div>`;
 }
 function tabBadges(){
-  const craft=craftIds().filter(id=>{const b=bpdef(id),pc=meta.parts[id]||[0,0,0];return pc.every(n=>n>0)&&meta.gold>=b.craft}).length,fz=fuseGroups().n;
+  const craft=isUnl('craft')?craftIds().filter(id=>{const b=bpdef(id),pc=meta.parts[id]||[0,0,0];return pc.every(n=>n>0)&&meta.gold>=b.craft}).length:0,fz=isUnl('fuse')?fuseGroups().n:0;
   const relTot=Object.values(meta.relics).reduce((n,a)=>n+(a[0]||0)+(a[1]||0),0);relicQFix();const relFree=relTot-meta.relicQ.length;
   const ups=UPG.filter(u=>lv(u.k)<u.max&&meta.gold>=upCost(u)).length+(TAL[heroCls]||[]).filter(t=>!hasTal(t.k)&&meta.gold>=t.cost).length;
   const pr=(prOpen()||prOf().lv)?prFree():0,prBuy=(prOpen()||prOf().lv)&&meta.gold>=prCost(prOf().lv).gold&&meta.essence>=prCost(prOf().lv).ess?1:0;
@@ -330,6 +334,10 @@ function tabBadges(){
     relics:relFree&&!meta.relicQ.length?{n:relFree,t:`${relFree} relique${relFree>1?'s':''} non équipée${relFree>1?'s':''}`}:null,
     pets:meta.eggs>0?{n:meta.eggs,t:`${meta.eggs} œuf${meta.eggs>1?'s':''} à faire éclore`}:null,
     forge:(ups+pr+prBuy+fz)?{n:pr?pr:fz?fz:ups+prBuy,t:pr?`${pr} point${pr>1?'s':''} de prestige à placer`:fz?`${fz} fusion${fz>1?'s':''} possible${fz>1?'s':''}`:`${ups+prBuy} amélioration${ups+prBuy>1?'s':''} achetable${ups+prBuy>1?'s':''}`}:null};
+  // onglets verrouillés : pas de pastille ; nouveautés débloquées : « ! » jusqu'à « Compris »
+  const TN={equip:['sets','slots'],arsenal:['craft','arms','recy'],relics:['relics'],mods:['mods','hmods','align'],pets:['pets'],forge:['bonus','affix','fuse','seals']};
+  for(const t in TN){if(tabLocked(t)){B[t]=null;continue}const nw=TN[t].filter(k=>meta.unlNew.includes(k));if(nw.length)B[t]={n:'!',t:`Nouveau : ${nw.map(k=>UNL_BY[k].n).join(', ')}`}}
+  if(!isUnl('fuse')&&B.forge&&!isUnl('bonus'))B.forge=null;
   document.querySelectorAll('.tab').forEach(t=>{let el=t.querySelector('.cx-tab__badge');const b=B[t.dataset.tab];
     if(!b){if(el)el.remove();return}if(!el){el=document.createElement('span');el.className='cx-tab__badge';t.appendChild(el)}el.textContent=b.n>9?'9+':b.n;el.title=b.t;el.setAttribute('aria-label',b.t)})}
 // Texte repliable (Disclosure) : une phrase, le détail derrière « En savoir plus ». L'état ouvert est retenu par clé.
@@ -338,38 +346,49 @@ function cxMore(key,sentence,body,lab='En savoir plus'){return `<details class="
 document.addEventListener('toggle',e=>{const d=e.target;if(!d.matches||!d.matches('details[data-more]'))return;moreOpen[d.dataset.more]=d.open;try{localStorage.setItem('crypte-more',JSON.stringify(moreOpen))}catch(err){}},true);
 const subTabs=(items,cur,act)=>`<div class="cx-tabs" role="tablist">${items.map(([k,l,n])=>`<button class="cx-tab" role="tab" data-cact="${act}" data-arg="${k}" aria-selected="${cur===k}">${l}${n?`<span class="cx-tab__badge">${n}</span>`:''}</button>`).join('')}</div>`;
 const CAMP_MORE={
-  ars_coffre:['Touche un objet pour voir sa fiche et l\'équiper.','<p>▲ signale un objet meilleur que celui que tu portes, le cadenas un objet verrouillé (ni recyclé, ni sacrifié par une fusion, ni utilisé comme source d\'affixe). « Équiper le meilleur », en bas, choisit pour chaque emplacement l\'objet qui donne le plus de puissance et de vie.</p>'],
-  equip:['Ton équipement porté et tes statistiques. Touche un emplacement pour voir sa fiche.','<p>Le coffre (tout ce que tu possèdes sans le porter) est dans l\'Armurerie, comme le recyclage. « Équiper le meilleur », en bas, choisit pour chaque emplacement l\'objet du coffre qui donne le plus de puissance et de vie.</p><p>Le <b>Prestige</b>, en bas de l\'onglet, s\'ouvre quand toutes les améliorations de la Forge sont au maximum.</p>'],
+  ars_coffre:['Touche un objet pour voir sa fiche et l\'équiper.','<p>Le coffre montre aussi ce que portent tes héros : la pastille A, G ou M indique l\'Archer, le Guerrier ou le Magicien, et le filtre « Portés » n\'affiche qu\'eux. ▲ signale un objet meilleur que celui que tu portes, le cadenas un objet verrouillé (ni recyclé, ni sacrifié par une fusion, ni utilisé comme source d\'affixe). « Équiper le meilleur », en bas, choisit pour chaque emplacement l\'objet qui donne le plus de puissance et de vie.</p>'],
+  equip:['L\'équipement de ce héros et ses statistiques. Touche un emplacement pour voir sa fiche.','<p>Chaque héros a son équipement ; un objet n\'est porté que par un héros à la fois. « Enregistrer l\'équipement porté » le garde pour le remettre plus tard. Le coffre (tout ce que tu possèdes, objets portés compris) est dans l\'Armurerie, comme le recyclage. « Équiper le meilleur », en bas, choisit pour chaque emplacement l\'objet du coffre qui donne le plus de puissance et de vie.</p><p>Le <b>Prestige</b>, en bas de l\'onglet, s\'ouvre quand toutes les améliorations de la Forge sont au maximum.</p>'],
   arsenal:['Fabrique les objets légendaires et plus rares avec leurs 3 fragments.','<p>Les fragments viennent des reliques, ouvertes en mission : Ossuaire (légendaires), Ancestrale (ancestraux), Sanguine (sanguins), Abyssale (abyssaux). Un objet sort au niveau d\'objet de ta plus haute mission réussie. Fabriquer une arme que tu as déjà donne un double, à fusionner à la Forge.</p><p>« Mes armes » montre tes armes, leur rang et leur DPS comparé à celle que tu portes.</p>'],
-  relics:['Équipe des reliques : elles s\'ouvrent pendant la mission.',`<p>En mission, ${REACT_N} réactifs (ennemis au halo doré) ouvrent la première relique de la liste, puis la suivante. Chaque relique ouverte donne un fragment d\'un objet de sa rareté et +25 essence, à la réussite de la mission.</p><p>Le type de relique dépend de la difficulté : Ossuaire en Normal, Difficile et Cauchemar ; Ancestrale en Tourment I à V ; Sanguine et Abyssale en Tourment VI à X. Trois reliques d\'un même type donnent une relique forgée qui vise l\'objet de ton choix. Le raffinage (50 essence) rend une relique éclatante : elle donne deux fragments.</p>`],
+  relics:['Équipe des reliques : elles s\'ouvrent pendant la mission.',`<p>En mission, ${REACT_N} réactifs (ennemis au halo doré) ouvrent la première relique de la liste, puis la suivante. Chaque relique ouverte donne un fragment d\'un objet de sa rareté et +25 essence, à la réussite de la mission.</p><p>Le type de relique dépend de la difficulté et du niveau de mission : Ossuaire en Normal, Difficile et Cauchemar ; Ancestrale en Tourment I et plus, dès le niveau ${BAL.relicLv[0]} ; Sanguine et Abyssale en Tourment VI et plus, dès les niveaux ${BAL.relicLv[1]} et ${BAL.relicLv[2]}. Sous le niveau requis, c'est la relique du dessous. Trois reliques d\'un même type donnent une relique forgée qui vise l\'objet de ton choix. Le raffinage (50 essence) rend une relique éclatante : elle donne deux fragments.</p>`],
   mods:['Place tes mods dans les cases du héros et de l\'arme.','<p>Chaque mod coûte de la capacité ; la maîtrise, gagnée en mission, en ajoute. Une case alignée sur une polarité divise par deux le coût des mods de cette polarité. Un mod au rang maximum se surcharge avec ses copies (jusqu\'à 5 étoiles).</p>'],
-  pets:['Ton familier te suit en mission ; fais éclore tes œufs ici.','<p>Les œufs tombent parfois en ouvrant une relique (Ossuaire 8 %, Ancestrale 12 %, Sanguine 15 %, Abyssale 25 %). Deux familiers identiques de même rang fusionnent en un seul du rang au-dessus (★★★★★ au maximum). Un familier équipé gagne des niveaux (jusqu\'à 20) avec les ennemis abattus.</p>'],
+  pets:['Ton familier te suit en mission ; fais éclore tes œufs ici.',`<p>Les œufs tombent parfois en ouvrant une relique (${EGG_CH.map((c,t)=>`${RTIER[t].n} ${fmtN(c*BAL.eggMul*100)} %`).join(', ')}). Deux familiers identiques de même rang fusionnent en un seul du rang au-dessus (★★★★★ au maximum). Un familier équipé gagne des niveaux (jusqu\'à 20) avec les ennemis abattus.</p>`],
   forge_up:['L\'or du Camp achète des améliorations permanentes et des talents.','<p>Chaque rang s\'applique à tous tes héros ; les talents sont propres au héros. Quand toutes les améliorations sont au maximum, le <b>Prestige</b> s\'ouvre dans l\'onglet Héros.</p><p>La sauvegarde (exporter, importer) se trouve maintenant dans <b>Réglages</b>.</p>'],
   forge_affix:['Touche Source ou Cible, puis un objet, puis l\'affixe à prendre.','<p>La source est détruite ; son affixe passe sur la cible, qui la gagne, la renforce ou la remplace. Le coût en essence dépend de la rareté de la source. Une affixe déjà plus forte sur la cible ne peut pas être remplacée par une plus faible.</p>'],
   ars_recy:['Touche les objets à recycler, puis Recycler en bas.','<p>Recycler détruit un objet contre de l\'essence, selon sa rareté et son rang. Les objets portés et verrouillés ne se recyclent pas. Filtre par rareté puis « Tout sélectionner » pour recycler un lot d\'un coup.</p>'],
-  forge_fuse:['Deux exemplaires identiques de même rang fusionnent en un seul du rang au-dessus.','<p>Identique : même modèle (le nom de base pour le butin, le nom exact pour les objets des reliques), même rareté et même rang. L\'exemplaire gardé conserve ses affixes et son niveau ; chaque rang ajoute 10 % à ses statistiques, jusqu\'au rang 10. Pour une arme, les doubles (trouvés ou fabriqués) se fusionnent avec celle que tu possèdes.</p>'],
+  forge_fuse:[`Deux exemplaires identiques de même rang fusionnent en un seul du rang au-dessus.`,`<p>Identique : même modèle (le nom de base pour le butin, le nom exact pour les objets des reliques), même rareté et même rang. L\'exemplaire gardé conserve ses affixes et son niveau ; chaque rang ajoute 10 % à ses statistiques, jusqu\'au rang 10 pour les objets des reliques (butin des monstres : rang ${BAL.mobRankMax.join(', ')} en commun, magique, rare). Chaque fusion coûte de l\'or : ${BAL.fuseGold} × 2 par rang atteint × (rareté + 1) × (1 + niveau de l\'objet / 20). Pour une arme, les doubles (trouvés ou fabriqués) se fusionnent avec celle que tu possèdes.</p>`],
   forge_seals:['Pose un sceau légendaire sur un objet porté.','<p>Les sceaux tombent seulement en Brèche (le mode à plusieurs), sur les Gardiens et les élites ; 100 éclats s\'échangent contre un sceau au hasard. Un sceau par objet, en plus de ses affixes.</p>']};
+// Clé de déblocage de chaque onglet du Camp et de chaque sous-onglet de la Forge.
+const TAB_UNL={relics:'relics',mods:'mods',pets:'pets',forge:'bonus'},FSUB_UNL={up:'bonus',affix:'affix',fuse:'fuse',seals:'seals'};
+const tabLocked=t=>t==='forge'?!['bonus','affix','fuse','seals'].some(isUnl):!!TAB_UNL[t]&&!isUnl(TAB_UNL[t]);
+// Cartes « Nouveau » propres à une vue.
+const viewNew=()=>campTab==='equip'?['sets','slots']:campTab==='mods'?['mods','hmods','align']:campTab==='pets'?['pets']:campTab==='relics'?['relics']:campTab==='forge'?[FSUB_UNL[forgeSub]]:[];
 function drawCamp(){
+  unlockCheck(false);
   if(campTab==='affix'){campTab='forge';forgeSub='affix'}
   if(campTab==='forge'&&forgeSub==='recy'){campTab='arsenal';arsView='recy'}
   const fk=campTab==='forge'?'forge_'+forgeSub:campTab==='arsenal'?(arsView==='recy'?'ars_recy':arsView==='coffre'?'ars_coffre':'arsenal'):campTab;
   {const h=document.getElementById('campHelp');if(h)h.href='aide/index.html#'+(campTab==='arsenal'&&(arsView==='coffre'||arsView==='recy')?'camp-coffre':campTab==='pets'?'familiers':campTab==='forge'?(forgeSub==='affix'?'camp-affix':forgeSub==='seals'?'camp-affix':forgeSub==='fuse'?'camp-fusion':'camp-forge'):'camp-'+campTab)}
   $('campGold').innerHTML=`<span class="coin"></span>${meta.gold}<span class="e"><span class="essi"></span>${meta.essence}</span>`;
-  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.tab===campTab)));
+  document.querySelectorAll('.tab').forEach(t=>{t.setAttribute('aria-selected',String(t.dataset.tab===campTab));const lk=tabLocked(t.dataset.tab);t.classList.toggle('is-locked',lk);if(lk)t.setAttribute('aria-description','verrouillé');else t.removeAttribute('aria-description')});
+  const NC=viewNew().map(newCard).join('');
   const body=$('campBody'),M=CAMP_MORE[fk],more=M?cxMore(fk,M[0],M[1]):'';
   let h='';
-  if(campTab==='forge'){h=subTabs([['up','Bonus'],['affix','Affixes'],['fuse','Fusion',fuseGroups().n],['seals','Sceaux',SEAL_IDS.some(id=>meta.seals[id]>0)&&!Object.values(meta.gear).some(i=>i&&i.seal)?1:0]],forgeSub,'fsub')+more+(forgeSub==='affix'?campAffix():forgeSub==='seals'?campSeals():forgeSub==='fuse'?campFusion():campForge())}
-  else if(campTab==='mods'||campTab==='pets')h=more+'<div id="modsCamp" class="col"></div>';
-  else h=more+(campTab==='equip'?campEquip()+prestSection():campTab==='arsenal'?campArsenal2():campTab==='relics'?campRelics():'');
+  if(tabLocked(campTab))h=lockedHtml(TAB_UNL[campTab]);
+  else if(campTab==='forge'){const fl=k=>!isUnl(FSUB_UNL[k]),lab=(k,l)=>fl(k)?`<span class="lockmini" aria-hidden="true">${LOCK_SVG}</span>${l}`:l;
+    h=subTabs([['up',lab('up','Bonus')],['affix',lab('affix','Affixes')],['fuse',lab('fuse','Fusion'),fl('fuse')?0:fuseGroups().n],['seals',lab('seals','Sceaux'),!fl('seals')&&SEAL_IDS.some(id=>meta.seals[id]>0)&&!Object.values(meta.gear).some(i=>i&&i.seal)?1:0]],forgeSub,'fsub')+(fl(forgeSub)?lockedHtml(FSUB_UNL[forgeSub]):NC+more+(forgeSub==='affix'?campAffix():forgeSub==='seals'?campSeals():forgeSub==='fuse'?campFusion():campForge()))}
+  else if(campTab==='mods'||campTab==='pets')h=NC+more+'<div id="modsCamp" class="col"></div>';
+  else h=NC+more+(campTab==='equip'?campEquip()+prestSection():campTab==='arsenal'?campArsenal2():campTab==='relics'?campRelics():'');
   body.innerHTML=h;
-  if(campTab==='pets'){if(modTab!=='p'){modTab='p';modSel=null;modSF=null;modPF='all';alSel=null}renderMods('modsCamp')}
-  else if(campTab==='mods'){if(modTab==='p'){modTab='h';modSel=null;modSF=null;modPF='all';alSel=null}renderMods('modsCamp')}
+  if(tabLocked(campTab)){}
+  else if(campTab==='pets'){if(modTab!=='p'){modTab='p';modSel=null;modSF=null;modPF='all';alSel=null}renderMods('modsCamp')}
+  else if(campTab==='mods'){if(modTab==='p'||(modTab==='h'&&!isUnl('hmods'))){modTab=isUnl('hmods')?'h':'w';modSel=null;modSF=null;modPF='all';alSel=null}renderMods('modsCamp')}
   tabBadges();
   const dk=typeof campDockHtml==='function'?campDockHtml():'';$('campDock').innerHTML=dk;$('campDock').hidden=!dk;
   const ft=dk?'':campFootHtml();$('campFoot').innerHTML=ft;$('campFoot').hidden=!ft;$('campFoot').className='cx-sheet__foot'+(ft.includes('cx-hint')?' stack':'');
 }
 // L'action principale de l'onglet, collée en bas de la feuille.
 function campFootHtml(){
+  if(tabLocked(campTab)||(campTab==='forge'&&!isUnl(FSUB_UNL[forgeSub]))||(campTab==='arsenal'&&({rec:'craft',mine:'arms',recy:'recy'})[arsView]&&!isUnl(({rec:'craft',mine:'arms',recy:'recy'})[arsView])))return '';
   if(campTab==='forge'&&forgeSub==='affix')return affixFoot();
   if(isRecy())return recyFoot();
   if(campTab==='forge'&&forgeSub==='fuse')return fusionFoot();
@@ -386,7 +405,7 @@ $('campSheet').addEventListener('click',e=>{
 function campClick(b){
   const d=b.dataset;
   if(d.slot)campSel={slot:d.slot};
-  else if(d.stash)campSel={stash:+d.stash};
+  else if(d.stash){const it=findItem(+d.stash);campSel=it?selOf(it):{stash:+d.stash}}
   else if(d.wsel)campSel={wpn:d.wsel};
   else if(d.cact){
     const a=d.cact,arg=d.arg;
@@ -402,12 +421,17 @@ function campClick(b){
     else if(a==='impok'){const dd=savePending;try{localStorage.setItem('crypte-meta',JSON.stringify(dd.meta));if(dd.cls)localStorage.setItem('crypte-cls',dd.cls);if(dd.best)localStorage.setItem('crypte-best2',String(dd.best));location.reload();return}catch(err){saveMsg='Impossible d\'écrire la sauvegarde : le stockage de ce navigateur est bloqué.'}}
     else if(a==='sfilter'){stF=arg}
     else if(a==='lock'&&campSel&&(campSel.wpn||campSel.slot==='arme')){const wid=campSel.wpn||curWid();meta.wlock=meta.wlock||{};meta.wlock[wid]=!meta.wlock[wid];const on=meta.wlock[wid];cxUndo(`${esc(wdef(wid).n)} ${on?'verrouillée':'déverrouillée'}`,()=>{meta.wlock[wid]=!on})}
-    else if(a==='lock'){const it=campSel&&campSel.stash?meta.stash.find(i=>i.id===campSel.stash):campSel&&campSel.slot?meta.gear[campSel.slot]:null;if(it){it.lock=!it.lock;cxUndo(`${esc(itemName(it))} ${it.lock?'verrouillé':'déverrouillé'}`,()=>{it.lock=!it.lock})}}
+    else if(a==='lock'){const it=campSel&&campSel.stash?meta.stash.find(i=>i.id===campSel.stash):campSel&&campSel.slot?meta.gear[campSel.slot]:campSel&&campSel.oth?(meta.gearBy[campSel.oth.split('|')[0]]||{})[campSel.oth.split('|')[1]]:null;if(it){it.lock=!it.lock;cxUndo(`${esc(itemName(it))} ${it.lock?'verrouillé':'déverrouillé'}`,()=>{it.lock=!it.lock})}}
     if(a==='bestall'){const plan=bestPlan(curEq(),meta.stash),names=[];for(const sl in plan){const it=plan[sl];meta.stash=meta.stash.filter(i=>i!==it);const old=meta.gear[sl];if(old)meta.stash.push(old);meta.gear[sl]=it;names.push(`<span style="color:${RAR[it.r].c}">${esc(itemName(it))}</span>`)}campSel=null;if(names.length)toast('Équipé : '+names.join(', '))}
     if(a==='equip'){const it=meta.stash.find(i=>i.id===campSel.stash),k=it&&tgtKey(curEq(),it);if(it&&k){meta.stash=meta.stash.filter(i=>i!==it);const old=meta.gear[k];if(old)meta.stash.push(old);meta.gear[k]=it;campSel={slot:k}}}
+    else if(a==='equipoth'&&campSel&&campSel.oth){const [c,k]=campSel.oth.split('|'),it=(meta.gearBy[c]||{})[k],t=it&&tgtKey(curEq(),it);if(it&&t){meta.gearBy[c][k]=null;const old=meta.gear[t];if(old)meta.stash.push(old);meta.gear[t]=it;campSel={slot:t};toast(`<span style="color:${RAR[it.r].c}">${esc(itemName(it))}</span> équipé sur ${esc(CLS[heroCls].n)}, retiré ${parCls(c).replace('par ','à ').replace("à le ","au ")}`)}}
+    else if(a==='setsave'){const i=arg===''||arg==null?-1:+arg;if(i<0&&setsOf().length>=SET_MAX)return;const s=setSave(i<0?setsOf().length:i);toast(`<b>${esc(s.n)}</b> enregistré`)}
+    else if(a==='setwear'){const r=setWear(+arg),s=setsOf()[+arg];if(r){campSel=null;toast(`<b>${esc(s.n)}</b> porté`+(r.from.length?` · pris ${r.from.map(c=>parCls(c).replace('par ','à ').replace("à le ","au ")).join(' et ')}`:'')+(r.miss?` · ${r.miss} objet${r.miss>1?'s':''} introuvable${r.miss>1?'s':''} (recyclé ou fusionné)`:''))}}
+    else if(a==='setdel'){const L=setsOf(),i=+arg,s=L[i];if(s){L.splice(i,1);cxUndo(`<b>${esc(s.n)}</b> supprimé`,()=>{setsOf().splice(i,0,s)})}}
     else if(a==='unequip'){const s=campSel.slot,it=meta.gear[s];if(it){meta.stash.push(it);meta.gear[s]=null;campSel={stash:it.id}}}
     else if(a==='toarsenal'){campTab='arsenal';campSel=null}
     else if(a==='wequip'){if(ownedW(arg)&&wclsOf(arg)===heroCls){meta.wpn[heroCls]=arg;if(campTab==='equip'||isCoffre())campSel={slot:'arme'}}}
+    else if(a==='unlok'){meta.unlNew=meta.unlNew.filter(k=>k!==arg)}
     else if(a==='arsv'){arsView=arg;campSel=null;campBack=null}
     else if(a==='fsub'){forgeSub=arg;campSel=null}
     else if(a==='slotopen'){const u=SLOT_U.find(x=>x.k===arg);if(u&&!slotOpen(u.k)&&(!u.need||slotOpen(u.need))&&(meta.hfrag|0)>=u.hf&&meta.gold>=u.gold){meta.hfrag-=u.hf;meta.gold-=u.gold;meta.slotU[u.k]=true;meta.gear[u.k]=null;SND.play('leg');toast(`Emplacement <b>${u.n}</b> débloqué`)}}
@@ -476,7 +500,7 @@ function campClick(b){
     else if(a==='xfcancel'){xf={src:'',k:'',dst:'',rep:'',pick:'src'}}
     else if(a==='xfok'){xfDo()}
     else if(a==='refine'){const r=meta.relics[arg];if(r&&r[0]>relicQN(arg,false)&&meta.essence>=50){r[0]--;r[1]++;meta.essence-=50}}
-    else if(a==='prbuy'){const o=prOf(),c=prCost(o.lv);if((prOpen()||o.lv)&&meta.gold>=c.gold&&meta.essence>=c.ess){meta.gold-=c.gold;meta.essence-=c.ess;o.lv++;toast(`Prestige du ${CLS[heroCls].n} : niveau ${o.lv}. Place ton point.`)}}
+    else if(a==='prbuy'){const o=prOf(),c=prCost(o.lv);if((prOpen()||o.lv)&&meta.gold>=c.gold&&meta.essence>=c.ess){meta.gold-=c.gold;meta.essence-=c.ess;o.lv++;toast(`Prestige du ${CLS[heroCls].n} : niveau ${o.lv}. Place ton point.`);if(typeof netMe==='function')netMe()}}
     else if(a==='pradd'){const o=prOf(),q=PREST.find(x=>x.k===arg);if(q&&prFree()>0&&!(q.max&&prPt(q.k)>=q.max))o.pts[q.k]=prPt(q.k)+1}
     else if(a==='prreset'){prOf().pts={}}
     else if(a==='up'){const u=UPG.find(x=>x.k===arg),c=upCost(u);if(meta.gold>=c&&lv(u.k)<u.max){meta.gold-=c;meta.up[u.k]=lv(u.k)+1}}
@@ -487,6 +511,8 @@ function campClick(b){
 }
 $('campBody').addEventListener('input',e=>{if(e.target.id==='saveIn')saveDraft=e.target.value});
 $('campBody').addEventListener('change',e=>{if(e.target.id==='xfSrc'){xf={src:e.target.value,k:'',dst:xf.dst===e.target.value?'':xf.dst,rep:''};drawCamp()}else if(e.target.id==='xfDst'){xf.dst=e.target.value;xf.rep='';drawCamp()}});
+// Héros › Équipements enregistrés : renommer
+$('campBody').addEventListener('change',e=>{const i=e.target.dataset.setname;if(i==null)return;const s=setsOf()[+i];if(s){s.n=e.target.value.trim().slice(0,24)||s.n;saveMeta()}});
 $('campBody').addEventListener('change',e=>{if(e.target.id!=='saveFile'||!e.target.files[0])return;const r=new FileReader();
   r.onload=()=>{saveDraft=String(r.result);const dd=parseCode(saveDraft);if(dd){savePending=dd;saveMsg=''}else saveMsg='Ce fichier ne contient pas de sauvegarde JSON valide.';drawCamp()};r.readAsText(e.target.files[0])});
 function openCamp(){$('camp').hidden=false;campSel=null;campMsg='';drawCamp()}
@@ -502,8 +528,16 @@ function refreshMenus(){
   if(document.activeElement!==$('lvIn'))$('lvIn').value=st;$('lvMinus').disabled=st<=1;$('lvPlus').disabled=st>=LV_MAX;
   const lm=lootMul(st);$('lvDesc').textContent=st===1?'Plus haut : plus de butin, monstres plus forts':`Butin ×${lm.toFixed(2).replace(/\.?0+$/,'').replace('.',',')} · or ×${goldMul(st).toFixed(1).replace('.',',')} · monstres plus forts`;
   $('bestTxt').textContent=best?`Meilleure survie : ${fmt(best)}`:'';
-  document.querySelectorAll('.cx-pick[data-m]').forEach(b=>b.setAttribute('aria-checked',String(b.dataset.m===meta.mode)));
-  $('modeDesc').textContent=MODES[meta.mode].d;
+  // La Brèche ne se joue qu'à plusieurs : choisissable par l'hôte dès qu'un joueur est connecté.
+  {const coopOk=typeof NET!=='undefined'&&NET.host&&NET.peers.some(p=>p.state==='open');if(meta.mode==='breche'&&!coopOk){meta.mode='survie';saveMeta()}
+    const mLock=m=>MODES[m].coop?!coopOk:!!UNL_BY[m]&&!isUnl(m);if(mLock(meta.mode)){meta.mode='survie';saveMeta()}
+    document.querySelectorAll('.cx-pick[data-m]').forEach(b=>{b.setAttribute('aria-checked',String(b.dataset.m===meta.mode));const lock=mLock(b.dataset.m);b.setAttribute('aria-disabled',String(lock));b.classList.toggle('is-locked',lock)});
+    const nxt=['defense','capture'].find(mLock);
+    $('modeDesc').textContent=MODES[meta.mode].d+(nxt?` ${UNL_BY[nxt].n.replace('Mission ','')} : ${UNL_BY[nxt].need.replace(/^./,c=>c.toLowerCase())}`:'')+(coopOk?'':' Brèche : à plusieurs seulement, héberge une partie (bouton Coop) pour la choisir.')}
+  if(!diffOk(meta.diff|0)){meta.diff=0;saveMeta()}if((meta.diff|0)===3&&(meta.torm|0)>tormMax()){meta.torm=Math.max(1,tormMax());saveMeta()}
+  if(meta.biome&&!isUnl('givre')){meta.biome=0;saveMeta()}
+  if(!started)unlockHomeSeen();
+  if(typeof NET!=='undefined'&&NET.host&&NET.on)sendRoster();
   {const bi=Math.max(0,Math.min(BIOMES.length-1,meta.biome|0));$('bioVal').textContent=(bi?'❄ ':'')+BIOMES[bi].n}
   relicQFix();const rn=meta.relicQ.length,rt=Object.values(meta.relics).reduce((n,a)=>n+(a[0]||0)+(a[1]||0),0);
   $('relicVal').textContent=rn?`${rn} équipée${rn>1?'s':''}`:'Aucune';$('relicVal').style.color=rn?'':'var(--muted)';
@@ -512,21 +546,22 @@ function refreshMenus(){
   $('diffDesc').textContent=di?diffLine(di):'';
 }
 // Feuille de choix (SettingRow → Sheet + Choice) : toucher une option la choisit et ferme la feuille.
+// Une option verrouillée (o.lock = condition) reste visible, grisée, avec ce qu'il faut faire pour l'obtenir.
 function openPick(title,opts,onPick,extra){$('pickTitle').textContent=title;
-  $('pickBody').innerHTML=`<div class="cx-choices" role="radiogroup" aria-label="${title}">${opts.map((o,i)=>`<button class="cx-choice" role="radio" data-pick="${i}" aria-checked="${!!o.on}" style="--cc:${o.c||'var(--ink)'}"><span class="cx-choice__key">${i+1}</span><span class="cx-choice__name">${o.n}</span><p class="cx-choice__desc">${o.d||''}</p><span class="cx-choice__go" aria-hidden="true">›</span></button>`).join('')}</div>${extra?extra():''}`;
-  $('pickBody').onclick=e=>{const b=e.target.closest('[data-pick]');if(b){const keep=onPick(+b.dataset.pick);if(keep)openPick(title,keep.opts||opts,onPick,extra);else closePick();return}
+  $('pickBody').innerHTML=`<div class="cx-choices" role="radiogroup" aria-label="${title}">${opts.map((o,i)=>`<button class="cx-choice${o.lock?' is-locked':''}" role="radio" data-pick="${i}" aria-checked="${!!o.on}" ${o.lock?'aria-disabled="true"':''} style="--cc:${o.c||'var(--ink)'}"><span class="cx-choice__key">${o.lock?`<span class="lockmini">${LOCK_SVG}</span>`:i+1}</span><span class="cx-choice__name">${o.n}</span><p class="cx-choice__desc">${o.lock?`<b>Verrouillé</b> : ${o.lock}`:o.d||''}</p><span class="cx-choice__go" aria-hidden="true">›</span></button>`).join('')}</div>${extra?extra():''}`;
+  $('pickBody').onclick=e=>{const b=e.target.closest('[data-pick]');if(b){const o=opts[+b.dataset.pick];if(o&&o.lock){toast(o.lock);return}const keep=onPick(+b.dataset.pick);if(keep)openPick(title,keep.opts||opts,onPick,extra);else closePick();return}
     const t=e.target.closest('[data-torm]');if(t){setTorm((meta.torm|0||1)+(+t.dataset.torm));openPick(title,diffOpts(),onPick,extra)}};
   $('pickSheet').hidden=false}
 function closePick(){$('pickSheet').hidden=true}
 $('pickClose').onclick=closePick;$('pickSheet').addEventListener('click',e=>{if(e.target.id==='pickSheet')closePick()});
-const diffOpts=()=>DIFF.map((d,i)=>({n:i===3?`${d.n} · ${dif3().n.replace('Tourment ','palier ')}`:d.n,d:diffLine(i),c:i?d.c:'var(--ink)',on:i===(meta.diff|0)}));
-const tormExtra=()=>(meta.diff|0)===3?`<div class="cx-rows"><div class="cx-row"><span class="cx-row__k" style="color:var(--ink)">Palier de Tourment<small>Plus haut : monstres plus forts, plus de Rares ; reliques Sanguines et Abyssales dès VI</small></span><span class="cx-stepper"><button type="button" data-torm="-1" ${dif().tier<=1?'disabled':''} aria-label="Baisser le palier">−</button><b style="min-width:3.2em;display:grid;place-items:center;font:700 16px/1 var(--font-body);color:#ff6a3a">${ROM[dif().tier-1]}</b><button type="button" data-torm="1" ${dif().tier>=10?'disabled':''} aria-label="Monter le palier">+</button></span></div></div>`:'<p class="cx-hint" style="margin:0">Toucher une difficulté la choisit et ferme la feuille.</p>';
+const diffOpts=()=>DIFF.map((d,i)=>({n:i===3?`${d.n} · ${dif3().n.replace('Tourment ','palier ')}`:d.n,d:diffLine(i),c:i?d.c:'var(--ink)',on:i===(meta.diff|0),lock:diffOk(i)?null:UNL_BY['diff'+i].need}));
+const tormExtra=()=>(meta.diff|0)===3?`<div class="cx-rows"><div class="cx-row"><span class="cx-row__k" style="color:var(--ink)">Palier de Tourment<small>Plus haut : monstres plus forts, plus de Rares ; reliques Sanguines et Abyssales dès VI</small></span><span class="cx-stepper"><button type="button" data-torm="-1" ${dif().tier<=1?'disabled':''} aria-label="Baisser le palier">−</button><b style="min-width:3.2em;display:grid;place-items:center;font:700 16px/1 var(--font-body);color:#ff6a3a">${ROM[dif().tier-1]}</b><button type="button" data-torm="1" ${dif().tier>=tormMax()?'disabled':''} aria-label="Monter le palier">+</button></span></div>${tormMax()<10?`<p class="cx-hint" style="margin:0;padding:0 var(--space-4) 8px">Palier ${ROM[tormMax()]} : réussis d'abord une mission au palier ${ROM[tormMax()-1]}.</p>`:''}</div>`:'<p class="cx-hint" style="margin:0">Toucher une difficulté la choisit et ferme la feuille.</p>';
 $('rowDiff').onclick=()=>openPick('Difficulté',diffOpts(),i=>{meta.diff=i;saveMeta();newGame();refreshMenus();return i===3?{opts:diffOpts()}:null},tormExtra);
-$('rowBio').onclick=()=>openPick('Biome',BIOMES.map((b,i)=>({n:(i?'❄ ':'')+b.n,d:b.d,c:i?'#9fd0ff':'var(--ink)',on:i===(meta.biome|0)})),i=>{meta.biome=i;saveMeta();newGame();refreshMenus()});
+$('rowBio').onclick=()=>openPick('Biome',BIOMES.map((b,i)=>({n:(i?'❄ ':'')+b.n,d:b.d,c:i?'#9fd0ff':'var(--ink)',on:i===(meta.biome|0),lock:i&&!isUnl('givre')?UNL_BY.givre.need:null})),i=>{meta.biome=i;saveMeta();newGame();refreshMenus()});
 const setLv=v=>{meta.start=clamp(Math.round(+v)||1,1,LV_MAX);saveMeta();newGame();refreshMenus()};
 $('lvMinus').onclick=()=>setLv((meta.start|0||1)-1);$('lvPlus').onclick=()=>setLv((meta.start|0||1)+1);
 $('lvIn').addEventListener('change',e=>{setLv(e.target.value);e.target.value=meta.start});
 $('relicBtn').onclick=()=>{campTab='relics';openCamp()};
-const setTorm=v=>{meta.torm=Math.max(1,Math.min(10,v));saveMeta();newGame();refreshMenus()};
-document.querySelectorAll('.cx-pick[data-m]').forEach(b=>b.onclick=()=>{meta.mode=b.dataset.m;saveMeta();newGame();refreshMenus()});
+const setTorm=v=>{meta.torm=Math.max(1,Math.min(tormMax()||1,v));saveMeta();newGame();refreshMenus()};
+document.querySelectorAll('.cx-pick[data-m]').forEach(b=>b.onclick=()=>{if(b.getAttribute('aria-disabled')==='true'){toast(MODES[b.dataset.m].coop?'La Brèche se joue à plusieurs : héberge une partie (bouton Coop) puis choisis-la.':`${UNL_BY[b.dataset.m].n} : ${UNL_BY[b.dataset.m].need.replace(/^./,c=>c.toLowerCase())}`);return}meta.mode=b.dataset.m;saveMeta();newGame();refreshMenus()});
 
