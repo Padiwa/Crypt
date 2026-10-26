@@ -427,7 +427,8 @@ const upInvested=n=>upCostRange(0,n||0);
 const fmtN=x=>(Math.round(x*10)/10).toLocaleString('fr-FR');
 const itemName=it=>it.name+(it.up?` +${it.up}`:'');
 function weaponItem(c,id){const w=(id&&wdef(id)&&ownedW(id))?wdef(id):wdef(WPN[c][0].id),af={...w.aff,...(meta.waff[w.id]||{})};for(const k in af)if(af[k]==null)delete af[k];
-  return {id:'w_'+w.id,wid:w.id,slot:'arme',r:w.r,lvl:1,base:{k:'dmg',v:w.dmg},aff:af,name:w.n,type:'Arme',up:meta.wlv[w.id]||0}}
+  return {id:'w_'+w.id,wid:w.id,cls:wclsOfD(w.id),slot:'arme',r:w.r,lvl:1,base:{k:'dmg',v:w.dmg},aff:af,name:w.n,type:'Arme',up:meta.wlv[w.id]||0,lock:!!(meta.wlock&&meta.wlock[w.id])}}
+const wclsOfD=id=>Object.keys(WPN).find(c=>WPN[c].some(w=>w.id===id));
 const curEq=()=>({arme:weaponItem(heroCls,meta.wpn[heroCls]),armure:meta.gear.armure||null,amulette:meta.gear.amulette||null,bottes:meta.gear.bottes||null,anneau:meta.gear.anneau||null});
 function rollPart(){
   // En mission, seuls les schémas magiques et rares de l'arme du héros tombent ; légendaires et Prime : reliques Abysse uniquement.

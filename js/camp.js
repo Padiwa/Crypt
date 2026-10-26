@@ -58,7 +58,7 @@ function bpCard(b){
   const cost=isW?Math.round(b.bp/2):b.craft,ready=pc.every(x=>x>0);
   const baseTxt=isW?`${b.dmg} dégâts de base`:baseTxtOf(b.slot,b.base);
   let foot;
-  const canRecy=own&&!eq&&b.bp>0;
+  const canRecy=own&&!eq&&b.bp>0&&!(meta.wlock&&meta.wlock[b.id]);
   if(own)foot=(eq?`<span class="owned">Équipée${mine?'':' · '+CLS[b.cls].n}</span>`:mine?`<button class="btn main" data-cact="wequip" data-arg="${b.id}">Équiper</button>`:`<span class="owned">Fabriquée · ${CLS[b.cls].n}</span>`)
     +(canRecy?(wRecy===b.id?`<div class="card" style="width:100%;box-sizing:border-box"><p style="margin:0;font-size:14px">Recycler <b style="color:${r.c}">${b.n}</b> ? Tu récupères <b>${wRecyEss(b)} essence</b> et <b>1 fragment</b> de son schéma. L'arme, son niveau d'amélioration et ses affixes ajoutées sont perdus ; ses mods restent dans ta collection.</p><div class="actions"><button class="btn danger" data-cact="wrecyok" data-arg="${b.id}">Recycler</button><button class="btn" data-cact="wrecyno">Annuler</button></div></div>`
       :`<button class="btn danger" data-cact="wrecy" data-arg="${b.id}">Recycler · <span class="essi"></span>${wRecyEss(b)} · 1 fragment</button>`):'');
@@ -76,7 +76,7 @@ function craftPlan(){const ids=[...WPN[heroCls],...Object.keys(WPN).filter(c=>c!
   for(const id of ids){const b=bpdef(id);if(b.kind==='arme'&&(ownedW(id)||b.bp===0))continue;
     for(let n=0;n<(b.kind==='arme'?1:20);n++){const pc=parts[id],c=bpCost(b);if(!pc.every(x=>x>0)||gold<c)break;parts[id]=pc.map(x=>x-1);gold-=c;plan.push(id)}}
   return {plan,cost:meta.gold-gold}}
-function recyPlan(){const ws=Object.keys(WPN).flatMap(c=>WPN[c].filter(w=>w.bp>0&&ownedW(w.id)&&(meta.wpn[c]||WPN[c][0].id)!==w.id));
+function recyPlan(){const ws=Object.keys(WPN).flatMap(c=>WPN[c].filter(w=>w.bp>0&&ownedW(w.id)&&!(meta.wlock&&meta.wlock[w.id])&&(meta.wpn[c]||WPN[c][0].id)!==w.id));
   const pr=meta.stash.filter(it=>primeBp(it)&&!it.lock);
   return {ws,pr,ess:ws.reduce((a,w)=>a+wRecyEss(bpdef(w.id)),0)+pr.reduce((a,it)=>a+primeRecyEss(it),0)}}
 function craftOne(id){const b=bpdef(id),pc=meta.parts[id],cost=bpCost(b);if(!pc||!pc.every(x=>x>0)||meta.gold<cost)return false;if(b.kind==='arme'&&ownedW(id))return false;
@@ -308,7 +308,7 @@ function campAffix(){
   h+=`<section class="cx-section"><h3 class="cx-section__label">Équipé · ${CLS[heroCls].n}</h3><div class="cx-slots">${xfSlot('w:'+eqW,weaponItem(heroCls,eqW),'Arme')}${['armure','amulette','bottes','anneau'].map(k=>xfSlot('g:'+k,meta.gear[k],SLOT[k])).join('')}</div></section>`;
   const ow=Object.keys(WPN).flatMap(c=>WPN[c].filter(w=>ownedW(w.id)&&w.id!==eqW).map(w=>[c,w]));
   if(ow.length)h+=`<section class="cx-section"><h3 class="cx-section__label">Autres armes</h3><div class="cx-slots">${ow.map(([c,w])=>xfSlot('w:'+w.id,weaponItem(c,w.id),`Arme · ${CLS[c].n}`,true)).join('')}</div></section>`;
-  {const list=invList();h+=`<section class="cx-section"><h3 class="cx-section__label">Coffre · ${meta.stash.length} objet${meta.stash.length>1?'s':''}</h3>${meta.stash.length?invToolbar(list,'affix'):''}<div id="invGrid">${invGrid(list,'affix')}</div></section>`}
+  {const list=invList('affix');h+=`<section class="cx-section"><h3 class="cx-section__label">Coffre · ${meta.stash.length} objet${meta.stash.length>1?'s':''}</h3>${meta.stash.length?invToolbar(list,'affix'):''}<div id="invGrid">${invGrid(list,'affix')}</div></section>`}
   h+=affFinder();h+=cxMore('wish','Alertes de butin : un flash quand une affixe recherchée tombe.',wishSection(),'Régler');
   return h;
 }
@@ -411,6 +411,7 @@ function campClick(b){
   const d=b.dataset;
   if(d.slot)campSel={slot:d.slot};
   else if(d.stash)campSel={stash:+d.stash};
+  else if(d.wsel)campSel={wpn:d.wsel};
   else if(d.cact){
     const a=d.cact,arg=d.arg;
     if(!a.startsWith('recy'))recyConfirm=false;if(a!=='ropen')campMsg='';
@@ -427,6 +428,7 @@ function campClick(b){
     else if(a==='sfilter'){stF=arg;stP=0}
     else if(a==='ssort'){stS=arg;stP=0}
     else if(a==='spage'){stP+=+arg}
+    else if(a==='lock'&&campSel&&(campSel.wpn||campSel.slot==='arme')){const wid=campSel.wpn||curWid();meta.wlock=meta.wlock||{};meta.wlock[wid]=!meta.wlock[wid];const on=meta.wlock[wid];cxUndo(`${esc(wdef(wid).n)} ${on?'verrouillée':'déverrouillée'}`,()=>{meta.wlock[wid]=!on})}
     else if(a==='lock'){const it=campSel&&campSel.stash?meta.stash.find(i=>i.id===campSel.stash):campSel&&campSel.slot?meta.gear[campSel.slot]:null;if(it){it.lock=!it.lock;cxUndo(`${esc(itemName(it))} ${it.lock?'verrouillé':'déverrouillé'}`,()=>{it.lock=!it.lock})}}
     else if(a==='recyask')recyConfirm=true;
     else if(a==='recycancel')recyConfirm=false;
@@ -437,23 +439,30 @@ function campClick(b){
       if(pb)fi=giveFrag(pb);campSel=nx?{stash:nx.id}:null;
       cxUndo(`<b>${esc(itemName(it))}</b> recyclé · +${e} essence${pb?` · fragment ${bpdef(pb).frag[fi]}`:''}`,()=>{meta.stash.push(it);meta.essence-=e;if(pb&&fi>=0&&meta.parts[pb])meta.parts[pb][fi]=Math.max(0,meta.parts[pb][fi]-1);campSel={stash:it.id}})}}
     else if(a==='upg'){const k=+arg;let it=null,isW=false,wid=null;
-      if(campSel&&campSel.slot==='arme'){isW=true;wid=meta.wpn[heroCls]&&ownedW(meta.wpn[heroCls])?meta.wpn[heroCls]:WPN[heroCls][0].id}
+      if(campSel&&campSel.wpn){isW=true;wid=campSel.wpn}
+      else if(campSel&&campSel.slot==='arme'){isW=true;wid=meta.wpn[heroCls]&&ownedW(meta.wpn[heroCls])?meta.wpn[heroCls]:WPN[heroCls][0].id}
       else if(campSel&&campSel.slot)it=meta.gear[campSel.slot];else if(campSel&&campSel.stash)it=meta.stash.find(i=>i.id===campSel.stash);
       const n=isW?(meta.wlv[wid]||0):it?(it.up||0):null;
       if(n!==null&&n<UP_MAX){const kk=Math.min(k,UP_MAX-n),c=upCostRange(n,kk);if(meta.essence>=c){meta.essence-=c;if(isW)meta.wlv[wid]=n+kk;else it.up=n+kk;toast(`Amélioré à +${n+kk}`)}}}
     else if(a==='unequip'){const s=campSel.slot,it=meta.gear[s];if(it){meta.stash.push(it);meta.gear[s]=null;campSel={stash:it.id}}}
     else if(a==='toarsenal'){campTab='arsenal';campSel=null}
-    else if(a==='wequip'){if(ownedW(arg))meta.wpn[heroCls]=arg}
+    else if(a==='wequip'){if(ownedW(arg)&&wclsOf(arg)===heroCls){meta.wpn[heroCls]=arg;if(campTab==='equip')campSel={slot:'arme'}}}
     else if(a==='arsv'){arsView=arg}
     else if(a==='fsub'){forgeSub=arg;campSel=null}
     else if(a==='dclose'){campSel=null}
-    else if(a==='dnav'){const L=invList(),i=L.findIndex(x=>campSel&&x.id===campSel.stash),n=L[i+(+arg)];if(n)campSel={stash:n.id}}
+    else if(a==='dmore'){dockMore=!dockMore}
+    else if(a==='dall'){dockAll=!dockAll}
+    else if(a==='dnav'){const L=invList('equip'),i=L.findIndex(isSel),n=L[i+(+arg)];if(n)campSel=selOf(n)}
     else if(a==='xftake'||a==='xfrecv'){const sc=$('campBody').parentElement.scrollTop;campBack={tab:campTab,sel:campSel,scroll:sc,label:{equip:'Héros',arsenal:'Armurerie'}[campTab]||'Héros',mode:a==='xfrecv'?'recv':'take'};
       xf=a==='xftake'?{src:arg,k:'',dst:'',rep:'',pick:'dst'}:{src:'',k:'',dst:arg,rep:'',pick:'src'};campTab='forge';forgeSub='affix';campSel=null;drawCamp();$('campBody').parentElement.scrollTop=0;return}
     else if(a==='goback'){const B=campBack;campBack=null;if(B){campTab=B.tab;campSel=B.sel;drawCamp();$('campBody').parentElement.scrollTop=B.scroll||0;return}}
     else if(a==='wrecy'){wRecy=arg}
+    else if(a==='wrecyq'){const b=bpdef(arg);if(b&&ownedW(arg)&&b.bp>0&&!(meta.wlock&&meta.wlock[arg])&&(meta.wpn[b.cls]||WPN[b.cls][0].id)!==arg){const L=invList('equip'),li=L.findIndex(isSel),nx=L[li+1]||L[li-1];
+      const e=wRecyEss(b),sv={lv:meta.wlv[arg],af:meta.waff&&meta.waff[arg],fz:meta.wfz&&meta.wfz[arg]};delete meta.built[arg];delete meta.wlv[arg];if(meta.waff)delete meta.waff[arg];if(meta.wfz)delete meta.wfz[arg];meta.essence+=e;const fi=giveFrag(arg);
+      campSel=nx&&!(nx.wid===arg)?selOf(nx):null;
+      cxUndo(`<b>${esc(b.n)}</b> recyclée · +${e} essence · fragment ${b.frag[fi]}`,()=>{meta.built[arg]=true;if(sv.lv)meta.wlv[arg]=sv.lv;if(sv.af){meta.waff=meta.waff||{};meta.waff[arg]=sv.af}if(sv.fz){meta.wfz=meta.wfz||{};meta.wfz[arg]=sv.fz}meta.essence-=e;if(meta.parts[arg])meta.parts[arg][fi]=Math.max(0,meta.parts[arg][fi]-1);campSel={wpn:arg}})}}
     else if(a==='wrecyno'){wRecy=null}
-    else if(a==='wrecyok'){const b=bpdef(arg);if(b&&ownedW(arg)&&b.bp>0&&(meta.wpn[b.cls]||WPN[b.cls][0].id)!==arg){const e=wRecyEss(b);delete meta.built[arg];delete meta.wlv[arg];if(meta.waff)delete meta.waff[arg];meta.essence+=e;const i=giveFrag(arg);
+    else if(a==='wrecyok'){const b=bpdef(arg);if(b&&ownedW(arg)&&b.bp>0&&!(meta.wlock&&meta.wlock[arg])&&(meta.wpn[b.cls]||WPN[b.cls][0].id)!==arg){const e=wRecyEss(b);delete meta.built[arg];delete meta.wlv[arg];if(meta.waff)delete meta.waff[arg];meta.essence+=e;const i=giveFrag(arg);
       toast(`<b style="color:${RAR[b.r].c}">${b.n}</b> recyclée : +${e} essence et le fragment ${b.frag[i]}`)}wRecy=null}
     else if(a==='craftask'){arsAsk=arsAsk==='craft'?null:'craft'}
     else if(a==='arecyask'){arsAsk=arsAsk==='recy'?null:'recy'}

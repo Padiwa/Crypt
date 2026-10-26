@@ -76,9 +76,8 @@ function drawBag(){
   // fiche ancrée : objet du butin choisi (prioritaire sur le détail d'un mod)
   if(runSel){const it=L.items.find(i=>i.id===runSel),cur=G.eq[it.slot];
     $('bagDock').innerHTML=`<div class="cx-dock__head"><h3 class="cx-dock__title" style="color:${RAR[it.r].c}">${esc(itemName(it))}</h3><button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-bag="close" aria-label="Fermer le détail"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
-      <span class="cx-dock__meta">${RAR[it.r].n} · ${SLOT[it.slot]} · niveau ${it.lvl} · ${cur?`remplace ${esc(itemName(cur))}`:'remplace un emplacement vide'}</span>
-      <ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.35"><li>${baseTxtOf(it.slot,fmtN(it.base.v))}</li>${Object.keys(it.aff).map(k=>`<li>${AFF[k].t(NOSCALE[k]?it.aff[k]:fmtN(it.aff[k]))}</li>`).join('')}</ul>
-      ${typeof cmpRows==='function'?cmpRows(G.eq,it):''}<button class="cx-btn cx-btn--primary cx-btn--block" data-bag="equip" data-arg="${it.id}" style="margin-top:4px">Équiper maintenant</button><p class="cx-hint" style="margin:0">Un objet équipé est gardé même si tu meurs. L'ancien part au coffre du Camp.</p>`;
+      <span class="cx-dock__meta">${RAR[it.r].n} · ${SLOT[it.slot]} · niveau ${it.lvl}</span>
+      ${(()=>{const k='r:'+it.id;if(k!==cmpKey){cmpKey=k;cmpPage=0}return cmpObjet(G.eq,it)})()}<button class="cx-btn cx-btn--primary cx-btn--block" data-bag="equip" data-arg="${it.id}" style="margin-top:4px">Équiper maintenant${cur?` · remplace ${esc(itemName(cur))}`:''}</button><p class="cx-hint" style="margin:0">Un objet équipé est gardé même si tu meurs. L'ancien part au coffre du Camp.</p>`;
     $('bagDock').hidden=false;$('bagFoot').hidden=true}
   else if(!modSel){$('bagDock').hidden=true;$('bagFoot').hidden=false}
 }

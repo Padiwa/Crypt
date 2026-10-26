@@ -32,11 +32,11 @@ addEventListener('keydown',e=>{
   const tabs=[...document.querySelectorAll('#camp .cx-tabs--icons .cx-tab')];
   if(/^[1-9]$/.test(e.key)&&tabs[+e.key-1]){tabs[+e.key-1].click();e.preventDefault();return}
   if(e.key==='/'){const s=document.querySelector('#campBody [data-inv="q"]');if(s){s.focus();e.preventDefault()}return}
-  if(campTab==='equip'){const L=invList();if(!L.length)return;const i=campSel&&campSel.stash?L.findIndex(x=>x.id===campSel.stash):-1;
+  if(campTab==='equip'){const L=invList('equip');if(!L.length)return;const i=L.findIndex(isSel);
     const g=document.querySelector('#invGrid .grid'),cols=g?Math.max(1,getComputedStyle(g).gridTemplateColumns.split(' ').length):1;
     let n=null;
     if(e.key==='['||e.key==='ArrowLeft')n=Math.max(0,i-1);else if(e.key===']'||e.key==='ArrowRight')n=Math.min(L.length-1,i+1);
     else if(e.key==='ArrowDown')n=i<0?0:Math.min(L.length-1,i+cols);else if(e.key==='ArrowUp')n=i<0?0:Math.max(0,i-cols);
     else if(e.key==='Enter'&&i>=0){const b=document.querySelector('#campDock [data-cact="equip"]');if(b){b.click();e.preventDefault()}return}
-    if(n!=null){campSel={stash:L[n].id};drawCamp();const c=document.querySelector(`#invGrid [data-stash="${L[n].id}"]`);if(c)c.scrollIntoView({block:'nearest'});e.preventDefault();e.stopImmediatePropagation()}}
+    if(n!=null){campSel=selOf(L[n]);drawCamp();const c=document.querySelector(L[n].wid?`#invGrid [data-wsel="${L[n].wid}"]`:`#invGrid [data-stash="${L[n].id}"]`);if(c)c.scrollIntoView({block:'nearest'});e.preventDefault();e.stopImmediatePropagation()}}
 },true);
