@@ -3,4 +3,4 @@
 // Vide : pas de relais, la coopération se fait seulement par QR codes (mode manuel), comme avant.
 // Après « npx wrangler deploy » dans relais/, mets ici l'adresse affichée, en wss:// :
 //   const RELAY_DEFAULT = 'wss://crypte-relais.<ton-sous-domaine>.workers.dev';
-const RELAY_DEFAULT = '';
+const RELAY_DEFAULT = 'wss://crypte-relais.cryptcendre.workers.dev';

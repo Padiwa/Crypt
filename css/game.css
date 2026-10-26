@@ -1169,3 +1169,4 @@ body:has(#camp:not([hidden])) .toast,body:has(#bag:not([hidden])) .toast{top:cal
 .code4in{flex:1 1 auto;min-width:0;box-sizing:border-box;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font:700 26px/1.2 var(--font-body);letter-spacing:.3em;text-align:center;color:var(--ink);font-variant-numeric:tabular-nums}
 .code4in:focus{outline:none;border-color:var(--ember-hi)}
 .code4in::placeholder{letter-spacing:normal;font-weight:400;font-size:15px;color:var(--muted)}
+.coopros .kickb{margin-left:2px;padding-inline:8px;min-height:30px}

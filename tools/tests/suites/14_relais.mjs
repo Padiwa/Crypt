@@ -2,8 +2,8 @@
 import { startRelay } from '../relais-local.mjs';
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-function client(url) {
-  const ws = new WebSocket(url); ws.got = []; ws.code = null;
+function client(url, origin) {
+  const ws = new WebSocket(url, origin ? { headers: { origin } } : undefined); ws.got = []; ws.code = null;
   ws.onmessage = (e) => ws.got.push(e.data === 'pong' ? 'pong' : JSON.parse(e.data)); ws.onclose = (e) => { ws.code = e.code; };
   return new Promise((r) => { ws.onopen = () => { ws.send('{"t":"hi"}'); r(ws); }; ws.onerror = () => r(ws); });
 }
@@ -40,6 +40,26 @@ export const tests = [
       t.ok(H2.got[0] && H2.got[0].t === 'ok' && H2.got.some((m) => m.t === 'join') && H.code === 4000 && !G.got.some((m) => m.t === 'hostgone'), 'le même hôte reprend sa salle (coupure réseau) sans renvoyer l\'invité');
       H2.close(); await wait(80);
       t.eq([G.got.some((m) => m.t === 'hostgone'), G.code], [true, 4002], 'l\'hôte parti, la salle se ferme pour l\'invité');
+    } finally { await R.close(); }
+  } },
+  { name: 'protections : sites autorisés, frein des codes faux', fn: async (b, t) => {
+    if (typeof WebSocket === 'undefined') { t.ok(true); return; }
+    const { originOk, GARDE } = await import('../../../relais/src/salle.js');
+    t.eq([originOk('https://moi.github.io', 'https://moi.github.io/'), originOk('https://autre.github.io', 'https://moi.github.io'), originOk('https://a.claudeusercontent.com', '*.claudeusercontent.com'), originOk('null', 'https://moi.github.io'), originOk('https://x.y', '')], [true, false, true, false, true], 'règles des sites autorisés');
+    const R = await startRelay({ origins: 'https://moi.github.io' });
+    try {
+      const X = await client(R.url + '/r/1111?role=h&k=s', 'https://pirate.example'); await wait(60);
+      t.eq(X.got[0] && X.got[0].t, 'origin', 'site non autorisé refusé');
+      const H = await client(R.url + '/r/2222?role=h&k=s', 'https://moi.github.io'); await wait(60);
+      t.eq(H.got[0] && H.got[0].t, 'ok', 'site autorisé : salle ouverte');
+      for (let i = 0; i < GARDE.max; i++) { const g = await client(R.url + '/r/' + String(3000 + i) + '?role=g', 'https://moi.github.io'); await wait(5); g.close(); }
+      await wait(60);
+      const G = await client(R.url + '/r/2222?role=g', 'https://moi.github.io'); await wait(60);
+      t.eq(G.got[0] && G.got[0].t, 'slow', GARDE.max + ' codes faux : ce réseau attend, même avec le bon code');
+      R.gardes.clear();
+      const G2 = await client(R.url + '/r/2222?role=g', 'https://moi.github.io'); await wait(60);
+      t.eq(G2.got[0] && G2.got[0].t, 'ok', 'après le délai, on entre de nouveau');
+      H.close();
     } finally { await R.close(); }
   } },
 ];

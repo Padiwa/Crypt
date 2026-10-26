@@ -29,6 +29,14 @@ npx wrangler deploy     # envoie le relais ; si ton compte n'a pas encore de sou
 
 Tant que `RELAY_DEFAULT` est vide, le jeu garde la connexion par QR codes, comme avant.
 
+## Protections
+
+- **Sites autorisés.** Dans le tableau de bord Cloudflare : Workers & Pages › crypte-relais › Settings › Variables and Secrets › Add. Type *Text*, nom `ORIGINES`, valeur : l'adresse de ton jeu, sans chemin, par exemple `https://ton-nom.github.io`. Plusieurs adresses se séparent par des virgules ; `*.exemple.com` vaut pour tous ses sous-domaines. Le relais refuse alors les autres sites, et le jeu affiche l'adresse refusée pour que tu puisses l'ajouter. Sans `ORIGINES`, tous les sites sont acceptés. `keep_vars = true`, dans `wrangler.toml`, garde cette variable à chaque déploiement.
+- **Frein des codes faux.** Un réseau (une adresse IP) qui tape plus de 20 codes sans partie en 10 minutes ne peut plus rejoindre de partie pendant 10 minutes. Trouver un code de 4 chiffres par hasard prendrait alors des jours. Les réglages sont dans `src/salle.js` (`GARDE`).
+- **Dans le jeu**, l'hôte est prévenu de chaque arrivée et peut retirer un joueur, changer de code ou fermer l'accès.
+
+Un programme peut toujours imiter l'adresse d'un site autorisé : `ORIGINES` écarte les autres sites web, le frein écarte les essais au hasard.
+
 ## Mettre à jour, surveiller
 
 - Après une modification de `src/`, relance `npx wrangler deploy`. Un nouvel envoi coupe les salles ouvertes : l'hôte rouvre la sienne tout seul sous le même code ; un joueur en train d'arriver retape le code. Les parties déjà connectées ne sont pas touchées.
@@ -40,7 +48,7 @@ Tant que `RELAY_DEFAULT` est vide, le jeu garde la connexion par QR codes, comme
 | Fichier | Rôle |
 | --- | --- |
 | `src/index.js` | Le Worker : envoie chaque connexion `/r/<code>` à la salle de ce code (un Durable Object). Les sockets hibernent entre deux messages ; le battement `ping` reçoit `pong` sans réveiller la salle. |
-| `src/salle.js` | La logique d'une salle : un hôte, jusqu'à 6 invités ; offre et réponse relayées ; salle reprise par le même hôte après une coupure ; fermée quand l'hôte part. |
+| `src/salle.js` | La logique d'une salle : un hôte, jusqu'à 6 invités ; offre et réponse relayées ; salle reprise par le même hôte après une coupure ; fermée quand l'hôte part. Aussi les règles des sites autorisés et le frein des codes faux. |
 | `wrangler.toml` | Nom du Worker, liaison `SALLES` et déclaration des Durable Objects (obligatoire dans l'offre gratuite, sans stockage). |
 
 ## Protocole
@@ -57,5 +65,6 @@ Connexion WebSocket : `wss://<relais>/r/<code>?role=h&k=<secret>` pour l'hôte, 
 | invité → relais → hôte | `{t:'answer', sdp}` (reçu avec `from`) | réponse de l'invité |
 | relais → hôte | `{t:'left', id}` | l'invité est parti |
 | relais → invité | `{t:'ok', id}`, `{t:'nohost'}`, `{t:'full'}`, `{t:'hostgone'}` | entré, code sans hôte, salle pleine, hôte parti |
+| relais → appareil | `{t:'origin'}`, `{t:'slow'}` | site non autorisé (`ORIGINES`), trop de codes faux depuis ce réseau |
 
 Les tests du jeu font tourner la même logique (`src/salle.js`) dans un relais local : `node tools/tests/run.mjs relais coop`.

@@ -4,7 +4,7 @@
 const NET={on:false,host:false,guest:false,pc:null,dc:null,state:'idle',code:'',err:'',hits:[],ebUsed:new Set(),snap:null,tick:null,
   peers:[],slot:0,roster:[],hostCls:null,hostName:'',hostPr:0,ready:false};
 const NET_MAX=4; // joueurs, hôte compris
-const NET_V=8;
+const NET_V=9;
 const NET_TIMEOUT=20000; // silence toléré en mission (une notification ou un écran qui s'éteint ne doit pas couper la partie)   // version du protocole : deux appareils de versions différentes refusent de jouer ensemble
 const ICE=[{urls:'stun:stun.l.google.com:19302'}];
 // Adresse du relais (js/relais.js) ; pour les tests, localStorage « crypte-relay » la remplace (« off » : aucun relais, QR codes seulement).
@@ -104,13 +104,21 @@ function relayOpen(code,role,onMsg,onEnd){relayClose();let ws;try{ws=new WebSock
   ws.onclose=()=>{if(RL.ws!==ws)return;RL.ws=null;clearInterval(RL.pingT);RL.pingT=null;onEnd(opened?'closed':'err')}}
 const relaySend=m=>{try{if(RL.ws&&RL.ws.readyState===1)RL.ws.send(JSON.stringify(m))}catch(e){}};
 // Hôte : « Créer une partie ».
-function netHostCode(){netReset();NET.host=true;NET.state='lobby';NET.relay='wait';RL.key=Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);RL.tries=0;relayHost(rnd4());drawCoop()}
+function netHostCode(){netReset();NET.host=true;NET.state='lobby';relayNewCode()}
+// Nouveau code (salle neuve, nouveau secret) : les joueurs déjà connectés restent ; l'ancien code ne mène plus nulle part.
+function relayNewCode(){relayClose();NET.relay='wait';RL.key=Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);RL.tries=0;relayHost(rnd4());refreshCoopUi();drawCoop()}
+// Fermer l'accès : plus personne ne peut arriver avec un code (« Rouvrir » en donne un nouveau).
+function relayShut(){relayClose();RL.code='';NET.relay='closed';refreshCoopUi();drawCoop()}
 function relayHost(code){RL.code=code;relayOpen(code,'h',relayHostMsg,why=>{if(!NET.host)return;
   if(NET.relay==='wait'&&why==='err'){NET.relay='off';NET.err='Relais injoignable : vérifie la connexion internet, ou invite les joueurs par QR code (ci-dessous).';refreshCoopUi();drawCoop();return}
   // salle perdue (coupure réseau) : on la rouvre sous le même code tant que la partie existe
-  if(NET.relay!=='off'){NET.relay='wait';refreshCoopUi();drawCoop();setTimeout(()=>{if(NET.host&&!RL.ws&&NET.relay==='wait')relayHost(RL.code)},2500)}})}
+  if(NET.relay==='on'||NET.relay==='wait'){NET.relay='wait';refreshCoopUi();drawCoop();setTimeout(()=>{if(NET.host&&!RL.ws&&NET.relay==='wait')relayHost(RL.code)},2500)}})}
+// Refus du relais avant d'entrer : site non autorisé (variable ORIGINES du Worker) ou trop de codes faux depuis ce réseau.
+const RELAY_WHY={origin:()=>`Ce site (${location.origin==='null'?'fichier local':location.origin}) n'est pas autorisé par le relais : ajoute son adresse à la variable ORIGINES du Worker, sur Cloudflare.`,
+  slow:()=>'Trop de codes faux essayés depuis ce réseau : réessaie dans 10 minutes.'};
 function relayHostMsg(m){
   if(m.t==='ok'){NET.relay='on';refreshCoopUi();drawCoop();return}
+  if(RELAY_WHY[m.t]){relayClose();NET.relay='off';NET.err=RELAY_WHY[m.t]();refreshCoopUi();drawCoop();return}
   if(m.t==='taken'){if(++RL.tries>8){NET.relay='off';NET.err='Aucun code libre pour l\'instant : réessaie dans un moment.';drawCoop();return}relayHost(rnd4());return}
   if(m.t==='join'){relayGuestIn(m.id);return}
   if(m.t==='answer'){const p=NET.peers.find(q=>q.rid===m.from);if(p&&p.state==='sent')unpackSdp(m.sdp).then(d=>p.pc.setRemoteDescription(d)).then(()=>{p.state='connecting';drawCoop()}).catch(()=>netPeerLost(p,true));return}
@@ -120,6 +128,9 @@ async function relayGuestIn(rid){if(!NET.host||NET.peers.some(p=>p.rid===rid))re
   const peer=await newPeer(rid);if(!peer)return;
   relaySend({to:rid,t:'offer',v:NET_V,sdp:peer.code});peer.state='sent';drawCoop();
   setTimeout(()=>{if(NET.peers.includes(peer)&&peer.state!=='open')netPeerLost(peer,true)},30000)}
+// Hôte : retirer un joueur de la partie (il reçoit « kick » et la connexion est fermée ; « Nouveau code » l'empêche de revenir).
+function netKick(slot){const p=NET.peers.find(q=>q.slot===slot);if(!p)return;const nm=p.name||'Joueur '+(slot+1);netSendTo(p,{t:'kick'});
+  setTimeout(()=>netPeerLost(p,true),150);toast(`<b>${esc(nm)}</b> est retiré de la partie.${NET.relay==='on'?' Touche « Nouveau code » pour qu\'il ne revienne pas.':''}`,true)}
 // Invité : rejoindre la partie d'un code.
 function netJoinCode(code){code=String(code||'').replace(/\D/g,'');if(code.length!==4){NET.err='Le code de la partie a 4 chiffres.';drawCoop();return}
   netReset();NET.guest=true;NET.state='rjoin';RL.code=code;drawCoop();
@@ -127,6 +138,7 @@ function netJoinCode(code){code=String(code||'').replace(/\D/g,'');if(code.lengt
   RL.joinT=setTimeout(()=>{if(NET.guest&&NET.state==='rjoin')fail(`La partie ${code} ne répond pas : vérifie le code avec l'hôte.`)},15000);
   relayOpen(code,'g',async m=>{
     if(m.t==='nohost')return fail(`Aucune partie avec le code ${code}. Vérifie le code avec l'hôte : il le voit en touchant Coop.`);
+    if(RELAY_WHY[m.t])return fail(RELAY_WHY[m.t]());
     if(m.t==='full')return fail('Cette partie est complète.');
     if(m.t==='hostgone'){if(!NET.on)fail('L\'hôte a fermé la partie.');return}
     if(m.t==='offer'){if(m.v!==NET_V)return fail('Version du jeu différente de celle de l\'hôte. Mettez le jeu à jour sur les deux appareils (Réglages › Application), puis recommencez.');
@@ -226,7 +238,8 @@ function netRecvHost(peer,m){
   if(m.t==='bye'){netPeerLost(peer);return}
   if(m.t==='leave'){peer.left=true;peer.Q=null;if(G&&G.mates)G.mates=G.mates.filter(q=>q.slot!==peer.slot);toast(`${whoHtml(peer.slot)} est retourné au Camp.`,true);if(started&&G&&!G.over)coopCheckFail();drawCoop();return}
   if(m.t==='hello'){if(m.v!==NET_V){netSendTo(peer,{t:'oldver',v:NET_V});NET.err=`Joueur ${peer.slot+1} : version du jeu différente. Mettez le jeu à jour sur les deux appareils (Réglages › Application), puis recommencez.`;netPeerLost(peer,true);return}
-    peer.cls=CLS[m.cls]?m.cls:'guerrier';peer.relic=m.relic;peer.name=cleanName(m.name)||'Joueur '+(peer.slot+1);peer.pr=Math.max(0,m.pr|0);if(peer.Q)peer.Q.cls=peer.cls;sendRoster();drawCoop();return}
+    const first=peer.name==null;peer.cls=CLS[m.cls]?m.cls:'guerrier';peer.relic=m.relic;peer.name=cleanName(m.name)||'Joueur '+(peer.slot+1);
+    if(first&&!(started&&G&&!G.over)){peer.pr=Math.max(0,m.pr|0);toast(`${whoHtml(peer.slot)} a rejoint la partie.`,true)}peer.pr=Math.max(0,m.pr|0);if(peer.Q)peer.Q.cls=peer.cls;sendRoster();drawCoop();return}
   if(!G)return;
   if(m.t==='fx'){fxApply(m);for(const p of NET.peers)if(p!==peer&&p.state==='open')netSendTo(p,m);return}
   if(m.t==='h'){if(!peer.Q||!m.p)return;if(m.q<=(peer.hq||0)&&peer.hq-m.q<1000)return;peer.hq=m.q;peer.hT=performance.now();heroUnpack(m.p,peer.Q);peer.Q.slot=peer.slot;return}
@@ -241,6 +254,7 @@ function netRecvHost(peer,m){
 function netRecvGuest(m){
   if(m.t==='ping')return;
   if(m.t==='bye'){netLost();return}
+  if(m.t==='kick'){const inGame=started&&G&&!G.over;netReset();toast('<b style="color:#e0474b">L\'hôte t\'a retiré de la partie.</b>'+(inGame?' Tu gardes ton butin.':''),true);if(inGame){G.hold=false;missionSuccess()}NET.err='L\'hôte t\'a retiré de la partie.';drawCoop();return}
   if(m.t==='oldver'||(m.t==='hello'&&m.v!==NET_V)){const err='Version du jeu différente de celle de l\'hôte. Mettez le jeu à jour sur les deux appareils (Réglages › Application), puis recommencez.';netReset();NET.err=err;openCoop();NET.err=err;drawCoop();return}
   if(m.t==='hello'){if(m.slot)NET.slot=m.slot;NET.hostCls=m.cls;NET.hostName=cleanName(m.name);NET.hostPr=Math.max(0,m.pr|0);drawCoop();refreshCoopUi();return}
   if(m.t==='roster'){NET.roster=(m.list||[]).map(r=>({slot:r.slot|0,cls:CLS[r.cls]?r.cls:null,name:cleanName(r.name),pr:Math.max(0,r.pr|0)}));if(m.mode)NET.hostMode={mode:m.mode,lv:m.lv,dn:m.dn};drawCoop();refreshCoopUi();return}
@@ -300,7 +314,7 @@ function coopWait(on){const el=$('exitBtn'),c=$('contBtn');if(!el)return;el.disa
 /* ---------- Écran de connexion ---------- */
 function loadQr(){return new Promise(res=>{if(window.qrcode)return res(true);const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';s.onload=()=>res(!!window.qrcode);s.onerror=()=>res(false);document.head.appendChild(s)})}
 function qrSvg(text){try{const q=qrcode(0,'L');q.addData(text);q.make();return q.createSvgTag({cellSize:3,margin:2,scalable:true})}catch(e){return ''}}
-function refreshCoopUi(){const b=$('coopBtn'),n=coopN();if(b)b.innerHTML=NET.on?`<span class="cx-dot"></span>Coop · ${n}`:NET.host&&NET.relay==='on'?`<span class="cx-dot"></span>Coop · ${RL.code}`:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.2A5 5 0 0 1 21 19"/></svg>Coop';
+function refreshCoopUi(){const b=$('coopBtn'),n=coopN();if(b)b.innerHTML=NET.on?`<span class="cx-dot"></span>Coop · ${n}`:NET.host&&NET.relay==='on'&&RL.code?`<span class="cx-dot"></span>Coop · ${RL.code}`:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.2A5 5 0 0 1 21 19"/></svg>Coop';
   const sb=$('startBtn');if(sb&&NET.guest&&NET.on){sb.disabled=true;sb.textContent=`En attente de l'hôte${NET.hostMode?' · '+(MODES[NET.hostMode.mode]||MODES.survie).n:''}…`}else if(sb&&sb.disabled&&!NET.guest){sb.disabled=false;refreshMenus()}}
 function codeBox(lab,code,share){return `<div class="coopcode"><span class="cx-hint" style="margin:0">${lab}</span><div class="qr" id="coopQr"></div>
   <textarea readonly id="coopOut" rows="3" aria-label="${lab}">${code}</textarea>
@@ -310,7 +324,7 @@ function pasteBox(lab,btn,act){return `<div class="coopcode"><span class="cx-hin
   ${camBox()}</div>`}
 const camBox=()=>`<div class="camwrap" id="coopCamWrap" hidden><div class="camv"><video id="coopCam" playsinline muted></video><span class="camframe" aria-hidden="true"></span></div><p class="cx-hint" id="coopCamTxt" style="margin:0">Montre le QR code à la caméra, bien à plat et sans reflet.</p><div class="actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-coop="scanstop">Arrêter la caméra</button></div></div>`;
 const missionTxt=o=>`${MODES[o.mode]?MODES[o.mode].n:'Survie'} · niveau ${o.lv} · ${o.dn}`;
-const rosterHtml=list=>`<ul class="coopros">${list.map(r=>{const w=who(r.slot),me=r.slot===(NET.host?0:NET.slot),c=w.cls||r.cls;return `<li><span class="dotc" style="background:${SLOT_C[r.slot]||'#888'}"></span>${prBadge(w.pr)}<b class="coopname">${esc(w.name)}</b><span class="cooptag">${[r.slot===0?'hôte':'',me?'toi':''].filter(Boolean).join(' · ')}</span><span class="cx-hint" style="margin:0">${c&&CLS[c]?CLS[c].n:'…'}</span></li>`}).join('')}</ul>`;
+const rosterHtml=list=>`<ul class="coopros">${list.map(r=>{const w=who(r.slot),me=r.slot===(NET.host?0:NET.slot),c=w.cls||r.cls;return `<li><span class="dotc" style="background:${SLOT_C[r.slot]||'#888'}"></span>${prBadge(w.pr)}<b class="coopname">${esc(w.name)}</b><span class="cooptag">${[r.slot===0?'hôte':'',me?'toi':''].filter(Boolean).join(' · ')}</span><span class="cx-hint" style="margin:0">${c&&CLS[c]?CLS[c].n:'…'}</span>${NET.host&&r.slot&&!started?`<button class="cx-btn cx-btn--sm cx-btn--ghost kickb" data-coop="kick" data-arg="${r.slot}" aria-label="Retirer ${esc(w.name)} de la partie">Retirer</button>`:''}</li>`}).join('')}</ul>`;
 const RULES=`<p class="cx-hint" style="margin:0">Jusqu'à ${NET_MAX} joueurs. Chacun garde son équipement et son butin, qui tombe séparément pour chaque joueur. Par joueur en plus, les monstres ont 50 % de vie en plus et sont 40 % plus nombreux. Un héros à terre se relève 8 s plus tard près d'un partenaire debout ; si tout le monde tombe, la mission échoue.</p>`;
 // Lien d'invitation du QR code : la page du jeu avec #coop=1234 (ouvert, il rejoint tout seul), sinon le code seul (lu par le scanner du jeu).
 const coopLink=code=>{try{if(/^https?:$/.test(location.protocol)&&window.top===window)return `${location.origin}${location.pathname}#coop=${code}`}catch(e){}return 'CRYPTE:'+code};
@@ -319,8 +333,9 @@ function drawCoop(){const body=$('coopBody');if(!body||$('coop').hidden)return;c
   const manual=`<div class="actions" style="margin:0"><button class="cx-btn${RELAY_URL?'':' cx-btn--primary'}" data-coop="host">Héberger${RELAY_URL?' par QR codes':' une partie'}</button><button class="cx-btn" data-coop="join">Rejoindre${RELAY_URL?' par QR code':''}</button></div>${NET.state==='joinIn'?pasteBox('Colle ou scanne le code de l\'hôte','Rejoindre','joingo'):''}`;
   if(NET.host){const open=NET.peers.filter(p=>p.state==='open'),pend=NET.peers.find(p=>p.state!=='open'&&!p.rid),arriving=NET.peers.filter(p=>p.rid&&p.state!=='open').length,full=1+NET.peers.length>=NET_MAX,relay=NET.relay&&NET.relay!=='off';
     const top=NET.relay==='on'?`<div class="code4box"><span class="cx-hint" style="margin:0">Code de la partie</span><b class="code4big" id="coopCode4" aria-label="Code ${RL.code.split('').join(' ')}">${RL.code}</b><div class="qr" id="coopQr4"></div>
-        <span class="cx-hint" style="margin:0;text-align:center">${full?'La partie est complète.':`Les autres touchent <b>Coop</b> et tapent ce code, ou scannent le QR code : ils arrivent tout seuls. ${NET_MAX-1-NET.peers.length>1?`Encore ${NET_MAX-1-NET.peers.length} places.`:'Encore une place.'}`}</span>${navigator.share?'<div class="actions" style="margin:0;justify-content:center"><button class="cx-btn cx-btn--sm" data-coop="share4">Partager le code</button></div>':''}</div>`
-      :NET.relay==='wait'?'<p class="cx-hint" style="margin:0">Ouverture de la partie…</p>':'';
+        <span class="cx-hint" style="margin:0;text-align:center">${full?'La partie est complète.':`Les autres touchent <b>Coop</b> et tapent ce code, ou scannent le QR code : ils arrivent tout seuls. ${NET_MAX-1-NET.peers.length>1?`Encore ${NET_MAX-1-NET.peers.length} places.`:'Encore une place.'}`}</span><div class="actions" style="margin:0;justify-content:center">${navigator.share?'<button class="cx-btn cx-btn--sm" data-coop="share4">Partager le code</button>':''}<button class="cx-btn cx-btn--sm" data-coop="newcode">Nouveau code</button><button class="cx-btn cx-btn--sm" data-coop="shut">Fermer l'accès</button></div></div>`
+      :NET.relay==='wait'?'<p class="cx-hint" style="margin:0">Ouverture de la partie…</p>'
+      :NET.relay==='closed'?`<div class="code4box"><span style="text-align:center">Accès fermé : plus personne ne peut arriver avec un code. Les joueurs déjà là restent.</span><div class="actions" style="margin:0;justify-content:center"><button class="cx-btn cx-btn--sm cx-btn--primary" data-coop="newcode">Rouvrir avec un nouveau code</button></div></div>`:'';
     h=`<section class="cx-section"><h3 class="cx-section__label">Ta partie · ${1+open.length} / ${NET_MAX} joueurs</h3>${top}${rosterHtml(rosterList())}
       ${arriving?`<p class="cx-hint" style="margin:0">${arriving} joueur${arriving>1?'s':''} en train d'arriver…</p>`:''}
       ${!relay&&!pend&&!full?`<div class="actions" style="margin:0"><button class="cx-btn${open.length?'':' cx-btn--primary'}" data-coop="add">Inviter un joueur</button></div>`:''}
@@ -378,6 +393,7 @@ addEventListener('pagehide',()=>{if(NET.on)netSend({t:'bye'})});
   $('coopBody').addEventListener('click',async e=>{const b=e.target.closest('[data-coop]');if(!b)return;const a=b.dataset.coop;NET.err='';
     if(!('RTCPeerConnection' in window)){NET.err='Ce navigateur ne permet pas la coopération.';drawCoop();return}
     if(a==='create')netHostCode();else if(a==='joincode')netJoinCode(($('coopCode')||{}).value);
+    else if(a==='newcode')relayNewCode();else if(a==='shut')relayShut();else if(a==='kick')netKick(+b.dataset.arg);
     else if(a==='share4'){try{await navigator.share({title:'Crypte des Cendres',text:`Rejoins ma partie de Crypte des Cendres : code ${RL.code}`,...(/^CRYPTE:/.test(coopLink(RL.code))?{}:{url:coopLink(RL.code)})})}catch(x){}}
     else if(a==='host')netHost();else if(a==='add')netAddPeer();else if(a==='cancel')netCancelPending();
     else if(a==='join'){NET.state='joinIn';drawCoop()}

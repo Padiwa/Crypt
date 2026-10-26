@@ -6,6 +6,18 @@
 
 export const MAX_GUESTS = 6;   // invités dans la salle en même temps (en attente ou déjà connectés)
 export const MAX_MSG = 16384;  // taille maximale d'un message, en caractères
+// Frein contre les codes essayés au hasard : au-delà de 20 codes sans partie en 10 minutes depuis un même réseau (adresse IP),
+// ce réseau ne peut plus rejoindre de partie pendant ces 10 minutes. Trouver un code par hasard prendrait alors des jours.
+export const GARDE = { max: 20, win: 10 * 60 * 1000 };
+export function gardeMaj(f, now, echec) { f = (f || []).filter((t) => now - t < GARDE.win); if (echec) f.push(now); return { f, bloque: f.length >= GARDE.max }; }
+// Sites autorisés (variable ORIGINES du Worker, séparés par des virgules ; « *.exemple.com » vaut pour ses sous-domaines). Vide : tous.
+export function originOk(origin, list) {
+  const L = String(list || '').split(',').map((s) => s.trim().toLowerCase().replace(/\/+$/, '')).filter(Boolean);
+  if (!L.length) return true;
+  const o = String(origin || '').toLowerCase(); if (!o || o === 'null') return false;
+  let host = ''; try { host = new URL(o).host; } catch (e) { return false; }
+  return L.some((x) => x === o || (x.startsWith('*.') && (host === x.slice(2) || host.endsWith(x.slice(1)))));
+}
 
 const att = (w) => { try { return w.deserializeAttachment() || {}; } catch (e) { return {}; } };
 const send = (w, m) => { try { w.send(JSON.stringify(m)); } catch (e) {} };
@@ -15,15 +27,18 @@ const live = (ctx, tag, not) => ctx.getWebSockets(tag).filter((w) => { const a =
 function accept(ctx, ws, tags, a) { ctx.acceptWebSocket(ws, tags); ws.serializeAttachment(a); }
 
 // Arrivée d'un appareil. role : 'h' (hôte) ou 'g' (invité). key : secret de l'hôte, pour reprendre sa salle après une coupure.
+// refus : raison décidée en amont par le Worker ('origin' : site non autorisé ; 'slow' : trop de codes faux depuis ce réseau).
 // Rien n'est envoyé au nouvel arrivant avant son premier message (« hi ») : la réponse à « hi » dit s'il est entré, et pourquoi sinon.
-export function join(ctx, ws, role, key) {
+// Renvoie 'nohost' quand un invité tape un code sans partie (compté par le frein).
+export function join(ctx, ws, role, key, refus) {
+  if (refus) return accept(ctx, ws, ['x'], { role: 'x', sid: sid(), why: refus });
   if (role === 'h') {
     const hosts = live(ctx, 'h');
     if (hosts.some((h) => !key || att(h).key !== key)) return accept(ctx, ws, ['x'], { role: 'x', sid: sid(), why: 'taken' });
     for (const h of hosts) { h.serializeAttachment({ ...att(h), gone: true }); try { h.close(4000, 'remplace'); } catch (e) {} }
     return accept(ctx, ws, ['h'], { role: 'h', sid: sid(), key });
   }
-  if (!live(ctx, 'h').length) return accept(ctx, ws, ['x'], { role: 'x', sid: sid(), why: 'nohost' });
+  if (!live(ctx, 'h').length) { accept(ctx, ws, ['x'], { role: 'x', sid: sid(), why: 'nohost' }); return 'nohost'; }
   if (live(ctx, 'g').length >= MAX_GUESTS) return accept(ctx, ws, ['x'], { role: 'x', sid: sid(), why: 'full' });
   const id = sid();
   accept(ctx, ws, ['g', 'g:' + id], { role: 'g', sid: id, id });
@@ -37,7 +52,7 @@ export function message(ctx, ws, data) {
   if (!m || typeof m !== 'object' || Array.isArray(m)) return;
   const a = att(ws);
   if (m.t === 'hi') {
-    if (a.role === 'x') { send(ws, { t: a.why }); try { ws.close(4001, a.why); } catch (e) {} }
+    if (a.role === 'x') { send(ws, { t: a.why }); try { ws.close(4001, String(a.why)); } catch (e) {} }
     else if (a.role === 'h') { send(ws, { t: 'ok' }); for (const g of live(ctx, 'g')) send(ws, { t: 'join', id: att(g).id }); }
     else if (a.role === 'g') send(ws, { t: 'ok', id: a.id });
     return;

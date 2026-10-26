@@ -142,4 +142,29 @@ export const tests = [
     await wf(L, () => NET.on && NET.roster.length === 2, 'L attend la connexion par le lien', 15000, A);
     t.eq(await L.evaluate(() => location.hash), '', 'le code est retiré de l\'adresse');
   } },
+  { name: 'code : l\'hôte retire un joueur, change de code, ferme l\'accès ; site non autorisé', fn: async (b, t) => {
+    const { A, G: [B], code } = await pairCode(b, t, 1);
+    t.ok(await A.evaluate(() => /a rejoint la partie/.test($('toast').textContent)), 'l\'hôte est prévenu de l\'arrivée');
+    await A.click('#coopBody [data-coop="kick"][data-arg="1"]');
+    await wf(B, () => !NET.on && /retiré de la partie/.test($('coopBody').textContent), 'B attend d\'être retiré', 8000, A);
+    t.eq(await A.evaluate(() => NET.peers.length), 0, 'l\'hôte n\'a plus de joueur');
+    await A.click('#coopBody [data-coop="newcode"]');
+    await wf(A, () => NET.relay === 'on' && /^\d{4}$/.test(($('coopCode4') || {}).textContent || ''), 'A attend le nouveau code', 8000);
+    const code2 = await A.evaluate(() => $('coopCode4').textContent);
+    if (code2 !== code) {
+      await B.fill('#coopCode', code);
+      await wf(B, () => /Aucune partie avec le code/.test($('coopBody').textContent), 'B attend le refus de l\'ancien code', 8000);
+    }
+    await A.click('#coopBody [data-coop="shut"]');
+    t.ok(await A.evaluate(() => NET.relay === 'closed' && /Accès fermé/.test($('coopBody').textContent) && RL.ws === null), 'accès fermé');
+    await B.fill('#coopCode', code2);
+    await wf(B, () => /Aucune partie avec le code/.test($('coopBody').textContent), 'B attend le refus après fermeture', 8000);
+    // relais réservé à un autre site : la page locale est refusée, avec l'explication
+    const R2 = await startRelay({ origins: 'https://moi.github.io' });
+    try {
+      const X = await coopPage(b, t, R2.url, 'archer');
+      await X.click('#coopBtn'); await X.click('[data-coop="create"]');
+      await wf(X, () => /pas autorisé par le relais/.test($('coopBody').textContent), 'X attend le refus du site', 8000);
+    } finally { await R2.close(); }
+  } },
 ];

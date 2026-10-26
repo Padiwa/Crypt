@@ -1,9 +1,10 @@
 // Crypte des Cendres — relais local pour les tests : la même logique de salle que le Worker Cloudflare (relais/src/salle.js),
 // servie en WebSocket sur 127.0.0.1, sans dépendance (serveur WebSocket minimal : messages texte, ping, fermeture).
-//   const R = await startRelay();  …  R.url = 'ws://127.0.0.1:<port>' ;  await R.close();
+//   const R = await startRelay({ origins: '' });  …  R.url = 'ws://127.0.0.1:<port>' ;  await R.close();
+// Comme le Worker : sites autorisés (origins, même syntaxe que la variable ORIGINES) et frein des codes faux par adresse IP.
 import http from 'http';
 import crypto from 'crypto';
-import { join, message, closed } from '../../relais/src/salle.js';
+import { join, message, closed, gardeMaj, originOk } from '../../relais/src/salle.js';
 
 // Une salle : l'équivalent du « ctx » d'un Durable Object (sockets acceptées et leurs étiquettes).
 class Ctx {
@@ -47,8 +48,8 @@ function frame(op, payload) {
   return Buffer.concat([head, payload]);
 }
 
-export async function startRelay(port = 0) {
-  const rooms = new Map();
+export async function startRelay({ port = 0, origins = '' } = {}) {
+  const rooms = new Map(), gardes = new Map();
   const srv = http.createServer((req, res) => { res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8' }); res.end('Relais local de Crypte des Cendres : en service.\n'); });
   srv.on('upgrade', (req, sock) => {
     const u = new URL(req.url, 'http://x'), m = u.pathname.match(/^\/r\/(\d{4})$/), key = req.headers['sec-websocket-key'];
@@ -58,12 +59,14 @@ export async function startRelay(port = 0) {
     if (!rooms.has(m[1])) rooms.set(m[1], new Ctx());
     const ctx = rooms.get(m[1]), ws = new Sock(sock, ctx);
     sock.on('data', (c) => ws.feed(c)); sock.on('close', () => ws.gone()); sock.on('error', () => ws.gone());
-    join(ctx, ws, u.searchParams.get('role') === 'h' ? 'h' : 'g', (u.searchParams.get('k') || '').slice(0, 40));
+    const role = u.searchParams.get('role') === 'h' ? 'h' : 'g', ip = req.socket.remoteAddress || '';
+    const refus = !originOk(req.headers.origin, origins) ? 'origin' : role === 'g' && gardeMaj(gardes.get(ip), Date.now(), false).bloque ? 'slow' : '';
+    if (join(ctx, ws, role, (u.searchParams.get('k') || '').slice(0, 40), refus) === 'nohost') gardes.set(ip, gardeMaj(gardes.get(ip), Date.now(), true).f);
   });
   await new Promise((r) => srv.listen(port, '127.0.0.1', r)); srv.unref();
   const url = `ws://127.0.0.1:${srv.address().port}`;
-  return { url, rooms, close: () => new Promise((r) => { for (const c of rooms.values()) for (const s of c.socks) try { s.s.destroy(); } catch (e) {} srv.close(() => r()); }) };
+  return { url, rooms, gardes, close: () => new Promise((r) => { for (const c of rooms.values()) for (const s of c.socks) try { s.s.destroy(); } catch (e) {} srv.close(() => r()); }) };
 }
 
 // Lancé seul : un relais local à essayer avec deux navigateurs (localStorage « crypte-relay » = l'adresse affichée).
-if (import.meta.url === `file://${process.argv[1]}`) { const R = await startRelay(+process.argv[2] || 8787); console.log('Relais local :', R.url); }
+if (import.meta.url === `file://${process.argv[1]}`) { const R = await startRelay({ port: +process.argv[2] || 8787 }); console.log('Relais local :', R.url); }

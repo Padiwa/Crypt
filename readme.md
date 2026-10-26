@@ -1,6 +1,6 @@
 # Crypte des Cendres — specs
 
-Oct 26, 2026 · @cms · version 108
+Oct 26, 2026 · @cms · version 113
 
 ## Vue d'ensemble
 
@@ -189,7 +189,7 @@ Au niveau L, les chances d'équipement, de relique et d'arme sont multipliées p
 
 **Rang (remplace l'amélioration à l'essence)** : rang 1 à 10, stocké dans it.up et meta.wlv (0 à 9), +10 % aux statistiques par rang (×1,9 au rang 10). Deux exemplaires identiques (même modèle : nom de base pour le butin, identifiant pour les objets des reliques ; même rareté ; même rang) fusionnent en un seul du rang au-dessus. L'exemplaire gardé conserve affixes et niveau ; le plus faible des doubles libres (ni porté, ni verrouillé, ni scellé) est sacrifié. Armes : les doubles fusionnent avec l'arme possédée, puis entre eux, jusqu'au plus haut rang possible. Interface : bouton Fusionner dans la fiche ancrée, nouveau sous-onglet Forge › Fusion (liste des fusions, « Tout fusionner »), pastille Forge = fusions possibles. Recyclage : 2 × éclats de rareté × 2^(rang − 1) essence pour un objet (éclats 1, 2, 4, 8, 16, 24, 36), 20 × (rareté + 1) × 2^(rang − 1) pour une arme ; recycler une arme qui a des doubles met le meilleur double à sa place.
 
-**Armurerie** : puces Armes du héros, Légendaire, Ancestral, Sanguin, Abyssal, Prêts, Autres classes. Chaque carte : affixes (noms, valeurs au niveau de fabrication), relique source et difficulté, fragments, Fabriquer (ou « Fabriquer un double »), Tout fabriquer. Vue Mes armes : rang, doubles, Fusionner.
+**Armurerie** : puces Armes du héros, Légendaire, Ancestral, Sanguin, Abyssal, Prêts, Autres classes. Chaque carte : affixes (noms, valeurs au niveau de fabrication), relique source et difficulté, fragments, Fabriquer (ou « Fabriquer un double »), Tout fabriquer. Vue Mes armes : rang, doubles, Fusionner. Vue Par héros (v110, aussi « Équipement des héros » depuis l'onglet Héros) : l'arme et les emplacements ouverts de chacun des trois héros, le héros joué en premier ; toucher l'objet d'un autre héros ouvre sa fiche avec « Équiper sur… » ; un héros sans rien de porté a un conseil.
 
 **Équilibrage vérifié** (score « Équiper le meilleur », médiane, armure au niveau d'objet 97) : Commun 222, Magique 235, Rare 249, Légendaire 412, Ancestral 479, Sanguin 535, Abyssal 759. DPS d'arme seule (Archer) : Commun 31–32, Magique 41–44, Rare 55–93, Légendaire 129–142, Ancestral 175–189, Sanguin 247–306, Abyssal 411–486 ; même ordre sans chevauchement entre raretés pour les trois héros.
 
@@ -225,6 +225,31 @@ Au niveau L, les chances d'équipement, de relique et d'arme sont multipliées p
 **v106 · Rythme de progression réglable.** Tous les réglages de vitesse de progression sont regroupés dans `BAL_PRESETS` (haut de `js/data.js`), avec deux rythmes : `rapide` (par défaut) et `long` (environ 80 h). C'est un réglage de développement, pas un choix du joueur (aucun écran ne le propose) : on change de rythme en modifiant la ligne `BAL_MODE`.
 
 **v107 · Rythmes dans des fichiers.** Chaque rythme est un fichier : `js/rythmes/rapide.js` (rythme publié, par défaut) et `js/rythmes/long.js` (fin de jeu visée vers 80 h). Chacun définit `RYTHME` avec les valeurs du tableau ci-dessous, commentées ; `BAL_PRESETS` et `BAL_MODE` disparaissent de `data.js`. Le rythme chargé est celui de la balise `<script src="js/rythmes/….js">` d'`index.html`, placée avant `data.js` (et la liste `CORE` de `sw.js`). Pour un nouveau rythme, on copie un fichier et on change ses valeurs. Le simulateur charge n'importe quel fichier : `--rythme long` ou un chemin. Le joueur ne choisit toujours pas le rythme.
+
+**v113 · Relais en ligne.** Le relais est déployé sur Cloudflare (Workers Builds depuis le dépôt GitHub, dossier racine `relais`, nom du Worker `crypte-relais` identique à `wrangler.toml`) à l'adresse `crypte-relais.cryptcendre.workers.dev`, branchée dans `js/relais.js`. À régler dans le tableau de bord : la variable `ORIGINES` avec l'adresse GitHub Pages du jeu. Tests : 72.
+
+**v112 · Protéger les parties à code (toujours 4 chiffres).**
+
+- Relais : variable `ORIGINES` (sites autorisés, séparés par des virgules, `*.domaine` pour les sous-domaines ; vide = tous), réglée dans le tableau de bord et gardée au déploiement (`keep_vars = true`). Frein des codes faux : 20 codes sans partie en 10 minutes depuis une même adresse IP bloquent ce réseau 10 minutes, même avec un bon code (Durable Object « garde:\<ip> », même classe que les salles). Nouveaux refus `origin` et `slow`, expliqués dans le jeu.
+- Hôte : annonce de chaque arrivée ; « Retirer » à côté d'un joueur (message `kick` ; en mission, l'invité garde son butin) ; « Nouveau code » (salle neuve, les joueurs connectés restent) ; « Fermer l'accès » puis « Rouvrir avec un nouveau code ». Protocole du jeu NET\_V = 9.
+- Tests : 72 (protections du relais, retrait d'un joueur, nouveau code, accès fermé, site refusé).
+
+**v111 · Rejoindre avec un code à 4 chiffres.** L'hôte touche « Créer une partie » et reçoit un code ; les autres le tapent (connexion dès le 4e chiffre), scannent son QR code ou ouvrent le lien `#coop=<code>`, et arrivent tout seuls, plusieurs à la fois.
+
+- Relais (`relais/`) : Cloudflare Worker et Durable Objects, offre gratuite, une salle par code (`src/salle.js`). Il ne fait passer que l'offre de l'hôte et la réponse de chaque invité (les mêmes codes SDP qu'en mode manuel), puis l'invité le quitte. Rien n'est stocké. Premier message de chaque appareil : `hi`, auquel la salle répond (`ok`, `taken`, `nohost`, `full`). Battement `ping`/`pong` sans réveiller la salle.
+- Hôte : salle ouverte tant que sa partie existe (un joueur peut arriver en mission), reprise sous le même code après une coupure (secret `k`), code retiré si un autre hôte l'occupe. Bouton Coop de l'accueil : « Coop · 1234 » tant que personne n'est arrivé.
+- Invité : messages clairs pour un code inconnu, une partie complète, une version différente, un relais injoignable ou une connexion directe impossible. Le lien `#coop=` est retiré de l'adresse, et fonctionne aussi dans un onglet où le jeu tourne déjà.
+- Sans relais (`js/relais.js` vide, ou relais injoignable) : la connexion par QR codes, inchangée, sous « Sans internet » ; l'hôte d'une partie à code peut aussi inviter ainsi un joueur sans internet.
+- Adresse du relais : `RELAY_DEFAULT` dans `js/relais.js` (à remplir après `npx wrangler deploy`) ; `localStorage['crypte-relay']` la remplace pour les tests (`off` : QR codes seulement).
+- Tests : 70, dont un relais local qui fait tourner `salle.js` (`tools/tests/relais-local.mjs`, suite « relais ») et deux tests de coopération à trois par code.
+
+**v110 · Lisibilité : recharges, sortie de mission, équipement par héros.** Trois retours de jeu : on ne voyait plus les recharges, ni le bouton pour quitter une mission, ni sur quel héros un objet est porté.
+
+- Compétences : en recharge, l'icône s'assombrit, les secondes restantes s'affichent au centre et un anneau à la couleur de la compétence se remplit (`--cd`, `.skt`, classe `cool`). Au moment de l'utiliser, le bouton s'enfonce et s'éclaire 260 ms ; prête, il garde son halo.
+- Pause : « Retour au Camp » devient un bouton en toutes lettres à côté de « Reprendre » ; Guide et Réglages passent en haut, à côté de la croix. La confirmation est inchangée.
+- Armurerie › Par héros (nouvelle puce, et « Équipement des héros » depuis l'onglet Héros) : l'arme et les emplacements ouverts de chacun des trois héros, le héros joué en premier. Toucher un objet ouvre sa fiche ; celui d'un autre héros propose « Équiper sur… ». Un héros sans rien de porté a un conseil. Avec une sauvegarde d'avant la v106, tout ce qui était porté est allé au héros joué en dernier, ce qui donnait l'impression que la fonction manquait.
+- HUD robuste : un élément absent de la page (page en cache plus ancienne que les scripts) ne bloque plus le reste du HUD ; le bouton Retour au Camp est recréé s'il manque.
+- Tests : 66 (recharges, HUD sans un élément, bouton de sortie, vue Par héros).
 
 **v109 · Noms et prestige en coopération.** En coopération, chaque joueur apparaît sous son nom, précédé du niveau de prestige du héros qu'il joue.
 
@@ -395,7 +420,15 @@ Chaque niveau suivant coûte ×1,7 du précédent. Les talents coûtent 150, 300
 
 ## Coopération
 
-De 2 à 4 joueurs jouent ensemble en Survie, chacun sur son appareil, reliés en étoile à l'hôte en pair à pair (WebRTC), sans serveur ni compte. L'hôte ouvre une invitation à la fois (« Inviter un joueur »), avec une connexion et un échange de codes par invité, jusqu'à 3 invités. Il relaie dans son instantané les héros et tirs de tous (numéro de place 0 à 3, couleur et étiquette « J2 · Guerrier »). Un battement toutes les 2 s hors mission évite que le silence du salon soit pris pour une déconnexion. La connexion se fait par échange de deux codes (offre de l'hôte, réponse de l'invité), en QR code (scan avec BarcodeDetector quand le navigateur l'a, Android Chrome) ou en copier-coller / Partager.
+De 2 à 4 joueurs jouent ensemble (Survie, Défense, Capture ou Brèche), chacun sur son appareil, reliés en étoile à l'hôte en pair à pair (WebRTC), sans compte. Chaque joueur apparaît sous son nom, précédé du niveau de prestige du héros qu'il joue. L'hôte relaie dans son instantané les héros et tirs de tous (place 0 à 3, couleur de place). Un battement toutes les 2 s hors mission évite que le silence du salon soit pris pour une déconnexion.
+
+**Mise en relation par code à 4 chiffres** (v111, `js/net.js`, relais dans `relais/`) : l'hôte touche « Créer une partie » et ouvre une salle au relais sous un code tiré au hasard ; les invités tapent le code (connexion dès le 4e chiffre), scannent le QR code de l'hôte ou ouvrent le lien `#coop=<code>`, et arrivent tout seuls, plusieurs à la fois, jusqu'à 3. Le relais ne fait passer que l'offre WebRTC de l'hôte et la réponse de chaque invité, puis l'invité le quitte ; la partie passe ensuite directement d'un appareil à l'autre. L'hôte garde sa salle ouverte tant que sa partie existe (un joueur peut arriver en mission) et la reprend sous le même code après une coupure.
+
+**Relais** : Cloudflare Worker et Durable Objects (offre gratuite), une salle par code, rien de stocké, déployé depuis GitHub (Workers Builds, dossier racine `relais`). Adresse dans `js/relais.js` : `wss://crypte-relais.cryptcendre.workers.dev`. Premier message de chaque appareil `hi`, réponse `ok`, `taken`, `nohost`, `full`, `origin` ou `slow` ; battement `ping`/`pong` sans réveiller la salle.
+
+**Protections** (v112) : variable `ORIGINES` du Worker (sites autorisés, réglée dans le tableau de bord, gardée au déploiement) ; frein des codes faux (20 codes sans partie en 10 minutes depuis une même adresse IP bloquent ce réseau 10 minutes) ; côté hôte, annonce de chaque arrivée, « Retirer » un joueur, « Nouveau code », « Fermer l'accès ».
+
+**Sans relais** (sans internet, relais injoignable, ou `js/relais.js` vide) : les mêmes codes s'échangent à la main, en QR code ou copier-coller, une invitation à la fois (« Sans internet : connexion par QR codes »).
 
 | Sujet | Règle |
 | --- | --- |
@@ -408,25 +441,31 @@ De 2 à 4 joueurs jouent ensemble en Survie, chacun sur son appareil, reliés en
 | Pauses | Le monde ne s'arrête pas pour le sac ou un bonus de niveau (héros protégé pendant le choix) ; il s'arrête en fin de manche |
 | À terre | Relève après 8 s près du partenaire debout le plus proche, avec 50 % de vie ; tout le monde à terre = échec pour tous |
 | Fin de manche | L'hôte décide sortir ou continuer ; chacun reçoit sa relique de manche |
-| Déconnexion | Message « bye » à la fermeture et silence de plus de 8 s : si l'hôte part, chaque invité termine en extraction ; si un invité part, les autres continuent |
+| Déconnexion | Message « bye » à la fermeture, ou silence de plus de 20 s en mission : si l'hôte part, chaque invité termine en extraction ; si un invité part, les autres continuent |
+| Noms | Nom de chaque joueur (Réglages › Compte, sinon Joueur-XXXXX) précédé du prestige du héros joué, dans le salon, les messages et au-dessus des partenaires ; une étiquette qui en chevauche une autre monte d'un cran |
+| Retrait | L'hôte retire un joueur depuis le salon (message kick) ; en mission, l'invité retiré garde son butin ; « Nouveau code » l'empêche de revenir |
+| Retour au Camp | Depuis la pause : un invité quitte la mission (message leave) et rejoint la suivante sans se reconnecter ; l'hôte arrête la mission pour tous, chaque invité garde son butin |
 
-Fichier `js/net.js` ; QR code par `qrcode-generator` chargé à la demande depuis jsDelivr. Les puits sacrés restent propres à chaque joueur ; Défense et Capture ne sont pas proposées en coopération.
+Fichier `js/net.js` ; QR code par `qrcode-generator` chargé à la demande depuis jsDelivr. Les puits sacrés restent propres à chaque joueur ; les quatre missions se jouent à plusieurs (Survie, Défense, Capture, Brèche). Adresse du relais dans js/relais.js.
 
 | Sens | Message | Fréquence | Contenu |
 | --- | --- | --- | --- |
-| Hôte → invités | hello, roster | connexion, changement | classe de l'hôte, place attribuée (J2–J4), liste place + classe |
+| Hôte → invités | hello, roster | connexion, changement | classe, nom et prestige de l'hôte, place attribuée (J2–J4) ; roster : place, classe, nom et prestige de chacun, mission choisie (mode, niveau, difficulté) |
 | Hôte → invités | start | lancement | niveau, biome, carte (piliers, braseros, runes), point d'apparition |
 | Hôte → invités | s (instantané) | 20 / s | monstres (id, type, position, vie, taille, états, dégâts, phase), projectiles ennemis, fioles, zones, tous les héros, tirs de chaque joueur, minuteurs |
 | Hôte → invités | kill, round, cont, exit, fail | événement | mort d'un monstre (butin calculé par chacun), fin de manche et décision |
-| Invité → hôte | hello | connexion, changement de héros | classe, relique équipée |
+| Invité → hôte | hello | connexion, changement de héros | version du protocole, classe, nom, prestige du héros joué, relique équipée ; renvoyé à chaque changement de héros, de nom ou de prestige |
 | Invité → hôte | g (état) | 20 / s | héros, tirs, coups portés (monstre, dégâts, critique), effets posés (ralenti, gel, brûlure, recul) |
 | Les deux sens | ping, bye | 2 s hors mission, fermeture | présence, départ propre |
+| Hôte → invité | kick | retrait | l'invité quitte la partie (en mission, il garde son butin) |
+| Invité → hôte | leave | retour au Camp | l'invité quitte la mission en cours et reste connecté |
+| Appareil ↔ relais | hi, join, offer, answer, left, hostgone | mise en relation | accueil, arrivée d'un invité, offre de l'hôte (avec NET\_V), réponse de l'invité, départs ; WebSocket, hors de la liaison WebRTC |
 
-Ne circulent jamais : sauvegarde, inventaire, équipement, mods, or, essence, butin, expérience. Liaison WebRTC chiffrée ; débit total de l'hôte à 4 joueurs de l'ordre de 0,5 à 1 Mo/s en wifi local. Les dégâts des invités ne sont pas vérifiés par l'hôte. Un PC ou un Mac est l'hôte conseillé à 3 ou 4 joueurs ; le code de réponse du téléphone lui parvient par Partager puis Coller ou, mieux, par la webcam du PC.
+Ne circulent jamais : sauvegarde, inventaire, équipement, mods, or, essence, butin, expérience. Liaison WebRTC chiffrée ; débit total de l'hôte à 4 joueurs de l'ordre de 0,5 à 1 Mo/s en wifi local. Les dégâts des invités ne sont pas vérifiés par l'hôte. Un PC ou un Mac est l'hôte conseillé à 3 ou 4 joueurs ; le code de réponse du téléphone lui parvient par Partager puis Coller ou, mieux, par la webcam du PC (connexion par QR codes). Le relais du code à 4 chiffres ne voit que la poignée de main WebRTC (adresses et clés de la liaison), quelques secondes, et ne stocke rien.
 
-Arrivée en cours de mission : si la connexion d'un invité s'ouvre alors que la mission de l'hôte tourne déjà (hôte qui a touché Lancer pendant « Connexion en cours »), l'hôte envoie à cet invité seul un message start et l'ajoute comme partenaire à côté de lui. Avant ce correctif, l'invité restait sur « En attente de l'hôte ». Version du protocole (NET\_V = 3) dans hello : deux appareils de versions différentes se déconnectent avec un message demandant de mettre le jeu à jour.
+Arrivée en cours de mission : si la connexion d'un invité s'ouvre alors que la mission de l'hôte tourne déjà (hôte qui a touché Lancer pendant « Connexion en cours »), l'hôte envoie à cet invité seul un message start et l'ajoute comme partenaire à côté de lui. Avant ce correctif, l'invité restait sur « En attente de l'hôte ». Version du protocole (NET\_V, 9 depuis v112) dans hello : deux appareils de versions différentes se déconnectent avec un message demandant de mettre le jeu à jour.
 
-Lecture des QR codes par caméra (bouton « Scanner avec la caméra », proposé dès que l'appareil a une caméra) : détecteur intégré du navigateur (BarcodeDetector) quand il existe, sinon jsQR 1.4.0 chargé à la demande depuis jsDelivr (webcam de PC, tous navigateurs) ; image réduite à 960 px, une lecture toutes les 120 ms, cadre de visée. Un code reconnu (commençant par Z ou P) est validé aussitôt : l'invité rejoint, l'hôte accepte la réponse, sans copier-coller. La caméra s'arrête dès la lecture, au bouton Arrêter ou à la fermeture. QR code affiché jusqu'à 320 px de large.
+Lecture des QR codes par caméra (bouton « Scanner avec la caméra », proposé dès que l'appareil a une caméra) : détecteur intégré du navigateur (BarcodeDetector) quand il existe, sinon jsQR 1.4.0 chargé à la demande depuis jsDelivr (webcam de PC, tous navigateurs) ; image réduite à 960 px, une lecture toutes les 120 ms, cadre de visée. Un code reconnu est validé aussitôt : code de connexion (commençant par Z ou P), ou QR code d'une partie à code (#coop=1234 ou CRYPTE:1234), qui rejoint par le relais : l'invité rejoint, l'hôte accepte la réponse, sans copier-coller. La caméra s'arrête dès la lecture, au bouton Arrêter ou à la fermeture. QR code affiché jusqu'à 320 px de large.
 
 Connexion entre deux missions : elle reste ouverte après une sortie, un échec, le Camp ou un changement de héros (battement toutes les 2 s), et l'hôte relance sans refaire les codes. Tant que la coopération est active : verrou d'écran allumé (Screen Wake Lock, redemandé au retour au premier plan), pas de bandeau « Mettre à jour » (un rechargement couperait la partie ; Réglages › Application prévient), et silence toléré de 20 s en mission avant de considérer un joueur parti (au lieu de 8 s).
 
@@ -464,7 +503,7 @@ Une seule page HTML avec JavaScript, sans serveur.
 - **Parcours affixe** : depuis la fiche, Forge › Affixes s'ouvre avec l'objet en source (ou en cible), puce « Retour à Héros » (cx-back) qui rend onglet, sélection et défilement, étapes cx-steps (1 Source, 2 Affixe, 3 Cible) et consigne d'étape dans la barre du bas jusqu'à Transférer. « Chercher par affixe » et les alertes (repliées) passent sous le coffre.
 - **Annuler plutôt que confirmer** : verrouiller un objet ou retirer un mod passent tout de suite avec un toast « Annuler » de 5 s ; le recyclage d'un lot (Forge › Recyclage) garde sa confirmation.
 - **Mods** : jauge de capacité (cx-meter, rouge si dépassée), build en tuiles cx-mod sous la polarité de chaque case, seule la prochaine case verrouillée est montrée, liste « Tes mods » filtrable, alignement replié. **Familier** : carte du familier équipé (rang, jauge d'expérience, effet), lignes Œufs (Faire éclore) et Collection (déplie la liste et les fusions), puis capacité et build.
-- **Pause** : butin de la partie d'abord (▲, Équiper le meilleur butin), bonus, équipement, 3 chiffres clés, statistiques et mods repliés ; barre du bas Réglages, Guide (icônes) et Reprendre ; Rendu standard est dans Réglages › Rendu.
+- **Pause** : butin de la partie d'abord (▲, Équiper le meilleur butin), bonus, équipement, 3 chiffres clés, statistiques et mods repliés ; Guide et Réglages en haut, à côté de la croix ; barre du bas « Retour au Camp » (en toutes lettres, avec confirmation) et Reprendre ; Rendu standard est dans Réglages › Rendu. Boutons de compétences (v110) : en recharge, icône atténuée, secondes restantes au centre et anneau à la couleur de la compétence qui se remplit ; enfoncement bref à l'utilisation ; halo quand elle est prête. Les éléments du HUD absents de la page (page en cache plus ancienne que les scripts) n'arrêtent plus le HUD.
 - **Retour arrière** (js/nav.js) : chaque niveau ouvert pousse une entrée d'historique ; Retour ou Échap ferme la fiche, puis la feuille (choix, Réglages, Coop), puis le Camp ou la Pause ; à la racine, un premier Retour affiche « Touche encore Retour pour quitter ». Raccourcis du Camp (hors champ de saisie) : 1 à 6 onglets, flèches et \[ \] dans le coffre, Entrée équipe, / cherche.
 
 **Comparaison et armes (v88–v89)** :
@@ -474,13 +513,13 @@ Une seule page HTML avec JavaScript, sans serveur.
 
 Recyclage (v90, dans l'Armurerie depuis v92) : puce de l'Armurerie (Coffre · Recettes · Mes armes · Recyclage) ; la Forge garde Bonus · Affixes · Fusion · Sceaux (« Améliorations » renommé « Bonus » en v91). Le coffre (barre d'inventaire, grille, fiche ancrée, « Équiper le meilleur ») est aussi dans l'Armurerie, puce Coffre par défaut ; l'onglet Héros garde l'équipement porté, les statistiques, les fragments et le prestige, avec un bouton « Ouvrir le coffre », seul endroit où l'on recycle. Puces « Rareté à recycler » (multi-sélection) + barre d'inventaire commune (recherche, tri, emplacement, filtre Arme). Grille des objets du coffre et des armes non portées (hors armes de départ) ; « Tout sélectionner » prend tous les objets non verrouillés du filtre ; « Recycler · n » avec l'essence gagnée, confirmation au-delà d'un objet. Gains selon la rareté et le rang (aucun fragment rendu depuis v91).
 
-**Fichiers (site GitHub Pages, sans build)** : `index.html`, `css/game.css`, puis les scripts classiques dans cet ordre, qui partagent la portée globale : `js/data.js` (données, sauvegarde), `js/game.js` (partie, combat, butin), `js/render.js` (Canvas, PixiJS, HUD), `js/ui.js` (fiches, pause, niveaux, mods, fin), `js/camp.js` (Camp), js/seal.js (sceaux), js/pet.js (familiers), js/net.js (coop), js/update.js (mises à jour), `js/settings.js` (réglages, bannière, vibrations), `js/audio.js` (sons), `js/main.js` (boucle). PWA : `manifest.webmanifest`, `sw.js` (cache, réseau d'abord pour la page et les scripts, numéro `VERSION` à incrémenter à chaque mise à jour), `icons/`, `.nojekyll`.
+**Fichiers (site GitHub Pages, sans build)** : `index.html`, `css/game.css`, puis les scripts classiques dans cet ordre, qui partagent la portée globale : `js/data.js` (données, sauvegarde), `js/game.js` (partie, combat, butin), `js/render.js` (Canvas, PixiJS, HUD), `js/ui.js` (fiches, pause, niveaux, mods, fin), `js/camp.js` (Camp), js/seal.js (sceaux), js/pet.js (familiers), js/unlock.js (déblocages), js/net.js (coop), js/relais.js (adresse du relais), js/update.js (mises à jour), `js/settings.js` (réglages, bannière, vibrations), `js/audio.js` (sons), `js/main.js` (boucle). PWA : `manifest.webmanifest`, `sw.js` (cache, réseau d'abord pour la page et les scripts, numéro `VERSION` à incrémenter à chaque mise à jour), `icons/`, `.nojekyll`.
 
 **Son** : entièrement synthétisé en Web Audio, aucun fichier. Coups (avec limite de cadence), critiques, coup reçu, ramassages par rareté, or, potion, esquive, compétence propre à chaque classe, ultime, météores, Gardien qui surgit et qui meurt, élite, Frénésie, montée de niveau, relique ouverte, vague, victoire, défaite, clics d'interface. Musique d'ambiance : bourdon grave filtré qui respire et cloches rares en mode mineur. Le son démarre au premier geste et se coupe quand l'onglet est masqué.
 
 **Sons de ramassage (v86, Réglages › Son, SET.pickSnd)** : Tous, Importants (par défaut) ou Aucun. Importants coupe l'or et les objets communs ou magiques, et garde les objets rares et mieux, les mods, reliques, fragments et sceaux. Intervalle minimal entre deux sons d'un même type : or 0,22 s (0,05 avant), objet commun 0,2 s, rare et mod 0,15 s, légendaire, relique et fragment 0,12 s ; l'or est aussi plus discret. Les sons de combat (coups 0,045 s, critiques, dégâts reçus), d'ultime et d'alertes ne changent pas.
 
-**Réglages** (bouton sur l'écran de départ et dans la pause, propres à l'appareil, clé `crypte-set`) : volume des effets et de la musique, tremblement Normal / Réduit / Désactivé, flash de butin, chiffres de dégâts, vibrations (coup reçu, légendaire ou affixe recherchée), rendu WebGL ou standard.
+**Réglages** (bouton sur l'écran de départ et dans la pause, propres à l'appareil, clé `crypte-set`) : volume des effets et de la musique, tremblement Normal / Réduit / Désactivé, flash de butin, chiffres de dégâts, vibrations (coup reçu, légendaire ou affixe recherchée), rendu WebGL ou standard. En tête, la section Compte (v109) : nom de joueur (meta.pname, 16 signes : lettres, chiffres, espace, - \_ ' .) et identifiant unique tiré une fois (meta.pid, nom par défaut Joueur-XXXXX) ; ces deux-là sont dans la sauvegarde, pas dans les réglages de l'appareil.
 
 **Côté des boutons** (Réglages › Écran, SET.hand = right | left, propre à l'appareil) : à gauche, la classe lefty sur body place la grappe de compétences en bas à gauche en miroir (grande compétence et ultime côté bord, esquive et potion côté centre, icône d'esquive retournée) et déplace l'aide clavier en bas à droite, alignée à droite. Le joystick reste flottant (n'importe où sur l'écran).
 
