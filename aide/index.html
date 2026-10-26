@@ -345,13 +345,13 @@ details.more .tbl{margin:0 14px 14px}
     <p>L'onglet <b>Héros</b> montre tes 5 emplacements, trois chiffres clés (Puissance, Vie, Réduction ; « Toutes les statistiques » déplie le reste), ton <b>coffre</b> et, en bas, le <b>Prestige</b>. Le coffre a une barre collée en haut : <b>recherche</b> (dans les noms et les affixes : « vitesse », « critique »…), <b>tri</b> (rareté, amélioration, niveau, récents), filtres par emplacement et un compteur des objets meilleurs que ton équipement (▲). La grille défile d'un bloc, sans pages. Filtre, tri et recherche sont partagés avec Forge › Affixes.</p>
     <p>Toucher un objet ouvre sa <b>fiche ancrée en bas</b>, sans fermer la grille : ‹ et › passent à l'objet précédent ou suivant, et le bouton principal dit ce qu'il remplace (« Équiper · remplace Grèves »).</p>
     <p>La fiche <b>compare l'objet à celui que tu portes sur le même emplacement</b>, affixe par affixe, en quatre colonnes : Affixes, Porté, Choisi, Écart (▲ en vert, ▼ en rouge). La statistique de base vient toujours en tête, puis les affixes communes aux deux objets, celles que tu gagnes (« + nouvelle ») et celles que tu perds (valeur barrée, « − perdue »). Les valeurs tiennent compte des améliorations. Au-delà de 4 affixes, ‹ › font défiler la liste (« Affixes 1–4 sur 6 ») et la barre prévient s'il reste des pertes plus loin. Dessous, « Ton héros » montre l'effet sur la Puissance, la Vie et la Réduction ; « Toutes les statistiques » ajoute le reste. Un objet que tu portes est marqué « Porté », sans comparaison. La Pause utilise la même fiche pour le butin de la partie.</p>
-    <p>Tes <b>armes</b> sont dans le coffre comme le reste (filtre « Arme ») : toutes celles que tu possèdes et ne portes pas, de chaque héros. Elles se comparent à l'arme portée, s'équipent, se verrouillent, s'améliorent, reçoivent une affixe et se recyclent depuis leur fiche, comme une armure ou un anneau. Une arme d'un autre héros s'affiche, mais s'équipe en changeant de héros. Une arme verrouillée n'est recyclée ni depuis sa fiche, ni par « Tout recycler » de l'Armurerie.</p>
+    <p>Tes <b>armes</b> sont dans le coffre comme le reste (filtre « Arme ») : toutes celles que tu possèdes et ne portes pas, de chaque héros. Elles se comparent à l'arme portée, s'équipent, se verrouillent, s'améliorent, et reçoivent une affixe depuis leur fiche, comme une armure ou un anneau ; elles se recyclent dans Forge › Recyclage. Une arme d'un autre héros s'affiche, mais s'équipe en changeant de héros. Une arme verrouillée ne se recycle pas.</p>
     <p>« Plus d'actions » déplie le reste :</p>
     <ul>
       <li><b>Améliorer</b> (+1 ou +10) : chaque objet monte de +0 à +100 avec de l'essence, chaque niveau ajoute 2 % de ses valeurs (×3 à +100).</li>
       <li><b>Verrouiller</b> : le cadenas protège un objet du recyclage et du transfert d'affixe.</li>
       <li><b>Prendre une affixe</b> / <b>Recevoir une affixe</b> : ouvre Forge › Affixes avec l'objet déjà en source (ou en cible) ; une puce <b>Retour à Héros</b> ramène exactement où tu étais.</li>
-      <li><b>Recycler</b> transforme l'objet en essence tout de suite. Un message « Annuler » reste 5 s si tu t'es trompé (de même pour verrouiller ou retirer un mod). « Tout recycler » garde les objets verrouillés, améliorés, Prime, Sanguins et Abyssaux, et demande une confirmation.</li>
+      <li><b>Recycler à la Forge</b> : ouvre Forge › Recyclage avec l'objet déjà choisi (puce « Retour à Héros » pour revenir). Le recyclage ne se fait plus que là. Verrouiller ou retirer un mod affichent un message « Annuler » pendant 5 s.</li>
       <li><b>Équiper le meilleur</b>, en bas de l'onglet, remplit chaque emplacement avec l'objet le plus fort du coffre.</li>
     </ul>
     <p class="tip"><b>Essence</b> (losange bleu) : la deuxième monnaie, gagnée en recyclant, en ouvrant des reliques et sur les Gardiens. Elle sert aux améliorations, aux mods, au raffinage et aux fusions.</p>
@@ -384,7 +384,7 @@ details.more .tbl{margin:0 14px 14px}
       <li>Chaque héros a 4 armes à fabriquer, de magique à légendaire, en plus de son arme de départ.</li>
       <li>Les objets Prime (armures, amulettes, bottes, anneaux) servent à tous les héros. Ceux de givre viennent de la Couronne du Blizzard, la relique Abysse des Abîmes gelés.</li>
       <li><b>Tout fabriquer</b> fabrique tout ce qui a ses 3 fragments tant que l'or suffit.</li>
-      <li><b>Recycler</b> une arme fabriquée non équipée ou un objet Prime rend de l'essence et 1 fragment de son schéma. <b>Tout recycler</b> le fait pour tous.</li>
+      <li><b>Recycler</b> une arme fabriquée ou un objet Prime (dans Forge › Recyclage, le bouton « Recycler à la Forge » y mène) rend de l'essence et 1 fragment de son schéma.</li>
     </ul>
     <p>Chaque recette indique dans quelles reliques trouver ses fragments manquants.</p>
   </div>
@@ -510,7 +510,7 @@ details.more .tbl{margin:0 14px 14px}
 <section id="camp-affix"><div class="sec">
   <div class="txt">
     <h2><small>Camp · Forge › Affixes</small>Affixes</h2>
-    <p>Ce sous-onglet de la Forge sert à déplacer les meilleures propriétés d'un objet à l'autre. On y arrive aussi depuis la fiche d'un objet (« Prendre une affixe », « Recevoir une affixe ») : les étapes s'affichent en haut (1 Source, 2 Affixe, 3 Cible) et la barre du bas dit quoi toucher ensuite. « Chercher par affixe » et les « Alertes de butin » sont en bas du sous-onglet.</p>
+    <p>Ce sous-onglet de la Forge sert à déplacer les meilleures propriétés d'un objet à l'autre. La liste « Chercher par affixe » vient juste après l'aperçu, avant les objets à sélectionner. On y arrive aussi depuis la fiche d'un objet (« Prendre une affixe », « Recevoir une affixe ») : les étapes s'affichent en haut (1 Source, 2 Affixe, 3 Cible) et la barre du bas dit quoi toucher ensuite. « Chercher par affixe » et les « Alertes de butin » sont en bas du sous-onglet.</p>
     <h3>Transfert</h3>
     <ol>
       <li>Touche <b>Source</b> puis un objet : celui qui sera détruit.</li>
@@ -537,7 +537,7 @@ details.more .tbl{margin:0 14px 14px}
 <section id="camp-forge"><div class="sec">
   <div class="txt">
     <h2><small>Camp · onglet 6</small>Forge et prestige</h2>
-    <p>La Forge a trois sous-onglets : <b>Améliorations</b>, <b>Affixes</b> et <b>Sceaux</b>. Les améliorations permanentes s'achètent avec l'or ; chaque niveau coûte 1,7 fois le précédent.</p>
+    <p>La Forge a quatre sous-onglets : <b>Améliorations</b>, <b>Affixes</b>, <b>Recyclage</b> et <b>Sceaux</b>. Les améliorations permanentes s'achètent avec l'or ; chaque niveau coûte 1,7 fois le précédent.</p>
     <div class="tbl"><table>
       <thead><tr><th>Amélioration</th><th>Effet par niveau</th><th>Niveaux</th></tr></thead>
       <tbody>
@@ -552,6 +552,8 @@ details.more .tbl{margin:0 14px 14px}
       </tbody>
     </table></div>
     <p>On y achète aussi les <b>3 talents</b> de chaque héros (150, 300 et 500 or).</p>
+    <h3>Recyclage</h3>
+    <p>C'est le seul endroit où l'on détruit des objets. Les puces <b>Rareté à recycler</b> (Commun, Magique, Rare…, plusieurs à la fois) filtrent la grille, avec la même recherche, le même tri et les mêmes filtres d'emplacement que le coffre. Touche les objets à recycler (marqués −), ou <b>Tout sélectionner</b> pour prendre tous ceux du filtre, puis <b>Recycler</b> en bas : le bouton annonce l'essence gagnée, et un lot de plusieurs objets demande une confirmation. Une arme ou un objet Prime rend aussi 1 fragment de son schéma. Les objets portés n'apparaissent pas et les objets verrouillés ne se recyclent pas.</p>
     <h3>Prestige</h3>
     <p>Quand les 8 améliorations sont au maximum, le <b>prestige</b> (en bas de l'onglet Héros) s'ouvre pour chaque héros, sans limite de niveau. Chaque niveau coûte de l'or et de l'essence et donne 1 point à placer dans 12 statistiques (vie, dégâts, critique, portée des compétences, rayon d'explosion…). Les points se redistribuent gratuitement.</p>
     <details class="more"><summary>Les 12 statistiques de prestige</summary><p>Le prestige s'ouvre quand les 8 améliorations de la Forge sont au maximum. Chaque niveau coûte un peu plus d'or et d'essence que le précédent. Les plafonds généraux s'appliquent toujours : critique 75 %, réduction des dégâts 60 %, recharge 50 %.</p><div class="tbl"><table><thead><tr><th>Statistique</th><th>Par point</th><th>Plafond</th></tr></thead><tbody><tr><td><b>Vitalité</b></td><td>+2 % de vie maximale</td><td>—</td></tr><tr><td><b>Puissance</b></td><td>+2 % de dégâts</td><td>—</td></tr><tr><td><b>Vivacité</b></td><td>+1 % de vitesse d&#x27;attaque</td><td>—</td></tr><tr><td><b>Acuité</b></td><td>+0,5 % de chances de critique</td><td>40 points</td></tr><tr><td><b>Brutalité</b></td><td>+3 % de dégâts critiques</td><td>—</td></tr><tr><td><b>Arcanes</b></td><td>+3 % de dégâts de compétence</td><td>—</td></tr><tr><td><b>Ténacité</b></td><td>−0,5 % de dégâts subis</td><td>40 points</td></tr><tr><td><b>Sang-froid</b></td><td>−0,5 % de temps de recharge</td><td>30 points</td></tr><tr><td><b>Foulée</b></td><td>+0,5 % de vitesse de déplacement</td><td>30 points</td></tr><tr><td><b>Opulence</b></td><td>+2 % d&#x27;or ramassé</td><td>—</td></tr><tr><td><b>Envergure</b></td><td>+3 % de portée des compétences</td><td>50 points</td></tr><tr><td><b>Déflagration</b></td><td>+3 % de rayon d&#x27;explosion</td><td>50 points</td></tr></tbody></table></div></details>
@@ -655,7 +657,7 @@ details.more .tbl{margin:0 14px 14px}
 
 </main>
 
-<footer class="wrap">Crypte des Cendres · guide à jour de la version 89 du jeu. <a href="../index.html">Retour au jeu</a></footer>
+<footer class="wrap">Crypte des Cendres · guide à jour de la version 90 du jeu. <a href="../index.html">Retour au jeu</a></footer>
 
 <dialog id="zoom" aria-label="Capture agrandie"><button type="button" id="zoomX" aria-label="Fermer">×</button><img id="zoomImg" alt=""></dialog>
 

@@ -58,7 +58,7 @@ function bpCard(b){
   const cost=isW?Math.round(b.bp/2):b.craft,ready=pc.every(x=>x>0);
   const baseTxt=isW?`${b.dmg} dégâts de base`:baseTxtOf(b.slot,b.base);
   let foot;
-  const canRecy=own&&!eq&&b.bp>0&&!(meta.wlock&&meta.wlock[b.id]);
+  const canRecy=false; // le recyclage se fait dans Forge › Recyclage
   if(own)foot=(eq?`<span class="owned">Équipée${mine?'':' · '+CLS[b.cls].n}</span>`:mine?`<button class="btn main" data-cact="wequip" data-arg="${b.id}">Équiper</button>`:`<span class="owned">Fabriquée · ${CLS[b.cls].n}</span>`)
     +(canRecy?(wRecy===b.id?`<div class="card" style="width:100%;box-sizing:border-box"><p style="margin:0;font-size:14px">Recycler <b style="color:${r.c}">${b.n}</b> ? Tu récupères <b>${wRecyEss(b)} essence</b> et <b>1 fragment</b> de son schéma. L'arme, son niveau d'amélioration et ses affixes ajoutées sont perdus ; ses mods restent dans ta collection.</p><div class="actions"><button class="btn danger" data-cact="wrecyok" data-arg="${b.id}">Recycler</button><button class="btn" data-cact="wrecyno">Annuler</button></div></div>`
       :`<button class="btn danger" data-cact="wrecy" data-arg="${b.id}">Recycler · <span class="essi"></span>${wRecyEss(b)} · 1 fragment</button>`):'');
@@ -84,12 +84,11 @@ function craftOne(id){const b=bpdef(id),pc=meta.parts[id],cost=bpCost(b);if(!pc|
   if(b.kind==='arme'){meta.built[id]=true;if(b.cls===heroCls)meta.wpn[heroCls]=id}
   else meta.stash.push({id:uid++,slot:b.slot,r:b.r,lvl:20,base:{k:BASE_STAT[b.slot],v:b.base},aff:{...b.aff},name:b.n,type:'Prime',bp:b.id});
   return true}
-function arsBar(){const cp=craftPlan(),rp=recyPlan(),nr=rp.ws.length+rp.pr.length;
-  let h=`<div class="actions" style="margin:0"><button class="btn${cp.plan.length?' main':''}" data-cact="craftask" ${cp.plan.length?'':'disabled'}>Tout fabriquer${cp.plan.length?` · ${cp.plan.length}`:''}</button><button class="btn danger" data-cact="arecyask" ${nr?'':'disabled'}>Tout recycler${nr?` · ${nr}`:''}</button></div>`;
-  if(!cp.plan.length&&!nr)h+='<p class="cx-hint" style="margin:0">Rien à fabriquer (il faut les 3 fragments et l\'or) ni à recycler (armes fabriquées non équipées, objets Prime non verrouillés).</p>';
+function arsBar(){const cp=craftPlan();
+  let h=`<div class="actions" style="margin:0"><button class="btn${cp.plan.length?' main':''}" data-cact="craftask" ${cp.plan.length?'':'disabled'}>Tout fabriquer${cp.plan.length?` · ${cp.plan.length}`:''}</button><button class="btn" data-cact="gorecy">Recycler à la Forge</button></div>`;
+  if(!cp.plan.length)h+='<p class="cx-hint" style="margin:0">Rien à fabriquer : il faut les 3 fragments et l\'or. Le recyclage des armes et objets Prime se fait dans Forge › Recyclage.</p>';
   if(arsAsk==='craft'&&cp.plan.length){const cnt={};for(const id of cp.plan)cnt[id]=(cnt[id]||0)+1;
-    h+=`<div class="card"><p style="margin:0;font-size:14px">Fabriquer ${cp.plan.length} objet${cp.plan.length>1?'s':''} pour <b><span class="coin"></span> ${cp.cost} or</b> : ${Object.keys(cnt).map(id=>`<b style="color:${RAR[bpdef(id).r].c}">${bpdef(id).n}</b>${cnt[id]>1?' ×'+cnt[id]:''}`).join(', ')}. L'arme de ton héros fabriquée est équipée tout de suite ; les objets Prime vont au coffre.</p><div class="actions"><button class="btn main" data-cact="craftall">Tout fabriquer</button><button class="btn" data-cact="arsno">Annuler</button></div></div>`}
-  if(arsAsk==='recy'&&nr){h+=`<div class="card"><p style="margin:0;font-size:14px">Recycler ${nr} objet${nr>1?'s':''} fabriqué${nr>1?'s':''} : ${[...rp.ws.map(w=>`<b style="color:${RAR[w.r].c}">${w.n}</b>`),...rp.pr.map(it=>`<b style="color:${RAR[it.r].c}">${esc(itemName(it))}</b>`)].join(', ')}. Tu récupères <b>${rp.ess} essence</b> et 1 fragment de schéma par objet. Les armes équipées et les objets verrouillés sont gardés.</p><div class="actions"><button class="btn danger" data-cact="arecyall">Tout recycler</button><button class="btn" data-cact="arsno">Annuler</button></div></div>`}
+    h+=`<div class="card"><p style="margin:0;font-size:14px">Fabriquer ${cp.plan.length} objet${cp.plan.length>1?'s':''} pour <b><span class="coin"></span> ${cp.cost} or</b> : ${Object.keys(cnt).map(id=>`<b style="color:${RAR[bpdef(id).r].c}">${bpdef(id).n}</b>${cnt[id]>1?' ×'+cnt[id]:''}`).join(', ')}.</p><div class="actions"><button class="btn main" data-cact="craftall">Fabriquer</button><button class="btn" data-cact="arsno">Annuler</button></div></div>`}
   return h}
 let arsView='rec';
 // Armurerie › Mes armes : toutes les armes possédées, avec leurs valeurs réelles (amélioration et affixes ajoutées comprises).
@@ -304,12 +303,13 @@ function campAffix(){
       if(!Object.keys(d.aff).length&&!(st&&st.mode==='add'))tLines+='<li class="cx-line cx-line--base">Aucune affixe</li>';}
     h+=`<div class="cx-diff">${xfDiffCard('src',s,s?wlab(xf.src):'',sLines,st&&st.ok)}${xfDiffCard('dst',d,d?wlab(xf.dst):'',tLines,st&&st.ok?true:null)}</div>`;
   }
+  h+=affFinder();
   const eqW=meta.wpn[heroCls]&&ownedW(meta.wpn[heroCls])?meta.wpn[heroCls]:WPN[heroCls][0].id;
   h+=`<section class="cx-section"><h3 class="cx-section__label">Équipé · ${CLS[heroCls].n}</h3><div class="cx-slots">${xfSlot('w:'+eqW,weaponItem(heroCls,eqW),'Arme')}${['armure','amulette','bottes','anneau'].map(k=>xfSlot('g:'+k,meta.gear[k],SLOT[k])).join('')}</div></section>`;
   const ow=Object.keys(WPN).flatMap(c=>WPN[c].filter(w=>ownedW(w.id)&&w.id!==eqW).map(w=>[c,w]));
   if(ow.length)h+=`<section class="cx-section"><h3 class="cx-section__label">Autres armes</h3><div class="cx-slots">${ow.map(([c,w])=>xfSlot('w:'+w.id,weaponItem(c,w.id),`Arme · ${CLS[c].n}`,true)).join('')}</div></section>`;
   {const list=invList('affix');h+=`<section class="cx-section"><h3 class="cx-section__label">Coffre · ${meta.stash.length} objet${meta.stash.length>1?'s':''}</h3>${meta.stash.length?invToolbar(list,'affix'):''}<div id="invGrid">${invGrid(list,'affix')}</div></section>`}
-  h+=affFinder();h+=cxMore('wish','Alertes de butin : un flash quand une affixe recherchée tombe.',wishSection(),'Régler');
+  h+=cxMore('wish','Alertes de butin : un flash quand une affixe recherchée tombe.',wishSection(),'Régler');
   return h;
 }
 function affixFoot(){const st=xfState(),s=xfGet(xf.src);
@@ -375,6 +375,7 @@ const CAMP_MORE={
   pets:['Ton familier te suit en mission ; fais éclore tes œufs ici.','<p>Les œufs tombent parfois en ouvrant une relique (Ossuaire 8 %, Sanguine 15 %, Abysse 25 %). Deux familiers identiques de même rang fusionnent en un seul du rang au-dessus (★★★★★ au maximum). Un familier équipé gagne des niveaux (jusqu\'à 20) avec les ennemis abattus.</p>'],
   forge_up:['L\'or du Camp achète des améliorations permanentes et des talents.','<p>Chaque rang s\'applique à tous tes héros ; les talents sont propres au héros. Quand toutes les améliorations sont au maximum, le <b>Prestige</b> s\'ouvre dans l\'onglet Héros.</p><p>La sauvegarde (exporter, importer) se trouve maintenant dans <b>Réglages</b>.</p>'],
   forge_affix:['Touche Source ou Cible, puis un objet, puis l\'affixe à prendre.','<p>La source est détruite ; son affixe passe sur la cible, qui la gagne, la renforce ou la remplace. Le coût en essence dépend de la rareté de la source. Une affixe déjà plus forte sur la cible ne peut pas être remplacée par une plus faible.</p>'],
+  forge_recy:['Touche les objets à recycler, puis Recycler en bas.','<p>Recycler détruit un objet contre de l\'essence (selon sa rareté et son amélioration). Une arme ou un objet Prime rend aussi 1 fragment de son schéma. Les objets portés et verrouillés ne se recyclent pas. Filtre par rareté puis « Tout sélectionner » pour recycler un lot d\'un coup.</p>'],
   forge_seals:['Pose un sceau légendaire sur un objet porté.','<p>Les sceaux tombent seulement en Brèche (le mode à plusieurs), sur les Gardiens et les élites ; 100 éclats s\'échangent contre un sceau au hasard. Un sceau par objet, en plus de ses affixes.</p>']};
 function drawCamp(){
   if(campTab==='affix'){campTab='forge';forgeSub='affix'}
@@ -384,7 +385,7 @@ function drawCamp(){
   document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.tab===campTab)));
   const body=$('campBody'),M=CAMP_MORE[fk],more=M?cxMore(fk,M[0],M[1]):'';
   let h='';
-  if(campTab==='forge'){h=subTabs([['up','Améliorations'],['affix','Affixes'],['seals','Sceaux',SEAL_IDS.some(id=>meta.seals[id]>0)&&!Object.values(meta.gear).some(i=>i&&i.seal)?1:0]],forgeSub,'fsub')+more+(forgeSub==='affix'?campAffix():forgeSub==='seals'?campSeals():campForge())}
+  if(campTab==='forge'){h=subTabs([['up','Améliorations'],['affix','Affixes'],['recy','Recyclage'],['seals','Sceaux',SEAL_IDS.some(id=>meta.seals[id]>0)&&!Object.values(meta.gear).some(i=>i&&i.seal)?1:0]],forgeSub,'fsub')+more+(forgeSub==='affix'?campAffix():forgeSub==='seals'?campSeals():forgeSub==='recy'?campRecycle():campForge())}
   else if(campTab==='mods'||campTab==='pets')h=more+'<div id="modsCamp" class="col"></div>';
   else h=more+(campTab==='equip'?campEquip()+prestSection():campTab==='arsenal'?campArsenal2():campTab==='relics'?campRelics():'');
   body.innerHTML=h;
@@ -397,6 +398,7 @@ function drawCamp(){
 // L'action principale de l'onglet, collée en bas de la feuille.
 function campFootHtml(){
   if(campTab==='forge'&&forgeSub==='affix')return affixFoot();
+  if(campTab==='forge'&&forgeSub==='recy')return recyFoot();
   if(campTab==='equip'){const pn=Object.keys(bestPlan(curEq(),meta.stash)).length;return pn?`<button class="cx-btn cx-btn--primary" data-cact="bestall">Équiper le meilleur · ${pn}</button>`:''}
   if(campTab==='relics'){relicQFix();const ne=relToEquip(relTier);if(!ne)return '';const sh=relTier==='g'?'Givre':relTier==='f'?'Forgées':relTier==='all'?'':RTIER[+relTier].n;return `<button class="cx-btn cx-btn--primary" data-cact="rqtype">Tout équiper${sh?' · '+sh:''} · ${ne}</button>`}
   return '';
@@ -449,6 +451,16 @@ function campClick(b){
     else if(a==='wequip'){if(ownedW(arg)&&wclsOf(arg)===heroCls){meta.wpn[heroCls]=arg;if(campTab==='equip')campSel={slot:'arme'}}}
     else if(a==='arsv'){arsView=arg}
     else if(a==='fsub'){forgeSub=arg;campSel=null}
+    else if(a==='gorecy'){campTab='forge';forgeSub='recy';campSel=null}
+    else if(a==='gorecy1'){const B={tab:campTab,sel:campSel,scroll:$('campBody').parentElement.scrollTop,label:'Héros'};recySel=new Set([arg]);recyAsk=false;campBack=B;campTab='forge';forgeSub='recy';campSel=null}
+    else if(a==='rcsel'){if(recySel.has(arg))recySel.delete(arg);else recySel.add(arg);recyAsk=false}
+    else if(a==='rcr'){const r=+arg;if(recyR.has(r))recyR.delete(r);else recyR.add(r);recyAsk=false}
+    else if(a==='rcrall'){recyR.clear();recyAsk=false}
+    else if(a==='rcall'){for(const it of recyList())if(!it.lock)recySel.add(recyKey(it));recyAsk=false}
+    else if(a==='rcnone'){recySel.clear();recyAsk=false}
+    else if(a==='rcask'){recyAsk=true}
+    else if(a==='rcno'){recyAsk=false}
+    else if(a==='rcok'){recyDo()}
     else if(a==='dclose'){campSel=null}
     else if(a==='dmore'){dockMore=!dockMore}
     else if(a==='dall'){dockAll=!dockAll}

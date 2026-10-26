@@ -24,7 +24,7 @@ function invToolbar(list,kind){const W=kind==='affix'?[]:invWeapons(),counts={al
 function invGrid(list,kind){if(!list.length)return `<p class="cx-hint" style="margin:0">${meta.stash.length?(invQ?'Aucun objet ne correspond à ta recherche.':'Aucun objet de ce type.'):'Ton coffre est vide. Sors vivant d\'une mission pour y ramener les objets trouvés.'}</p>`;
   if(kind==='affix')return `<div class="cx-cells">${list.map(it=>xfCell('s:'+it.id,it)).join('')}</div>`;
   return `<div class="grid">${list.map(it=>it.wid?cellHtml(it,'wsel',isSel(it),it.cls===heroCls&&better(it)).replace(`data-wsel="${it.id}"`,`data-wsel="${it.wid}"`):cellHtml(it,'stash',isSel(it),better(it))).join('')}</div>`}
-function invRefresh(){const kind=campTab==='forge'?'affix':'equip',list=invList(kind),g=$('invGrid');if(!g)return;g.innerHTML=invGrid(list,kind);const c=$('invCount');if(c)c.textContent=invCountTxt(list)}
+function invRefresh(){const g=$('invGrid');if(!g)return;if(campTab==='forge'&&forgeSub==='recy'){g.innerHTML=recyCells();return}const kind=campTab==='forge'?'affix':'equip',list=invList(kind);g.innerHTML=invGrid(list,kind);const c=$('invCount');if(c)c.textContent=invCountTxt(list)}
 $('campBody').addEventListener('input',e=>{if(e.target.dataset.inv==='q'){invQ=e.target.value;invRefresh()}});
 $('campBody').addEventListener('change',e=>{if(e.target.dataset.inv==='sort'){stS=e.target.value;drawCamp()}});
 
@@ -40,7 +40,7 @@ function campEquip(){
     ${pn?'':'<p class="cx-hint" style="margin:0">Ton équipement est déjà le meilleur que tu possèdes.</p>'}</section>
     ${keyStats(St)}${cxMore('equip_stats','Toutes les statistiques',`<div class="statgrid">${statRows(St)}</div>`,'Afficher')}
     <section class="cx-section"><h3 class="cx-section__label">Coffre · ${meta.stash.length+invWeapons().length} objet${meta.stash.length+invWeapons().length>1?'s':''}</h3>
-    ${meta.stash.length+invWeapons().length?invToolbar(list,'equip'):''}<div id="invGrid">${invGrid(list,'equip')}</div>${recBtn}</section>
+    ${meta.stash.length+invWeapons().length?invToolbar(list,'equip'):''}<div id="invGrid">${invGrid(list,'equip')}</div>${meta.stash.length?'<p class="cx-hint" style="margin:0">Pour recycler des objets : Forge › Recyclage.</p>':''}</section>
     <section class="cx-section"><h3 class="cx-section__label">Fragments de schéma</h3>${fragInv()}</section>`;
 }
 
@@ -114,8 +114,7 @@ function campDockHtml(){
   if(worn&&it.slot!=='arme')more.push(btn('','unequip',null,XSVG.out,'Retirer au coffre'));
   if(key[0]!=='w'&&Object.keys(it.aff).length)more.push(btn('','xftake',key,XSVG.take,'Prendre une affixe',it.lock));
   more.push(btn('','xfrecv',key,XSVG.take,'Recevoir une affixe'));
-  if(!worn&&!it.wid)more.push(btn(' cx-btn--danger','recycle',null,XSVG.recy,`Recycler · +${recyGain(it)} essence${primeBp(it)?' · 1 fragment':''}`,it.lock));
-  if(!worn&&it.wid&&wb&&wb.bp>0)more.push(btn(' cx-btn--danger','wrecyq',it.wid,XSVG.recy,`Recycler · +${wRecyEss(wb)} essence · 1 fragment`,it.lock));
+  if(!worn&&(!it.wid||(wb&&wb.bp>0)))more.push(btn('','gorecy1',key,XSVG.recy,'Recycler à la Forge',it.lock));
   const sk=key;if(sk!==cmpKey){cmpKey=sk;cmpPage=0}
   return `<div class="cx-dock__head"><h3 class="cx-dock__title" style="color:${r.c}">${esc(itemName(it))}${it.lock?` <span class="lockchip">${LOCK_SVG}</span>`:''}</h3>${nav}<button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-cact="dclose" aria-label="Fermer la fiche">${XSVG.x}</button></div>
     <span class="cx-dock__meta">${r.n} · ${SLOT[it.slot]}${it.wid?' · fabriquée':` · niveau ${it.lvl}`}${n?` · amélioré +${n}`:''}${worn?' · <b style="color:var(--heal)">Porté</b>':''}${idx>=0?` · ${idx+1} / ${list.length}`:''}</span>
@@ -141,3 +140,34 @@ function cxUndo(html,undo){let el=$('undoToast');if(!el){el=document.createEleme
   clearTimeout(undoT);el.innerHTML=`<div class="cx-toast" role="status"><span>${html}</span>${undo?'<button type="button">Annuler</button>':''}<div class="cx-toast__time"><i></i></div></div>`;el.hidden=false;
   const b=el.querySelector('button');if(b)b.onclick=()=>{el.hidden=true;clearTimeout(undoT);undo();saveMeta();syncEq();if(!$('camp').hidden)drawCamp();if(!$('bag').hidden)drawBag()};
   undoT=setTimeout(()=>{el.hidden=true},5000)}
+
+/* ---------- Forge › Recyclage : le seul endroit où l'on recycle ---------- */
+let recySel=new Set(),recyR=new Set(),recyAsk=false;
+const recyKey=it=>it.wid?'w:'+it.wid:'s:'+it.id;
+const recyEss=it=>it.wid?wRecyEss(bpdef(it.wid)):recyGain(it);
+const recyFrag=it=>it.wid?it.wid:primeBp(it);
+function recyAll(){return invList('equip').filter(it=>!it.wid||bpdef(it.wid).bp>0)}
+function recyList(){return recyAll().filter(it=>!recyR.size||recyR.has(it.r))}
+function recyPicked(){const all=recyAll();return [...recySel].map(k=>all.find(it=>recyKey(it)===k)).filter(it=>it&&!it.lock)}
+function recyCell(it){const k=recyKey(it),on=recySel.has(k);return `<button class="cx-cell${on?' is-src':''}" data-cact="rcsel" data-arg="${k}" ${it.lock?'aria-disabled="true"':''} style="--rar:${RARV[it.r]}" aria-pressed="${on}" aria-label="${esc(itemName(it))}${it.lock?', verrouillé':''}${on?', choisi':''}">${it.lock?`<span class="cx-cell__lock">${LOCK_SVG}</span>`:''}${GLYPH[it.slot]}${it.up?`<span class="cx-cell__up">+${it.up}</span>`:''}${on?'<span class="cx-pin cx-pin--src">−</span>':''}</button>`}
+function recyCells(){const all=recyAll(),list=recyList();return list.length?`<div class="cx-cells">${list.map(recyCell).join('')}</div>`:`<p class="cx-hint" style="margin:0">${all.length?'Aucun objet pour ce filtre.':'Rien à recycler : ton coffre est vide.'}</p>`}
+function campRecycle(){const all=recyAll(),list=recyList();for(const k of [...recySel])if(!all.some(it=>recyKey(it)===k&&!it.lock))recySel.delete(k);
+  const rs=[...new Set(all.map(it=>it.r))].sort((a,b)=>a-b),cnt={};for(const it of all)cnt[it.r]=(cnt[it.r]||0)+1;
+  const rch=r=>`<button class="cx-chip cx-chip--sm" data-cact="rcr" data-arg="${r}" aria-pressed="${recyR.has(r)}" style="${recyR.has(r)?'':`color:${RAR[r].c}`}">${RAR[r].n} <span class="n">${cnt[r]}</span></button>`;
+  const cell=it=>{const k=recyKey(it),on=recySel.has(k);return `<button class="cx-cell${on?' is-src':''}" data-cact="rcsel" data-arg="${k}" ${it.lock?'aria-disabled="true"':''} style="--rar:${RARV[it.r]}" aria-pressed="${on}" aria-label="${esc(itemName(it))}${it.lock?', verrouillé':''}${on?', choisi':''}">${it.lock?`<span class="cx-cell__lock">${LOCK_SVG}</span>`:''}${GLYPH[it.slot]}${it.up?`<span class="cx-cell__up">+${it.up}</span>`:''}${on?'<span class="cx-pin cx-pin--src">−</span>':''}</button>`};
+  const sel=list.filter(it=>!it.lock).length;
+  return `${backChip()}<section class="cx-section"><h3 class="cx-section__label">Rareté à recycler</h3><div class="cx-chips"><button class="cx-chip cx-chip--sm" data-cact="rcrall" aria-pressed="${!recyR.size}">Toutes <span class="n">${all.length}</span></button>${rs.map(rch).join('')}</div></section>
+    <section class="cx-section"><h3 class="cx-section__label">Objets · ${list.length}</h3>${all.length?invToolbar(list,'equip').replace('<span class="cx-count" id="invCount">','<span class="cx-count">'):''}
+    <div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-cact="rcall" ${sel?'':'disabled'}>Tout sélectionner · ${sel}</button><button class="cx-btn cx-btn--sm cx-btn--ghost" data-cact="rcnone" ${recySel.size?'':'disabled'}>Tout désélectionner</button></div>
+    <div id="invGrid">${recyCells()}</div>
+    <p class="cx-hint" style="margin:0">Les objets portés ne sont pas listés ; les objets verrouillés (cadenas) ne se recyclent pas.</p></section>`}
+function recyFoot(){const P=recyPicked();if(!P.length)return '<p class="cx-hint">Touche les objets à recycler.</p>';
+  const e=P.reduce((a,it)=>a+recyEss(it),0),f=P.filter(recyFrag).length;
+  if(recyAsk)return `<p class="cx-hint">Recycler ${P.length} objet${P.length>1?'s':''} ? Ils sont détruits contre ${e} essence${f?` et ${f} fragment${f>1?'s':''}`:''}.</p><div class="row"><button class="cx-btn cx-btn--ghost" data-cact="rcno">Annuler</button><button class="cx-btn cx-btn--danger" data-cact="rcok">Recycler</button></div>`;
+  return `<button class="cx-btn cx-btn--danger cx-btn--cost" data-cact="${P.length>1?'rcask':'rcok'}">Recycler · ${P.length} <span class="cx-price ess"><i class="cx-ess"></i>+${e}</span></button>`}
+function recyDo(){const P=recyPicked();if(!P.length)return;let e=0,f=0;
+  for(const it of P){e+=recyEss(it);
+    if(it.wid){const w=it.wid;delete meta.built[w];delete meta.wlv[w];if(meta.waff)delete meta.waff[w];if(meta.wfz)delete meta.wfz[w];if(meta.wlock)delete meta.wlock[w];giveFrag(w);f++}
+    else{meta.stash=meta.stash.filter(x=>x!==it);const pb=primeBp(it);if(pb){giveFrag(pb);f++}}}
+  meta.essence+=e;recySel.clear();recyAsk=false;SND.play('pick2');
+  toast(`${P.length} objet${P.length>1?'s':''} recyclé${P.length>1?'s':''} · +${e} essence${f?` · ${f} fragment${f>1?'s':''}`:''}`)}
