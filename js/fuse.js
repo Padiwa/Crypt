@@ -35,17 +35,35 @@ function fuseGroups(){const G2={};for(const it of gearAll()){if((it.up|0)>=rankC
 const keepOrder=(a,b)=>(isWorn(b)-isWorn(a))||(b.lvl-a.lvl)||((!!b.lock)-(!!a.lock))||(Object.keys(b.aff).length-Object.keys(a.aff).length);
 function fuseGroup(L){const keep=[...L].sort(keepOrder)[0];
   const eat=L.filter(x=>x!==keep&&fuseFree(x)).sort((a,b)=>(a.lvl-b.lvl)||(a.id-b.id))[0];return fuseGear(keep,eat)?keep:null}
-function fuseAll(){let n=0;// les moins chères d'abord, tant que l'or suffit
-  for(let guard=0;guard<500;guard++){const g=fuseGroups();if(!g.n)break;let any=false;for(const L of g.gear.sort((a,b)=>gFuseCost(a[0])-gFuseCost(b[0])))if(fuseGroup(L)){n++;any=true}for(const id of g.wpn){const d=wFuse(id);if(d){n+=d;any=true}}if(!any)break}return n}
+// ok(rareté) : limite « Tout fusionner » aux raretés choisies dans la Forge (toutes par défaut).
+function fuseAll(ok=()=>true){let n=0;// les moins chères d'abord, tant que l'or suffit
+  for(let guard=0;guard<500;guard++){const g=fuseGroups();if(!g.n)break;let any=false;for(const L of g.gear.filter(L=>ok(L[0].r)).sort((a,b)=>gFuseCost(a[0])-gFuseCost(b[0])))if(fuseGroup(L)){n++;any=true}for(const id of g.wpn.filter(id=>ok(wdef(id).r))){const d=wFuse(id);if(d){n+=d;any=true}}if(!any)break}return n}
 /* ---------- Forge › Fusion ---------- */
+// Filtre par rareté (aucune choisie = toutes) et ordre de la liste : la plus rare d'abord, ou la moins chère d'abord.
+let fuseR=new Set(),fuseSort='rar';
+const fuseOk=r=>!fuseR.size||fuseR.has(r);
+// Une ligne par fusion possible, armes et objets ensemble : rareté, prix (ou prix manquant), rang, nom.
+function fuseRows(g=fuseGroups()){const rows=[];
+  for(const id of g.wpn){const w=wdef(id),p=wFusePlan(id,1e15),q=wFusePlan(id),ok=q.n>0;rows.push({r:w.r,cost:ok?q.cost:q.need,ok,up:meta.wlv[id]|0,name:w.n,id,p,q})}
+  for(const L of g.gear){const it=L[0],keep=[...L].sort(keepOrder)[0],cost=gFuseCost(keep);rows.push({r:it.r,cost,ok:meta.gold>=cost,up:it.up|0,name:it.rid?it.name:it.type,L,keep})}
+  return rows}
+const fuseShown=(g)=>{const all=fuseRows(g);for(const r of [...fuseR])if(!all.some(x=>x.r===r))fuseR.delete(r);
+  return {all,rows:all.filter(x=>fuseOk(x.r)).sort(fuseSort==='cost'?(a,b)=>a.cost-b.cost||b.r-a.r:(a,b)=>b.r-a.r||b.up-a.up||a.name.localeCompare(b.name,'fr'))}};
 function campFusion(){const g=fuseGroups();
   let h=`<section class="cx-section"><h3 class="cx-section__label">Fusions possibles · ${g.n}</h3>`;
   if(!g.n)return h+`<p class="cx-hint" style="margin:0">Aucune fusion pour l'instant. Il faut deux exemplaires du même objet (même modèle, même rareté, même rang). Les objets verrouillés, portés ou scellés peuvent recevoir une fusion, mais ne sont jamais sacrifiés.</p></section>`;
-  h+='<div class="cx-rows">';
+  const {all,rows}=fuseShown(g),cnt={};for(const x of all)cnt[x.r]=(cnt[x.r]||0)+1;
+  const rch=r=>`<button class="cx-chip cx-chip--sm" data-cact="fzr" data-arg="${r}" aria-pressed="${fuseR.has(r)}" style="${fuseR.has(r)?'':`color:${RAR[r].c}`}">${RAR[r].n} <span class="n">${cnt[r]}</span></button>`;
+  const sch=(k,l)=>`<button class="cx-chip cx-chip--sm" data-cact="fzs" data-arg="${k}" aria-pressed="${fuseSort===k}">${l}</button>`;
+  h+=`<div class="cx-chips" aria-label="Rareté"><button class="cx-chip cx-chip--sm" data-cact="fzrall" aria-pressed="${!fuseR.size}">Toutes <span class="n">${all.length}</span></button>${Object.keys(cnt).map(Number).sort((a,b)=>a-b).map(rch).join('')}</div>
+    <div class="cx-chips" aria-label="Ordre">${sch('rar','Par rareté')}${sch('cost','Par prix')}</div><div class="cx-rows">`;
   const price=(c,ok)=>`<span class="cx-price${ok?'':' is-short'}"><span class="coin"></span>${c}</span>`;
-  for(const id of g.wpn){const w=wdef(id),p=wFusePlan(id,1e15),q=wFusePlan(id),c=RAR[w.r].c,ok=q.n>0;
-    h+=`<div class="cx-row"><span class="cx-row__k"><b style="color:${c}">${esc(w.n)}</b><small>Arme ${RAR[w.r].n.toLowerCase()} · ${CLS[w.cls].n} · ${wSpares(id).length} double${wSpares(id).length>1?'s':''} · ${rkTxt(meta.wlv[id])} → <b>${rkTxt(ok?q.R:p.R)}</b> · ${price(ok?q.cost:q.need,ok)}</small></span><button class="cx-btn cx-btn--sm cx-btn--primary" data-cact="wfuse" data-arg="${id}" ${ok?'':'disabled'}>Fusionner</button></div>`}
-  for(const L of g.gear){const it=L[0],keep=[...L].sort(keepOrder)[0],c=RAR[it.r].c,cost=gFuseCost(keep),ok=meta.gold>=cost;
-    h+=`<div class="cx-row"><span class="cx-row__k"><b style="color:${c}">${esc(it.rid?it.name:it.type)}</b><small>${RAR[it.r].n} · ${SLOT[it.slot]} · ${L.length} exemplaires ${rkTxt(it.up)} · garde <b>${esc(keep.name)}</b> niv. ${keep.lvl}${isWorn(keep)?' (porté)':''} → ${rkTxt((it.up|0)+1)} · ${price(cost,ok)}</small></span><button class="cx-btn cx-btn--sm cx-btn--primary" data-cact="gfuse" data-arg="${keep.id}" ${ok?'':'disabled'}>Fusionner</button></div>`}
+  for(const x of rows){const c=RAR[x.r].c;
+    if(x.id){const w=wdef(x.id);h+=`<div class="cx-row"><span class="cx-row__k"><b style="color:${c}">${esc(w.n)}</b><small>Arme ${RAR[w.r].n.toLowerCase()} · ${CLS[w.cls].n} · ${wSpares(x.id).length} double${wSpares(x.id).length>1?'s':''} · ${rkTxt(meta.wlv[x.id])} → <b>${rkTxt(x.ok?x.q.R:x.p.R)}</b> · ${price(x.cost,x.ok)}</small></span><button class="cx-btn cx-btn--sm cx-btn--primary" data-cact="wfuse" data-arg="${x.id}" ${x.ok?'':'disabled'}>Fusionner</button></div>`;continue}
+    const it=x.L[0],keep=x.keep;
+    h+=`<div class="cx-row"><span class="cx-row__k"><b style="color:${c}">${esc(x.name)}</b><small>${RAR[it.r].n} · ${SLOT[it.slot]} · ${x.L.length} exemplaires ${rkTxt(it.up)} · garde <b>${esc(keep.name)}</b> niv. ${keep.lvl}${isWorn(keep)?' (porté)':''} → ${rkTxt((it.up|0)+1)} · ${price(x.cost,x.ok)}</small></span><button class="cx-btn cx-btn--sm cx-btn--primary" data-cact="gfuse" data-arg="${keep.id}" ${x.ok?'':'disabled'}>Fusionner</button></div>`}
+  if(!rows.length)h+=`<p class="cx-hint" style="margin:0;padding:12px">Aucune fusion pour ce filtre.</p>`;
   return h+`</div><p class="cx-hint" style="margin:0">L'exemplaire gardé conserve ses affixes et son niveau ; le plus faible des doubles libres est sacrifié. Chaque rang ajoute 10 % aux statistiques de l'objet. Prix : ${BAL.fuseGold} or × 2 par rang déjà atteint × (rareté + 1, de 1 en Commun à 7 en Abyssal) × (1 + niveau de l'objet / 20). Rang maximum : ${BAL.mobRankMax.map((m,r)=>`${RAR[r].n.toLowerCase()} ${m}`).join(', ')}, légendaire et au-dessus 10.</p></section>`}
-function fusionFoot(){const g=fuseGroups();return g.n?`<button class="cx-btn cx-btn--primary" data-cact="fuseall">Tout fusionner · ${g.n}</button>`:''}
+// Pied : tout fusionner, ou seulement les raretés choisies.
+function fusionFoot(){const g=fuseGroups();if(!g.n)return '';const n=fuseR.size?fuseShown(g).rows.length:g.n;
+  return `<button class="cx-btn cx-btn--primary" data-cact="fuseall" ${n?'':'disabled'}>${fuseR.size?'Fusionner ces raretés':'Tout fusionner'} · ${n}</button>`}

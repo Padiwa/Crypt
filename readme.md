@@ -1,6 +1,6 @@
 # Crypte des Cendres — specs
 
-Oct 27, 2026 · @cms · version 123
+Oct 27, 2026 · @cms · version 124
 
 ## Vue d'ensemble
 
@@ -236,6 +236,13 @@ Au niveau L, les chances d'équipement, de relique et d'arme sont multipliées p
 **v106 · Rythme de progression réglable.** Tous les réglages de vitesse de progression sont regroupés dans `BAL_PRESETS` (haut de `js/data.js`), avec deux rythmes : `rapide` (par défaut) et `long` (environ 80 h). C'est un réglage de développement, pas un choix du joueur (aucun écran ne le propose) : on change de rythme en modifiant la ligne `BAL_MODE`.
 
 **v107 · Rythmes dans des fichiers.** Chaque rythme est un fichier : `js/rythmes/rapide.js` (rythme publié, par défaut) et `js/rythmes/long.js` (fin de jeu visée vers 80 h). Chacun définit `RYTHME` avec les valeurs du tableau ci-dessous, commentées ; `BAL_PRESETS` et `BAL_MODE` disparaissent de `data.js`. Le rythme chargé est celui de la balise `<script src="js/rythmes/….js">` d'`index.html`, placée avant `data.js` (et la liste `CORE` de `sw.js`). Pour un nouveau rythme, on copie un fichier et on change ses valeurs. Le simulateur charge n'importe quel fichier : `--rythme long` ou un chemin. Le joueur ne choisit toujours pas le rythme.
+
+**v124 · Téléphone : palier de Tourment et en-tête du Camp ; Fusion par rareté.**
+
+- Palier de Tourment (feuille Difficulté) : le sélecteur − / + ne rétrécit plus (`.cx-stepper{flex:none}`) ; avant, le + sortait du sélecteur jusqu'à 412 px de large. C'est le libellé qui passe à la ligne.
+- En-tête du Camp : l'aide et la croix sortaient de l'écran jusqu'à 390 px avec peu d'or, et même à 430 px avec 30 millions. Les montants sont maintenant courts (`fmtBig` : 98 765, 123 k, 30,5 M, arrondis vers le bas ; montant exact en info-bulle). Jusqu'à 460 px, l'or et l'essence s'empilent, le titre des feuilles passe à 21 px et les boutons de l'en-tête à 40 px. Aucun bouton coupé sur les écrans vérifiés de 320 à 430 px.
+- Forge › Fusion : puces de rareté (Toutes, puis une par rareté présente, avec le nombre de fusions ; plusieurs au choix, `fuseR`) et tri Par rareté (la plus rare d'abord, par défaut) ou Par prix (la moins chère d'abord, `fuseSort`). Armes et objets sont dans une seule liste. Avec un filtre, le pied devient « Fusionner ces raretés · n » et ne fusionne que ces raretés (`fuseAll(fuseOk)`).
+- Tests : 92 (suite interface).
 
 **v123 · Critiques des ultimes, vol de vie réservé au Guerrier, durée des ralentissements.** Trois écarts relevés en écrivant les [Formules des statistiques](https://claude.ai/artifact/MzhmUehH8qKTgZ2mCHyQZH).
 

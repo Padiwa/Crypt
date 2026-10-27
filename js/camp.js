@@ -390,7 +390,8 @@ function drawCamp(){
   if(campTab==='forge'&&forgeSub==='recy'){campTab='arsenal';arsView='recy'}
   const fk=campTab==='forge'?'forge_'+forgeSub:campTab==='arsenal'?(arsView==='recy'?'ars_recy':arsView==='coffre'?'ars_coffre':arsView==='heros'?'ars_heros':'arsenal'):campTab;
   {const h=document.getElementById('campHelp');if(h)h.href='aide/index.html#'+(campTab==='arsenal'&&(arsView==='coffre'||arsView==='recy'||arsView==='heros')?'camp-coffre':campTab==='pets'?'familiers':campTab==='forge'?(forgeSub==='affix'?'camp-affix':forgeSub==='seals'?'camp-affix':forgeSub==='fuse'?'camp-fusion':'camp-forge'):'camp-'+campTab)}
-  $('campGold').innerHTML=`<span class="coin"></span>${meta.gold}<span class="e"><span class="essi"></span>${meta.essence}</span>`;
+  // montants courts : sur téléphone, l'en-tête garde la place de l'aide et de la croix ; le montant exact reste en info-bulle
+  $('campGold').innerHTML=`<span class="g"><span class="coin"></span>${fmtBig(meta.gold)}</span><span class="e"><span class="essi"></span>${fmtBig(meta.essence)}</span>`;$('campGold').title=`${(meta.gold|0).toLocaleString('fr-FR')} or · ${(meta.essence|0).toLocaleString('fr-FR')} essence`;
   document.querySelectorAll('.tab').forEach(t=>{t.setAttribute('aria-selected',String(t.dataset.tab===campTab));const lk=tabLocked(t.dataset.tab);t.classList.toggle('is-locked',lk);if(lk)t.setAttribute('aria-description','verrouillé');else t.removeAttribute('aria-description')});
   const NC=viewNew().map(newCard).join('');
   const body=$('campBody'),M=CAMP_MORE[fk],more=M?cxMore(fk,M[0],M[1]):'';
@@ -496,7 +497,10 @@ function campClick(b){
     else if(a==='wfuse'){const w=wdef(arg),d=wFuse(arg);if(d){SND.play('leg');toast(`<b style="color:${RAR[w.r].c}">${esc(w.n)}</b> passe au ${rkTxt(meta.wlv[arg])}`)}}
     else if(a==='gfuse'){const it=gearAll().find(x=>x.id===+arg),L=it?gearAll().filter(x=>mKey(x)===mKey(it)&&(x.up|0)===(it.up|0)):[],k=L.length>=2?fuseGroup(L):null;if(k){SND.play('leg');toast(`<b style="color:${RAR[k.r].c}">${esc(k.name)}</b> passe au ${rkTxt(k.up)}`)}}
     else if(a==='fuse1'){const it=xfGet(arg),p=fusePartner(it);if(it&&p&&fuseGear(it,p)){SND.play('leg');toast(`<b style="color:${RAR[it.r].c}">${esc(it.name)}</b> passe au ${rkTxt(it.up)} · ${esc(p.name)} sacrifié`)}}
-    else if(a==='fuseall'){const n=fuseAll();if(n){SND.play('leg');toast(`${n} fusion${n>1?'s':''} faite${n>1?'s':''}`)}}
+    else if(a==='fzr'){const r=+arg;if(fuseR.has(r))fuseR.delete(r);else fuseR.add(r)}
+    else if(a==='fzrall')fuseR.clear();
+    else if(a==='fzs')fuseSort=arg==='cost'?'cost':'rar';
+    else if(a==='fuseall'){const n=fuseAll(fuseOk);if(n){SND.play('leg');toast(`${n} fusion${n>1?'s':''} faite${n>1?'s':''}`)}}
     else if(a==='lookcls'){lookCls=arg}
     else if(a==='look'){const [i,col]=arg.split('|');lookSet(lookC(),+i,col);if(typeof netMe==='function')netMe()}
     else if(a==='lookreset'){if(meta.look)delete meta.look[arg];if(typeof netMe==='function')netMe()}

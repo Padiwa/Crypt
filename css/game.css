@@ -120,6 +120,7 @@ header .btn{margin-left:auto}
 .essi{width:9px;height:9px;transform:rotate(45deg);background:var(--ess);display:inline-block;flex:none;margin:0 2px}
 .purse{display:flex;align-items:center;gap:6px;font-weight:700;color:var(--r2);font-size:17px;font-variant-numeric:tabular-nums}
 .purse .e{color:var(--ess);display:flex;align-items:center;gap:5px;margin-left:8px}
+.purse .g{display:flex;align-items:center;gap:6px}
 .tabs{display:flex;gap:3px;background:#141117;border:1px solid var(--line);border-radius:10px;padding:4px}
 .tab{flex:1 1 auto;border:0;background:none;border-radius:7px;padding:8px 3px;font-size:11px;letter-spacing:-.1px;font-weight:700;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis}
 .boss.obj b{color:#9fe3f0}
@@ -474,6 +475,11 @@ button.cx-line[aria-pressed="true"]::before{content:"→"; display:inline-block;
 .cx-sheet__head{display:flex; align-items:center; gap:var(--space-3); padding:var(--space-3) var(--space-3) var(--space-3) var(--space-4); border-bottom:1px solid var(--line); flex:none}
 .cx-sheet__title{margin:0; font:500 30px/1.05 var(--font-display); letter-spacing:.02em; color:var(--ink); white-space:nowrap}
 .cx-sheet__aside{margin-left:auto; display:flex; align-items:center; gap:var(--space-2); min-width:0}
+/* les boutons de l'en-tête (aide, fermer) ne rétrécissent jamais ; le titre se réduit sur téléphone (la croix du Camp sortait de l'écran) */
+.cx-sheet__aside .cx-icon-btn{flex:none}
+.cx-sheet__aside .purse{min-width:0;overflow:hidden;white-space:nowrap}
+/* téléphone : titre plus petit, or et essence l'un sous l'autre */
+@media (max-width:460px){.cx-sheet__head{gap:var(--space-2)}.cx-sheet__title{font-size:21px}.cx-sheet__head .cx-icon-btn{width:40px;height:40px;min-width:40px;min-height:40px}.cx-sheet .purse{flex-direction:column;align-items:flex-end;gap:0;font-size:13px;line-height:1.2}.cx-sheet .purse .e{margin-left:0}}
 .cx-sheet__body{flex:1 1 auto; overflow:auto; overscroll-behavior:contain; touch-action:pan-y; padding:var(--space-4); display:flex; flex-direction:column; gap:var(--space-5)}
 .cx-sheet__foot{flex:none; display:flex; gap:var(--space-2); padding:var(--space-3) var(--space-4) calc(env(safe-area-inset-bottom,0px) + var(--space-3)); border-top:1px solid var(--line); background:var(--panel)}
 .cx-sheet__foot>.cx-btn{flex:1 1 0}
@@ -531,6 +537,8 @@ button.cx-row:focus-visible{outline:2px solid var(--ember-hi); outline-offset:-2
 .cx-row__k small{font-size:12px; color:var(--muted); opacity:.9}
 .cx-row__v{display:inline-flex; align-items:center; gap:6px; font:700 15px/1.2 var(--font-body); color:var(--ink); text-align:right; white-space:nowrap}
 button.cx-row .cx-row__v::after{content:""; width:7px; height:7px; margin-left:4px; border-right:2px solid var(--muted); border-top:2px solid var(--muted); transform:rotate(45deg)}
+/* un sélecteur ± ne rétrécit jamais : sur un écran étroit, c'est le libellé qui passe à la ligne (le + du palier de Tourment était coupé) */
+.cx-stepper{flex:none}
 .cx-row .cx-stepper button{width:40px; min-height:40px}
 .cx-row .cx-stepper input{width:48px}
 

@@ -501,6 +501,8 @@ const wRankCap=id=>{const w=wdef(id);return !w||w.r>=3?UP_MAX:Math.min(UP_MAX,BA
 const fuseGold=(r,n,l=1)=>Math.round(BAL.fuseGold*Math.pow(2,n|0)*(r+1)*(1+(l|0)/20));
 const upMul=n=>1+.1*(n||0),NOSCALE={multi:1,pierce:1,abSoul:1,abWard:1,abPulse:1,abExec:1,abRift:1,abHunt:1};
 const fmtN=x=>(Math.round(x*10)/10).toLocaleString('fr-FR');
+// Montant court pour les en-têtes étroits : 98 765, puis 123 k, puis 5,4 M (arrondi vers le bas : on n'annonce jamais plus que ce qu'on a).
+const fmtBig=x=>{x=Math.floor(+x||0);return x>=1e6?(Math.floor(x/1e5)/10).toLocaleString('fr-FR')+' M':x>=1e5?Math.floor(x/1e3).toLocaleString('fr-FR')+' k':x.toLocaleString('fr-FR')};
 const rkTxt=n=>`rang ${(n||0)+1}`;
 const itemName=it=>it.name+(it.up?` · R${it.up+1}`:'');
 function weaponItem(c,id){const w=(id&&wdef(id)&&ownedW(id))?wdef(id):wdef(WPN[c][0].id),af={...w.aff,...(meta.waff[w.id]||{})};for(const k in af)if(af[k]==null)delete af[k];
