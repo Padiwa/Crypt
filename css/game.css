@@ -1013,6 +1013,12 @@ body:has(#camp:not([hidden])) .toast,body:has(#bag:not([hidden])) .toast{top:cal
 .cx-cmp__row.is-aby .k{color:#cdb2ff}
 .cx-cmp__row.is-aby .k::before{content:"◈ "; color:#b07cff}
 .cx-cmp__row.is-seal .k{color:#ffb3ea}
+/* Affixe sans effet pour la classe du héros (ex. vol de vie hors Guerrier) */
+.cx-cmp__row.is-off .k,.cx-cmp__row.is-off .o,.cx-cmp__row.is-off .n{color:var(--muted)}
+.cx-cmp__row.is-off .n{text-decoration:line-through;font-weight:400}
+.cx-cmp__row.is-off .k::after{content:"sans effet · " attr(data-off);display:block;font-size:11px;color:var(--blood-ink);font-weight:700}
+li.affoff{color:var(--muted)}
+.affoff__tag{display:inline-block;padding:0 6px;border:1px solid currentColor;border-radius:999px;font:700 11px/1.5 var(--font-body);color:var(--blood-ink);white-space:nowrap;text-decoration:none}
 .cx-cmp__row.is-seal .k::before{content:"✦ "; color:#ff5fd2}
 .cx-cmp__pager{display:flex; align-items:center; justify-content:space-between; gap:var(--space-2); padding:2px 2px 2px var(--space-2); border-top:1px solid var(--line); background:var(--sunk)}
 .cx-cmp__pager span{font:700 12px/1.2 var(--font-body); color:var(--muted); font-variant-numeric:tabular-nums}

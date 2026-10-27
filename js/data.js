@@ -90,7 +90,7 @@ const WPN={
     {id:'a4',n:'Ultime Soupir',r:3,dmg:24,aff:{multi:1,pierce:2,apsPct:15,critDmg:25}},
     {id:'a9',n:'Arc des Anciens Rois',r:4,dmg:28,aff:{multi:1,pierce:2,crit:10,critDmg:40,apsPct:15}},
     {id:'a10',n:'Corde du Premier Chasseur',r:4,dmg:31,aff:{multi:1,apsPct:22,crit:8,bossDmg:25,execute:30}},
-    {id:'a11',n:'Arc de la Veuve rouge',r:5,dmg:35,aff:{multi:2,pierce:1,critDmg:50,leech:2,crit:10,apsPct:15}},
+    {id:'a11',n:'Arc de la Veuve rouge',r:5,dmg:35,aff:{multi:2,pierce:1,critDmg:50,execute:35,crit:10,apsPct:15}},
     {id:'a12',n:'Baliste du Sang versé',r:5,dmg:38,aff:{multi:1,pierce:3,dmgPct:30,critDmg:45,crit:10,lowDmg:35}},
     {id:'a5',n:'Arc du Vide éternel',r:6,dmg:42,aff:{multi:2,pierce:2,apsPct:25,critDmg:60,crit:12,dmgPct:25,abRift:25}},
     {id:'a13',n:'Œil de l\'Abîme',r:6,dmg:46,aff:{multi:2,pierce:2,apsPct:20,critDmg:55,crit:12,bossDmg:35,abHunt:45}}],
@@ -207,11 +207,17 @@ for(const k in SANG)RGEAR['S'+k.slice(1)]={...SANG[k],r:5,sang:k};
 for(const k in ABY)RGEAR['B'+k.slice(1)]={...ABY[k],r:6,aby:k};
 for(const id of craftIds()){const b=bpdef(id);RELICS['F_'+id]={t:b.r-3,fz:1,tgt:id,n:`Relique forgée · ${b.n}`}}
 const baseRoll=(slot,l)=>slot==='dos'?2+Math.floor(l/25):slot==='armure'?Math.round(20+l*7):slot==='bottes'?6+Math.floor(l/4):slot==='anneau'?7+Math.floor(l*.8):3;
+// Affixe propre à certaines classes (cls) : sans effet pour les autres classes, ignorée dans les statistiques et signalée sur la fiche.
+const affOff=(k,c=heroCls)=>!!(AFF[k]&&AFF[k].cls&&!AFF[k].cls.includes(c));
+const affOnly=k=>AFF[k].cls.map(c=>CLS[c].n).join(' et ')+' seulement';
+// Objets des reliques : une affixe sans effet pour le héros qui fabrique (vol de vie hors Guerrier) est remplacée par la première de AFF_SUB absente de l'objet.
+const AFF_SUB=['regen','lowArmor','potHeal','antidote','hp','armor'];
+const rgAff=(T,c=heroCls)=>{const out=[];for(const k of T.aff)out.push(affOff(k,c)?AFF_SUB.find(x=>!T.aff.includes(x)&&!out.includes(x))||k:k);return out};
 // Fabrique un objet des reliques au niveau d'objet l.
 function rgItem(id,l){const T=RGEAR[id],slot=T.slot,r=T.r;
   const it={id:uid++,slot,r,lvl:l,base:{k:BASE_STAT[slot],v:Math.round(baseRoll(slot,l)*RB[r])},aff:{},name:T.n,type:RAR[r].n,rid:id};
   if(T.sang)it.sang=T.sang;if(T.aby)it.aby=T.aby;if(T.bio)it.bio=1;
-  for(const k of T.aff){const A=AFF[k];const v=A.r?A.r(l):5;it.aff[k]=Math.max(1,Math.round(v*RK[r]))}
+  for(const k of rgAff(T)){const A=AFF[k];const v=A.r?A.r(l):5;it.aff[k]=Math.max(1,Math.round(v*RK[r]))}
   if(T.pw)it.aff[T.pw]=AFF[T.pw].r(l);return it}
 // Niveau de mission le plus haut atteint, et le niveau d'objet qui en découle.
 const maxL=()=>Math.max(1,meta.maxL|0);
@@ -434,7 +440,7 @@ const AFF={
   novaPct:{t:v=>`+${v} % de dégâts de compétence`,r:l=>ri(20,45)},
   burn:{t:v=>`Embrase : ${v} dégâts par seconde`,w:1},
   multi:{t:v=>`+${v} projectile${v>1?'s':''} par tir`,r:l=>1,cls:['archer','magicien'],wt:.35},
-  leech:{t:v=>`${v} % des dégâts rendus en vie`,r:l=>ri(1,2)+(l>60?1:0)},
+  leech:{t:v=>`${v} % des dégâts rendus en vie`,r:l=>ri(1,2)+(l>60?1:0),cls:['guerrier']},
   reach:{t:v=>`+${v} % de portée de frappe`,r:l=>ri(6,12)+Math.floor(l*.08),cls:['guerrier']},
   splash:{t:v=>`+${v} % de rayon d'explosion`,r:l=>ri(10,20)+Math.floor(l*.15),cls:['magicien']},
   pierce:{t:v=>`Les carreaux transpercent ${v} ennemi${v>1?'s':''}`,r:l=>1,cls:['archer'],wt:.35},
@@ -509,7 +515,7 @@ const partLabel=p=>{if(p.hf)return '<span style="color:var(--rar-aby)">Fragment 
 
 function stats(eq){
   const b=CLS[heroCls].base,s={regenPct:0,dmg:b.dmg,aps:b.aps,hp:b.hp,crit:b.crit,critDmg:150,multi:0,pierce:0,burn:0,armor:b.armor,speed:b.speed,regen:0,cdr:b.cdr,novaPct:0,dmgPct:0,apsPct:0,leech:0,reach:0,splash:0,burnPct:0,chill:0,shock:0,skillRad:0,skillDur:0,dashCd:0,potHeal:0,magnetPct:0,lowArmor:0,lowDmg:0,auraSlow:0,goldPct:0,antidote:0,execute:0,bossDmg:0,xpPct:0,lootPct:0,fury:0,ultPct:0,frz:0,cold:0,shard:0,abSoul:0,abWard:0,abPulse:0,abExec:0,abRift:0,abHunt:0};
-  for(const it of Object.values(eq))if(it){const m=upMul(it.up);s[it.base.k]+=it.base.v*m;for(const k in it.aff)s[k]+=NOSCALE[k]?it.aff[k]:it.aff[k]*m}
+  for(const it of Object.values(eq))if(it){const m=upMul(it.up);s[it.base.k]+=it.base.v*m;for(const k in it.aff)if(!affOff(k))s[k]+=NOSCALE[k]?it.aff[k]:it.aff[k]*m}
   s.seals={};for(const it of Object.values(eq))if(it&&it.seal)s.seals[it.seal]=1;
   for(const id of allMods(heroCls))s[MODS[id].k]+=modVal(id,meta.mods[id]);
   const R=(G&&G.run)||{},rr=k=>R[k]||0;

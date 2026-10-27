@@ -190,7 +190,7 @@ function lootFlash(w,it){const now=performance.now(),el=$('lootFlash');
   if(now-lfT>350){lfT=now;SND.play(w.leg?'leg':'wish');vibe([30,40,30]);if(SET.flash){el.className='';void el.offsetWidth;el.className='on'+(w.leg?' leg':'')}}
 }
 function shatter(e){G.rings.push({x:e.x,y:e.y,t:0,max:95,col:'170,225,255'});burst(e.x,e.y,14,'#cfefff',180,3);SND.play('crit');G._sh=(G._sh||0)+1;
-  if(G._sh<4)for(const o of G.en){if(!o.dead&&o!==e&&Math.abs(o.x-e.x)<120&&Math.hypot(o.x-e.x,o.y-e.y)<85+o.r){o.slow=Math.max(o.slow,1.5);dmgEnemy(o,S.dmg*1.5,false)}}G._sh--}
+  if(G._sh<4)for(const o of G.en){if(!o.dead&&o!==e&&Math.abs(o.x-e.x)<120&&Math.hypot(o.x-e.x,o.y-e.y)<85+o.r){slowE(o,1.5);dmgEnemy(o,S.dmg*1.5,false)}}G._sh--}
 function kill(e){
   e.dead=true;G.kills++;
   if(NET.host)netSend({t:'kill',id:e.id,type:e.type,x:e.x|0,y:e.y|0,elite:e.elite||0,corr:e.corr?1:0,gen:e.gen||0,nl:e.noLoot?1:0});
@@ -244,7 +244,9 @@ function hurt(d){
   if(P.hp<=0){P.hp=0;NET.on?heroDown():gameOver()}
 }
 function heal(v){G.P.hp=Math.min(S.hp,G.P.hp+v)}
-function onHit(e,d){if(S.frz&&e.type!=='boss'&&Math.random()*100<S.frz){e.frz=1;e.slow=Math.max(e.slow,1.5)}if(S.chill&&Math.random()*100<S.chill)e.slow=2;if(S.shock&&Math.random()*100<S.shock)chain(e,d*.6)}
+// Durée d'un ralentissement : allongée par la durée des compétences (affixe, Persistance, Prolongation) ; un ralentissement plus long en cours est gardé.
+const slowT=t=>t*(1+(S.skillDur||0)/100),slowE=(e,t)=>{e.slow=Math.max(e.slow||0,slowT(t))};
+function onHit(e,d){if(S.frz&&e.type!=='boss'&&Math.random()*100<S.frz){e.frz=1;slowE(e,1.5)}if(S.chill&&Math.random()*100<S.chill)slowE(e,2);if(S.shock&&Math.random()*100<S.shock)chain(e,d*.6)}
 function gainMod(id){
   const m=MODS[id],c=MOD_RAR[m.r].c;
   if(meta.mods[id]==null){
@@ -263,7 +265,7 @@ function chain(src,d){
 function explode(s,primary,frost){
   const R=(frost?85*(1+S.skillRad/100):55)*(1+S.splash/100);
   G.rings.push({x:s.x,y:s.y,t:.22,max:R,col:'140,190,255'});burst(s.x,s.y,8,'#9fc8ff',140,3);
-  for(const e of G.en){if(e===primary||e.dead)continue;if(Math.abs(e.x-s.x)<R+e.r&&Math.hypot(e.x-s.x,e.y-s.y)<R+e.r){if(frost)e.slow=2.5;dmgEnemy(e,s.d*(frost?1:.6),false);if(S.burn){e.burnT=2.5;e.burnDps=S.burn}}}
+  for(const e of G.en){if(e===primary||e.dead)continue;if(Math.abs(e.x-s.x)<R+e.r&&Math.hypot(e.x-s.x,e.y-s.y)<R+e.r){if(frost)slowE(e,2.5);dmgEnemy(e,s.d*(frost?1:.6),false);if(S.burn){e.burnT=2.5;e.burnDps=S.burn}}}
 }
 function fireE(e,a,sp,d,r=7){G.eb.push({id:++G.bid,x:e.x+Math.cos(a)*e.r,y:e.y+Math.sin(a)*e.r,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,d,r,life:4})}
 function ring(e,n,sp){e.rot+=.27;for(let i=0;i<n;i++)fireE(e,e.rot+i/n*Math.PI*2,sp,e.dmg*.55,8)}
@@ -271,6 +273,8 @@ function ring(e,n,sp){e.rot+=.27;for(let i=0;i<n;i++)fireE(e,e.rot+i/n*Math.PI*2
 const hitFx=(e,d,crit)=>{SND.play(crit?'crit':'hit');e.flash=1;if(SET.dmgNum&&(crit||G.en.length<60))ftext(e.x+rand(-8,8),e.y-e.r,Math.round(d)+(crit?'!':''),crit?'#ffd34d':'#f1e8d6',crit?20:15)};
 // Faille (abyssal) : un critique peut lancer des éclairs en chaîne (70 % des dégâts) ; pas de chaîne depuis une chaîne.
 const riftTry=(e,d)=>{if(S.abRift&&!G._rift&&Math.random()*100<S.abRift){G._rift=1;chain(e,d*.7);G._rift=0}};
+// Coup qui peut être critique : les dégâts critiques s'appliquent (Pluie d'acier, météores).
+const critHit=(e,d)=>{const c=Math.random()*100<S.crit;dmgEnemy(e,c?d*S.critDmg/100:d,c)};
 // Récompense de capture (chaque joueur reçoit la sienne).
 function capReward(){const r=relicDrop(true);G.loot.relics.push(r);G.fresh++;G.gold+=60*G.level;
   toast(`<b style="color:var(--r2)">Cible capturée.</b> ${relicName(r)} et ${60*G.level} or. Rejoins l'extraction, ou traque la cible suivante.`)}
@@ -343,14 +347,14 @@ function doNova(){
     G.rings.push({x:P.x,y:P.y,t:.15,max:80,col:'255,200,120'});return;
   }
   G.rings.push({x:P.x,y:P.y,t:0,max:175*(1+S.skillRad/100),col:'150,210,255'});G.shake=Math.max(G.shake,5);
-  for(const e of G.en){const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy);if(d<175*(1+S.skillRad/100)+e.r){const crit=Math.random()*100<S.crit;e.slow=2.5*(1+S.skillDur/100);dmgEnemy(e,S.nova*(crit?S.critDmg/100:1),crit);const k=e.type==='boss'?80:420;e.kx+=dx/(d||1)*k;e.ky+=dy/(d||1)*k}}
+  for(const e of G.en){const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy);if(d<175*(1+S.skillRad/100)+e.r){const crit=Math.random()*100<S.crit;slowE(e,2.5);dmgEnemy(e,S.nova*(crit?S.critDmg/100:1),crit);const k=e.type==='boss'?80:420;e.kx+=dx/(d||1)*k;e.ky+=dy/(d||1)*k}}
   G.eb=G.eb.filter(b=>Math.hypot(b.x-P.x,b.y-P.y)>175*(1+S.skillRad/100));
 }
 const ultNeed=()=>Math.max(10,Math.round(ULT_N*(1-((S&&S.fury)||0)/100)));
 function doUlt(){
   const P=G.P,need=ultNeed();if(P.down)return;if((G.ult||0)<need)return;G.ult=0;const m=1+(S.ultPct||0)/100,RR=1+S.skillRad/100;G.shake=Math.max(G.shake,12);G.hshake=Math.max(G.hshake||0,G.cls==='guerrier'?11:7);SND.play('ult');
   if(G.cls==='guerrier'){const r=320*RR;P.inv=3;G.rings.push({x:P.x,y:P.y,t:0,max:r,col:'255,190,110'});G.rings.push({x:P.x,y:P.y,t:.12,max:r*.6,col:'255,110,60'});burst(P.x,P.y,50,'#ffb070',320,4);
-    for(const e of G.en){if(e.dead)continue;const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy);if(d<r+e.r){const k=e.type==='boss'?120:700;e.kx+=dx/(d||1)*k;e.ky+=dy/(d||1)*k;e.slow=2;dmgEnemy(e,S.nova*3*m,false)}}
+    for(const e of G.en){if(e.dead)continue;const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy);if(d<r+e.r){const k=e.type==='boss'?120:700;e.kx+=dx/(d||1)*k;e.ky+=dy/(d||1)*k;slowE(e,2);dmgEnemy(e,S.nova*3*m,false)}}
     toast('<b style="color:#ffd45a">Colère du Titan</b> : invulnérable pendant 3 s.');return}
   if(G.cls==='archer'){P.rain=3;P.rainT=0;toast('<b style="color:#ffd45a">Pluie d\'acier</b>');return}
   P.meteors=3;P.meteorT=0;toast('<b style="color:#ffd45a">Pluie de météores</b>');
@@ -358,11 +362,11 @@ function doUlt(){
 function ultTick(dt){const P=G.P;
   if(P.rain>0){P.rain-=dt;P.rainT-=dt;if(P.rainT<=0){P.rainT=.12;const R=450*(1+S.skillRad/100),m=1+(S.ultPct||0)/100,c=[];
       for(const e of G.en)if(!e.dead&&Math.hypot(e.x-P.x,e.y-P.y)<R)c.push(e);
-      for(let i=0;i<4&&c.length;i++){const e=c.splice(Math.floor(Math.random()*c.length),1)[0];G.rings.push({x:e.x,y:e.y,t:.2,max:30,col:'255,212,90'});G.hshake=Math.max(G.hshake||0,1.5);SND.play('rain');burst(e.x,e.y,6,'#ffd45a',160,2);dmgEnemy(e,S.nova*.7*m,Math.random()*100<S.crit)}}}
+      for(let i=0;i<4&&c.length;i++){const e=c.splice(Math.floor(Math.random()*c.length),1)[0];G.rings.push({x:e.x,y:e.y,t:.2,max:30,col:'255,212,90'});G.hshake=Math.max(G.hshake||0,1.5);SND.play('rain');burst(e.x,e.y,6,'#ffd45a',160,2);critHit(e,S.nova*.7*m)}}}
   if(P.meteors>0){P.meteorT-=dt;if(P.meteorT<=0){P.meteors--;P.meteorT=.35;const m=1+(S.ultPct||0)/100,R=150*(1+S.skillRad/100),c=G.en.filter(e=>!e.dead&&!e.downed&&Math.hypot(e.x-P.x,e.y-P.y)<520);
       const tg=c.find(e=>e.type==='boss')||c[Math.floor(Math.random()*c.length)],x=tg?tg.x:P.x+rand(-150,150),y=tg?tg.y:P.y+rand(-150,150);
       G.rings.push({x,y,t:0,max:R,col:'255,140,60'});G.rings.push({x,y,t:.15,max:R*.5,col:'255,220,140'});burst(x,y,40,'#ff8a3a',300,4);G.shake=Math.max(G.shake,10);G.hshake=Math.max(G.hshake||0,6);SND.play('boom');
-      for(const e of G.en){if(!e.dead&&Math.hypot(e.x-x,e.y-y)<R+e.r)dmgEnemy(e,S.nova*3*m,Math.random()*100<S.crit)}}}
+      for(const e of G.en){if(!e.dead&&Math.hypot(e.x-x,e.y-y)<R+e.r)critHit(e,S.nova*3*m)}}}
 }
 function doPotion(){
   const P=G.P;if(P.down)return;if(G.potions<=0||P.hp>=S.hp)return;G.potions--;SND.play('potion');if(sealOn('alch'))netFx('pot',P.x,P.y,SEAL_R);const h=S.hp*.45*(1+S.potHeal/100)*(P.psnT>0?.5:1);P.hp=Math.min(S.hp,P.hp+h);

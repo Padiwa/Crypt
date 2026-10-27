@@ -24,7 +24,7 @@ function bpCard(b){
   const own=isW&&ownedW(b.id),eq=isW&&curWid(b.cls)===b.id,craftable=b.r>=3,ready=craftable&&pc.every(x=>x>0),cost=b.craft;
   const lvl=relicItemLvl();
   const baseTxt=isW?`${b.dmg} dégâts de base`:baseTxtOf(b.slot,Math.round(baseRoll(b.slot,lvl)*RB[b.r]));
-  const lines=isW?Object.keys(b.aff).map(k=>`<li${AFF[k].aby?' class="abyp"':''}>${AFF[k].t(b.aff[k])}</li>`).join(''):b.aff.map(k=>`<li>${AFF_NAME[k]||k}</li>`).join('')+(b.pw?`<li class="abyp">${AFF[b.pw].t(AFF[b.pw].r(lvl))}</li>`:'');
+  const lines=isW?Object.keys(b.aff).map(k=>`<li${AFF[k].aby?' class="abyp"':''}>${AFF[k].t(b.aff[k])}</li>`).join(''):rgAff(b).map(k=>`<li>${AFF_NAME[k]||k}</li>`).join('')+(b.pw?`<li class="abyp">${AFF[b.pw].t(AFF[b.pw].r(lvl))}</li>`:'');
   const sp=isW?wSpares(b.id).length:0;
   let st=isW?(own?`<span class="owned">${eq?'Équipée':'Possédée'} · ${rkTxt(meta.wlv[b.id])}${sp?` · ${sp} double${sp>1?'s':''}`:''}${mine?'':' · '+CLS[b.cls].n}</span>`:''):'';
   let foot='';
@@ -227,7 +227,7 @@ function affFinder(){
   let h=`<section class="cx-section"><h3 class="cx-section__label">Chercher par affixe</h3><p class="cx-hint" style="margin:0">Ouvre une affixe, puis choisis pour chaque objet : <b>Source</b> (détruite, on prend cette affixe) ou <b>Cible</b> (elle reçoit l'affixe).</p><div class="cx-chips">${chip('all','Toutes')}${chip('off','Offensives')}${chip('def','Défensives')}${chip('uti','Utilitaires')}</div>`;
   if(!keys.length)return h+`<p class="cx-hint" style="margin:0">${all.length?'Aucune affixe de ce type sur tes objets.':'Aucun objet.'}</p></section>`;
   h+='<ul class="afind">'+keys.map(k=>{const L=by[k],b=L[0],open=afOpen===k,mine=d&&d.aff[k]!=null?affEff(d,k):null;
-    const row=`<button class="afrow" data-cact="afopen" data-arg="${k}" aria-expanded="${open}"><span class="afn">${AFF_NAME[k]||k}</span><span class="afv">${affShort(k,b.v)}</span><span class="afs">max · <b style="color:${RARV[b.it.r]}">${esc(itemName(b.it))}</b> · ${b.w}${L.length>1?` · ${L.length} objets`:''}${mine!=null?` · ta cible : ${affShort(k,mine)}`:''}</span><span class="afc" aria-hidden="true">${open?'▴':'▾'}</span></button>`;
+    const row=`<button class="afrow" data-cact="afopen" data-arg="${k}" aria-expanded="${open}"><span class="afn">${AFF_NAME[k]||k}${affOff(k)?` <span class="affoff__tag">${affOnly(k)}</span>`:''}</span><span class="afv">${affShort(k,b.v)}</span><span class="afs">max · <b style="color:${RARV[b.it.r]}">${esc(itemName(b.it))}</b> · ${b.w}${L.length>1?` · ${L.length} objets`:''}${mine!=null?` · ta cible : ${affShort(k,mine)}`:''}</span><span class="afc" aria-hidden="true">${open?'▴':'▾'}</span></button>`;
     if(!open)return `<li>${row}</li>`;
     return `<li class="open">${row}<ul>${L.map((o,i)=>{const isS=xf.src===o.key&&xf.k===k,isD=xf.dst===o.key,canS=xfSrcOk(o.key)&&!isD;
       return `<li><span><b style="color:${RARV[o.it.r]}">${esc(itemName(o.it))}</b>${o.it.lock?` <span class="li" aria-label="verrouillé">${LOCK_SVG}</span>`:''} · ${o.w}<br><span class="afv2">${affShort(k,o.v)}</span>${i===0?' <span class="cx-tag cx-tag--heal">max</span>':''}</span>

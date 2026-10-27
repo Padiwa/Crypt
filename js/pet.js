@@ -47,7 +47,7 @@ function petTick(dt){const Q=G.pet,ps=G.petS,P=G.P;if(!Q||!ps||G.over)return;
   const dx=tx-Q.x,dy=ty-Q.y,dd=Math.hypot(dx,dy);if(dd>900){Q.x=P.x;Q.y=P.y}else if(dd>4){const v=Math.min(dd,sp*dt*(dd>120?1.6:1));Q.x+=dx/dd*v;Q.y+=dy/dd*v;Q.face=Math.atan2(dy,dx)}
   Q.flap+=dt*10;Q.hit=Math.max(0,Q.hit-dt*4);
   const pow=ps.mul*(1+ps.pDmg/100),rate=1+ps.pAps/100;
-  const hitE=(e,d)=>{const crit=Math.random()*100<5+ps.pCrit;const dmg=d*(crit?S.critDmg/100:1);dmgEnemy(e,dmg,crit);if(ps.pLeech)heal(dmg*ps.pLeech/100);if(ps.pEcho){if(S.burn){e.burnT=2.5;e.burnDps=S.burn*.5}if(S.chill)e.slow=Math.max(e.slow||0,1.2)}};
+  const hitE=(e,d)=>{const crit=Math.random()*100<5+ps.pCrit;const dmg=d*(crit?S.critDmg/100:1);dmgEnemy(e,dmg,crit);if(ps.pLeech)heal(dmg*ps.pLeech/100);if(ps.pEcho){if(S.burn){e.burnT=2.5;e.burnDps=S.burn*.5}if(S.chill)slowE(e,1.2)}};
   if(Q.t==='corbeau'){Q.cd-=dt*rate;if(Q.cd<=0){const R=260*(1+ps.pLink/100),L=[];for(const e of G.en){if(e.dead||e.type==='cible')continue;const k=(e.x-Q.x)**2+(e.y-Q.y)**2;if(k<R*R)L.push([k,e])}
       L.sort((a,b)=>a[0]-b[0]);const n=1+Math.round(ps.pMulti);if(L.length){Q.cd=1.2;Q.hit=1;for(const [,e] of L.slice(0,n)){hitE(e,S.dmg*.6*pow);G.zaps.push({x1:Q.x,y1:Q.y,x2:e.x,y2:e.y,t:.1})}const e0=L[0][1];Q.face=Math.atan2(e0.y-Q.y,e0.x-Q.x)}else Q.cd=.3}}
   else if(Q.t==='follet'){if(!P.down){const still=!(inputVec().m>.15);heal(S.hp*.01*ps.mul*(1+ps.pHeal/100)*(still?2:1)*dt)}

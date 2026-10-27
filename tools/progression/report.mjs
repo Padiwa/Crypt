@@ -1,18 +1,21 @@
 // Crypte des Cendres — simulateur de progression : rapport HTML à partir des carrières simulées.
 //   node tools/progression/report.mjs resultats/*.jsonl --notes analyse.html --out rapport.html
 // Chaque .jsonl est une carrière (une ligne par mission) ; son fichier _jalons.json voisin donne les jalons.
+// Comparaison avec un banc précédent : --base ancien/ --base-label v105 (les carrières de même classe sont mises en regard :
+// valeur précédente sous chaque chiffre, courbes précédentes en pointillé).
 import fs from 'fs';
 import path from 'path';
 
 const args = process.argv.slice(2);
 const opt = (k, d) => { const i = args.indexOf('--' + k); if (i < 0) return d; const v = args[i + 1]; args.splice(i, 2); return v; };
 const out = opt('out', 'rapport.html'), notes = opt('notes', null), version = opt('version', '');
+const baseDir = opt('base', null), baseLabel = opt('base-label', 'avant');
 const files = args.filter((f) => f.endsWith('.jsonl'));
 const CLSN = { archer: 'Archer', guerrier: 'Guerrier', magicien: 'Magicien' };
 const COL = { archer: 'var(--c1)', guerrier: 'var(--c2)', magicien: 'var(--c3)' };
 const TIERN = ['Normal', 'Difficile', 'Cauchemar', ...['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'].map((r) => 'T' + r)];
 
-const runs = files.map((f) => {
+const load = (f) => {
   const rows = fs.readFileSync(f, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l));
   const jf = f.replace(/\.jsonl$/, '_jalons.json');
   const j = fs.existsSync(jf) ? JSON.parse(fs.readFileSync(jf, 'utf8')) : { miles: {} };
@@ -32,7 +35,12 @@ const runs = files.map((f) => {
     if (!x.died && x.tier === 12 && x.bank.maxL >= 50 && 'dos' in x.gear && Object.values(x.gear).filter((g) => g && g[0] >= 6).length >= 5) set('endgame', x);
   }
   return { f, cls, rows, miles };
-});
+};
+const runs = files.map(load);
+// banc précédent : une carrière par classe (le premier fichier trouvé pour la classe)
+const baseRuns = baseDir ? fs.readdirSync(baseDir).filter((f) => f.endsWith('.jsonl')).sort().map((f) => load(path.join(baseDir, f))) : [];
+const baseOf = (r) => baseRuns.find((b) => b.cls === r.cls) || null;
+const CMP = baseRuns.length > 0;
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const fr = (x, d = 0) => Number(x).toLocaleString('fr-FR', { maximumFractionDigits: d, minimumFractionDigits: d });
 const hfmt = (h) => h < 1 ? `${Math.round(h * 60)} min` : `${fr(h, 1)} h`;
@@ -54,43 +62,68 @@ function chart({ series, yLog = false, yTicks, yFmt = (v) => fr(v), xMax, xLabel
   for (const s of series) {
     const P = s.pts.filter((p) => !yLog || p[1] > 0); if (!P.length) continue;
     let d = ''; P.forEach((p, i) => { const x = X(p[0]), y = Y(p[1]); if (!i) d += `M${x},${y}`; else if (step) d += `H${x}V${y}`; else d += `L${x},${y}`; });
+    // série du banc précédent : trait fin en pointillé, fin de courbe en cercle vide
+    if (s.dash) { g += `<path d="${d}" fill="none" stroke="${s.col}" stroke-width="1.5" stroke-dasharray="5 4" stroke-linejoin="round" opacity=".75"/>`; const e = P[P.length - 1]; g += `<circle cx="${X(e[0])}" cy="${Y(e[1])}" r="3" fill="var(--panel)" stroke="${s.col}" stroke-width="1.5"/>`; continue; }
     g += `<path d="${d}" fill="none" stroke="${s.col}" stroke-width="2" stroke-linejoin="round"/>`;
     const e = P[P.length - 1]; g += `<circle cx="${X(e[0])}" cy="${Y(e[1])}" r="3.5" fill="${s.col}"/>`;
     for (const m of s.marks || []) g += `<circle cx="${X(m[0])}" cy="${Y(m[1])}" r="2.4" fill="var(--bad)"/>`;
   }
   return g + '</svg>';
 }
-const legend = (rs) => `<div class="legend">${rs.map((r) => `<span><i style="background:${COL[r.cls]}"></i>${CLSN[r.cls] || r.cls}</span>`).join('')}<span><i class="dot" style="background:var(--bad)"></i>mission perdue</span></div>`;
+const legend = (rs) => `<div class="legend">${rs.map((r) => `<span><i style="background:${COL[r.cls]}"></i>${CLSN[r.cls] || r.cls}</span>`).join('')}<span><i class="dot" style="background:var(--bad)"></i>mission perdue</span>${CMP ? `<span><i class="dash"></i>${esc(baseLabel)} (pointillé)</span>` : ''}</div>`;
 
-const xMax = Math.max(...runs.map((r) => r.rows.length ? r.rows[r.rows.length - 1].h : 1));
+const lastH = (r) => r.rows.length ? r.rows[r.rows.length - 1].h : 1;
+const xMax = Math.max(...runs.map(lastH), ...baseRuns.map(lastH));
 const rungVal = (r) => r.tier + Math.min(.9, (r.L - 1) / 55); // palier + fraction du niveau
+// séries du banc précédent (pointillé) puis du banc actuel, pour une même mesure
+const ser = (f, marks) => [...runs.map(baseOf).filter(Boolean).map((r) => ({ col: COL[r.cls], dash: true, pts: r.rows.map((x) => [x.h, f(x)]) })),
+  ...runs.map((r) => ({ col: COL[r.cls], pts: r.rows.map((x) => [x.h, f(x)]), marks: marks ? r.rows.filter((x) => x.died).map((x) => [x.h, f(x)]) : [] }))];
 
 // Progression : palier atteint au fil des heures
-const chProg = chart({ series: runs.map((r) => ({ col: COL[r.cls], pts: r.rows.map((x) => [x.h, rungVal(x)]), marks: r.rows.filter((x) => x.died).map((x) => [x.h, rungVal(x)]) })),
-  yTicks: TIERN.map((_, i) => i), yFmt: (v) => TIERN[Math.round(v)] || '', xMax, yLabel: 'Palier de difficulté au fil du temps', h: 340, step: true });
-const chLvl = chart({ series: runs.map((r) => ({ col: COL[r.cls], pts: r.rows.map((x) => [x.h, x.bank.maxL]) })), yTicks: [0, 10, 20, 30, 40, 50], xMax, yLabel: 'Plus haute mission réussie' , step: true });
-const chPow = chart({ series: runs.map((r) => ({ col: COL[r.cls], pts: r.rows.map((x) => [x.h, x.dps]) })), yLog: true, xMax, yLabel: 'Dégâts par seconde (échelle log)',
-  yTicks: [10, 100, 1e3, 1e4, 1e5, 1e6].filter((v, i, a) => true), yFmt: (v) => v >= 1e6 ? fr(v / 1e6) + ' M' : v >= 1e3 ? fr(v / 1e3) + ' k' : fr(v) });
-const chHp = chart({ series: runs.map((r) => ({ col: COL[r.cls], pts: r.rows.map((x) => [x.h, x.hp]) })), yLog: true, xMax, yLabel: 'Vie maximale (échelle log)', yTicks: [100, 1e3, 1e4, 1e5], yFmt: (v) => v >= 1e3 ? fr(v / 1e3) + ' k' : fr(v) });
+const chProg = chart({ series: ser(rungVal, true), yTicks: TIERN.map((_, i) => i), yFmt: (v) => TIERN[Math.round(v)] || '', xMax, yLabel: 'Palier de difficulté au fil du temps', h: 340, step: true });
+const chLvl = chart({ series: ser((x) => x.bank.maxL), yTicks: [0, 10, 20, 30, 40, 50], xMax, yLabel: 'Plus haute mission réussie', step: true });
+const chPow = chart({ series: ser((x) => x.dps), yLog: true, xMax, yLabel: 'Dégâts par seconde (échelle log)',
+  yTicks: [10, 100, 1e3, 1e4, 1e5, 1e6], yFmt: (v) => v >= 1e6 ? fr(v / 1e6) + ' M' : v >= 1e3 ? fr(v / 1e3) + ' k' : fr(v) });
+const chHp = chart({ series: ser((x) => x.hp), yLog: true, xMax, yLabel: 'Vie maximale (échelle log)', yTicks: [100, 1e3, 1e4, 1e5], yFmt: (v) => v >= 1e3 ? fr(v / 1e3) + ' k' : fr(v) });
+// valeur actuelle en gras, valeur du banc précédent dessous (avec le rapport pour les durées)
+const was = (txt) => CMP ? `<small class="was">${esc(baseLabel)} : ${txt}</small>` : '';
+const ratio = (a, b) => b > 0 ? ` · ×${fr(a / b, a / b >= 10 ? 0 : 1)}` : '';
 
 // Jalons
 const MILES = [['win', 'Première mission réussie'], ['slots4', 'Quatre emplacements équipés'], ['rank2', 'Un objet au rang 2'], ['relic1', 'Première relique ouverte'], ['own3', 'Premier objet légendaire'], ['L10', 'Mission de niveau 10'], ['forge_max', 'Bonus de la Forge au maximum'],
   ['L20', 'Mission de niveau 20'], ['win_Difficile', 'Réussite en Difficile'], ['win_Cauchemar', 'Réussite en Cauchemar'], ['slot_anneau2', '2e anneau débloqué'], ['win_Tourment I', 'Réussite en Tourment I'], ['own4', 'Premier objet ancestral'],
   ['L30', 'Mission de niveau 30'], ['win_Tourment V', 'Réussite en Tourment V'], ['win_Tourment VI', 'Réussite en Tourment VI'], ['own5', 'Premier objet sanguin'], ['own6', 'Premier objet abyssal'], ['slot_dos', 'Dos débloqué'], ['L40', 'Mission de niveau 40'], ['win_Tourment X', 'Réussite en Tourment X'], ['L50', 'Mission de niveau 50'], ['endgame', 'Fin de jeu : Tourment X niv. 50, 5 pièces abyssales']];
-const mileTable = `<div class="tw"><table><thead><tr><th>Jalon</th>${runs.map((r) => `<th class="num"><span class="sw" style="background:${COL[r.cls]}"></span>${CLSN[r.cls]}</th>`).join('')}</tr></thead><tbody>${MILES.map(([k, n]) => `<tr><td>${n}</td>${runs.map((r) => { const m = r.miles[k]; return `<td class="num">${m ? `<b>${hfmt(m.h)}</b><small>mission ${m.n}</small>` : '<span class="na">non atteint</span>'}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div>`;
+const thCls = runs.map((r) => `<th class="num"><span class="sw" style="background:${COL[r.cls]}"></span>${CLSN[r.cls]}</th>`).join('');
+const notReached = (r) => `<span class="na">non atteint</span><small>arrêt à ${hfmt(lastH(r))}</small>`;
+const mileCell = (r, k) => { const m = r.miles[k], b = baseOf(r), bm = b && b.miles[k];
+  return `<td class="num">${m ? `<b>${hfmt(m.h)}</b><small>mission ${m.n}</small>` : notReached(r)}${b ? was(bm ? hfmt(bm.h) + (m ? ratio(m.h, bm.h) : '') : 'non atteint') : ''}</td>`; };
+const mileTable = `<div class="tw"><table><thead><tr><th>Jalon</th>${thCls}</tr></thead><tbody>${MILES.map(([k, n]) => `<tr><td>${n}</td>${runs.map((r) => mileCell(r, k)).join('')}</tr>`).join('')}</tbody></table></div>`;
+
+// En bref (comparaison) : les grands jalons, les pertes et le butin en fin de parcours
+const deaths = (r) => r.rows.filter((x) => x.died).length;
+const perTier = (r, t, f) => { const R = r.rows.filter((x) => x.tier === t); return R.length ? R.reduce((a, x) => a + f(x), 0) / R.length : null; };
+const BRIEF = [['win_Tourment I', 'Réussite en Tourment I'], ['win_Tourment VI', 'Réussite en Tourment VI'], ['own6', 'Premier objet abyssal'], ['win_Tourment X', 'Réussite en Tourment X'], ['L50', 'Mission de niveau 50'], ['endgame', 'Fin de jeu']];
+const briefTable = CMP ? `<div class="tw"><table><thead><tr><th>Mesure</th>${thCls}</tr></thead><tbody>${BRIEF.map(([k, n]) => `<tr><td>${n}</td>${runs.map((r) => mileCell(r, k)).join('')}</tr>`).join('')}
+<tr><td>Missions jouées · perdues</td>${runs.map((r) => { const b = baseOf(r); return `<td class="num"><b>${r.rows.length} · ${deaths(r)}</b>${b ? was(`${b.rows.length} · ${deaths(b)}`) : ''}</td>`; }).join('')}</tr>
+${[[3, 'Tourment I'], [12, 'Tourment X']].map(([t, tn]) => [[`Reliques trouvées par mission en ${tn}`, (x) => x.relics, 0], [`Gardiens par mission en ${tn}`, (x) => x.boss, 0]].map(([n, f, d]) => `<tr><td>${n}</td>${runs.map((r) => { const v = perTier(r, t, f), b = baseOf(r), bv = b && perTier(b, t, f); return `<td class="num">${v == null ? '<span class="na">—</span>' : `<b>${fr(v, d)}</b>`}${b ? was(bv == null ? '—' : fr(bv, d)) : ''}</td>`; }).join('')}</tr>`).join('')).join('')}
+</tbody></table></div>` : '';
 
 // Morts et murs : par palier
-const wallRows = TIERN.map((n, t) => { const c = runs.map((r) => { const R = r.rows.filter((x) => x.tier === t); return R.length ? { n: R.length, d: R.filter((x) => x.died).length, h: R.reduce((a, x) => a + x.t + 45, 0) / 3600 } : null; }); return { n, c }; }).filter((w) => w.c.some(Boolean));
-const wallTable = `<div class="tw"><table><thead><tr><th>Palier</th>${runs.map((r) => `<th class="num">${CLSN[r.cls]}</th>`).join('')}</tr></thead><tbody>${wallRows.map((w) => `<tr><td>${w.n}</td>${w.c.map((c) => `<td class="num">${c ? `<b>${hfmt(c.h)}</b><small>${c.n} mission${c.n > 1 ? 's' : ''} · ${c.d} perdue${c.d > 1 ? 's' : ''}</small>` : '<span class="na">—</span>'}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+const tierStat = (r, t) => { const R = r.rows.filter((x) => x.tier === t); return R.length ? { n: R.length, d: R.filter((x) => x.died).length, h: R.reduce((a, x) => a + x.t + 45, 0) / 3600 } : null; };
+const wallRows = TIERN.map((n, t) => ({ n, t, c: runs.map((r) => tierStat(r, t)) })).filter((w) => w.c.some(Boolean) || runs.some((r) => baseOf(r) && tierStat(baseOf(r), w.t)));
+const wallTable = `<div class="tw"><table><thead><tr><th>Palier</th>${runs.map((r) => `<th class="num">${CLSN[r.cls]}</th>`).join('')}</tr></thead><tbody>${wallRows.map((w) => `<tr><td>${w.n}</td>${w.c.map((c, i) => { const b = baseOf(runs[i]), bc = b && tierStat(b, w.t);
+  return `<td class="num">${c ? `<b>${hfmt(c.h)}</b><small>${c.n} mission${c.n > 1 ? 's' : ''} · ${c.d} perdue${c.d > 1 ? 's' : ''}</small>` : '<span class="na">—</span>'}${b ? was(bc ? `${hfmt(bc.h)} · ${bc.d} perdue${bc.d > 1 ? 's' : ''}` : '—') : ''}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div>`;
 
 // Économie moyenne par mission, selon le palier
-const econ = runs.map((r) => { const by = {}; for (const x of r.rows) { const b = by[x.tier] || (by[x.tier] = { n: 0, gold: 0, ess: 0, rel: 0, op: 0, kills: 0, boss: 0, t: 0 }); b.n++; b.gold += x.gold; b.ess += x.ess; b.rel += x.relics; b.op += x.opened; b.kills += x.kills; b.boss += x.boss; b.t += x.t; } return { cls: r.cls, by }; });
-const econTable = `<div class="tw"><table><thead><tr><th>Classe · palier</th><th class="num">Durée</th><th class="num">Ennemis</th><th class="num">Gardiens</th><th class="num">Or</th><th class="num">Essence</th><th class="num">Reliques trouvées</th><th class="num">ouvertes</th></tr></thead><tbody>${econ.flatMap((e) => Object.entries(e.by).filter(([t]) => [0, 2, 3, 8, 12].includes(+t)).map(([t, b]) => `<tr><td>${CLSN[e.cls]} · ${TIERN[t]}</td><td class="num">${fr(b.t / b.n / 60, 1)} min</td><td class="num">${fr(b.kills / b.n)}</td><td class="num">${fr(b.boss / b.n, 1)}</td><td class="num">${fr(b.gold / b.n)}</td><td class="num">${fr(b.ess / b.n)}</td><td class="num">${fr(b.rel / b.n, 1)}</td><td class="num">${fr(b.op / b.n, 1)}</td></tr>`)).join('')}</tbody></table></div>`;
+const econOf = (r) => { const by = {}; for (const x of r.rows) { const b = by[x.tier] || (by[x.tier] = { n: 0, gold: 0, ess: 0, rel: 0, op: 0, kills: 0, boss: 0, t: 0 }); b.n++; b.gold += x.gold; b.ess += x.ess; b.rel += x.relics; b.op += x.opened; b.kills += x.kills; b.boss += x.boss; b.t += x.t; } return by; };
+const ECOLS = [[(b) => b.t / b.n / 60, 1, ' min'], [(b) => b.kills / b.n, 0, ''], [(b) => b.boss / b.n, 1, ''], [(b) => b.gold / b.n, 0, ''], [(b) => b.ess / b.n, 0, ''], [(b) => b.rel / b.n, 1, ''], [(b) => b.op / b.n, 1, '']];
+const econTable = `<div class="tw"><table><thead><tr><th>Classe · palier</th><th class="num">Durée</th><th class="num">Ennemis</th><th class="num">Gardiens</th><th class="num">Or</th><th class="num">Essence</th><th class="num">Reliques trouvées</th><th class="num">ouvertes</th></tr></thead><tbody>${runs.flatMap((r) => { const by = econOf(r), b = baseOf(r), bby = b ? econOf(b) : {};
+  return [0, 2, 3, 8, 12].filter((t) => by[t] || bby[t]).map((t) => `<tr><td>${CLSN[r.cls]} · ${TIERN[t]}</td>${ECOLS.map(([f, d, u]) => `<td class="num">${by[t] ? `<b>${fr(f(by[t]), d)}${u}</b>` : '<span class="na">—</span>'}${b ? was(bby[t] ? fr(f(bby[t]), d) + u : '—') : ''}</td>`).join('')}</tr>`); }).join('')}</tbody></table></div>`;
 
 const totM = runs.reduce((a, r) => a + r.rows.length, 0), totH = runs.reduce((a, r) => a + (r.rows.length ? r.rows[r.rows.length - 1].h : 0), 0);
 const notesHtml = notes && fs.existsSync(notes) ? fs.readFileSync(notes, 'utf8') : '';
 
-const html = `<title>Banc de progression</title>
+const html = `<meta charset="utf-8"><title>Banc de progression</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -121,6 +154,10 @@ svg .axis{fill:var(--muted);font:12px var(--f-body)}
 .legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted)}
 .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
 .legend i.dot{width:7px;height:7px;border-radius:50%}
+.legend i.dash{height:0;border-top:2px dashed var(--muted);border-radius:0}
+td small{display:block}
+th:first-child,td:first-child{min-width:9.5em}
+td small.was{color:var(--muted);font-style:italic}
 .tw{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
 table{border-collapse:collapse;width:100%;font-size:14px}
 th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
@@ -141,9 +178,10 @@ code{font:13px var(--f-mono)}
 <header style="display:flex;flex-direction:column;gap:12px">
   <span class="eyebrow">Crypte des Cendres${version ? ' · ' + esc(version) : ''} · simulateur de progression</span>
   <h1>Banc de progression</h1>
-  <p class="lead">Un bot joue de vraies missions de Survie avec les règles du jeu, puis passe au Camp comme le conseille le Parcours. Il monte d'un niveau après chaque sortie d'au moins deux manches, change de palier au plafond prévu, et redescend de trois niveaux après une mission perdue.</p>
-  <div class="facts"><span><b>${runs.length}</b> carrières</span><span><b>${fr(totM)}</b> missions</span><span><b>${fr(totH, 1)} h</b> de jeu simulées</span><span>temps de jeu = durée des manches + 45 s de Camp par mission</span></div>
+  <p class="lead">Un bot joue de vraies missions de Survie avec les règles du jeu, puis passe au Camp comme le conseille le Parcours. Il monte d'un niveau après chaque sortie d'au moins deux manches, change de palier au plafond prévu, redescend de trois niveaux après une mission perdue et d'un palier après deux pertes de suite. Il n'utilise que ce que le Camp a débloqué.</p>
+  <div class="facts"><span><b>${runs.length}</b> carrières</span><span><b>${fr(totM)}</b> missions</span><span><b>${fr(totH, 1)} h</b> de jeu simulées</span>${CMP ? `<span>comparé au banc <b>${esc(baseLabel)}</b> (en italique sous chaque chiffre)</span>` : ''}<span>temps de jeu = durée des manches + 45 s de Camp par mission</span></div>
 </header>
+${CMP ? `<section><h2>En bref</h2><p>Valeur ${version ? esc(version) : 'actuelle'} en gras, banc ${esc(baseLabel)} en italique dessous. Pour les durées, le rapport indique combien de fois plus long c'est aujourd'hui (×3 = trois fois plus de temps de jeu).</p>${briefTable}</section>` : ''}
 ${notesHtml}
 <section><h2>Jalons</h2><p>Temps de jeu cumulé pour atteindre chaque étape, et numéro de la mission.</p>${mileTable}</section>
 <section><h2>Courbes</h2>
@@ -154,7 +192,7 @@ ${notesHtml}
 </section>
 <section><h2>Temps passé par palier</h2>${wallTable}</section>
 <section><h2>Butin moyen par mission</h2><p>Paliers Normal, Cauchemar, Tourment I, VI et X. L'essence compte celle gagnée pendant la mission, avant les dépenses au Camp.</p>${econTable}</section>
-<section><h2>Méthode</h2><p>Simulateur : <code>tools/progression/</code>. Une carrière : <code>node tools/progression/run.mjs --cls archer --missions 400 --seed 1</code>, puis <code>node tools/progression/report.mjs resultats/*.jsonl</code>. Le hasard est fixé par la graine : même graine, même carrière. Le bot fuit en arc, tire à l'arrêt, ramasse réactifs et butin, utilise compétence, ultime, esquive et potions ; il joue moins bien qu'un bon joueur dans les situations serrées, donc les murs mesurés sont plutôt pessimistes et les durées plutôt longues.</p></section>
+<section><h2>Méthode</h2><p>Simulateur : <code>tools/progression/</code>. Une carrière : <code>node tools/progression/run.mjs --cls archer --missions 400 --seed 1</code>, puis <code>node tools/progression/report.mjs resultats/*.jsonl</code>. Le hasard est fixé par la graine : même graine, même carrière. Comparaison avec un banc précédent : <code>--base ancien/ --base-label v105</code>. Le bot équipe jusqu'à 300 reliques par mission, fuit en arc, tire à l'arrêt, ramasse réactifs et butin, utilise compétence, ultime, esquive et potions ; il joue moins bien qu'un bon joueur dans les situations serrées, donc les murs mesurés sont plutôt pessimistes et les durées plutôt longues.</p></section>
 </main>`;
 fs.writeFileSync(out, html);
 console.log('rapport :', out);

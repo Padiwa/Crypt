@@ -71,6 +71,7 @@ Progression dans le stockage du navigateur (`crypte-meta`), réglages dans `cryp
 ```
 node tools/progression/run.mjs --cls archer --missions 150 --seed 1 --out resultats/archer_1.jsonl
 node tools/progression/report.mjs resultats/*.jsonl --notes analyse.html --out rapport.html
+node tools/progression/report.mjs resultats/*.jsonl --base ancien/ --base-label v105 --out rapport.html   # comparé à un banc précédent
 node tools/progression/ablate.mjs resultats/archer_1_etat.json
 ```
 `run.mjs` écrit une ligne par mission (palier, niveau, mort, butin, puissance, économie), les jalons et l'état de la sauvegarde. `--caps 5,1,1,...` change le niveau à atteindre sur chaque palier avant de passer au suivant (13 paliers, de Normal à Tourment X). `report.mjs` trace les courbes et les tableaux ; `ablate.mjs` montre d'où vient la puissance du héros en retirant une source à la fois. Même graine, même carrière. Compter 5 à 15 s par mission.

@@ -28,18 +28,20 @@ SIM.camp = function () {
   if (meta.pets.length) { const pref = ['follet', 'corbeau', 'golem', 'furet']; const b = [...meta.pets].sort((a, c) => (c.rk * 100 + c.lv) - (a.rk * 100 + a.lv) || pref.indexOf(a.t) - pref.indexOf(c.t))[0]; meta.petEq = b.uid; }
   // Bonus de la Forge d'abord (conseil du Parcours), dans la limite de l'or
   if (U('bonus')) { const ord = ['str', 'vig', 'cel', 'alc', 'luc', 'for', 'cat', 'rea']; for (let g = 0; g < 60; g++) { const c = UPG.filter(u => lv(u.k) < u.max).sort((a, b) => upCost(a) - upCost(b) || ord.indexOf(a.k) - ord.indexOf(b.k))[0]; if (!c || meta.gold < upCost(c)) break; meta.gold -= upCost(c); meta.up[c.k] = lv(c.k) + 1; } }
-  // Fusion des doubles, puis fabrication de tout ce qui est prêt (armes de sa classe et objets ; pas les armes des autres classes)
-  if (U('fuse')) fuseAll();
+  // Fabrication de tout ce qui est prêt, le plus rare d'abord (armes de sa classe et objets ; pas les armes des autres classes), puis fusion des doubles.
+  // La fabrication passe avant la fusion : depuis que la fusion coûte de l'or (v106), « Tout fusionner » d'abord ne laissait plus de quoi fabriquer.
   for (let g = 0; g < 40 && U('craft'); g++) {
-    const id = craftIds().find(id => { const b = bpdef(id), pc = meta.parts[id]; return pc && pc.every(x => x > 0) && meta.gold >= b.craft && (b.kind !== 'arme' || b.cls === heroCls); });
+    const id = craftIds().filter(id => { const b = bpdef(id), pc = meta.parts[id]; return pc && pc.every(x => x > 0) && meta.gold >= b.craft && (b.kind !== 'arme' || b.cls === heroCls); }).sort((a, b) => bpdef(b).r - bpdef(a).r)[0];
     if (!id) break; const r = craftOne(id); if (!r) break; log.push('craft ' + id);
     SIM.mile('craft' + bpdef(id).r);
   }
+  // Avant « Tout fusionner », qui dépense tout l'or : emplacements à débloquer, talents, et le prestige avec la moitié de l'or au plus.
+  for (const u of SLOT_U) if (U('slots') && !slotOpen(u.k) && (!u.need || slotOpen(u.need)) && (meta.hfrag | 0) >= u.hf && meta.gold >= u.gold) { meta.hfrag -= u.hf; meta.gold -= u.gold; meta.slotU[u.k] = true; meta.gear[u.k] = null; SIM.mile('slot_' + u.k); }
+  if (U('bonus')) for (const t of TAL[heroCls]) if (!meta.tal[t.k] && meta.gold >= t.cost + 200) { meta.gold -= t.cost; meta.tal[t.k] = true; }
+  { let bud = meta.gold * .5; for (let g = 0; g < 50; g++) { const o = prOf(), c = prCost(o.lv); if (!(prOpen() || o.lv) || bud < c.gold || meta.essence < c.ess + 50) break; bud -= c.gold; meta.gold -= c.gold; meta.essence -= c.ess; o.lv++; } }
   if (U('fuse')) fuseAll();
   // Arme : la meilleure possédée
   { const base = curEq(); let best = curWid(), bs = -1; for (const w of SIMW()) { const s = SIMscore({ ...base, arme: weaponItem(heroCls, w.id) }); if (s > bs) { bs = s; best = w.id; } } meta.wpn[heroCls] = best; }
-  // Emplacements : débloquer dès que possible
-  for (const u of SLOT_U) if (U('slots') && !slotOpen(u.k) && (!u.need || slotOpen(u.need)) && (meta.hfrag | 0) >= u.hf && meta.gold >= u.gold) { meta.hfrag -= u.hf; meta.gold -= u.gold; meta.slotU[u.k] = true; meta.gear[u.k] = null; SIM.mile('slot_' + u.k); }
   // Équiper le meilleur
   { const plan = bestPlan(curEq(), meta.stash); for (const sl in plan) { const it = plan[sl]; meta.stash = meta.stash.filter(i => i !== it); const old = meta.gear[sl]; if (old) meta.stash.push(old); meta.gear[sl] = it; } }
   fuseAll();
