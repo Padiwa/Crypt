@@ -28,7 +28,7 @@ function bpCard(b){
   let st=isW?(own?`<span class="owned">${eq?'Équipée':'Possédée'} · ${rkTxt(meta.wlv[b.id])}${sp?` · ${sp} double${sp>1?'s':''}`:''}${mine?'':' · '+CLS[b.cls].n}</span>`:''):'';
   let foot='';
   if(craftable)foot=`<div class="parts">${b.frag.map((n,i)=>`<span class="part${pc[i]?' have':''}">${n}${pc[i]>1?' ×'+pc[i]:''}</span>`).join('')}</div>
-    <button class="btn main buy" data-cact="craft" data-arg="${b.id}" ${ready&&meta.gold>=cost?'':'disabled'}>${isW&&own?'Fabriquer un double':'Fabriquer'} · <span class="coin"></span>${cost}</button>`;
+    <button class="btn main buy cost-btn" data-cact="craft" data-arg="${b.id}" ${ready&&meta.gold>=cost?'':'disabled'}><span>${isW&&own?'Fabriquer un double':'Fabriquer'}</span>${costHtml([['or',cost],['pf',3,pc.filter(x=>x>0).length]])}</button>`;
   if(isW&&own&&!eq&&mine)foot+=`<button class="btn" data-cact="wequip" data-arg="${b.id}">Équiper</button>`;
   return `<div class="wpn${eq&&mine?' on':''}"><div class="nm" style="color:${r.c}">${esc(b.n)}</div><div class="meta">${r.n} · ${isW?'Arme · '+CLS[b.cls].n:SLOT[b.slot]+(b.bio?' · ❄ Abîmes gelés':'')} · ${baseTxt}${!isW?` · niveau ${lvl}`:''}</div>
     <ul>${lines||'<li>Aucun bonus</li>'}</ul>
@@ -43,9 +43,9 @@ function craftOne(id){const b=bpdef(id),pc=meta.parts[id];if(!b||b.r<3||!pc||!pc
   if(b.kind==='arme'){const g=gainWeapon(id);if(g==='new'&&b.cls===heroCls)meta.wpn[heroCls]=id;return g}
   const it=rgItem(id,relicItemLvl());meta.stash.push(it);return it}
 function arsBar(){const cp=craftPlan();
-  let h=`<div class="actions" style="margin:0"><button class="btn${cp.plan.length?' main':''}" data-cact="craftask" ${cp.plan.length?'':'disabled'}>Tout fabriquer${cp.plan.length?` · ${cp.plan.length}`:''}</button>${isUnl('fuse')?'<button class="btn" data-cact="gofuse">Fusionner à la Forge</button>':''}</div>`;
+  let h=`<div class="actions" style="margin:0"><button class="btn cost-btn${cp.plan.length?' main':''}" data-cact="craftask" ${cp.plan.length?'':'disabled'}><span>Tout fabriquer${cp.plan.length?` · ${cp.plan.length}`:''}</span>${cp.plan.length?costHtml([['or',cp.cost],['pf',cp.plan.length*3]]):''}</button>${isUnl('fuse')?'<button class="btn" data-cact="gofuse">Fusionner à la Forge</button>':''}</div>`;
   if(arsAsk==='craft'&&cp.plan.length){const cnt={};for(const id of cp.plan)cnt[id]=(cnt[id]||0)+1;
-    h+=`<div class="card"><p style="margin:0;font-size:14px">Fabriquer ${cp.plan.length} objet${cp.plan.length>1?'s':''} pour <b><span class="coin"></span> ${cp.cost} or</b> : ${Object.keys(cnt).map(id=>`<b style="color:${RAR[bpdef(id).r].c}">${esc(bpdef(id).n)}</b>${cnt[id]>1?' ×'+cnt[id]:''}`).join(', ')}.</p><div class="actions"><button class="btn main" data-cact="craftall">Fabriquer</button><button class="btn" data-cact="arsno">Annuler</button></div></div>`}
+    h+=`<div class="card"><p style="margin:0;font-size:14px">Fabriquer ${cp.plan.length} objet${cp.plan.length>1?'s':''} pour <b><span class="coin"></span> ${cp.cost} or</b> : ${Object.keys(cnt).map(id=>`<b style="color:${RAR[bpdef(id).r].c}">${esc(bpdef(id).n)}</b>${cnt[id]>1?' ×'+cnt[id]:''}`).join(', ')}.</p><div class="actions"><button class="btn main cost-btn" data-cact="craftall"><span>Fabriquer</span>${costHtml([['or',cp.cost],['pf',cp.plan.length*3]])}</button><button class="btn" data-cact="arsno">Annuler</button></div></div>`}
   return h}
 let arsView='coffre',arsR='w';
 // Armurerie › Mes armes : toutes les armes possédées, avec leurs valeurs réelles (rang et affixes ajoutées comprises).
@@ -107,7 +107,7 @@ function fusionSection(){
   for(let t=0;t<4;t++){const AV=relAvail(t),av=AV.length,cost=FUSE_COST[t],L=fuseTargets(t);if(!fuseTgt[t]||!L.includes(fuseTgt[t]))fuseTgt[t]=L[0]||null;const ok=av>=3&&meta.essence>=cost&&fuseTgt[t];
     if(!av)continue;
     h+=`<div class="frow"><span class="rgem" style="--tc:${RTIER[t].c}">${RELIC_SVG}</span><div class="fl"><b>3 × <span style="color:${RTIER[t].c}">${RTIER[t].n}</span> → relique forgée</b><span>${av} possédée${av>1?'s':''}${av<3?` · il en faut ${3-av} de plus`:''}${av>=3&&meta.essence<cost?` · il manque ${cost-meta.essence} essence`:''}</span></div>
-      <button class="btn buy" data-cact="rfuse" data-arg="${t}" ${ok?'':'disabled'}>Fusionner · <span class="essi"></span>${cost}</button></div>`;
+      <button class="btn buy cost-btn" data-cact="rfuse" data-arg="${t}" ${ok?'':'disabled'}><span>Fusionner</span>${costHtml([['rel',3,av,t],['ess',cost]])}</button></div>`;
     if(av>=3)h+=`<div class="ftgt"><span class="cx-hint" style="margin:0">Objet visé :</span><div class="cx-chips">${L.map(id=>{const b=bpdef(id);return `<button class="cx-chip cx-chip--sm" data-cact="rftgt" data-arg="${t}|${id}" aria-pressed="${fuseTgt[t]===id}">${esc(b.n)} <span class="n">${fragStatus(id)} / 3</span></button>`}).join('')}</div></div>`}
   return h+'</div></section>'}
 // File d'ouverture regroupée par type (relique + état), dans l'ordre de la première de chaque groupe.
@@ -143,7 +143,7 @@ function campRelics(){
         const st=n>=3?'<span class="rs ok">✓ prêt à fabriquer</span>':n===2?'<span class="rs comp">★ un fragment de plus</span>':`<span class="rs miss">${n} / 3</span>`;
         return `<li><div class="rrh"><span class="dot" style="background:${RAR[b.r].c}"></span><span class="rl">${esc(b.n)} · ${b.kind==='arme'?'arme':SLOT[b.slot].toLowerCase()}${own?' · possédée':''}</span>${st}</div></li>`}).join('')}</ul>
       <div class="cx-card__foot">${a[0]?ctl(false,'Intactes'):''}${a[1]?ctl(true,'Éclatantes'):''}
-        ${a[0]?`<button class="btn buy" data-cact="refine" data-arg="${id}" ${meta.essence<50||relicQN(id,false)>=a[0]?'disabled':''}>Raffiner en éclatante · <span class="essi"></span>50</button>`:''}</div></section>`}
+        ${a[0]?`<button class="btn buy cost-btn" data-cact="refine" data-arg="${id}" ${meta.essence<50||relicQN(id,false)>=a[0]?'disabled':''}><span>Raffiner en éclatante</span>${costHtml([['ess',50]])}</button>`:''}</div></section>`}
   else h+='<p class="cx-hint" style="margin:0">Touche une relique pour voir les objets qu\'elle contient et tes fragments. ★ : un fragment de plus complète un objet.</p>';
   return h+fusionSection()+qh+cxMore('relsrc','Où tombent les reliques',srcRows,'Afficher');
 }
@@ -318,7 +318,7 @@ function affixFoot(){const st=xfState(),s=xfGet(xf.src);
     return t?`<p class="cx-hint">${t}</p>`:''}
   if(!st.ok)return `<p class="cx-hint">${st.full?'Touche l\'affixe à remplacer sur la cible.':st.msg}</p>`;
   const cost=st.cost||xfCost(s),poor=meta.essence<cost,both=st.fuseOk&&st.canUp;
-  return `${both?`<div class="cx-chips" role="radiogroup" aria-label="Mode" style="justify-content:center"><button class="cx-chip cx-chip--sm" role="radio" data-cact="xfop" data-arg="fuse" aria-checked="${st.mode==='fuse'}">Fusionner (additionner)</button><button class="cx-chip cx-chip--sm" role="radio" data-cact="xfop" data-arg="up" aria-checked="${st.mode==='up'}">Remplacer</button></div>`:''}<div class="row"><button class="cx-btn cx-btn--ghost" data-cact="xfcancel">Annuler</button><button class="cx-btn cx-btn--primary cx-btn--cost" data-cact="xfok" ${poor?'disabled':''}>${st.mode==='fuse'?'Fusionner':'Transférer'} <span class="cx-price"><i class="cx-ess"></i>${cost}</span></button></div>
+  return `${both?`<div class="cx-chips" role="radiogroup" aria-label="Mode" style="justify-content:center"><button class="cx-chip cx-chip--sm" role="radio" data-cact="xfop" data-arg="fuse" aria-checked="${st.mode==='fuse'}">Fusionner (additionner)</button><button class="cx-chip cx-chip--sm" role="radio" data-cact="xfop" data-arg="up" aria-checked="${st.mode==='up'}">Remplacer</button></div>`:''}<div class="row"><button class="cx-btn cx-btn--ghost" data-cact="xfcancel">Annuler</button><button class="cx-btn cx-btn--primary cost-btn" data-cact="xfok" ${poor?'disabled':''}><span>${st.mode==='fuse'?'Fusionner':'Transférer'}</span>${costHtml([['ess',cost]])}</button></div>
     <p class="cx-hint">${poor?`Il te manque ${cost-meta.essence} essence.`:`${esc(itemName(s))} sera détruit.`}</p>`;
 }
 // Détruit une arme utilisée comme source : un double prend sa place s'il y en a ; sinon elle disparaît, et le héros reprend son arme de départ s'il la portait.
@@ -359,7 +359,7 @@ function prestSection(){
   let h=`<h3>Prestige · ${CLS[c].n}${o.lv?` · niveau ${o.lv}`:''}</h3>`;
   if(!op&&!o.lv)return h+`<p class="empty" style="font-size:13px">Le prestige se débloque quand toutes les améliorations permanentes sont au maximum (${nmax} / ${UPG.length}). Ensuite, chaque niveau de prestige donne 1 point à placer dans une statistique du ${CLS[c].n.toLowerCase()}, sans limite de niveau.</p>`;
   h+=`<p class="empty" style="font-size:13px">Chaque niveau de prestige donne 1 point à placer dans une statistique. Le prestige est propre à chaque héros et n'a pas de limite. Tu peux redistribuer tes points gratuitement.</p>
-  <div class="up"><b>Niveau de prestige ${o.lv} → ${o.lv+1}</b><button class="btn buy" data-cact="prbuy" ${meta.gold<cost.gold||meta.essence<cost.ess?'disabled':''}><span class="coin"></span>${cost.gold} · <span class="essi"></span>${cost.ess}</button>
+  <div class="up"><b>Niveau de prestige ${o.lv} → ${o.lv+1}</b><button class="btn buy cost-btn" data-cact="prbuy" ${meta.gold<cost.gold||meta.essence<cost.ess?'disabled':''}><span>Monter</span>${costHtml([['or',cost.gold],['ess',cost.ess]])}</button>
   <p style="grid-column:1/-1">${free?`<b style="color:var(--ember)">${free} point${free>1?'s':''} à placer</b>`:'Aucun point à placer'} · ${o.lv} au total</p></div><div class="ups">`;
   h+=PREST.map(q=>{const n=prPt(q.k,c),mx=q.max&&n>=q.max,v=n*q.per;
     return `<div class="up"><b>${q.n}${n?` · ${n}`:''}</b><button class="btn" data-cact="pradd" data-arg="${q.k}" ${!free||mx?'disabled':''} aria-label="Placer un point en ${q.n}">${mx?'Max':'+1'}</button>
@@ -370,7 +370,7 @@ function prestSection(){
 function campForge0(){
   const ups=UPG.map(u=>{const l=lv(u.k),mx=l>=u.max,c=upCost(u);
     return `<div class="up${mx?' is-max':''}"><b>${u.n}</b><p>${mx?u.d(l):(l?u.d(l)+' → ':'')+u.d(l+1)}</p><div class="pips">${Array.from({length:u.max},(_,i)=>`<i class="${i<l?'on':''}"></i>`).join('')}</div>
-      <button class="btn buy" data-cact="up" data-arg="${u.k}" ${mx||meta.gold<c?'disabled':''}>${mx?'Max':`<span class="coin"></span>${c}`}</button></div>`}).join('');
+      <button class="btn buy${mx?'':' cost-btn'}" data-cact="up" data-arg="${u.k}" ${mx||meta.gold<c?'disabled':''}>${mx?'Max':`<span>Améliorer</span>${costHtml([['or',c]])}`}</button></div>`}).join('');
   const nmax=UPG.filter(u=>lv(u.k)>=u.max).length;
   return `<h3>Améliorations permanentes · ${nmax} / ${UPG.length} au maximum</h3><div class="ups">${ups}</div><p class="cx-hint" style="margin:0">Elles valent pour tous tes héros. Toutes au maximum : le prestige s'ouvre (onglet Héros › Prestige). Les talents de chaque héros sont dans l'onglet Héros.</p>`;
 }
@@ -383,7 +383,7 @@ function heroKit(){const c=heroCls,K=kitOf(c),mr=mastOf(c).r;
     <p class="cx-hint" style="margin:0">Maîtrise du ${CLS[c].n.toLowerCase()} : rang ${mr} / 10. Le 2e sort et le 2e ultime s'ouvrent au rang 3, les 3es au rang 6 ; la maîtrise monte avec les ennemis abattus. Les dégâts suivent les dégâts de compétence, la portée et la durée des compétences, la recharge et les dégâts de l'ultime.</p>`}
 function heroTalents(){const C=CLS[heroCls],d=C.desc,k=d.indexOf('<b>');
   const tals=TAL[heroCls].map(t=>{const own=hasTal(t.k);
-    return `<div class="tal${own?' own':''}"><b>${t.n}</b><p>${t.d}</p>${own?'<span class="owned">Acquis</span>':`<button class="btn buy" data-cact="tal" data-arg="${t.k}" ${meta.gold<t.cost||!isUnl('bonus')?'disabled':''}><span class="coin"></span>${t.cost}</button>`}</div>`}).join('');
+    return `<div class="tal${own?' own':''}"><b>${t.n}</b><p>${t.d}</p>${own?'<span class="owned">Acquis</span>':`<button class="btn buy cost-btn" data-cact="tal" data-arg="${t.k}" ${meta.gold<t.cost||!isUnl('bonus')?'disabled':''}><span>Acheter</span>${costHtml([['or',t.cost]])}</button>`}</div>`}).join('');
   const n=TAL[heroCls].filter(t=>hasTal(t.k)).length;
   return `<p style="margin:0">${k>0?d.slice(0,k).trim():d}</p>${heroKit()}
     <h3>Talents · ${C.n} · ${n} / ${TAL[heroCls].length}</h3><div class="tals">${tals}</div>${isUnl('bonus')?'':`<p class="cx-hint" style="margin:0">${UNL_BY.bonus.need} pour acheter des talents.</p>`}`}
@@ -501,7 +501,7 @@ function campClick(b){
     if(a==='equip'){const it=meta.stash.find(i=>i.id===campSel.stash),k=it&&tgtKey(curEq(),it);if(it&&k){meta.stash=meta.stash.filter(i=>i!==it);wearGear(k,it);campSel={slot:k}}}
     else if(a==='equipoth'&&campSel&&campSel.oth){const [c,k]=campSel.oth.split('|'),it=(meta.gearBy[c]||{})[k],t=it&&tgtKey(curEq(),it);if(it&&t){meta.gearBy[c][k]=null;wearGear(t,it);campSel={slot:t};toast(`<span style="color:${RAR[it.r].c}">${esc(itemName(it))}</span> équipé sur ${esc(CLS[heroCls].n)}, retiré ${parCls(c).replace('par ','à ').replace("à le ","au ")}`)}}
     else if(a==='setsave'){const i=arg===''||arg==null?-1:+arg;if(i<0&&setsOf().length>=SET_MAX)return;const s=setSave(i<0?setsOf().length:i);toast(`<b>${esc(s.n)}</b> enregistré`)}
-    else if(a==='setwear'){const r=setWear(+arg),s=setsOf()[+arg];if(r){campSel=null;toast(`<b>${esc(s.n)}</b> porté`+(r.from.length?` · pris ${r.from.map(c=>parCls(c).replace('par ','à ').replace("à le ","au ")).join(' et ')}`:'')+(r.miss?` · ${r.miss} objet${r.miss>1?'s':''} introuvable${r.miss>1?'s':''} (recyclé ou fusionné)`:''))}}
+    else if(a==='setwear'){const r=setWear(+arg),s=setsOf()[+arg];if(r){campSel=null;toast(`<b>${esc(s.n)}</b> porté`+(r.from.length?` · pris ${r.from.map(c=>parCls(c).replace('par ','à ').replace("à le ","au ")).join(' et ')}`:'')+(r.miss?` · ${r.miss} objet${r.miss>1?'s':''} introuvable${r.miss>1?'s':''} (recyclé ou fusionné)`:'')+(r.mm?` · ${r.mm} mod${r.mm>1?'s':''} non remis (absent ou capacité dépassée)`:'')+(r.petMiss?' · familier introuvable (fusionné)':''))}}
     else if(a==='setdel'){const L=setsOf(),i=+arg,s=L[i];if(s){L.splice(i,1);cxUndo(`<b>${esc(s.n)}</b> supprimé`,()=>{setsOf().splice(i,0,s)})}}
     else if(a==='unequip'){const s=campSel.slot,it=meta.gear[s];if(it){meta.stash.push(it);meta.gear[s]=null;campSel={stash:it.id}}}
     else if(a==='toarsenal'){campTab='arsenal';campSel=null}

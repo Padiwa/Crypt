@@ -7,7 +7,9 @@ const SND=(()=>{
     sfx=ac.createGain();mus=ac.createGain();sfx.connect(master);mus.connect(master);
     noiseB=ac.createBuffer(1,ac.sampleRate,ac.sampleRate);const d=noiseB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
     vol();return true}
-  function vol(){if(!ac)return;sfx.gain.setTargetAtTime(SET.sfx,ac.currentTime,.02);mus.gain.setTargetAtTime(SET.music*.55,ac.currentTime,.2)}
+  function vol(){if(!ac)return;sfx.gain.setTargetAtTime(SET.sfx,ac.currentTime,.02);mus.gain.setTargetAtTime(SET.music*.55,ac.currentTime,.2);wake()}
+  // Batterie (v134) : musique coupée, le moteur audio s'endort 8 s après le dernier son et se réveille au suivant.
+  let idleT=0;function wake(){if(!ac||!unlocked||document.hidden)return;if(ac.state==='suspended')ac.resume();clearTimeout(idleT);if(SET.music<=0)idleT=setTimeout(()=>{if(ac&&SET.music<=0&&!document.hidden)ac.suspend()},8000)}
   function unlock(){if(!init())return;if(ac.state==='suspended')ac.resume();if(!unlocked){unlocked=true;music()}}
   addEventListener('pointerdown',unlock,true);addEventListener('keydown',unlock,true);
   document.addEventListener('visibilitychange',()=>{if(!ac)return;if(document.hidden)ac.suspend();else if(unlocked)ac.resume()});
@@ -53,7 +55,7 @@ const SND=(()=>{
   const GAP={hit:.045,crit:.07,gold:.22,rain:.06,hurt:.08,boom:.08,pick:.2,pick2:.15,pick3:.12,ui:.03};
   // Sons de ramassage (Réglages) : 'all' = tout, 'imp' = seulement rare et mieux, mods, reliques, fragments, sceaux ; 'off' = aucun
   const PICK={gold:'low',pick:'low',pick2:'imp',pick3:'imp'};
-  function play(k){if(!ac||!unlocked||SET.sfx<=0||!LIB[k])return;const pk=PICK[k],pm=SET.pickSnd||'imp';if(pk&&(pm==='off'||(pm==='imp'&&pk==='low')))return;const t=ac.currentTime,g=GAP[k]||.02;if(last[k]&&t-last[k]<g)return;last[k]=t;try{LIB[k]()}catch{}}
+  function play(k){if(!ac||!unlocked||SET.sfx<=0||!LIB[k])return;wake();const pk=PICK[k],pm=SET.pickSnd||'imp';if(pk&&(pm==='off'||(pm==='imp'&&pk==='low')))return;const t=ac.currentTime,g=GAP[k]||.02;if(last[k]&&t-last[k]<g)return;last[k]=t;try{LIB[k]()}catch{}}
   // Musique d'ambiance : bourdon grave filtré + cloches rares en mode mineur
   function music(){if(musOn||!ac)return;musOn=true;
     const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=380;f.Q.value=3;const g=ac.createGain();g.gain.value=.16;f.connect(g);g.connect(mus);

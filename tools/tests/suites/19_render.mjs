@@ -1,7 +1,8 @@
 // Rendu WebGL : retour dans l'appli (changement d'appli, écran verrouillé). Le moteur de rendu est reconstruit à neuf ;
 // l'ancien ne doit ni marquer le nouveau comme perdu (écran noir puis rendu standard), ni laisser ses textures en mémoire.
 // PixiJS est remplacé par la maquette fixtures/pixi-mock.js (pas de réseau en test).
-import { GAME, FIX, sleep } from '../lib.mjs';
+// Économie d'énergie (v134) : images dessinées par seconde selon l'écran, réglage « Économie de batterie ».
+import { GAME, FIX, sleep, newPage, startMission } from '../lib.mjs';
 
 async function glPage(b) {
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 } });
@@ -32,5 +33,32 @@ export const tests = [
     t.ok(s1.live <= s0.live + 40, `objets de la scène libérés (${s0.live} puis ${s1.live})`);
     const f0 = s1.f; await sleep(p, 300);
     t.ok(await p.evaluate((f0) => PIXI.__frames > f0 && !/Rendu WebGL interrompu/.test(document.body.textContent), f0), 'le jeu continue de dessiner, sans bascule vers le rendu standard');
+  } },
+  { name: 'batterie : rien n\'est dessiné derrière l\'accueil, le Camp et l\'écran de fin ; 5 images par seconde en pause (v134)', fn: async (b, t) => {
+    const p = t.track(await newPage(b));
+    await p.evaluate(() => { window.__n = 0; const r = window.render; window.render = () => { __n++; r(); }; });
+    const rate = async (ms = 1000) => { await p.evaluate(() => { __n = 0; }); await sleep(p, ms); return p.evaluate((ms) => Math.round(__n * 1000 / ms), ms); };
+    t.eq(await rate(), 0, 'accueil : aucune image');
+    await p.click('#tabbar [data-nav="arsenal"]'); t.eq(await rate(), 0, 'Camp : aucune image');
+    await p.click('#tabbar [data-nav="combat"]');
+    await startMission(p); const play = await rate();
+    t.ok(play >= 25, `mission : le jeu tourne normalement (${play} images par seconde)`);
+    await p.evaluate(() => openBag()); const pz = await rate(1500);
+    t.ok(pz >= 2 && pz <= 7, `pause : environ 5 images par seconde (${pz})`);
+    await p.evaluate(() => { closeBag(); missionSuccess(); }); await sleep(p, 300);
+    t.eq(await rate(), 0, 'écran de fin : aucune image');
+    await p.click('#againBtn'); const again = await rate();
+    t.ok(again >= 25, `Rejouer : le jeu repart (${again})`);
+  } },
+  { name: 'batterie : réglage « Économie de batterie » : 30 images par seconde et image en résolution 1× (v134)', fn: async (b, t) => {
+    const p = t.track(await newPage(b));
+    await p.evaluate(() => { window.__n = 0; const r = window.render; window.render = () => { __n++; r(); }; });
+    await p.click('#setBtn'); await p.click('#settings [data-set="eco"]');
+    t.ok(await p.evaluate(() => SET.eco === true && JSON.parse(localStorage.getItem('crypte-set') || '{}').eco !== false), 'réglage activé');
+    await p.evaluate(() => closeSettings());
+    await startMission(p); await p.evaluate(() => { __n = 0; }); await sleep(p, 1500);
+    const n = await p.evaluate(() => Math.round(__n / 1.5));
+    t.ok(n >= 20 && n <= 34, `mission : environ 30 images par seconde (${n})`);
+    t.eq(await p.evaluate(() => [dpr, cv.width === Math.round(innerWidth)]), [1, true], 'résolution 1×');
   } },
 ];

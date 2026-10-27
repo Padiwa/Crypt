@@ -61,6 +61,37 @@ export const tests = [
     await p.click('[data-cact="setwear"][data-arg="0"]');
     t.ok(await p.evaluate(() => /introuvable/.test(document.getElementById('toast').textContent)), 'objet manquant signalé');
   } },
+  { name: 'équipements enregistrés : mods du héros et de l\'arme, aura, familier et mods du familier (v134)', fn: async (b, t) => {
+    const p = t.track(await newPage(b));
+    const ids = await p.evaluate(() => {
+      heroCls = 'archer'; const of = (k) => Object.keys(MODS).filter((id) => modKind(id) === k && modOk(id, 'archer'));
+      const W = of('w'), H = of('h'), A = of('a'), P = of('p');
+      for (const id of [...W.slice(0, 3), ...H.slice(0, 3), ...A.slice(0, 2), ...P.slice(0, 3)]) meta.mods[id] = 0;
+      meta.pets = [{ uid: 1, t: 'follet', rk: 3, lv: 10, xp: 0 }, { uid: 2, t: 'corbeau', rk: 1, lv: 1, xp: 0 }]; meta.petEq = 1;
+      build('w').load.fill(null); build('h').load.fill(null); petBuild().load.fill(null);
+      build('w').load[0] = W[0]; build('w').load[1] = W[1]; build('h').load[0] = H[0]; meta.aura.archer = A[0] || null; petBuild().load[0] = P[0];
+      saveMeta(); return { W, H, A, P };
+    });
+    await campView(p, 'equip');
+    await p.click('#setsSec [data-cact="setsave"]');
+    t.ok(await p.evaluate(() => /5 mods/.test(document.getElementById('setsSec').textContent) && /Feu follet/.test(document.getElementById('setsSec').textContent)), 'la ligne montre les mods et le familier');
+    // tout change : autres mods, autre aura, autre familier
+    await p.evaluate((x) => { build('w').load.fill(null); build('w').load[2] = x.W[2]; build('h').load.fill(null); build('h').load[1] = x.H[1]; meta.aura.archer = x.A[1] || null; meta.petEq = 2; petBuild().load.fill(null); petBuild().load[1] = x.P[1]; saveMeta(); drawCamp(); }, ids);
+    t.ok(await p.evaluate(() => !!document.querySelector('#setsSec [data-cact="setwear"][data-arg="0"]:not([disabled])')), 'plus marqué « porté » quand les mods changent');
+    await p.click('#setsSec [data-cact="setwear"][data-arg="0"]');
+    const r = await p.evaluate(() => [build('w').load.slice(0, 4), build('h').load.slice(0, 2), meta.aura.archer || null, meta.petEq, petBuild().load.slice(0, 2)]);
+    t.eq(r, [[ids.W[0], ids.W[1], null, null], [ids.H[0], null], ids.A[0] || null, 1, [ids.P[0], null]], 'mods de l\'arme et du héros, aura, familier et ses mods remis');
+    t.ok(await p.evaluate(() => /porté/.test(document.querySelector('#setsSec .cx-set').textContent)), 'de nouveau « porté »');
+    // un mod disparu et un familier fusionné : signalés, le reste est remis
+    await p.evaluate((x) => { delete meta.mods[x.W[1]]; meta.pets = meta.pets.filter((q) => q.uid !== 1); meta.petEq = 2; build('w').load.fill(null); saveMeta(); drawCamp(); }, ids);
+    await p.click('#setsSec [data-cact="setwear"][data-arg="0"]');
+    t.ok(await p.evaluate(() => /1 mod non remis/.test(document.getElementById('toast').textContent) && /familier introuvable/.test(document.getElementById('toast').textContent)), 'mod absent et familier fusionné signalés');
+    t.eq(await p.evaluate((x) => [build('w').load[0] === x.W[0], meta.petEq], ids), [true, 2], 'le reste est remis, le familier actuel reste');
+    // un équipement enregistré avant la v134 (sans mods) ne touche ni aux mods ni au familier
+    await p.evaluate(() => { const s = setsOf('archer')[0]; for (const k of ['wm', 'hm', 'au', 'pet', 'pm']) delete s[k]; build('h').load.fill(null); saveMeta(); drawCamp(); });
+    await p.evaluate(() => { setWear(0); drawCamp(); });
+    t.eq(await p.evaluate(() => [build('h').load.filter(Boolean).length, meta.petEq]), [0, 2], 'ancien enregistrement : mods et familier inchangés');
+  } },
   { name: 'Armurerie › Par héros : ce que porte chaque héros, objet repris sur le héros joué', fn: async (b, t) => {
     const p = t.track(await newPage(b));
     await p.evaluate(() => { heroCls = 'archer'; meta.gear.armure = rgItem('L1', 50); meta.gearBy.guerrier.bottes = rgItem('L2', 50); meta.gearBy.guerrier.bottes.slot = 'bottes'; saveMeta(); });

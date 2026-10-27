@@ -2,6 +2,30 @@
 import { newPage, campView } from '../lib.mjs';
 
 export const tests = [
+  { name: 'coûts : chaque amélioration et chaque fusion affiche son prix, ressource nommée, avant l\'action ; Tout fusionner coûte ce qui est affiché (v134)', fn: async (b, t) => {
+    const p = t.track(await newPage(b));
+    const txt = (sel) => p.evaluate((sel) => { const e = document.querySelector(sel); return e ? e.innerText.replace(/\s+/g, ' ').trim() : null; }, sel);
+    // Forge › Bonus : « Améliorer · N or »
+    await p.evaluate(() => { meta.gold = 100000; meta.up = {}; saveMeta(); });
+    await campView(p, 'forge', 'up');
+    t.ok(/^Améliorer \d[\d  ]* or$/i.test(await txt('[data-cact="up"]')), `Forge › Bonus : ${await txt('[data-cact="up"]')}`);
+    // Forge › Fusion : Tout fusionner, nombre de fusions et prix exact
+    await p.evaluate(() => { meta.stash = []; for (let i = 0; i < 5; i++) { const it = genItem(30, 1); Object.assign(it, { r: 1, slot: 'armure', type: 'Cuirasse', name: 'Cuirasse', up: 0, lvl: 30 }); meta.stash.push(it); } saveMeta(); });
+    await campView(p, 'forge', 'fuse');
+    await p.waitForFunction(() => { const x = document.querySelector('[data-cact="fuseall"]'); return x && !x.disabled; });
+    const fa = await txt('[data-cact="fuseall"]'), want = +fa.match(/(\d[\d  ]*) or/)[1].replace(/\D/g, '');
+    const g0 = await p.evaluate(() => meta.gold); await p.click('[data-cact="fuseall"]');
+    t.eq(await p.evaluate((g0) => g0 - meta.gold, g0), want, `Tout fusionner : l'or dépensé est celui affiché (${fa})`);
+    t.ok(/\d+ fusions? /i.test(fa), 'nombre de fusions sur le bouton');
+    // Héros › Emplacements : fragments de harnais et or, ce qui manque en rouge
+    await p.evaluate(() => { meta.hfrag = 3; meta.gold = 100000; saveMeta(); });
+    await campView(p, 'equip');
+    t.ok(/12 fragments de harnais/i.test(await txt('[data-cact="slotopen"]')) && await p.evaluate(() => !!document.querySelector('[data-cact="slotopen"] .cost__p.is-short')), 'emplacement : fragments de harnais (manquants en rouge) et or');
+    // Mods : monter de rang · N essence
+    await p.evaluate(() => { meta.essence = 10; modTab = 'w'; modSel = 'ferocite'; saveMeta(); });
+    await campView(p, 'mods'); await p.evaluate(() => { modSel = 'ferocite'; drawCamp(); });
+    t.ok(/Monter de rang \d+ essence/i.test(await txt('[data-act="fuse"]') || ''), `mod : ${await txt('[data-act="fuse"]')}`);
+  } },
   { name: 'fabrication : niveau de la plus haute mission, arme neuve puis double', fn: async (b, t) => {
     const p = t.track(await newPage(b));
     const r = await p.evaluate(() => {

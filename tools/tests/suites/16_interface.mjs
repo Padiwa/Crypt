@@ -1,7 +1,19 @@
 // Interface (v124 à v130) : palier de Tourment et en-tête du Camp sur téléphone étroit, sous-onglets de la Forge, écran de fusion de 320 à 430 px, barre des onglets.
-import { newPage, campView, openMission } from '../lib.mjs';
+import { newPage, campView, openMission, startMission } from '../lib.mjs';
 
 export const tests = [
+  { name: 'montée de niveau : les bonus les uns sous les autres, nom et texte entiers, de 320 à 430 px (v134)', fn: async (b, t) => {
+    for (const w of [320, 360, 390, 430]) {
+      const p = t.track(await newPage(b, { w, h: w < 360 ? 640 : 844 }));
+      await startMission(p);
+      await p.evaluate(() => { G.run.multi = 1; G.run.dmg = 2; G.pend = 1; showLevelUp(); });
+      await p.waitForFunction(() => !$('lvlup').hidden);
+      const r = await p.evaluate(() => { const C = [...document.querySelectorAll('#choices .choice')].map((c) => c.getBoundingClientRect()), sh = document.querySelector('#lvlup .sheet').getBoundingClientRect();
+        const cut = [...document.querySelectorAll('#choices .choice b, #choices .choice p')].some((e) => e.scrollWidth > e.clientWidth + 1);
+        return { n: C.length, stacked: C.every((c, i) => !i || c.top >= C[i - 1].bottom), wide: C.every((c) => c.width > sh.width * .8), cut, fits: sh.bottom <= innerHeight + 1 && sh.top >= -1 }; });
+      t.eq(r, { n: 3, stacked: true, wide: true, cut: false, fits: true }, `${w} px`);
+    }
+  } },
   { name: 'palier de Tourment : le − et le + restent visibles et utilisables de 320 à 430 px', fn: async (b, t) => {
     for (const w of [320, 360, 390, 430]) {
       const p = await newPage(b, { w, h: 760 });

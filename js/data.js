@@ -245,7 +245,9 @@ meta.modSt=meta.modSt||{};meta.modCp=meta.modCp||{};
 if(!meta.v3){for(const id in meta.bp||{}){const w=wdef(id);if(w&&!meta.built[id])meta.gold+=w.bp||0}meta.bp={};meta.v3=1;meta.relics={lA1:[1,0],...(meta.relics||{})}}
 if(!MODES[meta.mode]||meta.mode==='breche')meta.mode='survie'; // la Brèche se choisit une fois la coopération connectée
 if(!Array.isArray(meta.relicQ))meta.relicQ=[];if(meta.relicSel){if(!meta.relicQ.length)meta.relicQ=[meta.relicSel];meta.relicSel=null}
-const saveMeta=()=>{try{localStorage.setItem('crypte-meta',JSON.stringify(meta))}catch{}};
+// metaVer : compteur de modifications de la sauvegarde (calculs gardés en cache, comme le plan de « Tout fusionner »)
+let metaVer=0;
+const saveMeta=()=>{metaVer++;try{localStorage.setItem('crypte-meta',JSON.stringify(meta))}catch{}};
 // Compte : un identifiant unique tiré une fois (gardé dans la sauvegarde) et un nom choisi dans Réglages › Compte.
 // En coopération, chaque joueur apparaît sous ce nom, précédé du niveau de prestige du héros qu'il joue.
 if(!meta.pid||!/^[A-Z2-9]{5}$/.test(meta.pid)){const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',r=new Uint8Array(5);try{crypto.getRandomValues(r)}catch{for(let i=0;i<5;i++)r[i]=Math.random()*256}
@@ -617,17 +619,39 @@ const parCls=c=>/^[AEIOUÉ]/.test(CLS[c].n)?`par l'${CLS[c].n}`:`par le ${CLS[c]
 const findItem=id=>meta.stash.find(i=>i.id===id)||allWorn().find(i=>i.id===id)||null;
 // Retire l'objet au héros qui le porte (s'il en a un) ; renvoie la classe du héros dépouillé.
 function unwear(it){const c=wornBy(it);if(!c||it.wid)return null;const k=wornSlot(it,c);meta.gearBy[c][k]=null;return c}
-/* Équipements enregistrés : meta.sets[classe] = [{n, g:{emplacement: id d'objet ou null}, w: arme}], 6 par héros au plus. */
+/* Équipements enregistrés : meta.sets[classe] = [{n, g:{emplacement: id d'objet ou null}, w: arme, wm: mods de l'arme, hm: mods du héros,
+   au: aura, pet: familier (uid ou null), pm: mods du familier}], 6 par héros au plus. Mods, aura et familier : depuis la v134
+   (un équipement enregistré avant n'a pas ces champs, « Porter » laisse alors les mods et le familier tels quels). */
 const SET_MAX=6;
 const setsOf=(c=heroCls)=>meta.sets[c]||(meta.sets[c]=[]);
 function setSave(i,c=heroCls){const L=setsOf(c),g={};for(const k of GEAR_KEYS())g[k]=meta.gearBy[c][k]?meta.gearBy[c][k].id:null;
-  const s={n:L[i]?L[i].n:`Équipement ${L.length+1}`,g,w:curWid(c)};if(L[i])L[i]=s;else if(L.length<SET_MAX)L.push(s);return s}
+  const s={n:L[i]?L[i].n:`Équipement ${L.length+1}`,g,w:curWid(c),wm:build('w',c).load.slice(),hm:build('h',c).load.slice(),au:meta.aura[c]||null,
+    pet:meta.petEq==null?null:meta.petEq,pm:petBuild().load.slice()};
+  if(L[i])L[i]=s;else if(L.length<SET_MAX)L.push(s);return s}
+// Remet des mods enregistrés dans une configuration (arme, héros ou familier) : seulement les mods possédés, permis au héros et du bon type,
+// dans les cases ouvertes, tant que la capacité suit. Renvoie le nombre de mods laissés de côté.
+function setMods(b,ids,c){let miss=0;for(let i=0;i<b.load.length;i++)b.load[i]=null;
+  (ids||[]).forEach((id,i)=>{if(!id)return;const rk=meta.mods[id];
+    if(rk==null||!MODS[id]||!modOk(id,c)||bKind(id)!==b.kind||modKind(id)==='a'||i>=b.slots||bUsed(b)+bDrain(b,id,rk,i)>bCap(b)){miss++;return}b.load[i]=id});
+  return miss}
+// Mods, aura et familier d'un équipement enregistré sont-ils ceux d'aujourd'hui ?
+function setModsSame(s,c=heroCls){if(!('hm' in s))return true;const eq=(a,b)=>a.length>=b.length?a.every((x,i)=>(x||null)===(b[i]||null)):eq(b,a);
+  return eq(build('w',c).load,s.wm||[])&&eq(build('h',c).load,s.hm||[])&&(meta.aura[c]||null)===(s.au||null)&&(meta.petEq==null?null:meta.petEq)===s.pet&&eq(petBuild().load,s.pm||[])}
 // Porte un équipement enregistré : chaque objet est pris dans le coffre ou sur un autre héros. Renvoie {done, miss, from}.
 function setWear(i,c=heroCls){const s=setsOf(c)[i];if(!s)return null;const g=meta.gearBy[c];let done=0,miss=0;const from=new Set();
   for(const k of GEAR_KEYS()){if(!(k in s.g))continue;const id=s.g[k],cur=g[k]||null;if(cur&&cur.id===id)continue;
     if(id==null){if(cur){meta.stash.push(cur);g[k]=null;done++}continue}
     const it=findItem(id);if(!it||keySlot(k)!==it.slot){miss++;continue}
     const o=unwear(it);if(o)from.add(o);meta.stash=meta.stash.filter(x=>x!==it);if(cur)meta.stash.push(cur);g[k]=it;done++}
-  if(s.w&&ownedW(s.w)&&wclsOfD(s.w)===c&&meta.wpn[c]!==s.w){meta.wpn[c]=s.w;done++}else if(s.w&&!ownedW(s.w))miss++;
-  return {done,miss,from:[...from]}}
+  const wOk=!s.w||ownedW(s.w)&&wclsOfD(s.w)===c;
+  if(s.w&&wOk&&meta.wpn[c]!==s.w){meta.wpn[c]=s.w;done++}else if(s.w&&!wOk)miss++;
+  // v134 : mods de l'arme (si c'est bien l'arme enregistrée), aura et mods du héros, familier et ses mods
+  let mm=0,petMiss=false;
+  if('hm' in s){
+    if(wOk)mm+=setMods(build('w',c),s.wm,c);
+    if(s.au==null||meta.mods[s.au]!=null&&modOk(s.au,c))meta.aura[c]=s.au||null;else mm++;
+    mm+=setMods(build('h',c),s.hm,c);
+    if(s.pet==null)meta.petEq=null;else if(meta.pets.some(p=>p.uid===s.pet))meta.petEq=s.pet;else petMiss=true;
+    mm+=setMods(petBuild(),s.pm,c)}
+  return {done,miss,from:[...from],mm,petMiss}}
 

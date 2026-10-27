@@ -151,7 +151,7 @@ function modDetail(id){
       why=bs.i<0?`Toutes les cases de ${where} sont prises. Retire un mod d'abord.`:!fits?`Capacité insuffisante : il faut ${bs.d} points, il en reste ${Math.max(0,cap-u)}.`:''}
     fuseBlocked=eq&&u-bDrain(b,id,rk,slot)+bDrain(b,id,rk+1,slot)>cap;
   }
-  const fuse=maxed?'<span class="owned" style="align-self:center;flex:1;text-align:center">Rang max</span>':`<button class="cx-btn cx-btn--cost" data-act="fuse" ${meta.essence<fc||fuseBlocked?'disabled':''}>Fusionner <span class="cx-price ess"><i class="cx-ess"></i>${fc}</span></button>`;
+  const fuse=maxed?'<span class="owned" style="align-self:center;flex:1;text-align:center">Rang max</span>':`<button class="cx-btn cost-btn" data-act="fuse" ${meta.essence<fc||fuseBlocked?'disabled':''}><span>Monter de rang</span>${costHtml([['ess',fc]])}</button>`;
   if(!why&&fuseBlocked&&!maxed)why='Monter ce mod de rang dépasserait la capacité.';
   return `<span class="cx-dock__meta">${MOD_RAR[m.r].n} · ${costLine} · rang ${rk} / ${m.max}</span>
     <p>${m.t(modVal(id,rk))}${maxed?'':` <span style="color:var(--muted)">· rang ${rk+1} : ${m.t(modVal(id,rk+1))}</span>`}</p>
@@ -169,7 +169,7 @@ function starBlock(id,b,k,slot){const m=MODS[id],rk=meta.mods[id],st=modSt(id),c
   const why=!maxed?`Monte d'abord ce mod au rang ${m.max}.`:cp<c.cp?`Il faut ${c.cp} copie${c.cp>1?'s':''} de ce mod (tu en as ${cp}). Les doublons trouvés en mission deviennent des copies.`:meta.essence<c.ess?`Il manque ${c.ess-meta.essence} essence.`:!capOk?'La surcharge dépasserait la capacité de ce build.':'';
   return `<div class="surch"><div class="sh"><b>Surcharge</b>${stars}<span class="cx-hint" style="margin:0">${cp} copie${cp>1?'s':''}</span></div>
     <p style="margin:0;font-size:14px">Étoile ${st+1} : <b>${m.t(modVal(id,rk,st+1))}</b>${!maxed?` (au rang ${m.max} : ${m.t(modVal(id,m.max,st+1))})`:''}${nd?` · coût en capacité +${nd}`:''}</p>
-    <div class="actions"><button class="btn buy" data-act="star" ${ok?'':'disabled'}>Surcharger · ${c.cp} copie${c.cp>1?'s':''} + ${c.ess} essence</button>${dis}</div>${why?`<p class="empty" style="font-size:13px;margin:0">${why}</p>`:''}</div>`}
+    <div class="actions"><button class="btn buy cost-btn" data-act="star" ${ok?'':'disabled'}><span>Surcharger</span>${costHtml([['cp',c.cp,cp],['ess',c.ess]])}</button>${dis}</div>${why?`<p class="empty" style="font-size:13px;margin:0">${why}</p>`:''}</div>`}
 function alignPanel(b){
   const cost=bAlignCost(b),mt=b.mast;
   let h=`<h3>Alignement · ${b.kind==='w'?'arme':b.kind==='p'?'familier':'héros'}</h3><p class="empty" style="font-size:13px">Aligne une case sur une polarité : un mod de la même polarité y coûte moitié moins, un autre 25 % de plus. Chaque alignement coûte de l'essence (200, 400, 800 puis 1 600)${b.kind==='p'?'.':` et remet la maîtrise ${b.de} à 0.`}</p>
@@ -177,7 +177,7 @@ function alignPanel(b){
   if(alSel){const cur=b.pol[alSel.i];
     h+=`<div class="alrow">${Object.keys(POL).map(k=>`<button class="chip" data-act="alpol" data-p="${k}" aria-pressed="${alSel.p===k}" ${cur===k?'disabled':''}><span style="color:${POL[k].c}">${POL[k].s}</span> ${POL[k].n}</button>`).join('')}</div>`;
     if(alSel.p)h+=`<div class="card"><p style="margin:0;font-size:14px">Aligner la case ${alSel.i+1} en <b style="color:${POL[alSel.p].c}">${POL[alSel.p].n}</b> pour <b>${cost} essence</b>.${b.kind==='p'?'':` La maîtrise ${b.de} repasse du rang ${mt.r} à 0${mt.r?` : −${mt.r} de capacité jusqu'à ce que tu la regagnes en mission`:''}.`}</p>
-      <div class="actions"><button class="btn main" data-act="alok" ${meta.essence<cost?'disabled':''}>Aligner · ${cost} essence</button><button class="btn" data-act="alcancel">Annuler</button></div>
+      <div class="actions"><button class="btn main cost-btn" data-act="alok" ${meta.essence<cost?'disabled':''}><span>Aligner</span>${costHtml([['ess',cost]])}</button><button class="btn" data-act="alcancel">Annuler</button></div>
       ${meta.essence<cost?`<p class="empty" style="font-size:13px">Il te manque ${cost-meta.essence} essence.</p>`:''}</div>`;
     else h+='<p class="empty" style="font-size:13px">Choisis la polarité de cette case.</p>';
   }
@@ -209,7 +209,7 @@ function renderMods(rootId){
   const slotHtml=i=>{if(i>b.slots)return '';if(i>=b.slots){const nx=i===b.slots;return `<div class="cx-modslot"><span class="cx-modslot__pol" style="cursor:default">Verrouillée</span><div class="cx-mod cx-mod--empty cx-mod--locked"><b>${b.kind==='p'?'Familier ★★★':nx?`${HSLOT_COST[b.slots-3]} fragments`:'—'}</b></div></div>`}
     const id=b.load[i],p=b.pol[i];return `<div class="cx-modslot${modSF===i?' fsel':''}"><button class="cx-modslot__pol" data-act="slotf" data-i="${i}" aria-pressed="${modSF===i}" aria-label="Filtrer les mods pour la case ${i+1} (${p?POL[p].n:'neutre'})" style="color:${p?POL[p].c:'var(--muted)'}">${p?POL[p].s+' '+POL[p].n:'Neutre'}</button>${id?modTile(id,(modSel===id?' is-sel':'')+(act.includes(id)?'':' off'),i,b):'<div class="cx-mod cx-mod--empty"><b>Libre</b></div>'}</div>`};
   const buyBox=modTab==='h'&&b.slots<HSLOT_MAX&&inCamp?(()=>{const c=HSLOT_COST[b.slots-3],have=fragTotal();
-    return `<div class="cx-rows"><div class="cx-row"><span class="cx-row__k" style="color:var(--ink)">Case ${b.slots+1} du héros<small>${c} fragments de relique, pris parmi ceux que tu as en plus grand nombre · tu en as ${have}</small></span><button class="cx-btn cx-btn--sm" data-act="slotbuy" style="margin:0" ${have<c?'disabled':''}>Débloquer</button></div></div>`})():'';
+    return `<div class="cx-rows"><div class="cx-row"><span class="cx-row__k" style="color:var(--ink)">Case ${b.slots+1} du héros<small>${c} fragments de relique, pris parmi ceux que tu as en plus grand nombre · tu en as ${have}</small></span><button class="cx-btn cx-btn--sm cost-btn" data-act="slotbuy" style="margin:0" ${have<c?'disabled':''}><span>Débloquer</span>${costHtml([['frag',c,have]])}</button></div></div>`})():'';
   const petTab=inCamp&&campTab==='pets',bn=modTab==='h'?`Build ${deCls(heroCls)}`:modTab==='w'?`Build ${b.de}`:'Build du familier';
   const over=u>cap;
   root.innerHTML=`${petTab?petPanel():`<div class="cx-tabs" role="tablist"><button class="cx-tab${isUnl('hmods')?'':' is-locked'}" role="tab" data-act="mtab" data-t="h" aria-selected="${modTab==='h'}">${isUnl('hmods')?'':`<span class="lockmini" aria-hidden="true">${LOCK_SVG}</span>`}Héros · ${CLS[heroCls].n}</button><button class="cx-tab" role="tab" data-act="mtab" data-t="w" aria-selected="${modTab==='w'}">Arme · ${wdef(curWid()).n}</button>${inCamp?'':`<button class="cx-tab" role="tab" data-act="mtab" data-t="p" aria-selected="${modTab==='p'}">Familier</button>`}</div>`}
@@ -254,6 +254,20 @@ function modAct(a,ds){
     toast(`Case ${alSel.i+1} alignée en <b style="color:${POL[alSel.p].c}">${POL[alSel.p].n}</b>. ${b.kind==='p'?'':` Maîtrise ${b.de} remise à 0.`}`);alSel=null}
   saveMeta();modsChanged();
 }
+/* ---------- Coût d'une action (v134) ----------
+   Chaque ressource est nommée et a son icône : « 1 200 or », « 50 essence », « 3 fragments de l'objet », « 12 fragments de harnais »…
+   Ce qui manque est en rouge, avec ce que tu as. parts : [[sorte, quantité, ce que tu as (facultatif), précision]]. */
+const COST_K={
+  or:{i:'<span class="coin"></span>',n:()=>'or',h:()=>meta.gold},
+  ess:{i:'<i class="cx-ess"></i>',n:()=>'essence',h:()=>meta.essence},
+  frag:{i:'<i class="cost__frag"></i>',n:q=>`fragment${q>1?'s':''} d'objet`,h:()=>fragTotal()},
+  pf:{i:'<i class="cost__frag"></i>',n:q=>`fragment${q>1?'s':''} de l'objet`,h:null},
+  hf:{i:'<i class="cost__hf"></i>',n:q=>`fragment${q>1?'s':''} de harnais`,h:()=>meta.hfrag|0},
+  rel:{i:'<i class="cost__rel"></i>',n:(q,x)=>`relique${q>1?'s':''} ${RTIER[x].n}${q>1?'s':''}`,h:null},
+  cp:{i:'<i class="cost__cp"></i>',n:q=>`copie${q>1?'s':''} du mod`,h:null},
+  sh:{i:'<i class="cost__sh"></i>',n:q=>`éclat${q>1?'s':''} légendaire${q>1?'s':''}`,h:()=>meta.lshard|0}};
+function costHtml(parts){return `<span class="cost">${parts.filter(p=>p&&p[1]>0).map(([k,q,have,x])=>{const K=COST_K[k],h=have!=null?have:K.h?K.h():null,short=h!=null&&h<q;
+  return `<span class="cost__p${short?' is-short':''}" title="${short?`il te manque ${fmtBig(q-h)}, tu as ${fmtBig(h)}`:''}">${K.i}<b>${fmtBig(q)}</b> ${K.n(q,x)}</span>`}).join('')}</span>`}
 function modsChanged(){if(started&&G&&!G.over){refreshStats();if(G.pet||petEq())G.petS=petStats()}if(!$('bag').hidden)drawBag();if(!$('camp').hidden)drawCamp()}
 
 /* ---------- Fin de niveau, extraction, mort ---------- */

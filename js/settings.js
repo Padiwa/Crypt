@@ -1,5 +1,5 @@
 // Crypte des Cendres — settings.js : réglages propres à l'appareil (son, tremblement, flash, vibrations, chiffres)
-const SET_DEF={sfx:.7,music:.35,shake:1,flash:true,vib:true,dmgNum:true,hand:'right',pickSnd:'imp',mouse:'follow',zoom:1};
+const SET_DEF={sfx:.7,music:.35,shake:1,flash:true,vib:true,dmgNum:true,hand:'right',pickSnd:'imp',mouse:'follow',zoom:1,eco:false};
 // Zoom de la vue en mission, réglé par le joueur : 70 % (on voit plus loin) à 140 % (tout est plus gros). Le HUD ne change pas.
 const ZOOM_MIN=.7,ZOOM_MAX=1.4;
 const setZoom=()=>Math.min(ZOOM_MAX,Math.max(ZOOM_MIN,+SET.zoom||1));
@@ -25,6 +25,7 @@ function drawSettings(){
       <div class="setrow"><div><b>Tremblement</b><span>Coups reçus, compétences, ultime</span></div><div class="cx-chips" role="radiogroup" aria-label="Tremblement">${sh.map(([v,l])=>`<button class="cx-chip cx-chip--sm" role="radio" aria-checked="${SET.shake===v}" data-shake="${v}">${l}</button>`).join('')}</div></div>
       <div class="setrow"><div><b>Boutons de compétences</b><span>Côté de l'écran ; le déplacement se fait de l'autre main</span></div><div class="cx-chips" role="radiogroup" aria-label="Côté des boutons">${[['left','À gauche'],['right','À droite']].map(([v,l])=>`<button class="cx-chip cx-chip--sm" role="radio" aria-checked="${SET.hand===v}" data-hand="${v}">${l}</button>`).join('')}</div></div>
       <div class="setrow"><div><b>Déplacement à la souris</b><span>Ordinateur : le héros va vers le pointeur ; clic gauche maintenu (ou pointeur sur le héros) = immobile. Clavier (ZQSD, flèches) toujours actif.</span></div><div class="cx-chips" role="radiogroup" aria-label="Déplacement à la souris">${[['follow','Suivre le pointeur'],['joy','Joystick']].map(([v,l])=>`<button class="cx-chip cx-chip--sm" role="radio" aria-checked="${(SET.mouse==='joy'?'joy':'follow')===v}" data-mouse="${v}">${l}</button>`).join('')}</div></div>
+      ${tog('eco','Économie de batterie','30 images par seconde en mission et image moins fine sur les écrans haute définition. Couper la musique économise aussi la batterie.')}
       ${tog('flash','Flash de butin','Éclair doré quand une affixe recherchée ou un légendaire tombe')}
       ${tog('dmgNum','Chiffres de dégâts','Nombres au-dessus des ennemis touchés')}
       ${tog('vib','Vibrations','Quand tu es touché ou qu\'un légendaire tombe (téléphones Android)')}</section>
@@ -35,7 +36,7 @@ document.addEventListener('DOMContentLoaded',()=>{});
 (function wireSettings(){
   const body=$('setBody');
   body.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.cact){if(!b.disabled)campClick(b);return}
-    if(b.dataset.set){const k=b.dataset.set;SET[k]=!SET[k];if(k==='vib'&&SET.vib&&navigator.vibrate)navigator.vibrate(30)}
+    if(b.dataset.set){const k=b.dataset.set;SET[k]=!SET[k];if(k==='vib'&&SET.vib&&navigator.vibrate)navigator.vibrate(30);if(k==='eco'){try{renewRender()}catch(err){noteErr('rendu',err)}}}
     else if(b.dataset.shake!=null){SET.shake=+b.dataset.shake;if(G)G.hshake=6}
     else if(b.dataset.hand){SET.hand=b.dataset.hand;applyHand()}
     else if(b.dataset.pick){SET.pickSnd=b.dataset.pick}

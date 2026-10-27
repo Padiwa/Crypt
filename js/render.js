@@ -303,7 +303,7 @@ function pPlayer(cls,flash,C=lookPal(cls)){
 }
 function initPixi(){
   if(typeof PIXI==='undefined'||!PIXI.Renderer)return false;
-  const res=Math.min(devicePixelRatio||1,2);
+  const res=SET.eco?1:Math.min(devicePixelRatio||1,2);
   const R=new PIXI.Renderer({width:innerWidth,height:innerHeight,resolution:res,autoDensity:true,backgroundColor:0x050307,antialias:true});
   const view=R.view;view.id='pv';view.setAttribute('aria-hidden','true');
   Object.assign(view.style,{position:'fixed',left:'0',top:'0',width:'100%',height:'100%',display:'block'});
