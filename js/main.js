@@ -27,18 +27,17 @@ function start(){
   let noGl=false;try{noGl=localStorage.getItem('crypte-nogl')==='1'}catch{}
   try{if(!NOGL&&!noGl&&initPixi())resize()}catch(err){console.error(err);PX=null}
   if(!matchMedia('(hover:hover) and (pointer:fine)').matches)$('keys').hidden=true;
-  const pickCls=c=>{heroCls=c;try{localStorage.setItem('crypte-cls',c)}catch{}
+  window.pickCls=c=>{heroCls=c;try{localStorage.setItem('crypte-cls',c)}catch{}
     if(typeof netMe==='function')netMe();
-    document.querySelectorAll('.cx-pick[data-c]').forEach(b=>b.setAttribute('aria-checked',String(b.dataset.c===c)));
-    {const d=CLS[c].desc,k=d.indexOf('<b>');$('clsDesc').innerHTML=k>0?cxMore('cls',d.slice(0,k).trim(),d.slice(k).split(/(?=<b>Ultime)/).map(x=>`<p>${x.trim()}</p>`).join(''),'Compétences'):`<p class="cx-hint" style="margin:0">${d}</p>`}newGame();refreshMenus()};
-  $('campBtn').onclick=openCamp;$('campBtn2').onclick=openCamp;$('closeCamp').onclick=closeCamp;
-  document.querySelectorAll('.cx-pick[data-c]').forEach(b=>b.onclick=()=>pickCls(b.dataset.c));
+    newGame();refreshMenus();if(!$('camp').hidden)drawCamp()};
+  $('campBtn2').onclick=()=>{campTab='equip';heroSub='main';openCamp()};
   pickCls(heroCls);
   const go=()=>{started=true;paused=false;last=performance.now()};window.goRun=go;
   const coopNew=()=>{newGame();if(NET.host&&NET.on)netStartHost()};
-  $('startBtn').onclick=()=>{if(NET.guest&&NET.on)return;$('intro').hidden=true;coopNew();go()};
+  const startRun=()=>{if(NET.guest&&NET.on)return;$('intro').hidden=true;$('mission').hidden=true;coopNew();go()};
+  $('startBtn').onclick=startRun;$('startBtn2').onclick=startRun;
   $('againBtn').onclick=()=>{if(NET.guest&&NET.on){toast('Coopération : l\'hôte relance la partie.');return}$('over').hidden=true;coopNew();go()};
-  $('changeBtn').onclick=()=>{$('over').hidden=true;started=false;paused=false;pickCls(heroCls);$('intro').hidden=false};
+  $('changeBtn').onclick=()=>{$('over').hidden=true;started=false;paused=false;pickCls(heroCls);$('intro').hidden=false;navSync()};
   requestAnimationFrame(frame);
 }
 start();

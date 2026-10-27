@@ -28,11 +28,40 @@ export const tests = [
     await p.click('[data-cact="rcall"]'); await p.click('#campFoot [data-cact="rcask"]'); await p.click('#campFoot [data-cact="rcok"]');
     t.eq(await p.evaluate(() => [meta.stash.length, meta.stash[0].lock, meta.essence]), [1, true, 6], 'reste le verrouillé, 3 × 2 essence');
   } },
-  { name: 'recycler une arme avec un double garde le double', fn: async (b, t) => {
+  { name: 'recycler une arme la retire avec tous ses doubles (v125)', fn: async (b, t) => {
     const p = t.track(await newPage(b));
-    await p.evaluate(() => { heroCls = 'archer'; meta.built.a2 = true; meta.wlv.a2 = 1; meta.wcp.a2 = [0]; meta.wpn.archer = 'a0'; saveMeta(); });
+    await p.evaluate(() => { heroCls = 'archer'; meta.built.a2 = true; meta.wlv.a2 = 1; meta.wcp.a2 = [0, 0]; meta.wpn.archer = 'a0'; meta.essence = 0; saveMeta(); });
     await campView(p, 'arsenal', 'recy');
-    await p.evaluate(() => { recySel = new Set(['w:a2']); recyDo(); });
-    t.eq(await p.evaluate(() => [ownedW('a2'), meta.wlv.a2, wSpares('a2')]), [true, 0, []], 'double promu');
+    t.eq(await p.evaluate(() => (document.querySelector('[data-arg="w:a2"] .cx-cell__n') || {}).textContent), '×3', 'la case montre ×3 (l\'arme et ses 2 doubles)');
+    await p.click('[data-arg="w:a2"]');
+    t.ok(await p.evaluate(() => /Recycler · 1/.test($('campFoot').textContent)), 'pied : « Recycler · 1 » (l\'arme choisie)');
+    await p.click('#campFoot [data-cact="rcask"]');
+    t.ok(await p.evaluate(() => /1 objet \(3 exemplaires avec les doubles\)/.test($('campFoot').textContent)), 'confirmation : 1 objet (3 exemplaires)');
+    await p.click('#campFoot [data-cact="rcok"]');
+    // Arc long du Corbeau (rare) : 60 essence × 2 au rang 2, puis 60 par double au rang 1
+    t.eq(await p.evaluate(() => [ownedW('a2'), meta.wcp.a2 || null, meta.essence, !!document.querySelector('[data-arg="w:a2"]')]), [false, null, 240, false], 'arme et doubles partis, 240 essence, plus dans la liste');
+  } },
+  { name: 'arme verrouillée ou portée : seuls ses doubles se recyclent, l\'arme reste (v126)', fn: async (b, t) => {
+    const p = t.track(await newPage(b));
+    await p.evaluate(() => {
+      heroCls = 'archer'; meta.stash = []; meta.essence = 0;
+      meta.built.a2 = true; meta.wlv.a2 = 1; meta.wcp.a2 = [0, 1]; meta.wlock = { a2: true };   // verrouillée, 2 doubles
+      meta.built.a3 = true; meta.wlv.a3 = 0; meta.wcp.a3 = [0]; meta.wpn.archer = 'a3';          // portée, 1 double
+      meta.built.a7 = true; meta.wlv.a7 = 0; meta.wlock.a7 = true;                                 // verrouillée, sans double
+      saveMeta();
+    });
+    await campView(p, 'arsenal', 'recy');
+    const cells = () => p.evaluate(() => [...document.querySelectorAll('#invGrid .cx-cell')].map((c) => [c.dataset.arg, (c.querySelector('.cx-cell__n') || {}).textContent || '', !!c.querySelector('.cx-cell__lock'), c.getAttribute('aria-disabled') === 'true']).sort());
+    t.eq(await cells(), [['d:a2', '×2', true, false], ['d:a3', '×1', true, false], ['w:a7', '', true, true]], 'cases « doubles » au cadenas, arme verrouillée sans double grisée');
+    await p.click('[data-cact="rcall"]'); await p.click('#campFoot [data-cact="rcask"]');
+    t.ok(await p.evaluate(() => /2 objets \(3 exemplaires avec les doubles\)/.test($('campFoot').textContent)), 'confirmation : 2 objets, 3 exemplaires');
+    await p.click('#campFoot [data-cact="rcok"]');
+    // a2 rare : doubles aux rangs 1 et 2 → 60 + 120 ; a3 légendaire : double au rang 1 → 80
+    t.eq(await p.evaluate(() => [ownedW('a2'), meta.wlv.a2, wSpares('a2'), ownedW('a3'), meta.wpn.archer, wSpares('a3'), meta.essence]), [true, 1, [], true, 'a3', [], 260], 'armes gardées à leur rang, doubles partis, 260 essence');
+    t.eq(await cells(), [['w:a2', '', true, true], ['w:a7', '', true, true]], 'restent les armes verrouillées, grisées, sans double');
+    // la fiche d'une arme verrouillée avec des doubles propose « Recycler les doubles »
+    await p.evaluate(() => { meta.wcp.a2 = [0, 0]; saveMeta(); campTab = 'arsenal'; arsView = 'coffre'; campSel = { wpn: 'a2' }; dockMore = true; drawCamp(); });
+    t.ok(await p.evaluate(() => [...document.querySelectorAll('#campDock [data-cact="gorecy1"]')].some((x) => x.dataset.arg === 'd:a2' && !x.disabled && /Recycler les doubles · 2/.test(x.textContent))), 'fiche : « Recycler les doubles · 2 »');
+    t.eq(p.errs, [], 'aucune erreur');
   } },
 ];

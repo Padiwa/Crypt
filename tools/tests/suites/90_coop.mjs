@@ -1,5 +1,5 @@
 // Coopération (WebRTC local) : connexion par QR codes et par code à 4 chiffres (relais local), mission, noms. Lente : ignorée avec --quick.
-import { newPage, sleep, GAME } from '../lib.mjs';
+import { newPage, sleep, GAME, pickHero, openMission } from '../lib.mjs';
 import { startRelay } from '../relais-local.mjs';
 export const slow = true;
 
@@ -55,13 +55,14 @@ export const tests = [
   } },
   { name: 'changer de héros et de mission dans le salon ne coupe pas la connexion ; Défense à deux ; retour au Camp', fn: async (b, t) => {
     const [A, B] = await pair(b, t);
-    await B.click('.cx-pick[data-c="magicien"]'); await sleep(A, 600);
+    await pickHero(B, 'magicien'); await sleep(A, 600);
     t.ok(await A.evaluate(() => NET.on && NET.peers[0].cls === 'magicien'), 'l\'hôte voit le Magicien, toujours connecté');
-    await A.click('.cx-pick[data-c="guerrier"]'); await sleep(A, 400);
+    await pickHero(A, 'guerrier'); await sleep(A, 400);
+    await openMission(A);
     t.eq(await A.evaluate(() => document.querySelector('.cx-pick[data-m="breche"]').getAttribute('aria-disabled')), 'false', 'Brèche disponible à deux');
     await A.click('.cx-pick[data-m="defense"]'); await sleep(A, 500);
     t.eq(await B.evaluate(() => [NET.on, NET.hostMode && NET.hostMode.mode]), [true, 'defense'], 'l\'invité voit la Défense');
-    await A.click('#startBtn'); await wf(B, () => started && G && !G.over, 'B attend 6', 8000, A); await sleep(A, 2500);
+    await A.click('#startBtn2'); await wf(B, () => started && G && !G.over, 'B attend 6', 8000, A); await sleep(A, 2500);
     t.eq(await B.evaluate(() => [G.mode, !!G.pod, meta.mode, G.mates.length]), ['defense', true, 'survie', 1], 'invité en Défense, sa sauvegarde garde son mode');
     t.ok(await B.evaluate(() => G.pod.max > 0 && $('objBar').hidden === false), 'cryopode affiché chez l\'invité');
     await B.evaluate(() => { openBag(); }); await B.click('#quitBtnBag'); await B.click('#bagDock [data-bag="quitok"]'); await sleep(A, 800);
@@ -81,7 +82,7 @@ export const tests = [
     await A.click('#closeSet');
     // l'invité change de héros : le prestige suit le héros joué
     await B.evaluate(() => { meta.prest.magicien = { lv: 4, pts: {} }; });
-    await B.click('.cx-pick[data-c="magicien"]'); await sleep(A, 600);
+    await pickHero(B, 'magicien'); await sleep(A, 600);
     t.eq(await A.evaluate(() => [NET.on, NET.peers[0].cls, NET.peers[0].pr]), [true, 'magicien', 4], 'prestige du Magicien reçu, connexion gardée');
     // couleurs du héros : chacun voit celles que l'autre a choisies pour le héros qu'il joue, mises à jour en direct
     await B.evaluate(() => { lookSet('magicien', 0, '#7a1f24'); saveMeta(); netMe(); }); await sleep(A, 500);
@@ -100,8 +101,8 @@ export const tests = [
   } },
   { name: 'Capture à deux (cible, capture, récompense et cible suivante synchronisées) puis Brèche', fn: async (b, t) => {
     const [A, B] = await pair(b, t);
-    await A.click('.cx-pick[data-m="capture"]'); await sleep(A, 300);
-    await A.click('#startBtn'); await wf(B, () => started && G && G.target, 'B attend 8', 8000, A);
+    await openMission(A); await A.click('.cx-pick[data-m="capture"]'); await sleep(A, 300);
+    await A.click('#startBtn2'); await wf(B, () => started && G && G.target, 'B attend 8', 8000, A);
     t.eq(await B.evaluate(() => G.mode), 'capture', 'invité en Capture, cible reçue');
     // l'invité se place sur la cible, l'hôte la met à terre : la capture compte l'invité
     await A.evaluate(() => { G.target.hp = 0; G.target.downed = true; G.target.spd = 0; });
@@ -114,7 +115,7 @@ export const tests = [
     t.eq(await B.evaluate(() => [$('lvlTxt').textContent, $('objK').textContent]), ['1 capture', 'Traque la cible 2'], 'invité : cible 2 affichée');
     await A.evaluate(() => { missionSuccess(); }); await wf(B, () => G.over, 'B attend 10', 5000, A);
     await A.click('#changeBtn').catch(() => {}); await A.evaluate(() => { $('over').hidden = true; started = false; $('intro').hidden = false; refreshMenus(); });
-    await A.click('.cx-pick[data-m="breche"]'); await sleep(A, 300);
+    await openMission(A); await A.click('.cx-pick[data-m="breche"]'); await sleep(A, 300);
     t.eq(await A.evaluate(() => meta.mode), 'breche', 'Brèche choisie');
     await A.evaluate(() => { $('startBtn').click(); }); await wf(B, () => started && G && !G.over, 'B attend 11', 8000, A);
     t.eq(await B.evaluate(() => [G.mode, G.breche]), ['survie', true], 'invité en Brèche');

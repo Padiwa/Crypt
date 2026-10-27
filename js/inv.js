@@ -13,23 +13,24 @@ function invWeapons(worn){const out=[];for(const c of [heroCls,...Object.keys(CL
 const selOf=it=>{if(it.wid)return {wpn:it.wid};const c=wornBy(it);if(c){const k=wornSlot(it,c);return c===heroCls?{slot:k}:{oth:c+'|'+k}}return {stash:it.id}};
 const isSel=it=>{if(!campSel)return false;const s=selOf(it);return Object.keys(s).length===Object.keys(campSel).length&&Object.keys(s).every(k=>campSel[k]===s[k])};
 // Coffre de l'Armurerie : tout ce que tu possèdes, objets portés compris (marqués du héros qui les porte). Filtre « Portés » : seulement ceux-là.
-// kind : 'equip' (coffre, objets portés compris), 'recy' (recyclage : rien de porté), 'affix' (Forge › Affixes : le coffre seul).
-function invList(kind){const all=kind==='equip',F=!all&&stF==='porte'?'all':stF,pool=all?[...meta.stash,...allWorn()]:meta.stash;
+// kind : 'equip' (coffre, objets portés compris), 'recy' (recyclage : rien de porté), 'affix' (Forge › Affixes et fusion : tout, comme 'equip', les objets du héros choisi en tête).
+function invList(kind){const all=kind==='equip'||kind==='affix',F=!all&&stF==='porte'?'all':stF,pool=all?[...meta.stash,...allWorn()]:meta.stash;
   const slotOk=i=>F==='all'||(F==='porte'?!!wornBy(i):i.slot===F);
-  const st=pool.filter(i=>slotOk(i)&&invMatch(i,invQ));const ws=kind==='affix'||!(F==='all'||F==='arme'||F==='porte')?[]:invWeapons(all).filter(i=>(F!=='porte'||!!wornBy(i))&&invMatch(i,invQ));
-  const nid=i=>i.wid?-1:i.id;const f=invSortFn[stS]||invSortFn.rar;return [...st,...ws].sort(stS==='new'?(a,b)=>nid(b)-nid(a):f)}
+  const st=pool.filter(i=>slotOk(i)&&invMatch(i,invQ));const ws=!(F==='all'||F==='arme'||F==='porte')?[]:invWeapons(all).filter(i=>(F!=='porte'||!!wornBy(i))&&invMatch(i,invQ));
+  const nid=i=>i.wid?-1:i.id;const f=invSortFn[stS]||invSortFn.rar,L=[...st,...ws].sort(stS==='new'?(a,b)=>nid(b)-nid(a):f);
+  if(kind!=='affix')return L;const mine=i=>wornBy(i)===heroCls;return [...L.filter(mine),...L.filter(i=>!mine(i))]}
 function invCountTxt(list){const nb=list.filter(i=>!wornBy(i)&&better(i)).length,nw=list.filter(i=>wornBy(i)).length;return `${list.length} objet${list.length>1?'s':''}${nw?` · ${nw} porté${nw>1?'s':''}`:''}${nb?` · ▲ ${nb} meilleur${nb>1?'s':''} que ton équipement`:''}`}
 // Pastille du héros qui porte l'objet (initiale à sa couleur).
 const whoTag=c=>c?`<span class="cwho" style="--wc:${CLS[c].col}" title="Porté : ${CLS[c].n}">${CLS[c].n[0]}</span>`:'';
-// Barre collée : recherche, tri, filtres par emplacement, compteur. kind = 'equip' (Héros) ou 'affix' (Forge › Affixes).
-function invToolbar(list,kind){const all=kind==='equip',W=kind==='affix'?[]:invWeapons(all),G2=all?[...meta.stash,...allWorn()]:meta.stash,counts={all:G2.length+W.length,arme:W.length,porte:allWorn().length+W.filter(w=>wornBy(w)).length};for(const it of G2)counts[it.slot]=(counts[it.slot]||0)+1;
+// Barre collée : recherche, tri, filtres par emplacement, compteur. kind = 'equip' (Héros) ou 'affix' (Forge › Affixes et fusion).
+function invToolbar(list,kind){const all=kind==='equip'||kind==='affix',W=invWeapons(all),G2=all?[...meta.stash,...allWorn()]:meta.stash,counts={all:G2.length+W.length,arme:W.length,porte:allWorn().length+W.filter(w=>wornBy(w)).length};for(const it of G2)counts[it.slot]=(counts[it.slot]||0)+1;
   const ch=(k,l)=>`<button class="cx-chip cx-chip--sm" data-cact="sfilter" data-arg="${k}" aria-pressed="${stF===k}">${l} <span class="n">${counts[k]||0}</span></button>`;
   return `<div class="cx-toolbar"><div class="cx-toolbar__row"><label class="cx-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input type="search" data-inv="q" value="${esc(invQ)}" placeholder="Chercher une affixe : vitesse, critique…" aria-label="Chercher dans le coffre" enterkeyhint="search"></label>
     <select class="cx-sort" data-inv="sort" aria-label="Trier le coffre">${Object.keys(SORT_N).map(k=>`<option value="${k}"${stS===k?' selected':''}>${SORT_N[k]}</option>`).join('')}</select></div>
-    <div class="cx-chips">${ch('all','Tout')}${all?ch('porte','Portés'):''}${kind==='affix'?'':ch('arme','Arme')}${['armure','amulette','bottes','anneau',...(counts.dos?['dos']:[])].map(k=>ch(k,SLOT[k])).join('')}</div>
+    <div class="cx-chips">${ch('all','Tout')}${all?ch('porte','Portés'):''}${ch('arme','Arme')}${['armure','amulette','bottes','anneau',...(counts.dos?['dos']:[])].map(k=>ch(k,SLOT[k])).join('')}</div>
     <span class="cx-count" id="invCount">${invCountTxt(list)}</span></div>`}
 function invGrid(list,kind){if(!list.length)return `<p class="cx-hint" style="margin:0">${meta.stash.length?(invQ?'Aucun objet ne correspond à ta recherche.':'Aucun objet de ce type.'):'Ton coffre est vide. Sors vivant d\'une mission pour y ramener les objets trouvés.'}</p>`;
-  if(kind==='affix')return `<div class="cx-cells">${list.map(it=>xfCell('s:'+it.id,it)).join('')}</div>`;
+  if(kind==='affix')return `<div class="cx-cells">${list.map(it=>xfCell(afKey(it),it).replace('</button>',whoTag(wornBy(it))+'</button>')).join('')}</div>`;
   return `<div class="grid">${list.map(it=>{const w=wornBy(it),tag=whoTag(w);return (it.wid?cellHtml(it,'wsel',isSel(it),!w&&it.cls===heroCls&&better(it)).replace(`data-wsel="${it.id}"`,`data-wsel="${it.wid}"`):cellHtml(it,'stash',isSel(it),!w&&better(it))).replace('</button>',tag+'</button>')}).join('')}</div>`}
 function invRefresh(){const g=$('invGrid');if(!g)return;if(isRecy()){g.innerHTML=recyCells();return}const kind=campTab==='forge'?'affix':'equip',list=invList(kind);g.innerHTML=invGrid(list,kind);const c=$('invCount');if(c)c.textContent=invCountTxt(list)}
 $('campBody').addEventListener('input',e=>{if(e.target.dataset.inv==='q'){invQ=e.target.value;invRefresh()}});
@@ -47,18 +48,41 @@ function herosView(){const order=[heroCls,...Object.keys(CLS).filter(c=>c!==hero
       ...ks.map(k=>{const it=g[k];
         return it?`<button class="slot${isSel(it)?' sel':''}" data-stash="${it.id}"><span>${SLOT[k]}${it.up?' · '+rkTxt(it.up):''}</span><strong style="color:${RAR[it.r].c}">${esc(itemName(it))}${lk(it)}</strong></button>`:`<div class="slot"><span>${SLOT[k]}</span><strong style="color:var(--muted)">Vide</strong></div>`})];
     return `<section class="cx-section hgear"><h3 class="cx-section__label"><span class="cwho" style="--wc:${CLS[c].col}" aria-hidden="true">${CLS[c].n[0]}</span>${CLS[c].n}${me?' · héros joué':''} · ${n} objet${n>1?'s':''}</h3><div class="slots">${cells.join('')}</div>
-      ${n?'':`<p class="cx-hint" style="margin:0">${me?'Rien de porté : touche « Équiper le meilleur » dans l\'onglet Héros.':`Rien de porté : choisis le ${CLS[c].n} sur l'écran d'accueil, puis « Équiper le meilleur » dans l'onglet Héros.`}</p>`}</section>`}).join('')}
+      ${n?'':`<p class="cx-hint" style="margin:0">${me?'Rien de porté : touche « Équiper le meilleur » dans l\'onglet Héros.':`Rien de porté : choisis le ${CLS[c].n} en haut de l'onglet Héros, puis « Équiper le meilleur ».`}</p>`}</section>`}).join('')}
 const stashN=()=>meta.stash.length+allWorn().length+invWeapons(true).length;
 // Porter un objet dans un emplacement : l'objet qu'il remplace retourne au coffre.
 const wearGear=(sl,it)=>{const old=meta.gear[sl];if(old)meta.stash.push(old);meta.gear[sl]=it};
+// Onglet Héros (v130) : le héros au centre, ses emplacements autour ; sous-vues Talents, Prestige, Apparence (heroSub, shell.js). Les équipements enregistrés restent sur la vue principale, sous les tuiles.
+function heroSlot(k,eq){const it=eq[k],sel=campSel&&campSel.slot===k;
+  if(!slotOpen(k)){const u=SLOT_U.find(x=>x.k===k),ok=!u.need||slotOpen(u.need),hf=meta.hfrag|0,can=slotCan(u);
+    return `<div class="hslot hslot--lock${can?' is-ready':''}" role="img" aria-label="${SLOT[k]} verrouillé${ok?` : ${Math.min(hf,u.hf)} fragments de harnais sur ${u.hf}`:''}"><span class="hslot__lk" aria-hidden="true">${LOCK_SVG}</span><small>${ok&&isUnl('slots')?`${Math.min(hf,u.hf)} / ${u.hf}`:SLOT[k]}</small>${can?'<span class="dot" aria-hidden="true"></span>':''}</div>`}
+  const up=it&&it.up?`<span class="cx-cell__up">R${it.up+1}</span>`:'',lk=it&&it.lock?`<span class="cx-cell__lock">${LOCK_SVG}</span>`:'';
+  return `<button class="hslot${it?'':' is-empty'}${sel?' is-sel':''}" data-slot="${k}" style="--rar:${it?RARV[it.r]:'#5c4a66'}" aria-label="${SLOT[k]} : ${it?esc(itemName(it))+', '+RAR[it.r].n.toLowerCase():'vide'}">${GLYPH[k==='anneau2'?'anneau':k]}${up}${lk}<small>${SLOT[k]}</small></button>`}
 function campEquip(){
-  const eq=curEq(),St=stats(eq),pn=Object.keys(bestPlan(eq,meta.stash,true)).length,n=stashN();
-  return `${campMsg}${tutCard()}<section class="cx-section"><h3 class="cx-section__label">${CLS[heroCls].n} · équipement</h3><div class="slots">${slotsHtml(eq,true,campSel&&campSel.slot)}</div>
-    ${pn?'':'<p class="cx-hint" style="margin:0">Ton équipement est déjà le meilleur que tu possèdes.</p>'}
-    <div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-cact="gocoffre">Ouvrir le coffre · ${n} objet${n>1?'s':''}</button><button class="cx-btn cx-btn--sm" data-cact="goheros">Équipement des héros</button></div></section>
+  const eq=curEq(),St=stats(eq),n=stashN(),sets=isUnl('sets')?setsOf().length:0;
+  const cls=`<div class="cx-tabs hcls" role="tablist" aria-label="Héros">${Object.keys(CLS).map(c=>`<button class="cx-tab" role="tab" data-cact="hcls" data-arg="${c}" aria-selected="${c===heroCls}" style="--hc:${CLS[c].col}">${CLS[c].n}</button>`).join('')}</div>`;
+  const sub=(t)=>`${cls}<button class="cx-back" data-cact="hsub" data-arg="main">Retour au héros</button><h3 class="hsub__t">${t}</h3>`;
+  if(heroSub==='tal')return sub('Compétences et talents')+heroTalents();
+  if(heroSub==='prest')return sub('Prestige')+prestSection();
+  if(heroSub==='look')return sub('Apparence')+lookHtml();
+  const L=['arme','armure','amulette','bottes'],R=['anneau','anneau2','dos'];
+  const o=prOf(heroCls),prOn=prOpen()||o.lv>0,pf=prOn?prFree():0,nmax=UPG.filter(u=>lv(u.k)>=u.max).length,tn=TAL[heroCls].filter(t=>hasTal(t.k)).length,tb=isUnl('bonus')?TAL[heroCls].filter(t=>!hasTal(t.k)&&meta.gold>=t.cost).length:0;
+  const tile=(k,ico,t,sm,badge)=>`<button class="htile" data-cact="hsub" data-arg="${k}"><span class="htile__i" aria-hidden="true">${ico}</span><b>${t}</b><small>${sm}</small>${badge?`<span class="cx-tab__badge">${badge}</span>`:''}</button>`;
+  const mt=mastOf(heroCls);
+  return `${campMsg}${cls}
+    <section class="hstage" aria-label="Équipement du ${CLS[heroCls].n.toLowerCase()}">
+      <div class="hstage__col">${L.map(k=>heroSlot(k,eq)).join('')}</div>
+      <div class="hstage__mid"><canvas id="heroStage" width="360" height="360" aria-hidden="true"></canvas><span class="hstage__name">${CLS[heroCls].n}</span><small>${o.lv?`Prestige ${o.lv} · `:''}maîtrise ${mt.r} / 10</small></div>
+      <div class="hstage__col">${R.map(k=>heroSlot(k,eq)).join('')}</div>
+    </section>
+    ${keyStats(St)}
+    <div class="cx-actions hacts" style="margin:0"><button class="cx-btn cx-btn--sm" data-cact="gocoffre">Coffre · ${n}</button><button class="cx-btn cx-btn--sm" data-cact="goheros">Par héros</button>${isUnl('sets')?`<button class="cx-btn cx-btn--sm" data-cact="gosets">Équipements · ${sets}</button>`:''}</div>
+    <div class="htiles">${tile('tal','<svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.3L22 9l-5 4.8L18.2 21 12 17.5 5.8 21 7 13.8 2 9l7.1-.7z"/></svg>','Talents',`${tn} / ${TAL[heroCls].length}`,tb)}
+      ${tile('prest','<svg viewBox="0 0 24 24"><path d="M3 18h18l-2-10-4 4-3-7-3 7-4-4z"/><path d="M3 21h18"/></svg>','Prestige',prOn?`niveau ${o.lv}${pf?` · ${pf} point${pf>1?'s':''}`:''}`:`Forge ${nmax} / ${UPG.length}`,pf)}
+      ${tile('look','<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-2 0-3 2-1 3-1c2.5 0 4-1.5 4-4 0-4.5-4-8-9-8z"/><circle cx="7.5" cy="11" r="1.4"/><circle cx="11" cy="7" r="1.4"/><circle cx="16" cy="8" r="1.4"/></svg>','Apparence','couleurs')}</div>
     ${setsHtml()}${slotUnlockHtml()}
-    ${keyStats(St)}${cxMore('equip_stats','Toutes les statistiques',`<div class="statgrid">${statRows(St)}</div>`,'Afficher')}
-    <section class="cx-section"><h3 class="cx-section__label">Fragments des reliques</h3>${fragInv()}</section>${meta.tutOff&&tutStep()>=0?'<div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm cx-btn--ghost" data-cact="tuton">Réafficher le parcours</button></div>':''}`;
+    ${cxMore('equip_stats','Toutes les statistiques',`<div class="statgrid">${statRows(St)}</div>`,'Afficher')}
+    ${meta.tutOff&&tutStep()>=0?'<div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm cx-btn--ghost" data-cact="tuton">Réafficher le parcours</button></div>':''}`;
 }
 // Héros › Équipements enregistrés : jusqu'à SET_MAX par héros ; « Porter » reprend chaque objet dans le coffre ou sur un autre héros.
 function setsHtml(){if(!isUnl('sets'))return '';const L=setsOf(),eq=curEq();
@@ -67,7 +91,7 @@ function setsHtml(){if(!isUnl('sets'))return '';const L=setsOf(),eq=curEq();
   const rows=L.map((s,i)=>{const on=same(s),wb=[...new Set(GEAR_KEYS().map(k=>s.g[k]!=null?findItem(s.g[k]):null).filter(Boolean).map(wornBy).filter(c=>c&&c!==heroCls))];
     return `<div class="cx-row cx-set${on?' is-on':''}"><span class="cx-row__k"><input class="cx-setname" data-setname="${i}" value="${esc(s.n)}" maxlength="24" aria-label="Nom de l'équipement ${i+1}"><small><span class="sdots">${dots(s)}</span>${on?' · porté':wb.length?` · objets portés ${wb.map(parCls).join(' et ')}`:''}</small></span>
       <span class="cx-set__act"><button class="cx-btn cx-btn--sm${on?'':' cx-btn--primary'}" data-cact="setwear" data-arg="${i}" ${on?'disabled':''}>Porter</button><button class="cx-btn cx-btn--sm cx-btn--ghost" data-cact="setsave" data-arg="${i}" aria-label="Remplacer ${esc(s.n)} par l'équipement actuel">Remplacer</button><button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-cact="setdel" data-arg="${i}" aria-label="Supprimer ${esc(s.n)}">${XSVG.x}</button></span></div>`}).join('');
-  return `<section class="cx-section"><h3 class="cx-section__label">Équipements enregistrés · ${L.length} / ${SET_MAX}</h3>${rows?`<div class="cx-rows">${rows}</div>`:''}
+  return `<section class="cx-section" id="setsSec"><h3 class="cx-section__label">Équipements enregistrés · ${L.length} / ${SET_MAX}</h3>${rows?`<div class="cx-rows">${rows}</div>`:''}
     <div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-cact="setsave" data-arg="" ${L.length>=SET_MAX?'disabled':''}>Enregistrer l'équipement porté</button></div>
     <p class="cx-hint" style="margin:0">${L.length?'Chaque héros a ses équipements. « Porter » prend les objets dans le coffre ou sur un autre héros ; touche le nom pour le changer.':'Enregistre l\'arme et les objets portés pour les remettre plus tard en un geste. Chaque héros a ses équipements.'}</p></section>`}
 // Héros › Emplacements à débloquer (fragments de harnais, lâchés par les Gardiens).
@@ -79,7 +103,7 @@ function slotUnlockHtml(){if(!isUnl('slots'))return '';const next=SLOT_U.filter(
 // Armurerie › Coffre : tout ce que tu possèdes, armes et objets portés compris (pastille du héros qui les porte).
 function campCoffre(){const list=invList('equip'),n=stashN();
   return `<section class="cx-section"><h3 class="cx-section__label">Coffre · ${n} objet${n>1?'s':''}</h3>
-    ${n?invToolbar(list,'equip'):''}<div id="invGrid">${invGrid(list,'equip')}</div>${n?`<p class="cx-hint" style="margin:0">La pastille A, G ou M montre le héros qui porte l'objet (Archer, Guerrier, Magicien) ; « Par héros », en haut, les range héros par héros.${isUnl('recy')?' Pour recycler : puce Recyclage, en haut de l\'Armurerie.':''}</p>`:''}</section>`}
+    ${n?invToolbar(list,'equip'):''}<div id="invGrid">${invGrid(list,'equip')}</div>${n?`<p class="cx-hint" style="margin:0">La pastille A, G ou M montre le héros qui porte l'objet (Archer, Guerrier, Magicien) ; « Par héros », en haut, les range héros par héros.${isUnl('recy')?' Pour recycler : onglet Recycler, en haut de l\'Arsenal.':''}</p>`:''}</section>`}
 
 /* ---------- Fiche ancrée (cx-dock) ---------- */
 const XSVG={x:'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',prev:'<svg viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg>',next:'<svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>',
@@ -164,24 +188,28 @@ function campDockHtml(){
   if(worn&&it.slot!=='arme')more.push(btn('','unequip',null,XSVG.out,'Retirer au coffre'));
   if(!othC&&isUnl('affix')){if(xfSrcOk(key)&&Object.keys(it.aff).length)more.push(btn('','xftake',key,XSVG.take,'Prendre une affixe'));
     more.push(btn('','xfrecv',key,XSVG.take,'Recevoir une affixe'))}
-  if(isUnl('recy')&&!worn&&!othC&&!whoW&&(!it.wid||(wb&&!wb.start)))more.push(btn('','gorecy1',key,XSVG.recy,'Recycler',it.lock));
+  // arme gardée (verrouillée, portée, de départ) qui a des doubles : on peut recycler les doubles seuls
+  const dupN=it.wid?wSpares(it.wid).length:0,kept=it.wid&&(it.lock||worn||whoW||(wb&&wb.start));
+  if(isUnl('recy')&&kept&&dupN)more.push(btn('','gorecy1','d:'+it.wid,XSVG.recy,`Recycler les doubles · ${dupN}`,false));
+  else if(isUnl('recy')&&!worn&&!othC&&!whoW&&(!it.wid||(wb&&!wb.start)))more.push(btn('','gorecy1',key,XSVG.recy,'Recycler',it.lock));
   const sk=key;if(sk!==cmpKey){cmpKey=sk;cmpPage=0}
   return `<div class="cx-dock__head"><h3 class="cx-dock__title" style="color:${r.c}">${esc(itemName(it))}${it.lock?` <span class="lockchip">${LOCK_SVG}</span>`:''}</h3>${nav}<button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-cact="dclose" aria-label="Fermer la fiche">${XSVG.x}</button></div>
     <span class="cx-dock__meta">${r.n} · ${SLOT[it.slot]}${it.wid?' · fabriquée':` · niveau ${it.lvl}`}${` · ${rkTxt(n)}`}${worn?' · <b style="color:var(--heal)">Porté</b>':''}${whoW?` · <b style="color:${CLS[whoW].col}">Porté ${parCls(whoW)}</b>`:''}${idx>=0?` · ${idx+1} / ${list.length}`:''}</span>
     ${worn||other?affs:cmpObjet(eq,it)}${main}${fuse}${othC?`<p class="cx-hint" style="margin:0">Un objet n'est porté que par un héros à la fois : l'équiper ici le retire ${parCls(othC).replace('par ','à ').replace("à le ","au ")}.</p>`:''}
     <div class="cx-actions" style="gap:6px"><button class="cx-btn cx-btn--sm" data-cact="dmore" aria-expanded="${dockMore}">${dockMore?'Moins d\'actions':'Plus d\'actions'}</button>${worn?'':`<button class="cx-btn cx-btn--sm" data-cact="dall" aria-pressed="${dockAll}">${dockAll?'Masquer les statistiques':'Toutes les statistiques'}</button>`}</div>
-    ${dockMore?`<div class="cx-dock__more">${more.join('')}</div>`:''}${it.lock&&!worn?'<p class="cx-hint" style="margin:0">Verrouillé : ni recyclé, ni sacrifié par une fusion, ni utilisé comme source d\'affixe.</p>':''}`;
+    ${dockMore?`<div class="cx-dock__more">${more.join('')}</div>`:''}${it.lock&&!worn?`<p class="cx-hint" style="margin:0">${it.wid?'Verrouillée : l\'arme n\'est ni recyclée ni utilisée comme source d\'affixe ; ses doubles peuvent être recyclés.':'Verrouillé : ni recyclé, ni sacrifié par une fusion, ni utilisé comme source d\'affixe.'}</p>`:''}`;
 }
 
 /* ---------- Parcours affixe : départ depuis la fiche, puce de retour ---------- */
 let campBack=null; // {tab, sel, scroll, f, q, label}
 function backChip(){return campBack?`<button class="cx-back" data-cact="goback">Retour à ${campBack.label}</button>`:''}
 function xfSteps(){if(!campBack)return '';const rev=campBack.mode==='recv',s=!!xf.src,k=!!xf.k,d=!!xf.dst;
-  const L=rev?[['Cible',d],['Source',s],['Affixe',k]]:[['Source',s],['Affixe',k],['Cible',d]];let now=L.findIndex(x=>!x[1]);
+  const L=rev?[['Cible',d],['Affixe',k],['Source',s]]:[['Source',s],['Affixe',k],['Cible',d]];let now=L.findIndex(x=>!x[1]);
   return `<ol class="cx-steps">${L.map(([l,ok],i)=>`<li class="${ok?'is-done':i===now?'is-now':''}"><span>${i+1} ${l}${ok?' ✓':''}</span></li>`).join('')}</ol>`}
 function xfStepHint(){const s=!!xf.src,k=!!xf.k,d=!!xf.dst;
-  if(!s)return `Étape ${campBack&&campBack.mode==='recv'?2:1} sur 3 : touche l'objet source (il sera détruit).`;
-  if(!k)return `Étape ${campBack&&campBack.mode==='recv'?3:2} sur 3 : touche l'affixe à prendre sur la source.`;
+  if(campBack&&campBack.mode==='recv'){if(!d)return 'Étape 1 sur 3 : touche l\'objet qui reçoit l\'affixe.';if(!k)return 'Étape 2 sur 3 : choisis l\'affixe dans la liste déroulante de la source.';if(!s)return 'Étape 3 sur 3 : touche l\'objet à sacrifier dans la liste.';return ''}
+  if(!s)return 'Étape 1 sur 3 : touche l\'objet source (il sera détruit).';
+  if(!k)return 'Étape 2 sur 3 : touche l\'affixe à prendre sur la source.';
   if(!d)return 'Étape 3 sur 3 : touche l\'objet qui reçoit l\'affixe.';return ''}
 
 /* ---------- Toast « Annuler » ---------- */
@@ -193,14 +221,32 @@ function cxUndo(html,undo){let el=$('undoToast');if(!el){el=document.createEleme
 
 /* ---------- Armurerie › Recyclage : le seul endroit où l'on recycle ---------- */
 let recySel=new Set(),recyR=new Set(),recyAsk=false;
-const recyKey=it=>it.wid?'w:'+it.wid:'s:'+it.id;
-const recyEss=it=>it.wid?wRecyEss(bpdef(it.wid)):recyGain(it);
-function recyAll(){return invList('recy').filter(it=>!wornBy(it)&&(!it.wid||!wdef(it.wid).start))}
+// Une arme se recycle avec tous ses doubles : essence de chaque exemplaire selon son rang (l'arme au rang de meta.wlv, chaque double au sien).
+// Une arme gardée (verrouillée, portée, ou arme de départ) ne se recycle pas : seule une case « doubles » (dup) la représente, et ses doubles partent seuls.
+const recyKey=it=>it.dup?'d:'+it.wid:it.wid?'w:'+it.wid:'s:'+it.id;
+const wCopies=id=>1+wSpares(id).length;
+const wDupEss=id=>{const base=20*(wdef(id).r+1);return wSpares(id).reduce((a,k)=>a+base*2**k,0)};
+const wRecyAll=id=>20*(wdef(id).r+1)*2**(meta.wlv[id]|0)+wDupEss(id);
+const recyEss=it=>it.dup?wDupEss(it.wid):it.wid?wRecyAll(it.wid):recyGain(it);
+const recyCount=it=>it.dup?wSpares(it.wid).length:it.wid?wCopies(it.wid):1;
+const recyN=P=>P.reduce((a,it)=>a+recyCount(it),0);
+// « 9 objets », ou « 9 objets (32 exemplaires) » quand des armes ont des doubles
+const recyTxt=P=>{const n=P.length,c=recyN(P);return `${n} objet${n>1?'s':''}${c>n?` (${c} exemplaires avec les doubles)`:''}`};
+const wKept=it=>it.lock||!!wornBy(it)||!!wdef(it.wid).start;
+const dupOf=it=>Object.assign({},it,{dup:true,lock:false,up:0});
+function recyAll(){const out=[];
+  for(const it of invList('recy')){
+    if(!it.wid){if(!wornBy(it))out.push(it);continue}
+    if(!wKept(it)){out.push(it);continue}
+    if(wSpares(it.wid).length)out.push(dupOf(it));else if(it.lock&&!wdef(it.wid).start)out.push(it)}
+  // armes portées (absentes de la liste du coffre) : leurs doubles se recyclent aussi
+  if(stF==='all'||stF==='arme')for(const c in CLS){const id=curWid(c);if(!id||!ownedW(id)||!wSpares(id).length)continue;const it=weaponItem(c,id);if(invMatch(it,invQ)&&!out.some(x=>x.wid===id))out.push(dupOf(it))}
+  return out}
 function recyList(){return recyAll().filter(it=>!recyR.size||recyR.has(it.r))}
 function recyPicked(){const all=recyAll();return [...recySel].map(k=>all.find(it=>recyKey(it)===k)).filter(it=>it&&!it.lock)}
 // Contenu d'une case d'objet : cadenas s'il est verrouillé, glyphe de l'emplacement, rang s'il a été fusionné.
 const cellIn=it=>`${it.lock?`<span class="cx-cell__lock">${LOCK_SVG}</span>`:''}${GLYPH[it.slot]}${it.up?`<span class="cx-cell__up">R${it.up+1}</span>`:''}`;
-function recyCell(it){const k=recyKey(it),on=recySel.has(k);return `<button class="cx-cell${on?' is-src':''}" data-cact="rcsel" data-arg="${k}" ${it.lock?'aria-disabled="true"':''} style="--rar:${RARV[it.r]}" aria-pressed="${on}" aria-label="${esc(itemName(it))}${it.lock?', verrouillé':''}${on?', choisi':''}">${cellIn(it)}${on?'<span class="cx-pin cx-pin--src">−</span>':''}</button>`}
+function recyCell(it){const k=recyKey(it),on=recySel.has(k);return `<button class="cx-cell${on?' is-src':''}" data-cact="rcsel" data-arg="${k}" ${it.lock?'aria-disabled="true"':''} style="--rar:${RARV[it.r]}" aria-pressed="${on}" aria-label="${it.dup?`Doubles de ${esc(it.name)} (${recyCount(it)}), l'arme reste`:esc(itemName(it))}${it.lock?', verrouillé':''}${on?', choisi':''}">${it.dup?`<span class="cx-cell__lock">${LOCK_SVG}</span>${GLYPH[it.slot]}`:cellIn(it)}${recyCount(it)>1||it.dup?`<span class="cx-cell__n">×${recyCount(it)}</span>`:''}${on?'<span class="cx-pin cx-pin--src">−</span>':''}</button>`}
 function recyCells(){const all=recyAll(),list=recyList();return list.length?`<div class="cx-cells">${list.map(recyCell).join('')}</div>`:`<p class="cx-hint" style="margin:0">${all.length?'Aucun objet pour ce filtre.':'Rien à recycler : ton coffre est vide.'}</p>`}
 function campRecycle(){const all=recyAll(),list=recyList();for(const k of [...recySel])if(!all.some(it=>recyKey(it)===k&&!it.lock))recySel.delete(k);
   const rs=[...new Set(all.map(it=>it.r))].sort((a,b)=>a-b),cnt={};for(const it of all)cnt[it.r]=(cnt[it.r]||0)+1;
@@ -210,14 +256,15 @@ function campRecycle(){const all=recyAll(),list=recyList();for(const k of [...re
     <section class="cx-section"><h3 class="cx-section__label">Objets · ${list.length}</h3>${all.length?invToolbar(list,'recy').replace('<span class="cx-count" id="invCount">','<span class="cx-count">'):''}
     <div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-cact="rcall" ${sel?'':'disabled'}>Tout sélectionner · ${sel}</button><button class="cx-btn cx-btn--sm cx-btn--ghost" data-cact="rcnone" ${recySel.size?'':'disabled'}>Tout désélectionner</button></div>
     <div id="invGrid">${recyCells()}</div>
-    <p class="cx-hint" style="margin:0">Les objets portés ne sont pas listés ; les objets verrouillés (cadenas) ne se recyclent pas.</p></section>`}
+    <p class="cx-hint" style="margin:0">Les objets portés ne sont pas listés ; les objets verrouillés (cadenas) ne se recyclent pas. Une arme part avec tous ses doubles (×N sur la case) ; verrouillée ou portée, elle reste et seuls ses doubles se recyclent (case au cadenas).</p></section>`}
 function recyFoot(){const P=recyPicked();if(!P.length)return '<p class="cx-hint">Touche les objets à recycler.</p>';
   const e=P.reduce((a,it)=>a+recyEss(it),0),f=0;
-  if(recyAsk)return `<p class="cx-hint">Recycler ${P.length} objet${P.length>1?'s':''} ? Ils sont détruits contre ${e} essence${f?` et ${f} fragment${f>1?'s':''}`:''}.</p><div class="row"><button class="cx-btn cx-btn--ghost" data-cact="rcno">Annuler</button><button class="cx-btn cx-btn--danger" data-cact="rcok">Recycler</button></div>`;
-  return `<button class="cx-btn cx-btn--danger cx-btn--cost" data-cact="${P.length>1?'rcask':'rcok'}">Recycler · ${P.length} <span class="cx-price ess"><i class="cx-ess"></i>+${e}</span></button>`}
+  if(recyAsk)return `<p class="cx-hint">Recycler ${recyTxt(P)} ? Ils sont détruits contre ${e} essence${f?` et ${f} fragment${f>1?'s':''}`:''}.</p><div class="row"><button class="cx-btn cx-btn--ghost" data-cact="rcno">Annuler</button><button class="cx-btn cx-btn--danger" data-cact="rcok">Recycler</button></div>`;
+  return `<button class="cx-btn cx-btn--danger cx-btn--cost" data-cact="${recyN(P)>1?'rcask':'rcok'}">Recycler · ${P.length} <span class="cx-price ess"><i class="cx-ess"></i>+${e}</span></button>`}
 function recyDo(){const P=recyPicked();if(!P.length)return;let e=0,f=0;
   for(const it of P){e+=recyEss(it);
-    if(it.wid)wDestroy(it.wid); // un double prend la place de l'arme recyclée (le plus haut rang) ; sinon l'arme disparaît
+    if(it.dup)delete meta.wcp[it.wid]; // arme gardée : seuls ses doubles partent
+    else if(it.wid){delete meta.wcp[it.wid];wDestroy(it.wid)} // l'arme part avec tous ses doubles
     else meta.stash=meta.stash.filter(x=>x!==it)}
   meta.essence+=e;recySel.clear();recyAsk=false;SND.play('pick2');
-  toast(`${P.length} objet${P.length>1?'s':''} recyclé${P.length>1?'s':''} · +${e} essence${f?` · ${f} fragment${f>1?'s':''}`:''}`)}
+  toast(`${recyTxt(P)} recyclé${P.length>1?'s':''} · +${e} essence${f?` · ${f} fragment${f>1?'s':''}`:''}`)}

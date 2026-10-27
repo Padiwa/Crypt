@@ -37,17 +37,19 @@ export async function withMeta(p, fn, arg) {
 }
 
 // Navigation du Camp, indépendante de la disposition exacte des onglets.
-export async function openCamp(p) { if (await p.evaluate(() => $('camp').hidden)) await p.click('#campBtn'); }
+// v130 : le Camp s'ouvre par la barre des onglets (l'onglet de la vue en cours), et se ferme par l'onglet Combat.
+export async function openCamp(p) { if (await p.evaluate(() => $('camp').hidden)) { const k = await p.evaluate(() => navOf(campTab)); await p.click(`#tabbar [data-nav="${k}"]`); } }
 export async function campView(p, tab, sub) {
   await openCamp(p);
   await p.evaluate(([t, s]) => {
     campTab = t; campSel = null; campBack = null;
+    if (t === 'equip') heroSub = s || 'main';
     if (t === 'forge' && s) forgeSub = s;
     if (t === 'arsenal' && s) arsView = s;
     drawCamp();
   }, [tab, sub]);
 }
-export async function closeCamp(p) { if (!(await p.evaluate(() => $('camp').hidden))) await p.click('#closeCamp'); }
+export async function closeCamp(p) { if (!(await p.evaluate(() => $('camp').hidden))) await p.click('#tabbar [data-nav="combat"]'); }
 
 // Lance une mission (mode, niveau, difficulté, palier, classe).
 export async function startMission(p, { mode = 'survie', level = 1, diff = 0, torm = 1, cls = null } = {}) {
@@ -62,3 +64,7 @@ export async function startMission(p, { mode = 'survie', level = 1, diff = 0, to
 }
 
 export const sleep = (p, ms) => p.waitForTimeout(ms);
+
+// v130 : le héros se change avec les flèches de l'accueil ; la mission se règle sur l'écran Mission (carte de mission).
+export async function pickHero(p, c) { for (let i = 0; i < 3 && (await p.evaluate(() => heroCls)) !== c; i++) await p.click('#heroNext'); }
+export async function openMission(p) { if (await p.evaluate(() => $('mission').hidden)) await p.click('#missionCard'); }

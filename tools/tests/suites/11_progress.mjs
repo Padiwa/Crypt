@@ -1,15 +1,18 @@
 // Parcours du joueur nouveau, régénération (bonus et mod).
-import { newPage, campView } from '../lib.mjs';
+import { newPage, campView, closeCamp } from '../lib.mjs';
 
 export const tests = [
   { name: 'Parcours : étape 1 puis 2, masquer et réafficher', fn: async (b, t) => {
     const p = t.track(await newPage(b));
+    t.ok(await p.evaluate(() => tutStep() === 0 && !$('tutBtn').hidden && /Parcours 1/.test($('tutBtn').textContent)), 'étape 1 : bandeau sur l\'accueil');
+    await p.click('#tutBtn');
+    t.ok(await p.evaluate(() => !!document.querySelector('#pickBody .tutc') && document.querySelectorAll('#pickBody .tutrack li').length === 6), 'feuille du parcours : 6 étapes et la carte');
+    await p.evaluate(() => closePick());
+    await p.evaluate(() => { meta.wins = 1; for (const k of ['armure', 'amulette', 'bottes', 'anneau']) { const it = genItem(5); it.slot = k; meta.gear[k] = it; } saveMeta(); refreshMenus(); });
+    t.eq(await p.evaluate(() => [tutStep(), /Parcours 2/.test($('tutBtn').textContent)]), [1, true], 'étape 2');
+    await p.click('#tutBtn'); await p.click('#pickBody [data-cact="tutoff"]'); t.ok(await p.evaluate(() => $('tutBtn').hidden && $('pickSheet').hidden), 'masqué');
     await campView(p, 'equip');
-    t.ok(await p.evaluate(() => tutStep() === 0 && !!document.querySelector('.tutc')), 'étape 1 affichée');
-    await p.evaluate(() => { meta.wins = 1; for (const k of ['armure', 'amulette', 'bottes', 'anneau']) { const it = genItem(5); it.slot = k; meta.gear[k] = it; } saveMeta(); drawCamp(); });
-    t.eq(await p.evaluate(() => tutStep()), 1, 'étape 2');
-    await p.click('[data-cact="tutoff"]'); t.ok(await p.evaluate(() => !document.querySelector('.tutc')), 'masqué');
-    await p.click('[data-cact="tuton"]'); t.ok(await p.evaluate(() => !!document.querySelector('.tutc')), 'réaffiché');
+    await p.click('[data-cact="tuton"]'); await closeCamp(p); t.ok(await p.evaluate(() => !$('tutBtn').hidden), 'réaffiché');
   } },
   { name: 'Régénération : bonus 1,5 % de la vie max (min 3), mod Second souffle', fn: async (b, t) => {
     const p = t.track(await newPage(b));

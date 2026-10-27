@@ -7,9 +7,9 @@ const anyRank=()=>[...meta.stash,...allWorn()].some(i=>i&&(i.up|0)>=1)||Object.v
 const TUT=[
   {n:'Premiers pas',tip:'Survie en Normal, niveau 1. Sors au premier portail : un butin ramené vaut mieux qu\'une manche de trop. En pause, équipe ce qui porte ▲.',
     o:[['Réussis ta première mission',()=>meta.wins>=1],['Porte une armure, une amulette, des bottes et un anneau',()=>['armure','amulette','bottes','anneau'].every(k=>meta.gear[k])]]},
-  {n:'Premiers achats',tip:'Forge › Bonus : Force, Vigueur puis Célérité. Fais éclore ton œuf offert dans l\'onglet Familier.',
+  {n:'Premiers achats',tip:'Forge › Bonus : Force, Vigueur puis Célérité. Fais éclore ton œuf offert : Collection › Familiers.',
     o:[['Achète Force et Vigueur',()=>lv('str')>=1&&lv('vig')>=1],['Équipe un familier',()=>!!petEq()]]},
-  {n:'Monter en niveau',tip:'Monte le niveau de mission sur l\'écran d\'accueil. Après chaque sortie : « Équiper le meilleur », puis Forge › Fusion pour les doubles et Armurerie › Recyclage pour le reste.',
+  {n:'Monter en niveau',tip:'Monte le niveau de mission : touche la carte de mission sur l\'accueil. Après chaque sortie : « Équiper le meilleur » (onglet Héros), puis Forge › Fusion (Tout fusionner) pour les doubles et Arsenal › Recycler pour le reste.',
     o:[['Réussis une mission de niveau 10',()=>maxL()>=10],['Fais passer un objet au rang 2',anyRank]]},
   {n:'Premières reliques',tip:'Garde toujours des reliques équipées : elles s\'ouvrent avec les ennemis au halo doré. Pousse ta plus haute mission avant de fabriquer : l\'objet en prend le niveau.',
     o:[['Ouvre une relique en mission',()=>meta.relOpened>=1],['Fabrique un objet légendaire',()=>ownedRar(3)],['Réussis une mission de niveau 20',()=>maxL()>=20]]},

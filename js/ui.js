@@ -45,6 +45,8 @@ $('bagBtn').addEventListener('click',()=>{if(started&&!G.over&&$('extract').hidd
 $('closeBag').addEventListener('click',closeBag);$('closeBagX').addEventListener('click',closeBag);
 $('rendBtn').addEventListener('click',()=>{if(PX){dropPixi('choix du joueur');try{localStorage.setItem('crypte-nogl','1')}catch{}}else{try{localStorage.removeItem('crypte-nogl')}catch{}location.reload()}});
 function drawBag(){
+  {const rq=G.relic?`${G.react|0} / ${reactNeed()}`:`${(G.opened||[]).length} / ${G.relQ.length}`;
+    $('bagSum').innerHTML=`<span><b>${G.level}</b><small>niveau</small></span><span><b class="g">${G.gold}</b><small>or</small></span><span><b>${G.kills|0}</b><small>monstres</small></span><span><b class="r">${G.relQ.length?rq:'—'}</b><small>${G.relic?'réactifs':'reliques'}</small></span>`}
   $('slots').innerHTML=slotsHtml(G.eq,false);
   $('statgrid').innerHTML=statRows(S);
   $('bagKey').innerHTML=typeof keyStats==='function'?keyStats(S):'';
@@ -99,9 +101,11 @@ function showLevelUp(){SND.play('lvl');
   while(out.length<3&&pool.length)out.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
   for(const f of RUP_FILL)if(out.length<3)out.push(f);
   $('luSub').textContent=`Héros niveau ${G.hl-G.pend+1}`;
+  // v130 : cartes verticales (catégorie, nom, effet, rangs) ; la couleur de catégorie reste celle du jeu.
+  const CAT={[C_ATK]:'Attaque',[C_DEF]:'Défense',[C_UTI]:'Utilité',[C_ELE]:'Élément'};
   $('choices').innerHTML=out.map((u,i)=>{const rk=G.run[u.k]||0;
-    const d=u.k==='purse'?`+${20*G.level} or`:u.d;
-    return `<button class="choice" data-k="${u.k}" style="--cc:${u.c}"><span class="k">${i+1}</span><b>${u.n}${u.max?(rk+1>=u.max?`<small class="last">rang ${rk+1} / ${u.max} · dernier</small>`:rk?`<small>rang ${rk} → ${rk+1} / ${u.max}</small>`:`<small>nouveau · rang 1 / ${u.max}</small>`):''}</b><p>${d}</p>${u.max?`<span class="pips" aria-hidden="true">${Array.from({length:u.max},(_,j)=>`<i class="${j<rk?'on':j===rk?'nx':''}"></i>`).join('')}</span>`:''}</button>`}).join('');
+    const d=u.k==='purse'?`+${20*G.level} or`:u.d,rkt=u.max?(rk+1>=u.max&&rk?`rang ${rk+1} / ${u.max} · dernier`:rk?`rang ${rk} → ${rk+1} / ${u.max}`:`rang 1 / ${u.max}`):'';
+    return `<button class="choice${!rk&&u.max?' is-new':''}" data-k="${u.k}" style="--cc:${u.c||'var(--gold2)'}"><span class="k">${i+1}</span>${CAT[u.c]?`<span class="choice__cat">${CAT[u.c]}</span>`:''}${!rk&&u.max?'<span class="choice__new">Nouveau</span>':''}<b>${u.n}</b><p>${d}</p>${u.max?`<span class="pips" aria-hidden="true">${Array.from({length:u.max},(_,j)=>`<i class="${j<rk?'on':j===rk?'nx':''}"></i>`).join('')}</span><small${rk+1>=u.max&&rk?' class="last"':''}>${rkt}</small>`:''}</button>`}).join('');
   $('choices').querySelectorAll('.choice').forEach(b=>b.onclick=()=>{if(performance.now()-luShown<350)return;pickUp(b.dataset.k)});
   luShown=performance.now();
   $('lvlup').hidden=false;
@@ -331,13 +335,13 @@ function resolveRelic(){
   return h;
 }
 function missionSuccess(){SND.play('win');if(NET.host)netSend({t:'exit'});G.hold=false;
-  $('extract').hidden=true;$('lvlup').hidden=true;G.over=true;const rel=resolveRelic();const g=bank(true);recordBest();
+  $('extract').hidden=true;$('lvlup').hidden=true;G.over=true;$('over').classList.remove('is-dead');const rel=resolveRelic();const g=bank(true);recordBest();
   const cn=Math.max(1,G.capN|0),txt=G.mode==='capture'?`${cn>1?cn+' cibles capturées':'Cible capturée'} en ${fmt(G.t)}, ${G.kills} ennemis abattus.`:G.mode==='defense'?`Tu as tenu ${G.wave} vagues, ${G.kills} ennemis abattus.`:`Tu es sorti au niveau ${G.level} après ${fmt(G.t)}, avec ${G.kills} ennemis abattus.`;
   showOver(G.mode==='capture'?'Capture réussie':'Extraction réussie',txt+' Ton butin t\'attend au Camp.',`<span class="coin"></span>+${g} or · ${meta.gold} au total`,
     `<div class="exsum">${lootSummary(true)}</div>`+rel);
 }
 function gameOver(reason){
-  if(G.over)return;if(NET.host)netSend({t:'fail'});G.hold=false;SND.play('lose');G.over=true;const g=bank(false);recordBest();
+  if(G.over)return;if(NET.host)netSend({t:'fail'});G.hold=false;SND.play('lose');G.over=true;$('over').classList.add('is-dead');const g=bank(false);recordBest();
   const lost=G.loot.items.length+G.loot.parts.length+G.loot.relics.length;
   setTimeout(()=>showOver(reason==='pod'?'Le cryopode est détruit':'Tu es tombé',`Mission échouée après ${fmt(G.t)}, ${G.kills} ennemis abattus.`+(lost?(lost>1?` Les ${lost} objets et reliques trouvés sont perdus.`:' L\'objet trouvé est perdu.'):''),
     `<span class="coin"></span>+${g} or gardé (la moitié) · ${meta.gold} au total`,G.relQ.length?'Tes reliques ne sont pas consommées.':''),700);

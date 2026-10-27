@@ -366,7 +366,12 @@ select:disabled{opacity:.5}
 .cx-tab[aria-selected="true"] svg{color:var(--ember)}
 
 /* ---------- RolePicker (Source / Cible) ---------- */
-.cx-roles{display:grid; grid-template-columns:1fr 1fr; gap:var(--space-2)}
+.cx-roles{display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:var(--space-2)}
+.cx-swap{box-sizing:border-box; width:40px; height:40px; display:grid; place-items:center; padding:0; border-radius:var(--radius-pill); border:1px solid var(--line-strong); background:var(--panel-2); color:var(--ink); cursor:pointer; -webkit-tap-highlight-color:transparent}
+.cx-swap svg{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round}
+.cx-swap:hover:not(:disabled){border-color:var(--ember); color:var(--ember-hi)}
+.cx-swap:focus-visible{outline:2px solid var(--ember-hi); outline-offset:3px}
+.cx-swap:disabled{opacity:.35; cursor:not-allowed}
 .cx-role{
   --rc:var(--muted);
   box-sizing:border-box; display:flex; flex-direction:column; gap:3px; min-width:0; min-height:58px; margin:0; padding:var(--space-2) var(--space-3);
@@ -405,6 +410,7 @@ select:disabled{opacity:.5}
 }
 .cx-cell svg{width:26px; height:26px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round}
 .cx-cell__up{position:absolute; bottom:2px; left:4px; font:700 10px/1 var(--font-body); color:var(--ess); font-variant-numeric:tabular-nums}
+.cx-cell__n{position:absolute; bottom:2px; right:4px; font:700 10px/1 var(--font-body); color:var(--ink); font-variant-numeric:tabular-nums}
 .cx-cell__lock{position:absolute; top:-7px; left:-7px; width:20px; height:20px; display:grid; place-items:center; border-radius:var(--radius-pill); background:var(--gold); color:var(--on-ember); box-shadow:0 0 0 2px var(--panel)}
 .cx-cell__lock svg{width:12px; height:12px; stroke-width:2.4}
 .cx-slot:focus-visible,.cx-cell:focus-visible{outline:2px solid var(--ember-hi); outline-offset:3px}
@@ -777,6 +783,28 @@ button.cx-row .cx-row__v::after{content:""; width:7px; height:7px; margin-left:4
 .rs.ok{color:var(--heal);background:var(--heal-soft)}.rs.miss{color:var(--muted);border:1px dashed var(--line-strong)}.rs.comp{color:var(--on-ember);background:var(--gold)}.rs.cur{color:var(--ess)}
 
 .rctl{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;color:var(--muted)}.rctl b{color:var(--ink)}
+.xfaff{display:flex;flex-direction:column;gap:4px;min-width:0}
+.xfaff__k{font:600 12px/1.3 var(--font-body);color:var(--muted)}
+.xfaff__box{position:relative;display:flex;flex-direction:column;justify-content:center;gap:2px;min-height:var(--control-md);padding:7px 28px 7px 10px;background:var(--panel-2);border:1px solid var(--line-strong);border-radius:var(--radius-md)}
+.xfaff__box.is-empty{border-color:var(--ember)}
+.xfaff__box:focus-within{outline:2px solid var(--ember-hi);outline-offset:2px}
+.xfaff__v{font:700 14px/1.25 var(--font-body);color:var(--ink);overflow-wrap:anywhere}
+.xfaff__box.is-empty .xfaff__v{color:var(--ember-hi)}
+.xfaff__s{font:400 12px/1.3 var(--font-body);color:var(--muted)}
+.xfaff__box i{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-style:normal;color:var(--muted);pointer-events:none}
+.xfaff__box select{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;opacity:0;cursor:pointer;font-size:16px;border:0}
+.xfcl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.xfc{all:unset;box-sizing:border-box;position:relative;width:100%;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center;padding:9px 12px;min-height:var(--control-md);background:var(--sunk);border:1px solid var(--line);border-radius:var(--radius-md)}
+.xfc:hover{background:var(--panel-2)}
+.xfc:focus-visible{outline:2px solid var(--ember-hi);outline-offset:2px}
+.xfc[aria-pressed="true"]{border-color:var(--blood-ink);box-shadow:0 0 0 1px var(--blood-ink)}
+.xfc:disabled{opacity:.45;cursor:not-allowed}
+.xfc__nm{font:700 14px/1.25 var(--font-body);overflow-wrap:anywhere}
+.xfc__v{font:700 14px/1.2 var(--font-body);color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.xfc__sub{grid-column:1/3;font:400 12px/1.3 var(--font-body);color:var(--muted)}
+.xfc__sub b{font-weight:700}.xfc__sub b.ok{color:var(--heal)}
+.xfc .li{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:#f0cf4a;color:#1b0f06;vertical-align:-3px;margin-left:4px}
+.xfc .li svg{width:10px;height:10px;fill:none;stroke:currentColor;stroke-width:2.6}
 .afind{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .afind>li{border:1px solid var(--line);border-radius:var(--radius-md);background:var(--sunk);overflow:hidden}
 .afind>li.open{border-color:var(--line-strong)}
@@ -796,6 +824,8 @@ button.cx-row .cx-row__v::after{content:""; width:7px; height:7px; margin-left:4
 .cx-sheet__foot.stack .cx-hint{margin:0;text-align:center}
 .cx-sheet__foot .row{display:flex;gap:var(--space-2)}
 .cx-sheet__foot .row .cx-btn{flex:1 1 0}.cx-sheet__foot .row .cx-btn--primary{flex-grow:2}
+/* téléphone étroit : les deux boutons du pied tiennent (le prix du bouton principal sortait à 320 px) */
+@media (max-width:360px){.cx-sheet__foot .row .cx-btn{min-width:0;padding:0 10px}.cx-sheet__foot .row .cx-btn--cost{gap:8px}}
 .cx-sheet .purse{font-size:16px}
 #rendBtn{margin:0}
 @media (prefers-reduced-motion:reduce){.btn,.choice{transition:none}.btn:active,.choice:active{transform:none}}
@@ -1043,7 +1073,7 @@ li.affoff{color:var(--muted)}
 @media (pointer:fine){#cv{cursor:crosshair}}
 
 /* v106 : héros qui porte l'objet (coffre), équipements enregistrés, reliques ouvertes dans le HUD */
-.cell .cwho{position:absolute;bottom:-6px;right:-6px;min-width:17px;height:17px;padding:0 3px;border-radius:9px;background:var(--wc);color:#1b0f06;font:800 10px/17px var(--font-body);text-align:center;box-shadow:0 0 0 2px var(--panel)}
+.cell .cwho,.cx-cell .cwho{position:absolute;bottom:-6px;right:-6px;min-width:17px;height:17px;padding:0 3px;border-radius:9px;background:var(--wc);color:#1b0f06;font:800 10px/17px var(--font-body);text-align:center;box-shadow:0 0 0 2px var(--panel)}
 .cx-set .cx-row__k{gap:3px}
 .cx-setname{width:100%;max-width:16em;box-sizing:border-box;background:transparent;border:1px solid transparent;border-radius:6px;padding:2px 4px;margin-left:-5px;font:600 14px/1.3 var(--font-body);color:var(--ink)}
 .cx-setname:hover{border-color:var(--line)}

@@ -220,7 +220,7 @@ function netStartGuest(m){const sv=meta.mode;meta.mode=MODES[m.mode]?m.mode:'sur
   G.pillars=m.map.pil.map(a=>({x:a[0],y:a[1],r:a[2]}));G.braziers=m.map.bra.map(a=>({x:a[0],y:a[1],ph:rand(0,6)}));G.runes=m.map.run.map(a=>({x:a[0],y:a[1],r:a[2]}));if(G.pod)G.pillars.push(G.pod);
   {const o=SPAWN_OFF[NET.slot]||[40,0];G.P.x=m.x+o[0];G.P.y=m.y+o[1];resolve(G.P)}G.cam.x=G.P.x;G.cam.y=G.P.y;G.en=[];G.mates=[];
   if(PX)try{buildStatic()}catch(err){dropPixi(err)}
-  ['over','extract','lvlup','camp','bag','coop','settings'].forEach(id=>{const el=$(id);if(el)el.hidden=true});$('intro').hidden=true;
+  ['over','extract','lvlup','camp','bag','coop','settings','mission'].forEach(id=>{const el=$(id);if(el)el.hidden=true});$('intro').hidden=true;
   NET.lastRx=performance.now();window.goRun&&window.goRun();netTicks()}
 
 /* ---------- Échanges en partie ---------- */
@@ -359,8 +359,10 @@ function coopWait(on){const el=$('exitBtn'),c=$('contBtn');if(!el)return;el.disa
 /* ---------- Écran de connexion ---------- */
 function loadQr(){return new Promise(res=>{if(window.qrcode)return res(true);const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';s.onload=()=>res(!!window.qrcode);s.onerror=()=>res(false);document.head.appendChild(s)})}
 function qrSvg(text){try{const q=qrcode(0,'L');q.addData(text);q.make();return q.createSvgTag({cellSize:3,margin:2,scalable:true})}catch{return ''}}
-function refreshCoopUi(){const b=$('coopBtn'),n=coopN();if(b)b.innerHTML=NET.on?`<span class="cx-dot"></span>Coop · ${n}`:NET.host&&NET.relay==='on'&&RL.code?`<span class="cx-dot"></span>Coop · ${RL.code}`:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.2A5 5 0 0 1 21 19"/></svg>Coop';
-  const sb=$('startBtn');if(sb&&NET.guest&&NET.on){sb.disabled=true;sb.textContent=`En attente de l'hôte${NET.hostMode?' · '+(MODES[NET.hostMode.mode]||MODES.survie).n:''}…`}else if(sb&&sb.disabled&&!NET.guest){sb.disabled=false;refreshMenus()}}
+const COOP_SVG='<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.2A5 5 0 0 1 21 19"/></svg>';
+function refreshCoopUi(){const b=$('coopBtn'),n=coopN(),live=NET.on||(NET.host&&NET.relay==='on'&&RL.code);
+  if(b){b.innerHTML=`<span class="home__sbi">${COOP_SVG}</span><small>${NET.on?`Coop · ${n}`:live?`Code ${RL.code}`:'Coop'}</small>${live?'<span class="cx-dot" aria-hidden="true"></span>':''}`;b.classList.toggle('is-live',!!live)}
+  for(const id of ['startBtn','startBtn2']){const sb=$(id);if(sb&&NET.guest&&NET.on){sb.disabled=true;sb.innerHTML=`En attente<small>l'hôte lance${NET.hostMode?' · '+(MODES[NET.hostMode.mode]||MODES.survie).n:''}</small>`}else if(sb&&sb.disabled&&!NET.guest){sb.disabled=false;refreshMenus()}}}
 function codeBox(lab,code,share){return `<div class="coopcode"><span class="cx-hint" style="margin:0">${lab}</span><div class="qr" id="coopQr"></div>
   <textarea readonly id="coopOut" rows="3" aria-label="${lab}">${code}</textarea>
   <div class="actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-coop="copy">Copier</button>${share&&navigator.share?'<button class="cx-btn cx-btn--sm" data-coop="share">Partager</button>':''}</div></div>`}
@@ -384,7 +386,7 @@ function drawCoop(){const body=$('coopBody');if(!body||$('coop').hidden)return;c
     h=`<section class="cx-section"><h3 class="cx-section__label">Ta partie · ${1+open.length} / ${NET_MAX} joueurs</h3>${top}${rosterHtml(rosterList())}
       ${arriving?`<p class="cx-hint" style="margin:0">${arriving} joueur${arriving>1?'s':''} en train d'arriver…</p>`:''}
       ${!relay&&!pend&&!full?`<div class="actions" style="margin:0"><button class="cx-btn${open.length?'':' cx-btn--primary'}" data-coop="add">Inviter un joueur</button></div>`:''}
-      <div class="setrow"><div><b>Mission</b><span>${missionTxt(lobbyInfo())}. Le mode, le niveau et la difficulté se choisissent sur l'écran d'accueil${open.length?'':' ; la Brèche demande au moins un autre joueur'}.</span></div></div>
+      <div class="setrow"><div><b>Mission</b><span>${missionTxt(lobbyInfo())}. Le mode, le niveau et la difficulté se choisissent sur l'écran Mission (touche la carte de mission de l'accueil)${open.length?'':' ; la Brèche demande au moins un autre joueur'}.</span></div></div>
       ${open.length?`<p style="margin:0">Ferme cette fenêtre et touche « Lancer » : vous partez ensemble. Chacun joue son héros et peut en changer entre deux missions.</p>`:''}${dropHtml()}${RULES}</section>`;
     if(pend){const n=pend.slot+1;
       if(pend.state==='offer')h+='<p class="cx-hint">Préparation du code…</p>';
@@ -463,6 +465,6 @@ addEventListener('pagehide',()=>{if(NET.on)netSend({t:'bye'})});
   {let c=null;try{c=JSON.parse(sessionStorage.getItem(COOP_SS)||'null')}catch{}
     if(c&&RELAY_URL&&Date.now()-(c.at||0)<10*60*1000&&!/^#coop=/.test(location.hash))addEventListener('load',()=>setTimeout(()=>{if(NET.on||NET.host||NET.guest||started)return;
       if(c.r==='h'&&c.code&&c.key){netHostCode(c.code,c.key);toast('Partie rouverte sous le code '+c.code+'.',true)}else if(c.r==='g'&&c.code){NET.retry={code:c.code,n:0};netJoinCode(c.code,true)}},500))}
-  const btn=document.createElement('button');btn.className='cx-btn cx-btn--sm cx-btn--ghost';btn.style.margin='0';btn.id='coopBtn';btn.innerHTML='Coop';btn.onclick=openCoop;
-  const g=$('guideBtn');if(g)g.before(btn);
+  const btn=document.createElement('button');btn.className='home__sb home__sb--coop';btn.id='coopBtn';btn.setAttribute('aria-label','Coopération');btn.innerHTML='Coop';btn.onclick=openCoop;
+  const g=$('guideBtn');if(g)g.before(btn);refreshCoopUi();
 })();

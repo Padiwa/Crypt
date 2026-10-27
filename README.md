@@ -5,16 +5,18 @@ Action-RPG de crypte en hordes, jouable au pouce sur mobile et au clavier. Site 
 ## Structure
 | Fichier | Rôle |
 | --- | --- |
-| `index.html` | Interface (HUD, écrans, Camp, Réglages) et ordre de chargement des scripts |
-| `css/game.css` | Styles, design system « Crypte » (tokens + composants `cx-`) |
+| `index.html` | Interface (HUD, accueil Combat, écran Mission, Camp, barre des 5 onglets, Réglages) et ordre de chargement des scripts |
+| `css/game.css` | Styles et mise en page, design system « Crypte » (tokens + composants `cx-`) |
+| `css/aaa.css` | Habillage de la refonte v130, style « AAA mobile » (cadres dorés, boutons à relief, cases serties), chargé après `game.css` ; coquille : barre des onglets, accueil, écran Mission, scène du héros. Ne touche pas au rendu de la mission |
 | `js/data.js` | Constantes, classes, armes, reliques, mods, affixes, sauvegarde `meta` |
 | `js/game.js` | État de partie, ennemis, combat, apparitions, butin, mise à jour |
 | `js/render.js` | Rendu Canvas 2D, rendu WebGL (PixiJS 7.4.2) et HUD |
 | `js/ui.js` | Fiches d'objets, Pause, bonus de niveau, Mods, fin de mission |
-| `js/camp.js` | Le Camp (Héros, Armurerie, Reliques, Mods, Affixes, Forge), sauvegarde JSON |
+| `js/camp.js` | Le Camp : onglets Héros, Arsenal (Coffre, Armes, Recettes, Recycler), Forge (Affixes, Fusion, Bonus, Sceaux), Collection (Mods, Familiers, Reliques) ; transfert d'affixe, sauvegarde JSON |
+| `js/shell.js` | Navigation de la refonte : barre des 5 onglets, accueil Combat (héros dessiné, carte de mission), écran Mission, feuille du Parcours |
 | `js/inv.js` | Coffre de l'Armurerie, fiche d'objet ancrée, recyclage |
-| `js/fuse.js` | Fusion de rang (armes et équipements) |
-| `js/seal.js` | Forge › Affixes (Source / Cible, sceaux) |
+| `js/fuse.js` | Fusion de rang (armes et équipements) et son écran, Forge › Fusion |
+| `js/seal.js` | Sceaux légendaires de la Brèche (Forge › Sceaux) |
 | `js/pet.js` | Familiers |
 | `js/tut.js` | Parcours du joueur nouveau |
 | `js/unlock.js` | Déblocages progressifs du Camp et des choix de mission (conditions, cartes « Nouveau ») |
@@ -54,7 +56,7 @@ Le rythme chargé est celui de la balise `<script src="js/rythmes/….js">` d'`i
 Une suite unique vérifie le jeu dans un vrai navigateur (Chromium sans affichage) : démarrage, butin, reliques, fabrication et fusion, coffre, affixes, emplacements, missions, contrôles, sauvegarde, parcours, coopération.
 ```
 npm i playwright && npx playwright install chromium
-node tools/tests/run.mjs            # tout (≈ 45 s)
+node tools/tests/run.mjs            # tout (100 tests, ≈ 4 min)
 node tools/tests/run.mjs --quick    # sans la coopération
 node tools/tests/run.mjs fusion     # seulement les suites dont le fichier contient « fusion »
 ```
@@ -64,7 +66,7 @@ Chaque fichier de `tools/tests/suites/` exporte une liste `tests`. Toute erreur 
 Android (Chrome) : menu ⋮ → « Installer l'application ». iPhone (Safari) : Partager → « Sur l'écran d'accueil ».
 
 ## Sauvegarde
-Progression dans le stockage du navigateur (`crypte-meta`), réglages dans `crypte-set`. Camp → Forge → Sauvegarde pour exporter ou importer en JSON.
+Progression dans le stockage du navigateur (`crypte-meta`), réglages dans `crypte-set`. Réglages (l'engrenage) → Exporter ou Importer pour la sauvegarde en JSON.
 
 ## Simulateur de progression
 `tools/progression/` joue des carrières complètes dans un vrai navigateur sans affichage. Un bot joue des missions de Survie avec les règles du jeu ; entre deux missions, il passe au Camp comme le conseille le Parcours (fusion, fabrication, meilleur équipement, recyclage, Bonus, talents, prestige, emplacements, mods, familier, reliques). Il monte d'un niveau après chaque sortie d'au moins deux manches, change de palier au plafond prévu et redescend de trois niveaux après une mission perdue.

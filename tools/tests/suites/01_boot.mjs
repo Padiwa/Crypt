@@ -5,7 +5,9 @@ export const tests = [
   { name: 'le jeu démarre sur l\'accueil, sans erreur', fn: async (b, t) => {
     const p = t.track(await newPage(b));
     t.ok(await p.evaluate(() => !$('intro').hidden), 'accueil visible');
-    t.ok((await p.textContent('#startBtn')).includes('Lancer'), 'bouton Lancer');
+    t.ok((await p.textContent('#startBtn')).includes('Combattre'), 'bouton Combattre');
+    t.ok(await p.evaluate(() => getComputedStyle($('tabbar')).display !== 'none' && document.querySelectorAll('#tabbar [data-nav]').length === 5), 'barre des 5 onglets');
+    t.eq(await p.evaluate(() => document.querySelector('#tabbar [aria-current="page"]').dataset.nav), 'combat', 'onglet Combat actif');
   } },
   { name: 'rendu WebGL : une mission tourne', fn: async (b, t) => {
     const p = t.track(await newPage(b, { hash: '#test' }));
