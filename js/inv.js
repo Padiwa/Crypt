@@ -62,7 +62,7 @@ function campEquip(){
   const eq=curEq(),St=stats(eq),n=stashN(),sets=isUnl('sets')?setsOf().length:0;
   const cls=`<div class="cx-tabs hcls" role="tablist" aria-label="Héros">${Object.keys(CLS).map(c=>`<button class="cx-tab" role="tab" data-cact="hcls" data-arg="${c}" aria-selected="${c===heroCls}" style="--hc:${CLS[c].col}">${CLS[c].n}</button>`).join('')}</div>`;
   const sub=(t)=>`${cls}<button class="cx-back" data-cact="hsub" data-arg="main">Retour au héros</button><h3 class="hsub__t">${t}</h3>`;
-  if(heroSub==='tal')return sub('Compétences et talents')+heroTalents();
+  if(heroSub==='tal')return sub('Sorts, ultimes et talents')+heroTalents();
   if(heroSub==='prest')return sub('Prestige')+prestSection();
   if(heroSub==='look')return sub('Apparence')+lookHtml();
   const L=['arme','armure','amulette','bottes'],R=['anneau','anneau2','dos'];
@@ -77,7 +77,7 @@ function campEquip(){
     </section>
     ${keyStats(St)}
     <div class="cx-actions hacts" style="margin:0"><button class="cx-btn cx-btn--sm" data-cact="gocoffre">Coffre · ${n}</button><button class="cx-btn cx-btn--sm" data-cact="goheros">Par héros</button>${isUnl('sets')?`<button class="cx-btn cx-btn--sm" data-cact="gosets">Équipements · ${sets}</button>`:''}</div>
-    <div class="htiles">${tile('tal','<svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.3L22 9l-5 4.8L18.2 21 12 17.5 5.8 21 7 13.8 2 9l7.1-.7z"/></svg>','Talents',`${tn} / ${TAL[heroCls].length}`,tb)}
+    <div class="htiles">${tile('tal','<svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.3L22 9l-5 4.8L18.2 21 12 17.5 5.8 21 7 13.8 2 9l7.1-.7z"/></svg>','Sorts et talents',`talents ${tn} / ${TAL[heroCls].length}`,tb)}
       ${tile('prest','<svg viewBox="0 0 24 24"><path d="M3 18h18l-2-10-4 4-3-7-3 7-4-4z"/><path d="M3 21h18"/></svg>','Prestige',prOn?`niveau ${o.lv}${pf?` · ${pf} point${pf>1?'s':''}`:''}`:`Forge ${nmax} / ${UPG.length}`,pf)}
       ${tile('look','<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-2 0-3 2-1 3-1c2.5 0 4-1.5 4-4 0-4.5-4-8-9-8z"/><circle cx="7.5" cy="11" r="1.4"/><circle cx="11" cy="7" r="1.4"/><circle cx="16" cy="8" r="1.4"/></svg>','Apparence','couleurs')}</div>
     ${setsHtml()}${slotUnlockHtml()}

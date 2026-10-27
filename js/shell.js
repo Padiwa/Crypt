@@ -53,7 +53,7 @@ function homeDraw(){
   $('introGold').textContent=fmtBig(meta.gold);$('introEss').textContent=fmtBig(meta.essence);
   $('homeGold').title=`${(meta.gold|0).toLocaleString('fr-FR')} or`;$('homeEss').title=`${(meta.essence|0).toLocaleString('fr-FR')} essence`;
   heroPaint($('avaCv'),heroCls,-Math.PI/2,1.25);heroPaint($('heroCv'),heroCls,-Math.PI/2,1.12);
-  const C=CLS[heroCls];$('heroName').textContent=C.n;$('heroCv').setAttribute('aria-label',`${C.n} : ${C.skill}, ultime ${C.ult}`);
+  const C=CLS[heroCls];$('heroName').textContent=C.n;$('heroCv').setAttribute('aria-label',`${C.n} : ${kitS().n}, ultime ${kitU().n}`);
   document.documentElement.style.setProperty('--hero-c',C.col);
   $('heroDots').innerHTML=heroOrder().map(c=>`<i class="${c===heroCls?'on':''}" style="--c:${CLS[c].col}"></i>`).join('');
   // Parcours

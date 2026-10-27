@@ -288,7 +288,9 @@ function bank(full){
   const g=full?G.gold:Math.floor(G.gold/2);meta.gold+=g;G.run={};
   const gainM=(mt,label)=>{let up=0;if(mt.r<10){mt.xp+=G.kills;while(mt.r<10&&mt.xp>=mastNeed(mt.r)){mt.xp-=mastNeed(mt.r);mt.r++;up++}if(mt.r>=10)mt.xp=0}
     return `Maîtrise ${label} : rang ${mt.r} / 10`+(mt.r<10?` (${mt.xp} / ${mastNeed(mt.r)})`:'')+(up?` · +${up} de capacité`:'')};
+  const r0=mastOf(G.cls).r;
   G.mastMsg=gainM(mastOf(G.cls),deCls(G.cls))+'<br>'+gainM(mstOf(meta.wmast,G.wid),deW(wdef(G.wid).n));
+  {const r1=mastOf(G.cls).r,nw=KIT_MAST.filter(r=>r>0&&r0<r&&r1>=r).length;if(nw)G.mastMsg+=`<br><b style="color:#ffd45a">Nouveau sort et nouvel ultime ${deCls(G.cls)}</b> au choix : Héros › Sorts et talents.`}
   {const pm=petBank(G.kills);if(pm)G.mastMsg+='<br>'+pm}
   if(full){tutWin();
     for(const it of G.loot.items)meta.stash.push(it)

@@ -21,7 +21,7 @@ function newGame(){
   const C=CLS[heroCls],L=clamp(meta.start|0||1,1,LV_MAX);
   G={eid:0,bid:0,zid:0,hold:false,mates:[],oshots:null,cls:heroCls,level:L,t:0,tl:0,potions:2+lv('alc'),kills:0,gold:0,loot:{items:[],parts:[],relics:[],seals:[],lsh:0},breche:false,twinQ:[],fresh:0,run:{},hl:1,xp:0,pend:0,nxp:0,
     en:[],shots:[],eb:[],zaps:[],zones:[],lobs:[],parts:[],texts:[],drops:[],rings:[],spawns:[],shake:0,spawnT:1.2,bossT:BOSS_T,bossN:0,vw:600,vh:900};
-  G.eq=curEq();G.wid=curWid();S=stats(G.eq);if(sealOn('gourde'))G.potions+=2;
+  G.eq=curEq();G.wid=curWid();G.kit=kitOf(heroCls);S=stats(G.eq);if(sealOn('gourde'))G.potions+=2;
   G.P={x:MAP/2,y:MAP/2,r:17,hp:S.hp,face:-Math.PI/2,fire:0,inv:1,flash:0,dashT:0,dashCd:0,novaCd:0,dx:0,dy:-1,spin:0,spinTick:0,swing:null,
     shield:0,noHit:0,psn:0,psnT:0,psnD:0,brnT:0,brnD:0,swings:0,critShots:0,dashHit:new Set()};
   if(heroCls==='magicien'&&hasTal('m_shield'))G.P.shield=S.hp*.25;
@@ -35,7 +35,7 @@ function newGame(){
   $('objBar').hidden=G.mode!=='defense';
   if(PX&&glLost())dropPixi('contexte WebGL perdu au lancement');
   if(PX)try{buildStatic()}catch(err){dropPixi(err)}
-  const ub=$('bUlt');ub.querySelector('svg').innerHTML=C.uicon;ub.setAttribute('aria-label',C.ult+', ultime');const nb=$('bNova');nb.querySelector('svg').innerHTML=C.icon;nb.setAttribute('aria-label',C.skill);nb.style.color=C.col;
+  const KS=SPELLS[G.cls].s[G.kit.s],KU=SPELLS[G.cls].u[G.kit.u];const ub=$('bUlt');ub.querySelector('svg').innerHTML=KU.icon;ub.setAttribute('aria-label',KU.n+', ultime');const nb=$('bNova');nb.querySelector('svg').innerHTML=KS.icon;nb.setAttribute('aria-label',KS.n);nb.style.color=C.col;
   $('hintTxt').innerHTML=C.hint;$('bossBar').hidden=true;
   petInit();
 }
@@ -236,8 +236,9 @@ function kill(e){
 }
 function dotHurt(d){if(GOD||G.over||d<=0||G.P.down)return;const P=G.P;d*=1-S.armor/200;P.hp-=d;P.noHit=0;if(P.hp<=0){P.hp=0;NET.on?heroDown():gameOver()}}
 function hurt(d){
-  const P=G.P;if(P.inv>0||P.dashT>0||GOD||P.down)return;
-  d*=1-S.armor/100;if(P.hp<S.hp*.3)d*=1-S.lowArmor/100;if(P.spin>0)d*=.5;P.noHit=0;
+  const P=G.P;if(P.inv>0||P.dashT>0||P.leapT>0||GOD||P.down)return;
+  if(P.wallT>0)wallReflect(d);
+  d*=1-S.armor/100;if(P.hp<S.hp*.3)d*=1-S.lowArmor/100;if(P.spin>0)d*=.5;if(P.criT>0)d*=.7;P.noHit=0;
   if(P.shield>0){const ab=Math.min(P.shield,d);P.shield-=ab;d-=ab;if(d<=0){P.inv=.35;ftext(P.x,P.y-P.r,'bloqué','#9fd0ff',13);return}}
   P.hp-=d;P.flash=1;P.inv=.35;SND.play('hurt');vibe(d/S.hp>.15?60:25);G.hshake=Math.max(G.hshake||0,Math.min(12,4+d/S.hp*45));
   ftext(P.x,P.y-P.r,'-'+Math.round(d),'#ff5a5a',16);
@@ -339,34 +340,84 @@ function doDash(){const P=G.P;if(P.down)return;if(P.dashCd>0){if(!(sealOn('esq')
   P.dashHit=new Set();
   if(G.cls==='archer'&&hasTal('a_shadow'))P.critShots=3;
   if(G.cls==='magicien'&&hasTal('m_blink'))explode({x:P.x,y:P.y,d:S.dmg*1.6},null,true)}
+/* ---------- Sorts et ultimes (v132) : 3 de chaque par héros, choisis dans Héros › Sorts et talents (SPELLS, G.kit). ----------
+   Chaque coup de sort passe par spellHit : bonus de dégâts (Gardiens, exécution…), éléments (gel, ralentissement, éclair) et brûlure, comme une attaque. */
+const nearE=(r,x=G.P.x,y=G.P.y)=>{let b=null,bd=r;for(const e of G.en){if(e.dead||e.downed)continue;const d=Math.hypot(e.x-x,e.y-y);if(d<bd){bd=d;b=e}}return b};
+function spellHit(e,d,crit){dmgEnemy(e,d,crit);if(e.dead||e.downed)return;onHit(e,d);if(S.burn){e.burnT=2.5;e.burnDps=S.burn}}
+const spellCrit=(e,d)=>{const c=Math.random()*100<S.crit;spellHit(e,c?d*S.critDmg/100:d,c)};
+const skCd=sp=>sp.cd*(1-S.cdr/100)*(sealOn('sablier')?.8:1)*(teamHas('vif')?.85:1);
+// Bond (Bond arrière, Bond écrasant) : le héros file en ligne droite, intouchable, puis l'atterrissage agit.
+function leap(a,dist,T,kind){const P=G.P;P.leapT=T;P.leapVx=Math.cos(a)*dist/T;P.leapVy=Math.sin(a)*dist/T;P.leapK=kind;P.leapA=a;burst(P.x,P.y,10,'#9fc2b8',120);SND.play('dash')}
+function leapLand(){const P=G.P,k=P.leapK;P.leapK=null;
+  if(k==='recul'){const t=nearE(700),a0=t?Math.atan2(t.y-P.y,t.x-P.x):P.leapA+Math.PI;P.face=a0;
+    for(let i=0;i<9;i++){const a=a0+(i-4)*.15,crit=Math.random()*100<S.crit;G.shots.push({kind:'bolt',x:P.x,y:P.y,vx:Math.cos(a)*700,vy:Math.sin(a)*700,a,d:S.nova*.5*(crit?S.critDmg/100:1),crit,pierce:S.pierce+1,hit:new Set(),life:.9*(1+S.skillRad/100)})}
+    G.rings.push({x:P.x,y:P.y,t:.15,max:60,col:'255,200,120'});return}
+  if(k==='bond'){const R=150*(1+S.reach/100)*(1+S.skillRad/100);G.rings.push({x:P.x,y:P.y,t:0,max:R,col:'255,190,110'});G.rings.push({x:P.x,y:P.y,t:.1,max:R*.6,col:'255,110,60'});burst(P.x,P.y,30,'#ffb070',260,4);G.shake=Math.max(G.shake,8);G.hshake=Math.max(G.hshake||0,6);SND.play('boom');
+    for(const e of G.en){if(e.dead)continue;const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy)||1;if(d<R+e.r){const crit=Math.random()*100<S.crit,dd=S.nova*1.4*(crit?S.critDmg/100:1);spellHit(e,dd,crit);if(S.leech)heal(dd*S.leech/100);slowE(e,1.5);const kb=e.type==='boss'?60:420;e.kx+=dx/d*kb;e.ky+=dy/d*kb}}}}
+// Rempart : la moitié du coup reçu (avant armure) frappe l'ennemi le plus proche (× dégâts de l'ultime).
+function wallReflect(d){const t=nearE(260);if(!t)return;spellHit(t,d*.5*(1+(S.ultPct||0)/100),false);G.rings.push({x:t.x,y:t.y,t:.2,max:28,col:'255,190,110'})}
 function doNova(){
-  const P=G.P;if(P.down)return;if(P.novaCd>0)return;P.novaCd=CLS[G.cls].cd*(1-S.cdr/100)*(sealOn('sablier')?.8:1)*(teamHas('vif')?.85:1);if(sealOn('soin'))netFx('sk',P.x,P.y,Math.max(200,175*(1+S.skillRad/100)));G.hshake=Math.max(G.hshake||0,3.5);SND.play('skill_'+G.cls);
-  if(G.cls==='guerrier'){P.spin=1.6*(1+S.skillDur/100);P.spinTick=0;return}
-  if(G.cls==='archer'){
+  const P=G.P;if(P.down)return;if(P.novaCd>0)return;const sp=SPELLS[G.cls].s[(G.kit&&G.kit.s)|0],k=sp.k;
+  P.novaCd=P.surT>0?.5:skCd(sp);P.novaMax=P.novaCd;if(sealOn('soin'))netFx('sk',P.x,P.y,Math.max(200,175*(1+S.skillRad/100)));G.hshake=Math.max(G.hshake||0,3.5);SND.play('skill_'+G.cls);
+  if(k==='tourbillon'){P.spin=1.6*(1+S.skillDur/100);P.spinTick=0;return}
+  if(k==='volee'){
     for(let i=0;i<24;i++){const a=i/24*Math.PI*2;G.shots.push({kind:'bolt',x:P.x,y:P.y,vx:Math.cos(a)*640,vy:Math.sin(a)*640,a,d:S.nova*.35,crit:false,pierce:S.pierce+2,hit:new Set(),life:1.2*(1+S.skillRad/100)})}
     G.rings.push({x:P.x,y:P.y,t:.15,max:80,col:'255,200,120'});return;
   }
-  G.rings.push({x:P.x,y:P.y,t:0,max:175*(1+S.skillRad/100),col:'150,210,255'});G.shake=Math.max(G.shake,5);
-  for(const e of G.en){const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy);if(d<175*(1+S.skillRad/100)+e.r){const crit=Math.random()*100<S.crit;slowE(e,2.5);dmgEnemy(e,S.nova*(crit?S.critDmg/100:1),crit);const k=e.type==='boss'?80:420;e.kx+=dx/(d||1)*k;e.ky+=dy/(d||1)*k}}
-  G.eb=G.eb.filter(b=>Math.hypot(b.x-P.x,b.y-P.y)>175*(1+S.skillRad/100));
+  if(k==='nova'){
+    G.rings.push({x:P.x,y:P.y,t:0,max:175*(1+S.skillRad/100),col:'150,210,255'});G.shake=Math.max(G.shake,5);
+    for(const e of G.en){const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy);if(d<175*(1+S.skillRad/100)+e.r){const crit=Math.random()*100<S.crit;slowE(e,2.5);spellHit(e,S.nova*(crit?S.critDmg/100:1),crit);const k=e.type==='boss'?80:420;e.kx+=dx/(d||1)*k;e.ky+=dy/(d||1)*k}}
+    G.eb=G.eb.filter(b=>Math.hypot(b.x-P.x,b.y-P.y)>175*(1+S.skillRad/100));return}
+  if(k==='chasseur'){const t=nearE(900*(1+S.skillRad/100)),a0=t?Math.atan2(t.y-P.y,t.x-P.x):P.face;P.face=a0;
+    for(let i=-1;i<=1;i++){const a=a0+i*.06,crit=Math.random()*100<S.crit;G.shots.push({kind:'bolt',x:P.x,y:P.y,vx:Math.cos(a)*900,vy:Math.sin(a)*900,a,d:S.nova*1.6*(crit?S.critDmg/100:1),crit,pierce:99,hit:new Set(),life:1.1*(1+S.skillRad/100)})}
+    G.rings.push({x:P.x,y:P.y,t:.15,max:60,col:'255,200,120'});G.shake=Math.max(G.shake,3);return}
+  if(k==='recul'){const t=nearE(700);leap(t?Math.atan2(P.y-t.y,P.x-t.x):P.face+Math.PI,220,.22,'recul');return}
+  if(k==='bond'){let best=null,bn=0;for(const e of G.en){if(e.dead||e.downed)continue;const d=Math.hypot(e.x-P.x,e.y-P.y);if(d>460)continue;let n=0;for(const o of G.en)if(!o.dead&&Math.abs(o.x-e.x)<150&&Math.abs(o.y-e.y)<150)n++;if(n>bn){bn=n;best=e}}
+    const a=best?Math.atan2(best.y-P.y,best.x-P.x):P.face,dist=best?Math.min(300,Math.max(60,Math.hypot(best.x-P.x,best.y-P.y))):200;leap(a,dist,.3,'bond');return}
+  if(k==='cri'){P.criT=6*(1+S.skillDur/100);refreshStats();const R=200*(1+S.skillRad/100);G.rings.push({x:P.x,y:P.y,t:0,max:R,col:'255,150,80'});burst(P.x,P.y,24,'#ff9a50',220,3);G.shake=Math.max(G.shake,5);
+    for(const e of G.en){if(e.dead)continue;const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy)||1;if(d<R+e.r){slowE(e,1.5);const kb=e.type==='boss'?40:380;e.kx+=dx/d*kb;e.ky+=dy/d*kb}}
+    ftext(P.x,P.y-P.r-8,'Cri de guerre','#ffb070',15);return}
+  if(k==='eclair'){let src=nearE(520*(1+S.skillRad/100)),px=P.x,py=P.y,d=S.nova*1.2;const hit=new Set();if(!src){G.rings.push({x:P.x,y:P.y,t:.15,max:50,col:'190,220,255'});return}
+    for(let i=0;i<7&&src;i++){hit.add(src);G.zaps.push({x1:px,y1:py,x2:src.x,y2:src.y,t:0});px=src.x;py=src.y;const crit=Math.random()*100<S.crit;spellHit(src,d*(crit?S.critDmg/100:1),crit);d*=.9;
+      let nx=null,nd=260*(1+S.skillRad/100);for(const o of G.en){if(o.dead||o.downed||hit.has(o))continue;const dd=Math.hypot(o.x-px,o.y-py);if(dd<nd){nd=dd;nx=o}}src=nx}
+    G.shake=Math.max(G.shake,3);return}
+  if(k==='transfert'){const x0=P.x,y0=P.y,ux=P.dx||0,uy=(P.dx||P.dy)?P.dy:-1;let tx=x0,ty=y0;
+    for(let st=12;st<=240;st+=12){const nx=x0+ux*st,ny=y0+uy*st;if(blocked(nx,ny,P.r*.6))break;tx=nx;ty=ny}
+    explode({x:x0,y:y0,d:S.nova*.6},null,true);P.x=tx;P.y=ty;resolve(P);G.cam.x=P.x;G.cam.y=P.y;P.inv=Math.max(P.inv,.3);explode({x:P.x,y:P.y,d:S.nova*.6},null,true);burst(P.x,P.y,16,'#bfe4ff',180,3);SND.play('dash');return}
 }
 const ultNeed=()=>Math.max(10,Math.round(ULT_N*(1-((S&&S.fury)||0)/100)));
 function doUlt(){
   const P=G.P,need=ultNeed();if(P.down)return;if((G.ult||0)<need)return;G.ult=0;const m=1+(S.ultPct||0)/100,RR=1+S.skillRad/100;G.shake=Math.max(G.shake,12);G.hshake=Math.max(G.hshake||0,G.cls==='guerrier'?11:7);SND.play('ult');
-  if(G.cls==='guerrier'){const r=320*RR;P.inv=3;G.rings.push({x:P.x,y:P.y,t:0,max:r,col:'255,190,110'});G.rings.push({x:P.x,y:P.y,t:.12,max:r*.6,col:'255,110,60'});burst(P.x,P.y,50,'#ffb070',320,4);
-    for(const e of G.en){if(e.dead)continue;const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy);if(d<r+e.r){const k=e.type==='boss'?120:700;e.kx+=dx/(d||1)*k;e.ky+=dy/(d||1)*k;slowE(e,2);dmgEnemy(e,S.nova*3*m,false)}}
+  const k=SPELLS[G.cls].u[(G.kit&&G.kit.u)|0].k;
+  if(k==='titan'){const r=320*RR;P.inv=3;G.rings.push({x:P.x,y:P.y,t:0,max:r,col:'255,190,110'});G.rings.push({x:P.x,y:P.y,t:.12,max:r*.6,col:'255,110,60'});burst(P.x,P.y,50,'#ffb070',320,4);
+    for(const e of G.en){if(e.dead)continue;const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy);if(d<r+e.r){const k=e.type==='boss'?120:700;e.kx+=dx/(d||1)*k;e.ky+=dy/(d||1)*k;slowE(e,2);spellHit(e,S.nova*3*m,false)}}
     toast('<b style="color:#ffd45a">Colère du Titan</b> : invulnérable pendant 3 s.');return}
-  if(G.cls==='archer'){P.rain=3;P.rainT=0;toast('<b style="color:#ffd45a">Pluie d\'acier</b>');return}
-  P.meteors=3;P.meteorT=0;toast('<b style="color:#ffd45a">Pluie de météores</b>');
+  if(k==='pluie'){P.rain=3;P.rainT=0;toast('<b style="color:#ffd45a">Pluie d\'acier</b>');return}
+  if(k==='meteores'){P.meteors=3;P.meteorT=0;toast('<b style="color:#ffd45a">Pluie de météores</b>');return}
+  if(k==='faucon'){P.hawkT=6;refreshStats();G.rings.push({x:P.x,y:P.y,t:0,max:140,col:'255,212,90'});burst(P.x,P.y,30,'#ffd45a',220,3);ftext(P.x,P.y-P.r-8,'Œil du faucon','#ffd45a',16);return}
+  if(k==='tempete'){P.stormT=3;P.stormTick=0;P.stormA=P.face;ftext(P.x,P.y-P.r-8,'Tempête de carreaux','#ffd45a',16);return}
+  if(k==='rempart'){P.wallT=6;P.shield=Math.max(P.shield||0,S.hp*.6*m);G.rings.push({x:P.x,y:P.y,t:0,max:120,col:'255,212,150'});burst(P.x,P.y,30,'#ffd496',200,3);ftext(P.x,P.y-P.r-8,'Rempart','#ffd496',16);return}
+  if(k==='berserk'){P.berT=8;P.frzT=0;refreshStats();G.rings.push({x:P.x,y:P.y,t:0,max:160,col:'255,90,60'});burst(P.x,P.y,40,'#ff5a3c',260,4);ftext(P.x,P.y-P.r-8,'Fureur du berserker','#ff7a5a',16);return}
+  if(k==='blizzard'){P.blizT=5;P.blizTick=0;ftext(P.x,P.y-P.r-8,'Blizzard','#bfe4ff',16);return}
+  if(k==='surcharge'){P.surT=6;P.novaCd=Math.min(P.novaCd,0);refreshStats();G.rings.push({x:P.x,y:P.y,t:0,max:150,col:'190,160,255'});burst(P.x,P.y,36,'#c9a6ff',240,4);ftext(P.x,P.y-P.r-8,'Surcharge arcanique','#c9a6ff',16);return}
 }
 function ultTick(dt){const P=G.P;
   if(P.rain>0){P.rain-=dt;P.rainT-=dt;if(P.rainT<=0){P.rainT=.12;const R=450*(1+S.skillRad/100),m=1+(S.ultPct||0)/100,c=[];
       for(const e of G.en)if(!e.dead&&Math.hypot(e.x-P.x,e.y-P.y)<R)c.push(e);
-      for(let i=0;i<4&&c.length;i++){const e=c.splice(Math.floor(Math.random()*c.length),1)[0];G.rings.push({x:e.x,y:e.y,t:.2,max:30,col:'255,212,90'});G.hshake=Math.max(G.hshake||0,1.5);SND.play('rain');burst(e.x,e.y,6,'#ffd45a',160,2);critHit(e,S.nova*.7*m)}}}
+      for(let i=0;i<4&&c.length;i++){const e=c.splice(Math.floor(Math.random()*c.length),1)[0];G.rings.push({x:e.x,y:e.y,t:.2,max:30,col:'255,212,90'});G.hshake=Math.max(G.hshake||0,1.5);SND.play('rain');burst(e.x,e.y,6,'#ffd45a',160,2);spellCrit(e,S.nova*.7*m)}}}
   if(P.meteors>0){P.meteorT-=dt;if(P.meteorT<=0){P.meteors--;P.meteorT=.35;const m=1+(S.ultPct||0)/100,R=150*(1+S.skillRad/100),c=G.en.filter(e=>!e.dead&&!e.downed&&Math.hypot(e.x-P.x,e.y-P.y)<520);
       const tg=c.find(e=>e.type==='boss')||c[Math.floor(Math.random()*c.length)],x=tg?tg.x:P.x+rand(-150,150),y=tg?tg.y:P.y+rand(-150,150);
       G.rings.push({x,y,t:0,max:R,col:'255,140,60'});G.rings.push({x,y,t:.15,max:R*.5,col:'255,220,140'});burst(x,y,40,'#ff8a3a',300,4);G.shake=Math.max(G.shake,10);G.hshake=Math.max(G.hshake||0,6);SND.play('boom');
-      for(const e of G.en){if(!e.dead&&Math.hypot(e.x-x,e.y-y)<R+e.r)critHit(e,S.nova*3*m)}}}
+      for(const e of G.en){if(!e.dead&&Math.hypot(e.x-x,e.y-y)<R+e.r)spellCrit(e,S.nova*3*m)}}}
+  // v132 : Tempête de carreaux, Blizzard, fins des renforts
+  if(P.stormT>0){P.stormT-=dt;P.stormTick-=dt;if(P.stormTick<=0){P.stormTick=.08;P.stormA+=.55;const m=1+(S.ultPct||0)/100;SND.play('rain');
+      for(let i=0;i<4;i++){const a=P.stormA+i*Math.PI/2,crit=Math.random()*100<S.crit;G.shots.push({kind:'bolt',x:P.x,y:P.y,vx:Math.cos(a)*640,vy:Math.sin(a)*640,a,d:S.nova*.3*m*(crit?S.critDmg/100:1),crit,pierce:S.pierce+2,hit:new Set(),life:1*(1+S.skillRad/100)})}}}
+  if(P.blizT>0){P.blizT-=dt;P.blizTick-=dt;if(P.blizTick<=0){P.blizTick=.3;const m=1+(S.ultPct||0)/100,R=320*(1+S.skillRad/100);G.rings.push({x:P.x,y:P.y,t:.1,max:R,col:'190,230,255'});
+      for(let i=0;i<10&&G.parts.length<420;i++)G.parts.push({x:P.x+rand(-R,R),y:P.y+rand(-R,R),vx:rand(-20,20),vy:rand(30,70),life:.6,max:.6,col:'#e4f4ff',size:rand(1.5,3)});
+      for(const e of G.en){if(e.dead||Math.abs(e.x-P.x)>R+e.r||Math.hypot(e.x-P.x,e.y-P.y)>R+e.r)continue;slowE(e,1.5);spellCrit(e,S.nova*.5*m)}}}
+  let rs=false;for(const t of ['criT','hawkT','berT','surT']){if(P[t]>0){P[t]-=dt;if(P[t]<=0){P[t]=0;rs=true}}}
+  if(P.wallT>0){P.wallT-=dt;if(P.wallT<=0){P.wallT=0;P.shield=Math.min(P.shield||0,S.abWard?S.hp*.3:0)}}
+  if(rs)refreshStats();
 }
 function doPotion(){
   const P=G.P;if(P.down)return;if(G.potions<=0||P.hp>=S.hp)return;G.potions--;SND.play('potion');if(sealOn('alch'))netFx('pot',P.x,P.y,SEAL_R);const h=S.hp*.45*(1+S.potHeal/100)*(P.psnT>0?.5:1);P.hp=Math.min(S.hp,P.hp+h);
@@ -425,10 +476,12 @@ function update(dt){
   if(P.cbT>0){P.cbT-=dt;if(Math.random()<dt*24){const a=rand(0,Math.PI*2);G.parts.push({x:P.x+Math.cos(a)*P.r*1.4,y:P.y+Math.sin(a)*P.r*1.4,vx:Math.cos(a)*30,vy:-50,life:.45,max:.45,col:'#ffd34d',size:3})}if(P.cbT<=0){P.cbT=0;refreshStats()}}
   if(G.cls==='magicien'&&hasTal('m_shield')){P.noHit+=dt;if(P.noHit>4)P.shield=Math.min(S.hp*.25,P.shield+S.hp*.08*dt)}
   if(moving){P.dx=iv.x/iv.m;P.dy=iv.y/iv.m;P.face=Math.atan2(P.dy,P.dx)}
-  let sp=P.down?0:S.speed*iv.m*(P.frzT>0?.62:1);
+  let sp=P.down?0:S.speed*iv.m*(P.frzT>0&&!(P.berT>0)?.62:1);
   if(P.dashT>0){P.dashT-=dt;sp=S.speed*3.4;P.x+=P.dx*sp*dt;P.y+=P.dy*sp*dt;if(Math.random()<.6)G.parts.push({x:P.x,y:P.y,vx:0,vy:0,life:.25,max:.25,col:'#9fc2b8',size:P.r*.8})}
+  else if(P.leapT>0){P.leapT-=dt;P.x+=P.leapVx*dt;P.y+=P.leapVy*dt;if(Math.random()<.7)G.parts.push({x:P.x,y:P.y,vx:0,vy:0,life:.25,max:.25,col:'#9fc2b8',size:P.r*.8});if(P.leapT<=0){P.leapT=0;P.leapLand=1}}
   else{P.x+=iv.x/(iv.m||1)*sp*dt;P.y+=iv.y/(iv.m||1)*sp*dt}
   resolve(P);
+  if(P.leapLand){P.leapLand=0;leapLand()}
   G.cam.x+=(P.x-G.cam.x)*Math.min(1,dt*8);G.cam.y+=(P.y-G.cam.y)*Math.min(1,dt*8);
   // Capture : décidée par l'hôte (en coopération, n'importe quel héros debout compte pour capturer et pour l'extraction).
   if(G.mode==='capture'&&!NET.guest){
@@ -447,7 +500,7 @@ function update(dt){
   if(P.swing){P.swing.t+=dt;if(P.swing.t>.2)P.swing=null}
   if(P.spin>0){P.spin-=dt;P.spinTick-=dt;P.face+=dt*18;
     if(P.spinTick<=0){P.spinTick=.2;const R=130*(1+S.reach/100)*(1+S.skillRad/100);
-      for(const e of G.en){const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy)||1;if(d<R+e.r){const crit=Math.random()*100<S.crit,dd=S.nova*.22*(crit?S.critDmg/100:1);dmgEnemy(e,dd,crit);if(S.leech)heal(dd*S.leech/100);const k=e.type==='boss'?10:90;e.kx+=dx/d*k;e.ky+=dy/d*k}}}}
+      for(const e of G.en){const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy)||1;if(d<R+e.r){const crit=Math.random()*100<S.crit,dd=S.nova*.22*(crit?S.critDmg/100:1);spellHit(e,dd,crit);if(S.leech)heal(dd*S.leech/100);const k=e.type==='boss'?10:90;e.kx+=dx/d*k;e.ky+=dy/d*k}}}}
   let tgt=null,td=1e9;if(!P.down)for(const e of G.en){if(e.downed)continue;const d=Math.hypot(e.x-P.x,e.y-P.y);if(d<td){td=d;tgt=e}}
   if(G.cls==='guerrier'){
     const R=(78+P.r)*(1+S.reach/100);
@@ -474,7 +527,7 @@ function update(dt){
     if(P.fire<=0){
       const slow=moving&&!(G.cls==='archer'&&hasTal('a_move'));
       P.fire=1/S.aps*(slow?1.43:1);const n=1+Math.floor(S.multi)+(Math.random()<S.multi%1?1:0),orb=G.cls==='magicien',sp=(orb?430:640)*(S.shotSpd||1);
-      const cs=P.critShots>0||!!P.critNext;if(P.critNext)P.critNext=0;else if(cs)P.critShots--;
+      const hawk=P.hawkT>0,cs=hawk||P.critShots>0||!!P.critNext;if(!hawk){if(P.critNext)P.critNext=0;else if(cs)P.critShots--}
       const gap=Math.min(orb?.25:.17,(orb?1.5:1.2)/n);
       for(let i=0;i<n;i++){const a=P.face+(i-(n-1)/2)*gap,crit=cs||Math.random()*100<S.crit;
         G.shots.push({kind:orb?'orb':'bolt',x:P.x,y:P.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,a,d:S.dmg*(crit?S.critDmg/100:1),crit,pierce:orb?0:S.pierce,hit:new Set(),life:1.4})}

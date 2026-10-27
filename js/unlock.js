@@ -4,7 +4,7 @@
 meta.unl=meta.unl||{};meta.unlNew=Array.isArray(meta.unlNew)?meta.unlNew:[];
 const UNL=[
   {k:'bonus',n:'Forge · Bonus',when:()=>meta.wins>=1,need:'Réussis ta première mission.',
-    learn:'L\'or rapporté de mission achète des améliorations permanentes pour tous tes héros. Commence par Force et Vigueur. Les talents, propres à chaque héros, s\'achètent dans l\'onglet Héros › Talents.',go:['forge','up'],help:'camp-forge'},
+    learn:'L\'or rapporté de mission achète des améliorations permanentes pour tous tes héros. Commence par Force et Vigueur. Les talents, propres à chaque héros, s\'achètent dans l\'onglet Héros › Sorts et talents.',go:['forge','up'],help:'camp-forge'},
   {k:'pets',n:'Familier',when:()=>meta.wins>=1,need:'Réussis ta première mission.',
     learn:'Ton premier œuf t\'attend : fais-le éclore et équipe ton familier. Il te suit en mission et gagne des niveaux avec les ennemis abattus.',go:['pets'],help:'familiers'},
   {k:'mods',n:'Mods de l\'arme',when:()=>meta.wins>=2,need:'Réussis 2 missions.',
