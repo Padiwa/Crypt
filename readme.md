@@ -1,6 +1,6 @@
 # Crypte des Cendres — specs
 
-Oct 27, 2026 · @cms · version 132
+Oct 27, 2026 · @cms · version 133
 
 ## Vue d'ensemble
 
@@ -256,6 +256,15 @@ Au niveau L, les chances d'équipement, de relique et d'arme sont multipliées p
 
 **v107 · Rythmes dans des fichiers.** Chaque rythme est un fichier : `js/rythmes/rapide.js` (rythme publié, par défaut) et `js/rythmes/long.js` (fin de jeu visée vers 80 h). Chacun définit `RYTHME` avec les valeurs du tableau ci-dessous, commentées ; `BAL_PRESETS` et `BAL_MODE` disparaissent de `data.js`. Le rythme chargé est celui de la balise `<script src="js/rythmes/….js">` d'`index.html`, placée avant `data.js` (et la liste `CORE` de `sw.js`). Pour un nouveau rythme, on copie un fichier et on change ses valeurs. Le simulateur charge n'importe quel fichier : `--rythme long` ou un chemin. Le joueur ne choisit toujours pas le rythme.
 
+**v133 · Écran de fin de mission refait, retour au Camp, écran noir au retour dans l'appli, Transfert sans objets verrouillés.**
+
+- Correction : « Aller au Camp » laissait l'écran de fin ouvert sous le Camp ; la barre d'onglets restait cachée et l'onglet Combat ramenait à l'écran de fin. **Au Camp** termine maintenant la partie et ramène à l'accueil du jeu, barre d'onglets visible (ce que faisait « Changer de héros », supprimé) ; **Rejouer** (**Réessayer** après un échec) relance la même mission.
+- Écran de fin dans le style des maquettes « Résultats » et « Défaite » de la refonte, plein écran. Demande de l'utilisateur : seulement huit compteurs (or, Gardiens vaincus, objectifs réalisés, reliques trouvées, reliques ouvertes dont partagées, fragments, mods, équipements) et tous les équipements rapportés ou perdus, 12 par page, nom au toucher. La progression, les messages de maîtrise et les déblocages n'y sont plus ; les déblocages s'annoncent au Camp (carte « Nouveau »).
+- Données : `G.bossK` (Gardiens vaincus, comptés dans `kill`), `G.objN` (objectifs, comptés par `objDone` : manches, paliers de vagues, captures), `G.modsGot` (mods ramassés) ; `resolveRelic` ne rend plus que des compteurs ; `overShow` et `ovrHtml` dans `js/ui.js` ; `unlockOverHtml` supprimé.
+- Écran noir au retour dans l'appli : le rendu WebGL est reconstruit à chaque retour ; l'ancien moteur, en perdant son contexte, marquait le nouveau comme perdu (rien n'était dessiné pendant 1,5 s, puis passage au rendu standard), et ses textures restaient dans le cache global de PixiJS (environ 11 Mo et 250 objets de plus à chaque retour). Seul le moteur en service écoute son canevas ; `pxFree` détruit la scène, la police des dégâts et toutes les textures. Mesuré : 30 allers-retours Camp ↔ mission sans croissance de mémoire.
+- Forge › Transfert : la liste des affixes à donner à la cible et la liste des objets qui la portent ne montrent plus les objets verrouillés ni les armes de départ (jamais détruits).
+- Tests : suite `19_render` (maquette de PixiJS dans `tools/tests/fixtures/pixi-mock.js`), « fin de mission : Au Camp ou Rejouer » et « compteurs et équipements, 12 par page » (`08_mission`), Transfert sans objet verrouillé (`06_affix`). Tests : 110.
+
 **v132 · Trois sorts et trois ultimes par héros.**
 
 - Chaque héros choisit un sort et un ultime parmi trois (Héros › Sorts et talents) ; 2e au rang 3 de maîtrise, 3e au rang 6. Nouveaux : Tir du chasseur, Bond arrière, Œil du faucon, Tempête de carreaux (Archer) ; Bond écrasant, Cri de guerre, Rempart, Fureur du berserker (Guerrier) ; Éclair en chaîne, Transfert, Blizzard, Surcharge arcanique (Magicien). Détail dans la section Héros.
@@ -340,7 +349,7 @@ Au niveau L, les chances d'équipement, de relique et d'arme sont multipliées p
 **v116 · Bonus du Tourment, retour d'une autre appli.**
 
 - Tourment : moins de réactifs par palier et avec le séjour dans la mission, plus de reliques avec le séjour (voir Bonus du Tourment, section Missions). Accélère la fin de jeu ; le simulateur n'a pas été relancé.
-- Changer d'appli ou éteindre l'écran ouvre le sac en mission (pause ; en coopération le monde continue pour les autres). Au retour (`visibilitychange`, `pageshow`), le moteur WebGL est reconstruit à neuf (`renewRender` : nouveau contexte, textures et décor refaits), sinon rendu standard : corrige l'écran noir après un passage en arrière-plan.
+- Changer d'appli ou éteindre l'écran ouvre le sac en mission (pause ; en coopération le monde continue pour les autres). Au retour (`visibilitychange`, `pageshow`), le moteur WebGL est reconstruit à neuf (`renewRender` : nouveau contexte, textures et décor refaits), sinon rendu standard : corrige l'écran noir après un passage en arrière-plan. Depuis la v133, l'ancien moteur est entièrement libéré (scène, police, textures du cache de PixiJS) et seul le moteur en service écoute la perte de contexte de son canevas.
 - Tests : 78.
 
 **v115 · Meilleure arme, course de connexion.**
@@ -516,7 +525,7 @@ Sauvegarde : « Exporter » télécharge aussitôt crypte-sauvegarde-AAAA-MM-JJ.
 
 Fin de manche et objectif (v81, mis à jour v91) : le résumé de sortie affiche des compteurs : équipements = total + nombre par rareté, reliques = total + nombre par type (Ossuaire, Ancestrale, Sanguine, Abyssale), armes ramassées = total + nombre par rareté. Un bandeau d'objectif centré sous le HUD donne l'étape, la valeur en grand et une jauge : Survie = temps avant le portail (orange pulsant sous 15 s) ; Capture = traque la cible n (distance), capture la cible n (%), vers l'extraction (distance), reste dans la zone (%) ; Défense = vague suivante ou ennemis restants, jauge = vie du cryopode.
 
-Écran de fin de mission réussie (v83, mis à jour v91) : deux encadrés de compteurs. Butin rapporté : équipements (total + par rareté), reliques ramassées (total + par type), armes ramassées. Reliques ouvertes : total + par type, essence gagnée (25 par relique), fragments (nombre et nombre d'objets différents), objets prêts à fabriquer (par nom), œufs de familier, reliques non ouvertes. Le détail relique par relique est replié sous « Détail des n reliques », puis la maîtrise.
+Écran de fin de mission (v83, refait en v133 dans le style des maquettes « Résultats » et « Défaite » de la refonte, `overShow` et `ovrHtml` dans `js/ui.js`) : plein écran, mode · difficulté · niveau · durée, puis huit compteurs : or (la moitié après un échec), Gardiens vaincus (`G.bossK`), objectifs réalisés (`G.objN` : manches en Survie et en Brèche, paliers de vagues en Défense, cibles en Capture), reliques trouvées, reliques ouvertes (dont partagées par les partenaires), fragments (armes, harnais, reliques ouvertes), mods ramassés, équipements. Dessous, tous les équipements rapportés ou perdus, les plus rares d'abord, 12 par page (‹ ›), nom, rareté et emplacement au toucher. En bas : Au Camp (fin de partie, accueil du jeu) et Rejouer ou Réessayer (même mission).
 
 **Rythme des sorties (v84)** : Survie, portail toutes les 2 minutes (LEVEL\_T = 120 s, 180 avant). Défense, sortie toutes les 3 vagues (DEF\_N = 3, 5 avant), avec le Gardien de la vague de sortie ; le HUD affiche « Sortie vague 3, 6, 9… ». Chaque manche rapporte toujours une relique (et un équipement magique ou mieux en Défense), donc environ 1,5 × plus de reliques de manche par heure. Moins d'expérience par manche de Survie (environ 4 niveaux sur la première). L'écran de mission réussie reprend le résumé de l'écran du portail (or, équipements par rareté, reliques par niveau, fragments, ennemis, durée de la mission), suivi du bilan des reliques ouvertes.
 

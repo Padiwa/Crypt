@@ -50,7 +50,7 @@ export const tests = [
     await p.evaluate(() => {
       heroCls = 'archer'; meta.essence = 5000; meta.stash = [];
       const mk = (r, slot, aff, lock) => { const it = genItem(40, r); Object.assign(it, { r, slot, aff, up: 0, lock: !!lock }); meta.stash.push(it); return it; };
-      const T = mk(3, 'bottes', { crit: 4, hp: 120, speed: 5 }), A = mk(2, 'armure', { crit: 6 }), B = mk(1, 'anneau', { crit: 2, dmgPct: 8 }), L = mk(3, 'amulette', { crit: 5 }, true);
+      const T = mk(3, 'bottes', { crit: 4, hp: 120, speed: 5 }), A = mk(2, 'armure', { crit: 6 }), B = mk(1, 'anneau', { crit: 2, dmgPct: 8 }), L = mk(3, 'amulette', { crit: 5, speed: 3 }, true);
       saveMeta(); window.__ids = [T.id, A.id, B.id, L.id];
     });
     const [T, A, B, L] = await p.evaluate(() => __ids);
@@ -63,7 +63,8 @@ export const tests = [
     t.ok(groups[0][1].includes('crit') && !groups[0][1].includes('dmgPct') && groups[1][1].includes('dmgPct'), 'critique en fusion, dégâts en ajout');
     await p.selectOption('#xfAff', 'crit');
     const rows = await p.evaluate(() => [...document.querySelectorAll('.xfc')].map((x) => [x.dataset.arg, x.disabled, x.querySelector('.xfc__sub').textContent.split(' · ').pop()]));
-    t.eq(rows.filter((r) => r[0][0] === 's'), [['s:' + A, false, 'fusion → +8 %'], ['s:' + L, true, 'verrouillé'], ['s:' + B, false, 'fusion → +5 %']], 'les objets qui portent l\'affixe, du plus fort au plus faible, verrouillé grisé');
+    t.eq(rows.filter((r) => r[0][0] === 's'), [['s:' + A, false, 'fusion → +8 %'], ['s:' + B, false, 'fusion → +5 %']], 'les objets qui portent l\'affixe, du plus fort au plus faible, sans l\'objet verrouillé (v133)');
+    t.ok(!groups.some((g) => g[1].includes('speed')), 'une affixe portée seulement par un objet verrouillé n\'est pas proposée (v133)');
     await p.click(`.xfc[data-arg="s:${A}"]`);
     t.ok(await p.evaluate(() => /Fusionner/.test($('campFoot').textContent) && /sera détruit/.test($('campFoot').textContent)), 'pied : Fusionner, la source sera détruite');
     await p.click('#campFoot [data-cact="xfok"]');

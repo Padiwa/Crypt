@@ -103,7 +103,7 @@ export const tests = [
     await capture(); await p.waitForFunction(() => G.capN === 2, null, { timeout: 6000 });
     t.eq(await p.evaluate(() => [G.loot.relics.slice(), [G.exitPt.x, G.exitPt.y]]), [['an', 'an'], ex], 'capture 2 : deuxième relique, même zone d\'extraction');
     await p.evaluate(() => { G.P.x = G.exitPt.x; G.P.y = G.exitPt.y; }); await p.waitForFunction(() => G.over, null, { timeout: 8000 });
-    t.ok(await p.evaluate(() => /2 cibles capturées/.test($('over').textContent)), 'résumé : 2 cibles capturées');
+    t.eq(await p.evaluate(() => [document.querySelector('#over [data-k="obj"] b').textContent, document.querySelector('#over [data-k="obj"] small').textContent]), ['2', 'cibles capturées'], 'fin de mission : 2 cibles capturées');
   } },
   { name: 'Capture : relique de la difficulté et du Tourment sans plafond de niveau ; les autres reliques inchangées', fn: async (b, t) => {
     const p = t.track(await newPage(b));
@@ -131,6 +131,42 @@ export const tests = [
     await sleep(p, 300);
     const r = await p.evaluate(() => [meta.built.a6, meta.hfrag, meta.maxL, meta.wins, meta.bestDiff, meta.relOpened, Object.keys(meta.parts).length > 0, meta.stash.length > 0]);
     t.eq(r, [true, 1, 33, 1, 3, 1, true, true], 'banque');
+  } },
+  { name: 'fin de mission : Au Camp ou Rejouer ; Au Camp ramène à l\'accueil avec la barre d\'onglets, navigation libre (v133)', fn: async (b, t) => {
+    const st = (p) => p.evaluate(() => [!$('over').hidden, !$('camp').hidden, !$('intro').hidden, getComputedStyle($('tabbar')).display !== 'none', started, campTab]);
+    for (const end of ['réussite', 'échec']) {
+      const p = t.track(await newPage(b)); await startMission(p);
+      await p.evaluate((end) => { G.loot.items.push(genItem(10)); if (end === 'réussite') missionSuccess(); else gameOver(); }, end);
+      await p.waitForFunction(() => !$('over').hidden);
+      t.eq(await p.evaluate(() => [...document.querySelectorAll('#over .ovr__foot button')].map((x) => x.firstElementChild.textContent)), ['Au Camp', end === 'réussite' ? 'Rejouer' : 'Réessayer'], `${end} : deux boutons`);
+      await p.click('#campBtn2');
+      t.eq(await st(p), [false, false, true, true, false, 'equip'], `${end} : écran de fin fermé, accueil du jeu, barre d'onglets visible`);
+      await p.click('#tabbar [data-nav="arsenal"]');
+      t.eq((await st(p)).slice(1, 6), [true, true, true, false, 'arsenal'], `${end} : l'onglet Arsenal s'ouvre`);
+      await p.click('#tabbar [data-nav="heros"]');
+      t.eq((await st(p))[5], 'equip', `${end} : puis l'onglet Héros`);
+      await p.click('#tabbar [data-nav="combat"]');
+      t.eq(await st(p), [false, false, true, true, false, 'equip'], `${end} : Combat ramène à l'accueil`);
+      if (end === 'réussite') t.ok(await p.evaluate(() => meta.stash.length > 0), 'le butin est au Camp');
+      await p.click('#startBtn'); t.ok(await p.evaluate(() => started && !G.over && $('intro').hidden), `${end} : nouvelle mission depuis l'accueil`);
+    }
+  } },
+  { name: 'fin de mission : or, Gardiens vaincus, objectifs, reliques trouvées et ouvertes, fragments, mods, et tous les équipements, 12 par page (v133)', fn: async (b, t) => {
+    const p = t.track(await newPage(b));
+    await p.evaluate(() => { meta.relics = { os: [2, 0] }; meta.relicQ = [{ id: 'os', rad: false }, { id: 'os', rad: false }]; saveMeta(); });
+    await startMission(p);
+    await p.evaluate(() => { for (let i = 0; i < 30; i++) G.loot.items.push(genItem(20, i % 4)); G.loot.relics.push('os', 'an'); G.loot.parts.push({ w: 'a6', full: 1 }, { w: 'a3', p: 1 }, { hf: 1 });
+      G.bossK = 4; G.objN = 0; objDone(); objDone(); G.opened.push(...G.relQ); G.modsGot = ['ferocite']; G.gold = 900; missionSuccess(); });
+    const tiles = await p.evaluate(() => Object.fromEntries([...document.querySelectorAll('#over .ovr__tile')].map((x) => [x.dataset.k, x.querySelector('b').textContent])));
+    t.eq(tiles, { gold: '+900', boss: '4', obj: '2', relF: '2', relO: '2', frag: '4', mods: '1', eq: '31' }, 'les huit compteurs (fragments : arme, harnais et 2 des reliques ouvertes)');
+    const pg = () => p.evaluate(() => [document.querySelectorAll('#ovrEq .ovr__slot').length, document.querySelector('.ovr__pager span').textContent]);
+    t.eq(await pg(), [12, 'Page 1 / 3'], 'page 1 : 12 équipements');
+    await p.click('[data-ovpg="1"]'); await p.click('[data-ovpg="1"]');
+    t.eq(await pg(), [7, 'Page 3 / 3'], 'page 3 : les 7 derniers');
+    t.ok(await p.evaluate(() => document.querySelector('[data-ovpg="1"]').disabled && !document.querySelector('[data-ovpg="-1"]').disabled), 'Suivant grisé à la dernière page');
+    await p.click('#ovrEq .ovr__slot >> nth=0');
+    t.ok(await p.evaluate(() => !!document.querySelector('#ovrEq .ovr__slot.is-sel') && / · /.test(document.querySelector('.ovr__cap').textContent)), 'un équipement touché montre son nom');
+    t.ok(await p.evaluate(() => { const f = document.querySelector('.ovr__foot').getBoundingClientRect(); return f.bottom <= innerHeight + 1 && f.top > 0; }), 'les deux boutons restent dans l\'écran');
   } },
   { name: 'pause › Retour au Camp : confirmation, butin du niveau perdu', fn: async (b, t) => {
     const p = t.track(await newPage(b)); await startMission(p);

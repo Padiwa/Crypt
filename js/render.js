@@ -308,8 +308,11 @@ function initPixi(){
   const view=R.view;view.id='pv';view.setAttribute('aria-hidden','true');
   Object.assign(view.style,{position:'fixed',left:'0',top:'0',width:'100%',height:'100%',display:'block'});
   cv.parentNode.insertBefore(view,cv);
-  view.addEventListener('webglcontextlost',e=>{e.preventDefault();if(!PX)return;PX.lost=true;noteErr('rendu','contexte WebGL perdu');clearTimeout(PX.lostT);PX.lostT=setTimeout(()=>{if(PX&&PX.lost)dropPixi('contexte WebGL non rétabli')},1500)},false);
-  view.addEventListener('webglcontextrestored',()=>{if(!PX)return;PX.lost=false;clearTimeout(PX.lostT);try{if(G)buildStatic()}catch(err){dropPixi(err)}},false);
+  // v133 : seul le moteur en service écoute son canevas. Détruire l'ancien moteur perd son contexte un peu plus tard ; sans ce garde,
+  // l'événement marquait le nouveau moteur comme perdu (écran noir 1,5 s, puis rendu standard) à chaque retour dans l'appli.
+  const mine=()=>!!PX&&PX.R.view===view;
+  view.addEventListener('webglcontextlost',e=>{e.preventDefault();if(!mine())return;PX.lost=true;noteErr('rendu','contexte WebGL perdu');clearTimeout(PX.lostT);PX.lostT=setTimeout(()=>{if(PX&&PX.lost)dropPixi('contexte WebGL non rétabli')},1500)},false);
+  view.addEventListener('webglcontextrestored',()=>{if(!mine())return;PX.lost=false;clearTimeout(PX.lostT);try{if(G)buildStatic()}catch(err){dropPixi(err)}},false);
   const C=()=>new PIXI.Container(),Gr=()=>new PIXI.Graphics();
   const stage=C(),world=C(),top=C(),ui=C();
   const T={};
@@ -483,8 +486,16 @@ function renderPixi(){
   endPools();
   R.render(PX.stage);
 }
-// Libère le moteur WebGL (canevas retiré de la page).
-function pxFree(){try{clearTimeout(PX.lostT);PX.R.view.remove();PX.R.destroy()}catch{}PX=null}
+// Libère le moteur WebGL (v133) : objets de la scène, police des dégâts, textures (PIXI les garde dans un cache global tant qu'on ne les
+// détruit pas : environ 11 Mo de plus à chaque reconstruction), puis le contexte et le canevas.
+function pxFree(){const X=PX;PX=null;if(!X)return;try{clearTimeout(X.lostT)}catch{}
+  try{X.stage.destroy({children:true})}catch{}
+  try{if(PIXI.BitmapFont&&PIXI.BitmapFont.available&&PIXI.BitmapFont.available.dmg)PIXI.BitmapFont.uninstall('dmg')}catch{}
+  const seen=new Set(),walk=v=>{if(!v||typeof v!=='object'||seen.has(v))return;seen.add(v);
+    if(v instanceof PIXI.Texture){if(v!==PIXI.Texture.WHITE&&v!==PIXI.Texture.EMPTY)try{v.destroy(true)}catch{}return}
+    if(v instanceof Map)v.forEach(walk);else for(const k in v)walk(v[k])};
+  try{walk(X.T)}catch{}
+  try{X.R.view.remove();X.R.destroy()}catch{}}
 function dropPixi(err){
   if(!PX)return;noteErr('WebGL désactivé',err);
   pxFree();floorPat=null;resize();toast('Rendu WebGL interrompu : le jeu passe au rendu standard (modifiable dans les réglages).',true);

@@ -192,7 +192,7 @@ function lootFlash(w,it){const now=performance.now(),el=$('lootFlash');
 function shatter(e){G.rings.push({x:e.x,y:e.y,t:0,max:95,col:'170,225,255'});burst(e.x,e.y,14,'#cfefff',180,3);SND.play('crit');G._sh=(G._sh||0)+1;
   if(G._sh<4)for(const o of G.en){if(!o.dead&&o!==e&&Math.abs(o.x-e.x)<120&&Math.hypot(o.x-e.x,o.y-e.y)<85+o.r){slowE(o,1.5);dmgEnemy(o,S.dmg*1.5,false)}}G._sh--}
 function kill(e){
-  e.dead=true;G.kills++;
+  e.dead=true;G.kills++;if(e.type==='boss')G.bossK=(G.bossK|0)+1;
   if(NET.host)netSend({t:'kill',id:e.id,type:e.type,x:e.x|0,y:e.y|0,elite:e.elite||0,corr:e.corr?1:0,gen:e.gen||0,nl:e.noLoot?1:0});
   if(S.abSoul){G.P.soulN=Math.min(10,(G.P.soulN||0)+1);G.P.soulT=5}
   if(S.abWard)G.P.shield=Math.max(G.P.shield||0,Math.min(S.hp*.3,(G.P.shield||0)+S.abWard));
@@ -625,7 +625,7 @@ function update(dt){
       d.gone=true;
       if(d.kind==='xp'){G.nxp--;gainXp(d.v)}
       else if(d.kind==='gold'){SND.play('gold');const a=Math.round(d.amt*(1+lv('for')*.15)*(1+S.goldPct/100));G.gold+=a;ftext(P.x+rand(-10,10),P.y-P.r-12,'+'+a,'#f0cf4a',13)}
-      else if(d.kind==='mod'){SND.play('pick2');gainMod(d.id)}
+      else if(d.kind==='mod'){SND.play('pick2');gainMod(d.id);(G.modsGot||(G.modsGot=[])).push(d.id)}
       else if(d.kind==='seal'){SND.play('leg');(G.loot.seals||(G.loot.seals=[])).push(d.id);G.fresh++}
       else if(d.kind==='relic'){SND.play('pick3');G.loot.relics.push(d.id);G.fresh++}
       else if(d.kind==='react'){if(G.relic){G.react++;if(G.react>=reactNeed()){const r=G.relic;G.opened.push(r);relShare(r);G.relI++;G.react=0;G.relic=G.relQ[G.relI]||null;G.shake=6;

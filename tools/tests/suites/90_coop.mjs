@@ -114,7 +114,7 @@ export const tests = [
     await wf(B, () => G.target && !G.target.downed && G.capN === 1, 'B attend la cible 2', 10000, A);
     t.eq(await B.evaluate(() => [$('lvlTxt').textContent, $('objK').textContent]), ['1 capture', 'Traque la cible 2'], 'invité : cible 2 affichée');
     await A.evaluate(() => { missionSuccess(); }); await wf(B, () => G.over, 'B attend 10', 5000, A);
-    await A.click('#changeBtn').catch(() => {}); await A.evaluate(() => { $('over').hidden = true; started = false; $('intro').hidden = false; refreshMenus(); });
+    await A.click('#campBtn2').catch(() => {}); await A.evaluate(() => { $('over').hidden = true; started = false; $('intro').hidden = false; refreshMenus(); });
     await openMission(A); await A.click('.cx-pick[data-m="breche"]'); await sleep(A, 300);
     t.eq(await A.evaluate(() => meta.mode), 'breche', 'Brèche choisie');
     await A.evaluate(() => { $('startBtn').click(); }); await wf(B, () => started && G && !G.over, 'B attend 11', 8000, A);
@@ -145,7 +145,7 @@ export const tests = [
     t.eq(e1.map((x, i) => x - e0[i]), [50, 50, 50], 'chacun : 25 essence par relique, la sienne et celle du partenaire');
     t.eq(await A.evaluate(() => meta.relics.an), [1, 0], 'l\'hôte dépense sa relique, pas celle partagée');
     t.eq(await B.evaluate(() => [meta.relics.os, meta.relics.an || null]), [[0, 0], null], 'l\'invité dépense la sienne seulement');
-    t.ok(await C.evaluate(() => /Partagées par les partenaires/.test($('over').textContent) && /ouverte par/.test($('over').textContent)), 'résumé de fin : reliques des partenaires');
+    t.eq(await C.evaluate(() => document.querySelector('#over [data-k="relO"]').textContent), '2reliques ouvertes · dont 2 partagées', 'fin de mission : reliques partagées par les partenaires comptées');
   } },
   { name: 'code à 4 chiffres : l\'hôte crée la partie, deux joueurs tapent le code et arrivent ensemble', fn: async (b, t) => {
     const { A, G: [B, C], code } = await pairCode(b, t, 2);

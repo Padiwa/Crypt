@@ -23,7 +23,7 @@ export const tests = [
     await startMission(p);
     await p.evaluate(() => { G.tl = LEVEL_T; }); await p.waitForFunction(() => !$('extract').hidden, null, { timeout: 5000 });
     await p.click('#exitBtn'); await sleep(p, 300);
-    t.ok(await p.evaluate(() => /Débloqué/.test($('relicTxt').textContent) && /Forge · Bonus/.test($('relicTxt').textContent) && /Familier/.test($('relicTxt').textContent)), 'annonce en fin de mission');
+    t.ok(await p.evaluate(() => ['bonus', 'pets'].every((k) => isUnl(k) && meta.unlNew.includes(k))), 'débloqués à la fin de la mission, annoncés au Camp');
     await p.evaluate(() => { $('over').hidden = true; started = false; $('intro').hidden = false; });
     await campView(p, 'forge', 'up');
     t.ok(await p.evaluate(() => !!document.querySelector('.newc') && /Nouveau · Forge · Bonus/.test($('campBody').textContent)), 'carte Nouveau');

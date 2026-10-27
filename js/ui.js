@@ -286,12 +286,9 @@ function roundDone(){
 }
 function bank(full){
   const g=full?G.gold:Math.floor(G.gold/2);meta.gold+=g;G.run={};
-  const gainM=(mt,label)=>{let up=0;if(mt.r<10){mt.xp+=G.kills;while(mt.r<10&&mt.xp>=mastNeed(mt.r)){mt.xp-=mastNeed(mt.r);mt.r++;up++}if(mt.r>=10)mt.xp=0}
-    return `Maîtrise ${label} : rang ${mt.r} / 10`+(mt.r<10?` (${mt.xp} / ${mastNeed(mt.r)})`:'')+(up?` · +${up} de capacité`:'')};
-  const r0=mastOf(G.cls).r;
-  G.mastMsg=gainM(mastOf(G.cls),deCls(G.cls))+'<br>'+gainM(mstOf(meta.wmast,G.wid),deW(wdef(G.wid).n));
-  {const r1=mastOf(G.cls).r,nw=KIT_MAST.filter(r=>r>0&&r0<r&&r1>=r).length;if(nw)G.mastMsg+=`<br><b style="color:#ffd45a">Nouveau sort et nouvel ultime ${deCls(G.cls)}</b> au choix : Héros › Sorts et talents.`}
-  {const pm=petBank(G.kills);if(pm)G.mastMsg+='<br>'+pm}
+  // maîtrises du héros et de l'arme, niveau du familier : un point par ennemi abattu
+  const gainM=mt=>{if(mt.r<10){mt.xp+=G.kills;while(mt.r<10&&mt.xp>=mastNeed(mt.r)){mt.xp-=mastNeed(mt.r);mt.r++}if(mt.r>=10)mt.xp=0}};
+  gainM(mastOf(G.cls));gainM(mstOf(meta.wmast,G.wid));petBank(G.kills);
   if(full){tutWin();
     for(const it of G.loot.items)meta.stash.push(it)
     for(const p of G.loot.parts){if(p.hf)meta.hfrag=(meta.hfrag|0)+1;else if(p.full)gainWeapon(p.w);else if(meta.built[p.w])meta.essence+=6;else{const a=meta.parts[p.w]||(meta.parts[p.w]=[0,0,0]);a[p.p]++}}
@@ -301,7 +298,51 @@ function bank(full){
   sealBank(full);saveMeta();return g;
 }
 function recordBest(){if(G.t>best){best=G.t;try{localStorage.setItem('crypte-best2',String(best))}catch{}}}
-function showOver(title,txt,earn,rel){$('overTitle').textContent=title;$('overTxt').textContent=txt;$('earnTxt').innerHTML=earn;$('relicTxt').innerHTML=[rel,G&&G.mastMsg?`<p class="lead" style="font-size:13px;margin:6px 0 0">${G.mastMsg}</p>`:'',typeof unlockOverHtml==='function'?unlockOverHtml():''].filter(Boolean).join('');refreshMenus();$('over').hidden=false}
+/* ---------- Écran de fin de mission (v133), style des maquettes « Résultats » et « Défaite » de la refonte ----------
+   Huit compteurs : or, Gardiens vaincus, objectifs réalisés, reliques trouvées, reliques ouvertes, fragments, mods, équipements ;
+   puis tous les équipements rapportés (ou perdus), 12 par page. En bas : Au Camp (accueil du jeu) et Rejouer ou Réessayer (même mission). */
+const OVR_PAGE=12,OVR={eq:[],pg:0,sel:-1,lost:false};
+const ovrNum=n=>Math.round(n||0).toLocaleString('fr-FR');
+const ovrDur=t=>{t=Math.max(0,Math.round(t));const m=Math.floor(t/60),s=t%60;return m?`${m} min ${String(s).padStart(2,'0')}`:`${s} s`};
+const ovrTag=()=>`${MODES[G.mode]?MODES[G.mode].n:'Mission'} · ${esc(dif().n)} · niveau ${G.level} · ${ovrDur(G.t)}`;
+// Équipements de la mission : objets et armes entières, les plus rares d'abord
+function ovrEqList(){const L=G.loot,E=[];
+  for(const it of L.items){const s=it.slot==='anneau2'?'anneau':it.slot;E.push({r:it.r,ico:GLYPH[s]||GLYPH.armure,n:itemName(it),k:SLOT[it.slot]||'Objet'})}
+  for(const p of L.parts){if(p.hf||!p.full)continue;const w=wdef(p.w);if(w)E.push({r:w.r,ico:GLYPH.arme,n:w.n,k:'Arme'})}
+  return E.map((e,i)=>({...e,i})).sort((a,b)=>b.r-a.r||a.i-b.i)}
+function ovrEqHtml(){const E=OVR.eq,np=Math.max(1,Math.ceil(E.length/OVR_PAGE)),pg=OVR.pg=Math.min(Math.max(0,OVR.pg),np-1),s=E[OVR.sel];
+  if(!E.length)return `<p class="ovr__none">${OVR.lost?'Aucun équipement perdu.':'Aucun équipement cette fois.'}</p>`;
+  return `<div class="ovr__grid${OVR.lost?' is-lost':''}${np>1?' is-paged':''}">${E.slice(pg*OVR_PAGE,pg*OVR_PAGE+OVR_PAGE).map((e,k)=>{const i=pg*OVR_PAGE+k;
+      return `<button class="ovr__slot${i===OVR.sel?' is-sel':''}" data-ovi="${i}" style="--rar:${RARV[e.r]}" aria-label="${esc(e.n)}, ${RAR[e.r].n.toLowerCase()}">${e.ico}</button>`}).join('')}</div>
+    <p class="ovr__cap" aria-live="polite">${s?`<b style="color:${RAR[s.r].c}">${esc(s.n)}</b> · ${RAR[s.r].n} · ${s.k}`:'Touche un objet pour voir son nom.'}</p>
+    ${np>1?`<div class="ovr__pager"><button class="cx-btn cx-btn--sm" data-ovpg="-1" aria-label="Page précédente"${pg?'':' disabled'}>‹</button><span>Page ${pg+1} / ${np}</span><button class="cx-btn cx-btn--sm" data-ovpg="1" aria-label="Page suivante"${pg<np-1?'':' disabled'}>›</button></div>`:''}`}
+function ovrEqDraw(){const e=$('ovrEq');if(e)e.innerHTML=ovrEqHtml()}
+$('overBody').addEventListener('click',e=>{const pg=e.target.closest('[data-ovpg]'),it=e.target.closest('[data-ovi]');
+  if(pg&&!pg.disabled){OVR.pg+=+pg.dataset.ovpg;OVR.sel=-1;ovrEqDraw();SND.play('ui')}
+  else if(it){const i=+it.dataset.ovi;OVR.sel=OVR.sel===i?-1:i;ovrEqDraw()}});
+// o : {win, gold, relF (trouvées), relO (ouvertes), relSh (dont partagées), frag, title}
+function ovrHtml(o){const k=G.bossK|0,mods=(G.modsGot||[]).length,cap=G.mode==='capture',obj=G.objN|0,E=OVR.eq,W=o.win;
+  const tile=(key,v,lab,c,cls)=>`<span class="ovr__tile${cls?' '+cls:''}" data-k="${key}"><b${c?` style="color:${c}"`:''}>${v}</b><small>${lab}</small></span>`;
+  const head=W?`<header class="ovr__head"><span class="ovr__rays" aria-hidden="true"></span><i class="ovr__ember" style="left:5%;top:58px"></i><i class="ovr__ember" style="right:7%;top:104px"></i><i class="ovr__ember ovr__ember--s" style="left:66%;top:-20px"></i>
+      <span class="ovr__tag">${ovrTag()}</span><h2 class="ovr__title" id="overTitle">${o.title}</h2><span class="ovr__ribbon">Réussie</span></header>`
+    :`<header class="ovr__head ovr__head--dead"><span class="ovr__fallen" aria-hidden="true"><canvas id="overHero" width="160" height="160"></canvas></span>
+      <h2 class="ovr__title ovr__title--dead" id="overTitle">${o.title}</h2><span class="ovr__tag">${ovrTag()}</span></header>`;
+  return head+`<div class="ovr__tiles">
+      ${tile('gold','+'+ovrNum(o.gold),W?'or':'or gardé · moitié','var(--gold)')}
+      ${tile('boss',ovrNum(k),`Gardien${k>1?'s':''} vaincu${k>1?'s':''}`,'#c79bff')}
+      ${tile('obj',ovrNum(obj),cap?`cible${obj>1?'s':''} capturée${obj>1?'s':''}`:`objectif${obj>1?'s':''} réalisé${obj>1?'s':''}`,'#7fe08a')}
+      ${tile('relF',ovrNum(o.relF),W?`relique${o.relF>1?'s':''} trouvée${o.relF>1?'s':''}`:`relique${o.relF>1?'s':''} perdue${o.relF>1?'s':''}`,'#ff8a24',W?'':'is-lost')}
+      ${tile('relO',ovrNum(o.relO),W?`relique${o.relO>1?'s':''} ouverte${o.relO>1?'s':''}${o.relSh?` · dont ${o.relSh} partagée${o.relSh>1?'s':''}`:''}`:`relique${o.relO>1?'s':''} ouverte${o.relO>1?'s':''}`,'#ff5a7a')}
+      ${tile('frag',ovrNum(o.frag),W?`fragment${o.frag>1?'s':''}`:`fragment${o.frag>1?'s':''} perdu${o.frag>1?'s':''}`,'#8fd3e0',W?'':'is-lost')}
+      ${tile('mods',ovrNum(mods),`mod${mods>1?'s':''}${W?'':` gardé${mods>1?'s':''}`}`,'#f0cf4a')}
+      ${tile('eq',ovrNum(E.length),W?`équipement${E.length>1?'s':''}`:`équipement${E.length>1?'s':''} perdu${E.length>1?'s':''}`,'var(--ink)',W?'':'is-lost')}
+    </div>
+    <section class="ovr__sec"><h3 class="ovr__lab">${W?'Équipements rapportés':'Équipements perdus'} · ${E.length}</h3><div id="ovrEq">${ovrEqHtml()}</div></section>`}
+function overShow(o){const el=$('over'),b=$('overBody');OVR.eq=ovrEqList();OVR.pg=0;OVR.sel=-1;OVR.lost=!o.win;
+  el.classList.toggle('is-dead',!o.win);b.innerHTML=ovrHtml(o);b.scrollTop=0;$('againLab').textContent=o.win?'Rejouer':'Réessayer';
+  unlockCheck(false);refreshMenus();el.hidden=false;if(!o.win)try{heroPaint($('overHero'),G.cls,-Math.PI/2+1.75,1.1)}catch(err){noteErr('fin de mission',err)}}
+// Fragments de la mission : fragments d'armes et de harnais ramassés, et ceux donnés par les reliques ouvertes
+const ovrFrag=()=>G.loot.parts.filter(p=>p.hf||!p.full).length;
 // Ouvre une relique : un fragment d'un objet de sa rareté (deux si éclatante ; la relique forgée vise son objet).
 // Ouvre une relique : fragments de sa rareté pour le héros joué. free : relique partagée par un autre joueur, rien n'est dépensé.
 function grantRelic(id,rad,free){
@@ -314,41 +355,20 @@ function grantRelic(id,rad,free){
   relicQFix();
   return {got,html:got.map(g=>{const b=bpdef(g.bid),st=fragStatus(g.bid);return `<b style="color:${RAR[b.r].c}">${esc(b.n)}</b> · fragment ${b.frag[g.fi]} (${st} / 3${st>=3?', prêt à fabriquer':''})`}).join(' et ')}}
 function resolveRelic(){
-  const out=[],S={n:0,ess:0,frag:0,fragN:{},ready:new Set(),eggs:0,byT:{},sh:0,shT:{}};
-  const one=(r,free)=>{const g=grantRelic(r.id,r.rad,free);if(!g)return;meta.essence+=25;S.ess+=25;const t=RELICS[r.id].t;
-    if(free){S.sh++;S.shT[t]=(S.shT[t]||0)+1}else{S.n++;S.byT[t]=(S.byT[t]||0)+1}
-    for(const f of g.got){S.frag++;S.fragN[f.bid]=1;if(fragStatus(f.bid)>=3)S.ready.add(f.bid)}
-    const egg=eggFromRelic(r.id);if(egg)S.eggs++;
-    out.push(`${relicName(r.id)}${r.rad?' éclatante':''}${free?`, ouverte par ${esc(typeof who==='function'?who(r.from).name:'un partenaire')}`:''} : ${g.html}.`+(egg?' <b style="color:#f0cf4a">Œuf de familier.</b>':''))};
+  const S={n:0,sh:0,frag:0};
+  const one=(r,free)=>{const g=grantRelic(r.id,r.rad,free);if(!g)return;meta.essence+=25;if(free)S.sh++;else S.n++;S.frag+=g.got.length;eggFromRelic(r.id)};
   for(const r of G.opened)one(r,false);
   for(const r of G.shared||[])one(r,true);
   meta.relOpened=(meta.relOpened|0)+S.n;
-  const left=G.relQ.length-G.opened.length;
-  if(!S.n&&!S.sh&&!left)return '';
-  const lc=(c,n,lab)=>`<span class="lc" style="--c:${c}">${n} ${lab}</span>`;
-  let h=`<div class="exsum" style="margin-top:4px">`;
-  if(S.n)h+=`<div><span>Reliques ouvertes</span><b>${S.n} · ${Object.keys(S.byT).sort((a,b)=>b-a).map(t=>lc(RTIER[t].c,S.byT[t],RTIER[t].n)).join('')}</b></div>`;
-  if(S.sh)h+=`<div><span>Partagées par les partenaires</span><b>${S.sh} · ${Object.keys(S.shT).sort((a,b)=>b-a).map(t=>lc(RTIER[t].c,S.shT[t],RTIER[t].n)).join('')}</b></div>`;
-  if(S.ess)h+=`<div><span>Essence</span><b style="color:var(--ess)">+${S.ess}</b></div>`;
-  if(S.frag)h+=`<div><span>Fragments</span><b>${S.frag} · ${Object.keys(S.fragN).length} objet${Object.keys(S.fragN).length>1?'s':''}</b></div>`;
-  if(S.ready.size)h+=`<div><span>Prêts à fabriquer</span><b>${[...S.ready].map(id=>{const b=bpdef(id);return `<span class="lc" style="--c:${RAR[b.r].c}">${esc(b.n)}</span>`}).join('')}</b></div>`;
-  if(S.eggs)h+=`<div><span>Œufs de familier</span><b style="color:#f0cf4a">${S.eggs}</b></div>`;
-  if(left)h+=`<div><span>Non ouvertes (restent équipées)</span><b>${left}</b></div>`;
-  h+='</div>';
-  if(out.length)h+=`<details class="reldet"><summary>Détail des ${out.length} relique${out.length>1?'s':''}</summary><div>${out.join('<br>')}</div></details>`;
-  return h;
+  return S;
 }
 function missionSuccess(){SND.play('win');if(NET.host)netSend({t:'exit'});G.hold=false;
-  $('extract').hidden=true;$('lvlup').hidden=true;G.over=true;$('over').classList.remove('is-dead');const rel=resolveRelic();const g=bank(true);recordBest();
-  const cn=Math.max(1,G.capN|0),txt=G.mode==='capture'?`${cn>1?cn+' cibles capturées':'Cible capturée'} en ${fmt(G.t)}, ${G.kills} ennemis abattus.`:G.mode==='defense'?`Tu as tenu ${G.wave} vagues, ${G.kills} ennemis abattus.`:`Tu es sorti au niveau ${G.level} après ${fmt(G.t)}, avec ${G.kills} ennemis abattus.`;
-  showOver(G.mode==='capture'?'Capture réussie':'Extraction réussie',txt+' Ton butin t\'attend au Camp.',`<span class="coin"></span>+${g} or · ${meta.gold} au total`,
-    `<div class="exsum">${lootSummary(true)}</div>`+rel);
+  $('extract').hidden=true;$('lvlup').hidden=true;G.over=true;const relF=G.loot.relics.length,frag0=ovrFrag(),R=resolveRelic(),g=bank(true);recordBest();
+  overShow({win:true,title:G.mode==='capture'?'Capture':'Extraction',gold:g,relF,relO:R.n+R.sh,relSh:R.sh,frag:frag0+R.frag});
 }
 function gameOver(reason){
-  if(G.over)return;if(NET.host)netSend({t:'fail'});G.hold=false;SND.play('lose');G.over=true;$('over').classList.add('is-dead');const g=bank(false);recordBest();
-  const lost=G.loot.items.length+G.loot.parts.length+G.loot.relics.length;
-  setTimeout(()=>showOver(reason==='pod'?'Le cryopode est détruit':'Tu es tombé',`Mission échouée après ${fmt(G.t)}, ${G.kills} ennemis abattus.`+(lost?(lost>1?` Les ${lost} objets et reliques trouvés sont perdus.`:' L\'objet trouvé est perdu.'):''),
-    `<span class="coin"></span>+${g} or gardé (la moitié) · ${meta.gold} au total`,G.relQ.length?'Tes reliques ne sont pas consommées.':''),700);
+  if(G.over)return;if(NET.host)netSend({t:'fail'});G.hold=false;SND.play('lose');G.over=true;const g=bank(false);recordBest();
+  setTimeout(()=>overShow({win:false,title:reason==='pod'?'Cryopode détruit':'Tu es tombé',gold:g,relF:G.loot.relics.length,relO:G.opened.length,relSh:0,frag:ovrFrag()}),700);
 }
 $('exitBtn').onclick=()=>{if(NET.guest)return;missionSuccess()};
 function contRun(){$('extract').hidden=true;G.level++;G.hold=false;

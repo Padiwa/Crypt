@@ -221,19 +221,20 @@ function wishSection(){const W=wishOf();
 function xfAll(){const eqW=curWid(),ws=Object.keys(WPN).flatMap(c=>WPN[c].filter(w=>ownedW(w.id)).map(w=>['w:'+w.id,weaponItem(c,w.id),w.id===eqW&&c===heroCls?'arme portée':'arme']));
   return [...Object.entries(meta.gear).filter(([k,i])=>i).map(([k,i])=>['g:'+k,i,'équipé']),...allWorn().filter(i=>wornBy(i)!==heroCls).map(i=>['o:'+i.id,i,`porté par le ${CLS[wornBy(i)].n}`]),...meta.stash.map(i=>['s:'+i.id,i,'coffre']),...ws]}
 // Cible d'abord (v127) : les affixes que les autres objets peuvent donner à la cible, chacune avec les objets qui la portent (du plus fort au plus faible).
+// v133 : seulement les objets qui peuvent servir de source ; un objet verrouillé ou une arme de départ n'est jamais détruit, il n'apparaît pas.
 function xfPool(dk){const out={};
-  for(const [key,it,w] of xfAll()){if(key===dk)continue;for(const k in it.aff){if(!AFF[k]||AFF[k].aby||it.aff[k]==null)continue;(out[k]||(out[k]=[])).push({key,it,w,v:affEff(it,k),ok:xfSrcOk(key)})}}
+  for(const [key,it,w] of xfAll()){if(key===dk||!xfSrcOk(key))continue;for(const k in it.aff){if(!AFF[k]||AFF[k].aby||it.aff[k]==null)continue;(out[k]||(out[k]=[])).push({key,it,w,v:affEff(it,k)})}}
   for(const k in out)out[k].sort((a,b)=>b.v-a.v);return out}
 function xfAffSel(d,P){const ks=Object.keys(P),nm=k=>AFF_NAME[k]||k,srt=(a,b)=>nm(a).localeCompare(nm(b)),full=Object.keys(d.aff).length>=xfCap(d);
-  const opt=k=>{const L=P[k],n=L.filter(o=>o.ok).length,mine=d.aff[k]!=null?affShort(k,affEff(d,k)):'';
-    return `<option value="${k}"${xf.k===k?' selected':''}${n?'':' disabled'}>${nm(k)} (${n}) · max ${affShort(k,L[0].v)}${mine?` · cible ${mine}`:''}${affOff(k)?' · sans effet':''}${n?'':' · rien à sacrifier'}</option>`};
+  const opt=k=>{const L=P[k],mine=d.aff[k]!=null?affShort(k,affEff(d,k)):'';
+    return `<option value="${k}"${xf.k===k?' selected':''}>${nm(k)} (${L.length}) · max ${affShort(k,L[0].v)}${mine?` · cible ${mine}`:''}${affOff(k)?' · sans effet':''}</option>`};
   const fu=ks.filter(k=>d.aff[k]!=null).sort(srt),ad=ks.filter(k=>d.aff[k]==null).sort(srt);
-  const L=xf.k&&P[xf.k],n=L?L.filter(o=>o.ok).length:0,av=ks.filter(k=>P[k].some(o=>o.ok)).length;
+  const L=xf.k&&P[xf.k],n=L?L.length:0,av=ks.length;
   return `<label class="xfaff"><span class="xfaff__k">Affixe à donner</span><span class="xfaff__box${xf.k?'':' is-empty'}"><span class="xfaff__v">${xf.k?nm(xf.k):av?'Choisir l\'affixe':'Aucune affixe disponible'}</span>${L?`<span class="xfaff__s">${d.aff[xf.k]!=null?'fusion':'ajout'} · max ${affShort(xf.k,L[0].v)} · ${n} objet${n>1?'s':''}</span>`:av?`<span class="xfaff__s">${av} affixe${av>1?'s':''} sur tes autres objets</span>`:''}<i aria-hidden="true">▾</i><select id="xfAff" aria-label="Affixe à donner à la cible"><option value="">${ks.length?'Choisir l\'affixe… (objets à sacrifier)':'Aucune sur tes autres objets'}</option>${fu.length?`<optgroup label="Déjà sur la cible · fusion">${fu.map(opt).join('')}</optgroup>`:''}${ad.length?`<optgroup label="Nouvelle affixe · ${full?'remplace une affixe':'ajout'}">${ad.map(opt).join('')}</optgroup>`:''}</select></span></label>`}
 function xfCands(d,P){const L=P[xf.k];if(!L)return '';const T=v=>affShort(xf.k,NOSCALE[xf.k]?v:v*upMul(d.up));
-  const rows=L.map(o=>{const st=o.ok?xfState({src:o.key,dst:xf.dst,k:xf.k,rep:'',op:''}):null,on=xf.src===o.key,can=!!(st&&(st.ok||st.full));
-    const why=!o.ok?(o.it.lock?'verrouillé':'arme de départ, jamais détruite'):!st?'':st.ok?({fuse:`fusion → ${T(st.nv)}`,up:`remplace → ${T(st.nv)}`,add:'ajout'}[st.mode]||''):st.full?'cible pleine : remplace une affixe':'déjà plus fort sur la cible';
-    return `<li><button class="xfc" data-cact="xfsrc" data-arg="${o.key}" aria-pressed="${on}"${can?'':' disabled'}><span class="xfc__nm" style="color:${RARV[o.it.r]}">${esc(itemName(o.it))}${o.it.lock?` <span class="li" aria-label="verrouillé">${LOCK_SVG}</span>`:''}</span><span class="xfc__v">${affShort(xf.k,o.v)}</span><span class="xfc__sub">${o.w} · ${RAR[o.it.r].n}${why?` · <b${can?' class="ok"':''}>${why}</b>`:''}</span>${on?'<span class="cx-pin cx-pin--src">Source</span>':''}</button></li>`}).join('');
+  const rows=L.map(o=>{const st=xfState({src:o.key,dst:xf.dst,k:xf.k,rep:'',op:''}),on=xf.src===o.key,can=!!(st&&(st.ok||st.full));
+    const why=!st?'':st.ok?({fuse:`fusion → ${T(st.nv)}`,up:`remplace → ${T(st.nv)}`,add:'ajout'}[st.mode]||''):st.full?'cible pleine : remplace une affixe':'déjà plus fort sur la cible';
+    return `<li><button class="xfc" data-cact="xfsrc" data-arg="${o.key}" aria-pressed="${on}"${can?'':' disabled'}><span class="xfc__nm" style="color:${RARV[o.it.r]}">${esc(itemName(o.it))}</span><span class="xfc__v">${affShort(xf.k,o.v)}</span><span class="xfc__sub">${o.w} · ${RAR[o.it.r].n}${why?` · <b${can?' class="ok"':''}>${why}</b>`:''}</span>${on?'<span class="cx-pin cx-pin--src">Source</span>':''}</button></li>`}).join('');
   return `<section class="cx-section"><h3 class="cx-section__label">${AFF_NAME[xf.k]||xf.k} · ${L.length} objet${L.length>1?'s':''}</h3><p class="cx-hint" style="margin:0">Touche l'objet à sacrifier : il est détruit et son affixe passe sur la cible.</p><ul class="xfcl">${rows}</ul></section>`}
 function affFinder(){
   const all=xfAll();

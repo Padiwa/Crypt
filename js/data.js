@@ -170,7 +170,7 @@ const reactNeed=()=>Math.max(1,Math.round(REACT_N*(1-tormBoost().react)));
 // (BAL.stayLoot par minute, BAL.stayLootMax au plus). G.objT = temps de mission au moment de l'objectif. Les lâchers garantis des Gardiens ne changent pas.
 const stayMin=()=>typeof G!=='undefined'&&G&&G.objT!=null?Math.floor(Math.max(0,(G.t||0)-G.objT)/60):0;
 const stayBonus=()=>Math.min(BAL.stayLootMax||0,stayMin()*(BAL.stayLoot||0));
-function objDone(){if(typeof G!=='undefined'&&G&&G.objT==null)G.objT=G.t||0}
+function objDone(){if(typeof G==='undefined'||!G)return;G.objN=(G.objN|0)+1;if(G.objT==null)G.objT=G.t||0}
 // Chance d'œuf de familier par relique ouverte, selon sa rareté (× BAL.eggMul).
 const EGG_CH=[.08,.12,.15,.25];
 const REL_SRC=['Normal, Difficile et Cauchemar (et plus haut sous le niveau requis)',`Tourment I et plus, niveau ${BAL.relicLv[0]}+`,`Tourment VI et plus, niveau ${BAL.relicLv[1]}+`,`Tourment VI et plus, niveau ${BAL.relicLv[2]}+, plus rare`];

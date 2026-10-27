@@ -358,14 +358,14 @@ details.more .tbl{margin:0 14px 14px}
     <p>L'écran du portail montre deux boutons côte à côte. <b>Sortir avec le butin</b> (en vert) garde tout ce que tu as ramassé. <b>Continuer · niveau N</b> fait monter le niveau : monstres plus forts, meilleur butin, et le niveau atteint devient disponible comme niveau de départ.</p>
     <h3 id="sejour">Rester après l'objectif</h3>
     <p>Une fois l'objectif réalisé (la 1re manche en Survie et en Brèche, les 3 premières vagues en Défense, la 1re cible en Capture), chaque minute de plus dans la mission augmente le <b>butin des monstres et des élites de 10 %</b>, jusqu'à <b>+100 %</b> au bout de 10 minutes : objets, fragments d'armes, mods et reliques tombent plus souvent. Un message annonce chaque hausse ; la pause et l'écran du portail montrent le bonus en cours. Le temps passé sur l'écran du portail ne compte pas, et les lâchers garantis des Gardiens ne changent pas. En coopération, chacun a son bonus. Rester plus longtemps rapporte plus, mais si tu meurs, tu perds les objets et les reliques de la mission.</p>
-    <p>L'écran de fin de mission propose <b>Aller au Camp</b> et <b>Recommencer</b>, côte à côte, puis <b>Changer de héros</b>.</p>
-    <h3>Résumé de butin</h3>
-    <p>L'écran du portail et l'écran de fin de mission réussie (Survie, Capture, Défense et Brèche) montrent le même résumé, en compteurs : or ramassé, équipements (total et nombre par rareté), reliques (total et nombre par type : Ossuaire, Ancestrale, Sanguine, Abyssale), armes ramassées par rareté, ennemis abattus et durée. À la fin, un second encadré fait le bilan des reliques ouvertes : essence, fragments, objets prêts à fabriquer par leur nom, œufs de familier, et reliques non ouvertes (qui restent équipées). Le détail relique par relique se déplie sous « Détail des n reliques ».</p>
+    <p>L'écran de fin de mission propose deux boutons côte à côte : <b>Au Camp</b> ramène à l'accueil du jeu (là où l'on change de héros et de mission, avec la barre des onglets du Camp) ; <b>Rejouer</b> (<b>Réessayer</b> après un échec) relance la même mission.</p>
+    <h3>Écran de fin de mission</h3>
+    <p>En haut, le mode, la difficulté, le niveau et la durée. Puis huit compteurs : <b>or</b> gagné (la moitié après un échec), <b>Gardiens vaincus</b>, <b>objectifs réalisés</b> (manches en Survie et en Brèche, paliers de vagues en Défense, cibles capturées en Capture), <b>reliques trouvées</b>, <b>reliques ouvertes</b> (dont celles partagées par les partenaires), <b>fragments</b> (d'armes, de harnais et ceux donnés par les reliques ouvertes), <b>mods</b> ramassés et <b>équipements</b>. Dessous, tous les équipements rapportés, ou perdus après un échec, 12 par page : les flèches ‹ › changent de page, et toucher un objet affiche son nom, sa rareté et son emplacement. Les nouveautés débloquées s'annoncent ensuite au Camp, sur une carte <b>Nouveau</b>.</p>
     <p class="tip warn"><b>Si tu meurs</b>, tu gardes la moitié de l'or, les mods et ce que tu as équipé depuis le sac. Les objets et reliques trouvés pendant la mission sont perdus. Équipe tout de suite ce qui compte vraiment.</p>
   </div>
   <div class="shots">
     <figure><button class="shot" type="button"><img src="img/extract.jpg" alt="Fin de manche : sortir avec le butin ou continuer" width="780" height="1688" loading="lazy"></button><figcaption>Fin de manche en Survie.</figcaption></figure>
-    <figure><button class="shot" type="button"><img src="img/end.jpg" alt="Écran Extraction réussie avec le résumé du butin et le bilan des reliques" width="780" height="1688" loading="lazy"></button><figcaption>Fin de mission : résumé et reliques ouvertes.</figcaption></figure>
+    <figure><button class="shot" type="button"><img src="img/end.jpg" alt="Écran Extraction réussie : huit compteurs (or, Gardiens, objectifs, reliques, fragments, mods, équipements) et les équipements rapportés, page par page" width="780" height="1688" loading="lazy"></button><figcaption>Fin de mission réussie : compteurs, équipements page par page, puis Au Camp ou Rejouer.</figcaption></figure>
   </div>
 </div></section>
 
@@ -626,7 +626,7 @@ details.more .tbl{margin:0 14px 14px}
     <ol>
       <li>Touche l'objet qui recevra l'affixe : c'est la <b>Cible</b> (le premier choix par défaut). La grille montre tous tes objets, portés compris : ceux de ton héros en tête, ceux des autres héros marqués de leur initiale (A, G, M).</li>
       <li>À gauche, dans la case Source, la <b>liste déroulante</b> montre les affixes que tes autres objets peuvent lui donner, en deux groupes : <b>Déjà sur la cible · fusion</b> et <b>Nouvelle affixe · ajout</b>, avec la meilleure valeur et le nombre d'objets.</li>
-      <li>Choisis une affixe : tous les objets qui la portent s'affichent (équipés, coffre, armes), du plus fort au plus faible, avec ce que la cible obtiendrait (« fusion → +10 % », « ajout », « remplace »). Les objets verrouillés et les armes de départ sont grisés.</li>
+      <li>Choisis une affixe : tous les objets qui la portent s'affichent (équipés, coffre, armes), du plus fort au plus faible, avec ce que la cible obtiendrait (« fusion → +10 % », « ajout », « remplace »). Les objets verrouillés et les armes de départ n'y figurent pas : ils ne sont jamais détruits (une affixe portée seulement par eux n'est pas proposée).</li>
       <li>Touche l'objet à sacrifier : il devient la <b>Source</b>. L'aperçu montre la ligne retirée (rouge) et la ligne ajoutée (vert). Valide : la cible reste choisie pour lui donner une autre affixe.</li>
     </ol>
     <p>Le bouton <b>⇄</b>, entre Source et Cible, intervertit les deux si tu t'es trompé (la cible choisie par erreur devient la source). Il est grisé quand la cible ne peut pas être détruite : objet verrouillé ou arme de départ. On peut aussi partir de la source : touche <b>Source</b>, un objet, puis l'affixe à prendre sur sa fiche, et enfin la cible. Si la cible est pleine, choisis l'affixe à remplacer. Le transfert coûte de l'essence selon la rareté de la source.</p>
@@ -787,7 +787,7 @@ details.more .tbl{margin:0 14px 14px}
 
 </main>
 
-<footer class="wrap">Crypte des Cendres · guide à jour de la version 132 du jeu. <a href="../index.html">Retour au jeu</a></footer>
+<footer class="wrap">Crypte des Cendres · guide à jour de la version 133 du jeu. <a href="../index.html">Retour au jeu</a></footer>
 
 <dialog id="zoom" aria-label="Capture agrandie"><button type="button" id="zoomX" aria-label="Fermer">×</button><img id="zoomImg" alt=""></dialog>
 

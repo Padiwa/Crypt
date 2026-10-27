@@ -49,7 +49,7 @@ const isUnl=k=>!!(meta.unl[k]||meta.unlAll);
 // Palier de Tourment le plus haut accessible : le suivant de ton meilleur palier réussi.
 const tormMax=()=>meta.unlAll?10:isUnl('diff3')?Math.min(10,(meta.bestTorm|0)+1):0;
 const diffOk=i=>i===0||isUnl('diff'+i);
-// Vérifie les conditions ; les nouveaux déblocages sont annoncés (carte « Nouveau » au Camp, ligne en fin de mission), sauf en silencieux.
+// Vérifie les conditions ; les nouveaux déblocages sont annoncés (carte « Nouveau » au Camp et sur l'écran de fin de mission), sauf en silencieux.
 function unlockCheck(silent){const got=[];for(const u of UNL){if(isUnl(u.k))continue;let ok=false;try{ok=!!u.when()}catch{}
     if(ok){meta.unl[u.k]=1;got.push(u.k);if(!silent&&!meta.unlNew.includes(u.k))meta.unlNew.push(u.k)}}
   if(got.length)saveMeta();return got}
@@ -65,6 +65,3 @@ function newCard(k){if(!meta.unlNew.includes(k))return '';const u=UNL_BY[k];
   return `<section class="cx-card newc"><div class="cx-card__head"><div><h4 class="cx-card__title">Nouveau · ${u.n}</h4></div></div><p style="margin:0">${u.learn}</p><div class="cx-actions" style="margin:0"><a class="cx-btn cx-btn--sm" href="aide/index.html#${u.help}" target="_blank" rel="noopener">Voir le guide</a><button class="cx-btn cx-btn--sm cx-btn--primary" data-cact="unlok" data-arg="${k}">Compris</button></div></section>`}
 // Les déblocages d'accueil (missions, difficultés, biome) s'annoncent dans la description de l'écran d'accueil.
 function unlockHomeSeen(){const n=meta.unlNew.length;meta.unlNew=meta.unlNew.filter(k=>!UNL_BY[k].home);if(meta.unlNew.length!==n)saveMeta()}
-// Fin de mission : les déblocages du jour, avec leur explication courte.
-function unlockOverHtml(){const got=unlockCheck(false);if(!got.length)return '';
-  return `<div class="unlover"><b>Débloqué</b>${got.map(k=>{const u=UNL_BY[k];return `<p><span>${u.n}</span> ${u.learn}</p>`}).join('')}</div>`}

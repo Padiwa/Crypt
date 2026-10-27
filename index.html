@@ -139,17 +139,11 @@
   </div>
 </div>
 
-<div class="overlay center" id="over" hidden>
-  <div class="sheet">
-    <h2 class="title" style="font-size:44px" id="overTitle">Tu es tombé</h2>
-    <p class="lead" id="overTxt"></p>
-    <p class="earn" id="earnTxt"></p>
-    <div class="lead overloot" id="relicTxt" style="font-size:14px"></div>
-    <div class="btnrow">
-      <button class="btn" id="campBtn2">Aller au Camp</button>
-      <button class="btn main" id="againBtn">Recommencer</button>
-    </div>
-    <button class="cx-btn cx-btn--ghost" id="changeBtn">Changer de héros</button>
+<div class="overlay" id="over" hidden>
+  <div class="ovr__body" id="overBody" role="dialog" aria-labelledby="overTitle"></div>
+  <div class="ovr__foot">
+    <button class="cx-btn cx-btn--lg" id="campBtn2"><span>Au Camp</span><small>accueil du jeu</small></button>
+    <button class="cx-btn cx-btn--lg cx-btn--primary" id="againBtn"><span id="againLab">Rejouer</span><small>même mission</small></button>
   </div>
 </div>
 

@@ -30,14 +30,17 @@ function start(){
   window.pickCls=c=>{heroCls=c;try{localStorage.setItem('crypte-cls',c)}catch{}
     if(typeof netMe==='function')netMe();
     newGame();refreshMenus();if(!$('camp').hidden)drawCamp()};
-  $('campBtn2').onclick=()=>{campTab='equip';heroSub='main';openCamp()};
+  // Fin de mission : deux boutons (v133). « Retour au Camp » termine la partie et ramène à l'accueil du jeu, barre d'onglets comprise
+  // (c'était « Changer de héros ») ; « Recommencer » relance la même mission. Avant, « Aller au Camp » laissait l'écran de fin ouvert
+  // sous le Camp : la barre d'onglets restait cachée et l'onglet Combat ramenait à l'écran de fin.
+  $('campBtn2').onclick=()=>{$('over').hidden=true;$('bossBar').hidden=true;$('objBar').hidden=true;started=false;paused=false;resetJoy();
+    pickCls(heroCls);$('intro').hidden=false;if(typeof refreshCoopUi==='function')refreshCoopUi();navSync()};
   pickCls(heroCls);
   const go=()=>{started=true;paused=false;last=performance.now()};window.goRun=go;
   const coopNew=()=>{newGame();if(NET.host&&NET.on)netStartHost()};
   const startRun=()=>{if(NET.guest&&NET.on)return;$('intro').hidden=true;$('mission').hidden=true;coopNew();go()};
   $('startBtn').onclick=startRun;$('startBtn2').onclick=startRun;
   $('againBtn').onclick=()=>{if(NET.guest&&NET.on){toast('Coopération : l\'hôte relance la partie.');return}$('over').hidden=true;coopNew();go()};
-  $('changeBtn').onclick=()=>{$('over').hidden=true;started=false;paused=false;pickCls(heroCls);$('intro').hidden=false;navSync()};
   requestAnimationFrame(frame);
 }
 start();
