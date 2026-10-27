@@ -15,6 +15,8 @@ const RYTHME={
   reactCutMax:.6,      // réduction totale maximale des réactifs
   sejRelic:.08,        // Tourment : reliques sur les monstres et les élites en plus par tranche de séjour
   sejRelicMax:.48,     // … au plus
+  stayLoot:.1,         // séjour après l'objectif : butin des monstres (objets, fragments, mods, reliques) +10 % par minute
+  stayLootMax:1,       // … jusqu'à +100 %
   corrupt:.08,         // part des ennemis corrompus quand une relique est équipée
   tormIv:[50,40],      // Tourment : secondes entre deux vagues de Gardiens, au palier I puis au palier X
   tormCnt:[2,2],       // Tourment : Gardiens par vague, paliers I–V puis VI–X

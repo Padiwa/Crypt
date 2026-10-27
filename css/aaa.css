@@ -235,11 +235,11 @@ body:has(#over:not([hidden])) .tabbar,body:has(#settings:not([hidden])) .tabbar{
 .home__sb.is-empty .home__gem{box-shadow:none;opacity:.6}
 .home__badge{top:-4px;right:2px}
 .home__stage{position:relative;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.home__stage::before{content:"";position:absolute;left:50%;top:50%;width:min(300px,70vw);aspect-ratio:1;transform:translate(-50%,-56%);border-radius:50%;
+.home__stage::before{content:"";position:absolute;left:50%;top:50%;width:calc(var(--hs,240px)*1.25);aspect-ratio:1;transform:translate(-50%,-56%);border-radius:50%;
   background:radial-gradient(circle,color-mix(in srgb,var(--hero-c,#f39a3e) 34%,transparent),rgba(0,0,0,0) 68%);pointer-events:none}
-.home__stage::after{content:"";position:absolute;left:50%;top:50%;width:min(220px,56vw);height:62px;transform:translate(-50%,46px);border-radius:50%;pointer-events:none;
+.home__stage::after{content:"";position:absolute;left:50%;top:50%;width:calc(var(--hs,240px)*.92);height:calc(var(--hs,240px)*.26);transform:translate(-50%,calc(var(--hs,240px)*.19));border-radius:50%;pointer-events:none;
   border:3px solid rgba(255,190,110,.55);box-shadow:0 0 22px rgba(243,154,62,.5),inset 0 0 18px rgba(243,154,62,.35);background:radial-gradient(ellipse,rgba(0,0,0,.55),rgba(40,14,6,.2) 70%)}
-#heroCv{position:relative;z-index:1;width:min(240px,58vw);height:auto;aspect-ratio:1;max-height:100%;touch-action:pan-y;filter:drop-shadow(0 0 16px rgba(255,150,70,.35))}
+#heroCv{position:relative;z-index:1;width:var(--hs,min(240px,58vw));height:auto;aspect-ratio:1;max-height:100%;touch-action:pan-y;filter:drop-shadow(0 0 16px rgba(255,150,70,.35))}
 .home__nrow{display:flex;align-items:center;gap:14px}
 .home__arrow{flex:none;width:40px;height:40px;padding:0;border-radius:50%;display:grid;place-items:center;cursor:pointer;color:var(--ink);
   border:3px solid transparent;background:linear-gradient(180deg,#3a2f42,#1c1520) padding-box,linear-gradient(180deg,var(--gold1),var(--gold3) 50%,var(--gold4)) border-box;box-shadow:0 0 0 2px var(--outline),0 3px 0 var(--outline)}
@@ -267,7 +267,7 @@ body:has(#over:not([hidden])) .tabbar,body:has(#settings:not([hidden])) .tabbar{
 .home__tags{display:flex;gap:6px;flex-wrap:wrap}
 .home__tag{padding:4px 8px;border-radius:8px;background:#0b080d;border:1px solid #3a2f42;font:800 11.5px/1 var(--font-num);letter-spacing:.03em;color:var(--c,var(--muted))}
 .home__go{min-height:72px;margin:0 0 6px}
-#bestTxt{margin:0;text-align:center;font-size:12px}
+#bestTxt{margin:0;font-size:12px}
 #bestTxt:empty{display:none}
 @media (max-height:700px){.home__mission{min-height:92px}.home__mico{height:68px}.home__go{min-height:60px}.home__side{top:calc(env(safe-area-inset-top,0px) + 136px)}}
 
@@ -478,3 +478,8 @@ body:has(#over:not([hidden])) .tabbar,body:has(#settings:not([hidden])) .tabbar{
 .hacts{display:flex;flex-wrap:wrap}
 .hacts>.cx-btn{flex:1 1 auto;letter-spacing:.03em;padding-left:10px;padding-right:10px;white-space:nowrap}
 #setsSec{scroll-margin-top:12px}
+/* v131 : bonus de séjour dans le résumé de la pause */
+.bagsum__stay{grid-column:1/-1;font:600 12px/1.3 var(--font-body);font-style:normal;text-align:center;color:#f0cf4a}
+/* v131 : sans la bannière Parcours, les boutons latéraux remontent ; la taille du héros (--hs) suit la hauteur libre de la scène (shell.js). */
+#tutBtn[hidden] ~ .home__side{top:calc(env(safe-area-inset-top,0px) + 92px)}
+@media (max-height:700px){#tutBtn[hidden] ~ .home__side{top:calc(env(safe-area-inset-top,0px) + 84px)}}

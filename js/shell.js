@@ -116,3 +116,9 @@ function openTut(){const i=tutStep();if(i<0)return;
   $('pickBody').onclick=e=>{const b=e.target.closest('[data-cact="tutoff"]');if(b){meta.tutOff=true;saveMeta();closePick();refreshMenus();toast('Parcours masqué : « Réafficher le parcours » en bas de l\'onglet Héros.')}};
   $('pickSheet').hidden=false}
 $('tutBtn').onclick=openTut;
+
+// Taille du héros de l'accueil (v131) : il prend la hauteur libre de la scène, plus grand quand la bannière Parcours a disparu
+// (entre 160 et 340 px, 80 % de la largeur au plus ; 112 px restent pour le nom, les flèches et les points).
+(function(){const st=document.querySelector('.home__stage');if(!st)return;
+  const fit=()=>{const h=st.clientHeight,w=st.clientWidth;if(!h||!w)return;st.style.setProperty('--hs',Math.round(Math.max(160,Math.min(340,w*.8,h-112)))+'px')};
+  if(typeof ResizeObserver==='function')new ResizeObserver(fit).observe(st);addEventListener('resize',fit);fit()})();

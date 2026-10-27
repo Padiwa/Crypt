@@ -46,7 +46,7 @@ $('closeBag').addEventListener('click',closeBag);$('closeBagX').addEventListener
 $('rendBtn').addEventListener('click',()=>{if(PX){dropPixi('choix du joueur');try{localStorage.setItem('crypte-nogl','1')}catch{}}else{try{localStorage.removeItem('crypte-nogl')}catch{}location.reload()}});
 function drawBag(){
   {const rq=G.relic?`${G.react|0} / ${reactNeed()}`:`${(G.opened||[]).length} / ${G.relQ.length}`;
-    $('bagSum').innerHTML=`<span><b>${G.level}</b><small>niveau</small></span><span><b class="g">${G.gold}</b><small>or</small></span><span><b>${G.kills|0}</b><small>monstres</small></span><span><b class="r">${G.relQ.length?rq:'—'}</b><small>${G.relic?'réactifs':'reliques'}</small></span>`}
+    $('bagSum').innerHTML=`<span><b>${G.level}</b><small>niveau</small></span><span><b class="g">${G.gold}</b><small>or</small></span><span><b>${G.kills|0}</b><small>monstres</small></span><span><b class="r">${G.relQ.length?rq:'—'}</b><small>${G.relic?'réactifs':'reliques'}</small></span>`+(()=>{const b=Math.round(stayBonus()*100);return b?`<em class="bagsum__stay">Bonus de séjour · butin des monstres +${b} %</em>`:''})()}
   $('slots').innerHTML=slotsHtml(G.eq,false);
   $('statgrid').innerHTML=statRows(S);
   $('bagKey').innerHTML=typeof keyStats==='function'?keyStats(S):'';
@@ -269,6 +269,7 @@ function lootSummary(end){
     ${G.relQ.length&&!end?`<div><span>Reliques ouvertes</span><b>${G.opened.length} / ${G.relQ.length}${G.relic?` · ${G.react} / ${reactNeed()} réactifs`:''}</b></div>`:''}${(G.shared||[]).length&&!end?`<div><span>Partagées par les partenaires</span><b>${G.shared.length}</b></div>`:''}<div><span>Ennemis abattus</span><b>${G.kills}</b></div><div><span>${end?'Durée de la mission':'Temps de survie'}</span><b>${fmt(G.t)}</b></div>`;
 }
 function roundDone(){
+  objDone();
   if(NET.on){G.hold=true;if(NET.host)netSend({t:'round'})}
   paused=true;resetJoy();$('bag').hidden=true;$('lvlup').hidden=true;
   const nl=G.level+1,unlock=false;
@@ -277,6 +278,7 @@ function roundDone(){
   if(G.mode==='defense'){const it=genItem(itemLvl(),1);G.loot.items.push(it);extra=` et <span style="color:${RAR[it.r].c}">${it.name}</span>`}
   $('exTitle').textContent=G.mode==='defense'?`Vague ${G.wave} repoussée`:`Niveau ${G.level} terminé`;
   $('exLead').innerHTML=(G.mode==='defense'?'Le cryopode tient. ':'Un portail s\'ouvre. ')+`Récompense de manche : relique <b style="color:${RTIER[RELICS[r].t].c}">${relicName(r)}</b>${extra}. Sors pour tout garder, ou continue : au niveau ${G.level+1}, les monstres seront plus forts.`+(unlock?` Tu peux désormais commencer au niveau ${nl}.`:'')
+    +(()=>{const n=Math.round((BAL.stayLoot||0)*100),mx=Math.round((BAL.stayLootMax||0)*100),b=Math.round(stayBonus()*100);if(!n)return '';return `<br><span style="color:#f0cf4a">Bonus de séjour</span> : ${b?`butin des monstres +${b} %. `:''}${b>=mx?(b?'C\'est le maximum.':''):`${b?'E':'e'}n continuant, il grandit de ${n} % par minute, jusqu'à +${mx} %.`}`})()
     +(()=>{const b=tormBoost();if(!b.t||!G.relQ.length)return '';return `<br><span style="color:#ff6a3a">Bonus du Tourment</span> : ${reactNeed()} réactifs par relique au lieu de ${REACT_N}${b.relic?`, reliques +${Math.round(b.relic*100)} %`:''}. Il grandit toutes les 2 minutes passées dans la mission.`})();
   $('exSum').innerHTML=lootSummary();
   $('contBtn').textContent=`Continuer · niveau ${G.level+1}`;

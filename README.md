@@ -45,6 +45,8 @@ Modifie les fichiers, puis incrémente `VERSION` en haut de `sw.js` (ex. `crypte
 
 L'appli détecte toute seule le changement de `VERSION` (au lancement, au retour au premier plan et toutes les 30 min, voir `js/update.js`) : un bandeau « Nouvelle version du jeu · Mettre à jour » s'affiche hors mission (accueil, pause, Camp, fin de partie). Réglages › Application montre la version installée et un bouton Rechercher.
 
+GitHub Pages fait garder chaque fichier 10 minutes par le navigateur. Depuis la v131, `sw.js` contourne ce cache : à l'installation (`cache: 'reload'`) comme pour la page, les scripts et le CSS (`cache: 'no-cache'`, une réponse 304 légère si rien n'a changé). Une version publiée arrive donc dès que GitHub Pages l'a mise en ligne (1 à 2 minutes). La suite `17_pwa` le vérifie sur un petit serveur local.
+
 ## Rythme de progression
 Les réglages qui fixent la vitesse de progression sont dans des fichiers de rythme, `js/rythmes/` : `rapide.js` (rythme publié, par défaut) et `long.js` (fin de jeu visée vers 80 h). Chacun définit `RYTHME`, chaque valeur commentée : reliques (monstres, élites, Gardiens, part d'Abyssales), réactifs, Gardiens du Tourment, niveau requis pour chaque rareté de relique, coûts en or (fusion de rang, fabrication, Bonus de la Forge), rang maximum du butin des monstres, étoiles de mod, œufs, fragments de harnais.
 Le rythme chargé est celui de la balise `<script src="js/rythmes/….js">` d'`index.html`, avant `data.js` (penser aussi à la liste `CORE` de `sw.js`). C'est un réglage de développement : le joueur ne le choisit pas. Pour un nouveau rythme, copier un fichier et changer ses valeurs. Le simulateur le mesure avant publication : `node tools/progression/run.mjs --rythme long --cls guerrier` (nom ou chemin d'un fichier), `--bal '{"relicMob":0.15}'` pour essayer une valeur seule.
@@ -56,7 +58,7 @@ Le rythme chargé est celui de la balise `<script src="js/rythmes/….js">` d'`i
 Une suite unique vérifie le jeu dans un vrai navigateur (Chromium sans affichage) : démarrage, butin, reliques, fabrication et fusion, coffre, affixes, emplacements, missions, contrôles, sauvegarde, parcours, coopération.
 ```
 npm i playwright && npx playwright install chromium
-node tools/tests/run.mjs            # tout (100 tests, ≈ 4 min)
+node tools/tests/run.mjs            # tout (102 tests, ≈ 4 min)
 node tools/tests/run.mjs --quick    # sans la coopération
 node tools/tests/run.mjs fusion     # seulement les suites dont le fichier contient « fusion »
 ```

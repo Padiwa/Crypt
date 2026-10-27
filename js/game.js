@@ -201,7 +201,7 @@ function kill(e){
     for(const sd of[-1,1]){const a=rand(0,Math.PI*2)*0+Math.atan2(e.y-G.P.y,e.x-G.P.x)+sd*Math.PI/2+rand(-.4,.4);
       G.spawns.push({type:'slime',gen:e.gen+1,split:1,tgtPod:e.tgtPod,x:clamp(e.x+Math.cos(a)*e.r*.6,EDGE+30,MAP-EDGE-30),y:clamp(e.y+Math.sin(a)*e.r*.6,EDGE+30,MAP-EDGE-30),kx:Math.cos(a)*260,ky:Math.sin(a)*260,t:.12})}}
   if(e.twin&&!NET.guest)twinDied(e);
-  const boss=e.type==='boss'&&!e.noLoot,L=G.level,DL=dif().loot,dl=1+DL*.5,lm=lootMul(L)*(1+(S.lootPct||0)/100)*(1+DL*.15)*biome().loot*(teamHas('fort')?1.1:1)*(1+petLootPct()/100);
+  const boss=e.type==='boss'&&!e.noLoot,L=G.level,DL=dif().loot,dl=1+DL*.5,lm=lootMul(L)*(1+(S.lootPct||0)/100)*(1+DL*.15)*biome().loot*(teamHas('fort')?1.1:1)*(1+petLootPct()/100),st=1+stayBonus();
   G.ult=Math.min(ultNeed(),(G.ult||0)+(boss?10:1)*(teamHas('cri')?1.2:1));
   burst(e.x,e.y,boss?60:10,e.col,boss?320:150,4);burst(e.x,e.y,boss?20:4,'#e8853b',120);
   const push=(o,s=20)=>{const d=Object.assign({x:e.x+rand(-s,s),y:e.y+rand(-s,s),t:rand(0,6),age:0,mt:0},o);G.drops.push(d);if(o.kind==='item'){const w=wishMatch(o.item);if(w){d.wish=1;lootFlash(w,o.item)}}else if(o.kind==='part'&&o.part.full&&meta.wish&&meta.wish.leg&&!ownedW(o.part.w)){d.wish=1;lootFlash({leg:1},null)}};
@@ -210,21 +210,21 @@ function kill(e){
     push({kind:'item',item:genItem(itemLvl(),2)},40);push({kind:'item',item:genItem(itemLvl(),1)},40);push({kind:'relic',id:relicDrop()},40);push({kind:'potion'},40);
     for(let i=0;i<Math.floor((L-1)/10);i++)push({kind:'item',item:genItem(itemLvl(),1)},50);
     if(BAL.bossRelicEvery)for(let i=0;i<Math.floor((L-1)/BAL.bossRelicEvery);i++)push({kind:'relic',id:relicDrop()},50);
-    if(Math.random()<Math.min(1,.15*lm))push({kind:'part',part:rollPart()},40);
+    if(Math.random()<Math.min(1,.15*lm*st))push({kind:'part',part:rollPart()},40);
     if(Math.random()<hfChance())push({kind:'part',part:{hf:1}},40);
     for(let i=0;i<2;i++)push({kind:'mod',id:rollMod(true)},40);
     meta.essence+=25;saveMeta();G.shake=14;SND.play('bossdie');banner('Gardien vaincu · son butin est à toi','#e8853b',2);
     if(!G.en.some(o=>o.type==='boss'&&!o.dead))$('bossBar').hidden=true;
   }else{
     const t=e.type;
-    if(Math.random()<({ghoul:.006,bat:.002,archer:.008,poison:.008,pyro:.008,brute:.035,slime:.0035,givrin:.007})[t]*lm)push({kind:'item',item:genItem(itemLvl())});
-    if(Math.random()<({ghoul:.003,bat:.001,archer:.004,poison:.004,pyro:.004,brute:.025,slime:.0018,givrin:.0035})[t]*BAL.relicMob*(1+tormBoost().relic))push({kind:'relic',id:relicDrop()});
-    if(L>1&&Math.random()<({ghoul:.0015,bat:.0005,archer:.002,poison:.002,pyro:.002,brute:.012,slime:.0009,givrin:.0018})[t]*(lm-1))push({kind:'part',part:rollPart()});
+    if(Math.random()<({ghoul:.006,bat:.002,archer:.008,poison:.008,pyro:.008,brute:.035,slime:.0035,givrin:.007})[t]*lm*st)push({kind:'item',item:genItem(itemLvl())});
+    if(Math.random()<({ghoul:.003,bat:.001,archer:.004,poison:.004,pyro:.004,brute:.025,slime:.0018,givrin:.0035})[t]*BAL.relicMob*(1+tormBoost().relic)*st)push({kind:'relic',id:relicDrop()});
+    if(L>1&&Math.random()<({ghoul:.0015,bat:.0005,archer:.002,poison:.002,pyro:.002,brute:.012,slime:.0009,givrin:.0018})[t]*(lm-1)*st)push({kind:'part',part:rollPart()});
     if(e.corr)push({kind:'react'},6);
-    if(Math.random()<({ghoul:.006,bat:.002,archer:.008,poison:.008,pyro:.008,brute:.06,slime:.004,givrin:.007})[t])push({kind:'mod',id:rollMod(false)});
+    if(Math.random()<({ghoul:.006,bat:.002,archer:.008,poison:.008,pyro:.008,brute:.06,slime:.004,givrin:.007})[t]*st)push({kind:'mod',id:rollMod(false)});
     if(Math.random()<(t==='brute'?.05:.005))push({kind:'potion'});
   }
-  if(e.elite){push({kind:'item',item:genItem(itemLvl(),1)},30);if(Math.random()<.4)push({kind:'item',item:genItem(itemLvl(),1)},30);if(Math.random()<BAL.relicElite*(1+tormBoost().relic))push({kind:'relic',id:relicDrop()},30);
+  if(e.elite){push({kind:'item',item:genItem(itemLvl(),1)},30);if(Math.random()<.4*st)push({kind:'item',item:genItem(itemLvl(),1)},30);if(Math.random()<BAL.relicElite*(1+tormBoost().relic)*st)push({kind:'relic',id:relicDrop()},30);
     if(e.elite==='explosif'&&!NET.guest)G.lobs.push({x0:e.x,y0:e.y,tx:e.x,ty:e.y,t:0,T:.7,kind:'pyro',r:95,dps:2*diff().ds});
     burst(e.x,e.y,30,ELITE[e.elite].c,240,4);SND.play('bossdie');toast(`<b style="color:${ELITE[e.elite].c}">Élite ${ELITE[e.elite].n} vaincue</b>`)}
   const gv=({ghoul:1,bat:.6,archer:1.5,poison:1.5,pyro:1.5,brute:5,boss:50,slime:.8,givrin:1.2})[e.type]*goldMul(L)*dl*(e.elite?5:1),n=boss?8:e.elite?5:(Math.random()<Math.min(1,(e.type==='bat'?.35:.65)*(1+.05*(L-1)))?1:0);
@@ -276,7 +276,7 @@ const riftTry=(e,d)=>{if(S.abRift&&!G._rift&&Math.random()*100<S.abRift){G._rift
 // Coup qui peut être critique : les dégâts critiques s'appliquent (Pluie d'acier, météores).
 const critHit=(e,d)=>{const c=Math.random()*100<S.crit;dmgEnemy(e,c?d*S.critDmg/100:d,c)};
 // Récompense de capture (chaque joueur reçoit la sienne).
-function capReward(){const r=relicDrop(true);G.loot.relics.push(r);G.fresh++;G.gold+=60*G.level;
+function capReward(){objDone();const r=relicDrop(true);G.loot.relics.push(r);G.fresh++;G.gold+=60*G.level;
   toast(`<b style="color:var(--r2)">Cible capturée.</b> ${relicName(r)} et ${60*G.level} or. Rejoins l'extraction, ou traque la cible suivante.`)}
 // Ligne de tir dégagée entre un monstre et sa cible (5 points testés sur le trajet).
 const losClear=(e,dx,dy)=>{for(let k=1;k<6;k++)if(blocked(e.x+dx*k/6,e.y+dy*k/6,4))return false;return true};
@@ -386,6 +386,8 @@ function update(dt){
   G.t+=dt;G.tl+=dt;
   // Tourment : toutes les 2 minutes de séjour, le bonus des reliques grandit (annoncé tant qu'il augmente)
   {const s=sejN();if(s>(G.sejSeen|0)){G.sejSeen=s;const b=tormBoost();if(b.t&&G.relQ.length&&(s*(BAL.sejReact||0)<=(BAL.sejReactMax||0)+1e-9||s*(BAL.sejRelic||0)<=(BAL.sejRelicMax||0)+1e-9))toast(`<b style="color:#ff6a3a">Séjour prolongé.</b> ${reactNeed()} réactifs par relique, reliques +${Math.round(b.relic*100)} %.`,true)}}
+  // Séjour après l'objectif : chaque minute, le butin des monstres grandit (annoncé jusqu'au plafond)
+  {const m=stayMin();if(m>(G.staySeen|0)){G.staySeen=m;const b=stayBonus();if(b>0&&m*(BAL.stayLoot||0)<=(BAL.stayLootMax||0)+1e-9)toast(`<b style="color:#f0cf4a">Butin des monstres +${Math.round(b*100)} %</b> : tu restes après l'objectif${b>=(BAL.stayLootMax||0)-1e-9?' (c\'est le maximum)':''}.`,true)}}
   if(!NET.guest&&G.mode==='survie'&&G.tl>=LEVEL_T){G.tl=LEVEL_T;roundDone();return}
   if(G.pod)G.pod.flash=Math.max(0,G.pod.flash-dt*6);
   const P=G.P;

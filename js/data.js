@@ -165,6 +165,12 @@ function tormBoost(){const t=typeof tormT==='function'?tormT():0;if(!t)return {t
   const react=Math.min(BAL.reactCutMax||0,t*(BAL.tormReact||0)+Math.min(BAL.sejReactMax||0,s*(BAL.sejReact||0)));
   return {t,s,react,relic:Math.min(BAL.sejRelicMax||0,s*(BAL.sejRelic||0))}}
 const reactNeed=()=>Math.max(1,Math.round(REACT_N*(1-tormBoost().react)));
+// Séjour après l'objectif (v131) : une fois l'objectif réalisé (1re manche finie en Survie et Brèche, 1re série de vagues tenue en Défense,
+// 1re cible capturée), chaque minute de plus dans la mission augmente le butin des monstres et des élites : objets, fragments, mods, reliques
+// (BAL.stayLoot par minute, BAL.stayLootMax au plus). G.objT = temps de mission au moment de l'objectif. Les lâchers garantis des Gardiens ne changent pas.
+const stayMin=()=>typeof G!=='undefined'&&G&&G.objT!=null?Math.floor(Math.max(0,(G.t||0)-G.objT)/60):0;
+const stayBonus=()=>Math.min(BAL.stayLootMax||0,stayMin()*(BAL.stayLoot||0));
+function objDone(){if(typeof G!=='undefined'&&G&&G.objT==null)G.objT=G.t||0}
 // Chance d'œuf de familier par relique ouverte, selon sa rareté (× BAL.eggMul).
 const EGG_CH=[.08,.12,.15,.25];
 const REL_SRC=['Normal, Difficile et Cauchemar (et plus haut sous le niveau requis)',`Tourment I et plus, niveau ${BAL.relicLv[0]}+`,`Tourment VI et plus, niveau ${BAL.relicLv[1]}+`,`Tourment VI et plus, niveau ${BAL.relicLv[2]}+, plus rare`];

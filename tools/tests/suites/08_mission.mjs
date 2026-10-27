@@ -195,4 +195,35 @@ export const tests = [
     const t0 = await p.evaluate(() => { closeBag(); return G.t; }); await sleep(p, 400);
     t.ok(await p.evaluate((t0) => G.t > t0, t0), 'Reprendre relance la mission');
   } },
+  { name: 'séjour après l\'objectif : butin des monstres +10 % par minute après la 1re manche ou la 1re capture, jusqu\'à +100 % (v131)', fn: async (b, t) => {
+    const p = t.track(await newPage(b));
+    await startMission(p, { mode: 'survie' });
+    t.eq(await p.evaluate(() => [G.objT == null, stayBonus()]), [true, 0], 'avant l\'objectif : aucun bonus');
+    await p.evaluate(() => { G.t = 300; roundDone(); });
+    t.ok(await p.evaluate(() => G.objT === 300 && /Bonus de séjour/.test($('exLead').textContent) && /10 % par minute/.test($('exLead').textContent)), 'fin de manche : objectif noté, bonus annoncé');
+    await p.evaluate(() => { contRun(); G.t = G.objT + 125; });
+    await sleep(p, 300);
+    t.eq(await p.evaluate(() => Math.round(stayBonus() * 100)), 20, 'deux minutes plus tard : +20 %');
+    t.ok(await p.evaluate(() => /Butin des monstres \+20 %/.test($('toast').textContent)), 'un message annonce la hausse');
+    await p.evaluate(() => { G.t = G.objT + 3600; openBag(); });
+    t.eq(await p.evaluate(() => Math.round(stayBonus() * 100)), 100, 'plafond : +100 %');
+    t.ok(await p.evaluate(() => /butin des monstres \+100 %/.test($('bagSum').textContent)), 'la pause affiche le bonus');
+    // Mêmes tirages au hasard, avec et sans bonus : objets, mods et reliques des monstres tombent environ deux fois plus.
+    const n = await p.evaluate(() => {
+      closeBag(); const R = Math.random;
+      const run = (late) => { let s = 7; Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647; G.objT = late ? G.t - 3600 : G.t; G.drops = [];
+        for (let i = 0; i < 3000; i++) kill({ type: 'brute', x: G.P.x, y: G.P.y, r: 20, col: '#fff' });
+        const c = (k) => G.drops.filter((d) => d.kind === k).length; return [c('item'), c('mod'), c('relic')]; };
+      try { return [run(false), run(true)]; } finally { Math.random = R; G.drops = []; }
+    });
+    t.ok(n[1].every((v, i) => v >= n[0][i] * 1.6 && v <= n[0][i] * 2.4 + 2), `butin doublé au plafond : ${JSON.stringify(n)}`);
+    const q = t.track(await newPage(b));
+    await startMission(q, { mode: 'capture' });
+    await q.evaluate(() => { G.t = 90; capReward(); });
+    t.eq(await q.evaluate(() => G.objT), 90, 'Capture : la 1re cible capturée lance le bonus');
+    await q.evaluate(() => { G.t = 90 + 61; }); await sleep(q, 300);
+    t.ok(await q.evaluate(() => /Butin des monstres \+10 %/.test($('toast').textContent)), 'une minute après : +10 %, annoncé');
+    await q.evaluate(() => { G.t = 200; capReward(); });
+    t.eq(await q.evaluate(() => G.objT), 90, 'les captures suivantes ne relancent pas le compte');
+  } },
 ];
