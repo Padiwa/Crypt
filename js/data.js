@@ -29,7 +29,7 @@ const keySlot=k=>k==='anneau2'?'anneau':k;
 // Case où va un objet : la sienne s'il est porté, sinon une case vide de son type, sinon celle où il apporte le plus.
 function tgtKey(eq,it){const ks=GEAR_KEYS().filter(k=>keySlot(k)===it.slot);if(!ks.length)return null;
   for(const k of ks)if(eq[k]===it)return k;for(const k of ks)if(!eq[k])return k;if(ks.length===1)return ks[0];
-  let best=ks[0],bs=-1e18;for(const k of ks){const v=itemScore({...eq,[k]:it});if(v>bs){bs=v;best=k}}return best}
+  let best=ks[0],bs=null;for(const k of ks){const v=eqVal({...eq,[k]:it});if(!bs||eqGt(v,bs)){bs=v;best=k}}return best}
 // Fragments de harnais : seulement sur les Gardiens, plus souvent dans les difficultés hautes.
 const hfChance=()=>{const D=dif();return .03*BAL.hfMul*(1+.5*Math.min(3,dsel().d))*(1+.05*(D.tier||0))};
 const BIOMES=[
@@ -347,7 +347,7 @@ const RUP=[
   {k:'exec',n:'Exécution',d:'+40 % de dégâts contre les ennemis sous 30 % de vie',max:3,c:C_ATK},
   {k:'slay',n:'Tueur de Gardiens',d:'+20 % de dégâts contre les Gardiens',max:3,c:C_ATK},
   {k:'refl',n:'Réflexes',d:'−15 % de recharge de l\'esquive',max:3,c:C_UTI},
-  {k:'endu',n:'Endurci',d:'−20 % de durée du poison et de la brûlure',max:2,c:C_DEF},
+  {k:'endu',n:'Endurci',d:'−20 % de durée du poison, de la brûlure et de la gelure',max:2,c:C_DEF},
   {k:'know',n:'Savoir',d:'+20 % d\'expérience',max:3,c:C_UTI},
   {k:'luck',n:'Bonne étoile',d:'+15 % de chances de butin pendant la mission',max:3,c:'#f0cf4a'},
   {k:'fiole',n:'Fiole de réserve',d:'+1 potion tout de suite',max:3,c:C_DEF},
@@ -380,7 +380,7 @@ const SPELLS={
       {k:'transfert',n:'Transfert',cd:7,icon:'<circle cx="5" cy="12" r="2"/><circle cx="18" cy="12" r="3.5"/><path d="M8.5 12h1.5M12 12h1.5"/>',d:'Téléportation de 240 px dans ta direction ; explosion glacée au départ et à l\'arrivée (60 % des dégâts de compétence, ralentit).'}],
     u:[{k:'meteores',n:'Pluie de météores',d:'3 météores sur les ennemis proches (300 % des dégâts de compétence chacun, critiques possibles).'},
       {k:'blizzard',n:'Blizzard',icon:'<path d="M7 15a4 4 0 1 1 1-7.9A5 5 0 0 1 18 8a3.5 3.5 0 0 1 0 7z"/><path d="M8 19v.01M12 19v.01M16 19v.01M10 22v.01M14 22v.01"/>',d:'5 s de froid autour de toi : toutes les 0,3 s, 50 % des dégâts de compétence et ralentissement (critiques possibles).'},
-      {k:'surcharge',n:'Surcharge arcanique',icon:'<path d="M12 2v6M12 16v6M2 12h6M16 12h6M5 5l4 4M15 15l4 4M19 5l-4 4M9 15l-4 4"/>',d:'6 s : sort sans recharge, orbes deux fois plus rapides, explosions +50 %.'}]},
+      {k:'surcharge',n:'Surcharge arcanique',icon:'<path d="M12 2v6M12 16v6M2 12h6M16 12h6M5 5l4 4M15 15l4 4M19 5l-4 4M9 15l-4 4"/>',d:'6 s : sort rechargé en 0,5 s, cadence doublée, explosions +50 %.'}]},
 };
 // Icônes d'origine (celles de la classe) pour le 1er sort et le 1er ultime.
 for(const c in SPELLS){SPELLS[c].s[0].icon=CLS[c].icon;SPELLS[c].u[0].icon=CLS[c].uicon}
@@ -397,7 +397,7 @@ const TAL={
           {k:'a_rico',n:'Ricochet',d:'Chaque carreau rebondit une fois vers un autre ennemi.',cost:500}],
   magicien:[{k:'m_blink',n:'Sillage de givre',d:"L'esquive laisse une explosion glacée qui ralentit.",cost:150},
             {k:'m_shield',n:'Barrière',d:'Un bouclier absorbe 25 % de ta vie. Il se recharge après 4 s sans être touché.',cost:300},
-            {k:'m_chain',n:"Chaîne d'éclairs",d:'Une orbe sur quatre foudroie 3 ennemis proches.',cost:500}],
+            {k:'m_chain',n:"Chaîne d'éclairs",d:'Chaque orbe a 25 % de chances de foudroyer 3 ennemis proches (80 % de ses dégâts).',cost:500}],
 };
 
 /* ---------- Mods ---------- */
@@ -423,12 +423,12 @@ const MODS={
   souffle:{type:'h',n:'Second souffle',r:0,max:3,drain:3,k:'regenPct',v:.5,t:v=>`+${String(v).replace('.',',')} % de ta vie max par seconde (au moins ${String(+(v*3).toFixed(1)).replace('.',',')} PV)`},
   alchimiste:{type:'h',n:'Alchimiste',r:0,max:3,drain:2,k:'potHeal',v:15,t:v=>`+${v} % de soin des potions`},
   rapace:{type:'h',n:'Rapace',r:0,max:3,drain:2,k:'magnetPct',v:20,t:v=>`+${v} % de portée de ramassage`},
-  etendue:{type:'h',n:'Étendue',r:1,max:5,drain:4,k:'skillRad',v:15,t:v=>`+${v} % de rayon de compétence`},
+  etendue:{type:'h',n:'Étendue',r:1,max:5,drain:4,k:'skillRad',v:15,t:v=>`+${v} % de portée des compétences`},
   persist:{type:'h',n:'Persistance',r:1,max:3,drain:4,k:'skillDur',v:12,t:v=>`+${v} % de durée de compétence et de ralentissement`},
   fantome:{type:'h',n:'Pas fantôme',r:1,max:3,drain:3,k:'dashCd',v:10,t:v=>`−${v} % de recharge de l'esquive`},
   dernier:{type:'h',n:'Dernier rempart',r:1,max:3,drain:4,k:'lowArmor',v:10,t:v=>`−${v} % de dégâts subis sous 30 % de vie`},
   survivant:{type:'h',n:'Rage du survivant',r:2,max:3,drain:5,k:'lowDmg',v:15,t:v=>`+${v} % de dégâts sous 50 % de vie`},
-  antidote:{type:'h',n:'Antidote',r:0,max:3,drain:3,k:'antidote',v:15,t:v=>`−${v} % de durée du poison et de la brûlure`},
+  antidote:{type:'h',n:'Antidote',r:0,max:3,drain:3,k:'antidote',v:15,t:v=>`−${v} % de durée du poison, de la brûlure et de la gelure`},
   presence:{type:'a',n:'Présence glaciale',r:2,max:3,drain:0,cap:4,k:'auraSlow',v:8,t:v=>`Ennemis proches ralentis de ${v} %`},
   cupidite:{type:'a',n:'Cupidité',r:1,max:3,drain:0,cap:4,k:'goldPct',v:10,t:v=>`+${v} % d'or ramassé`},
   ferveur:{type:'a',n:'Ferveur',r:2,max:3,drain:0,cap:4,k:'apsPct',v:5,t:v=>`+${v} % de vitesse d'attaque`},

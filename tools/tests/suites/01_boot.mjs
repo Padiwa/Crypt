@@ -16,7 +16,7 @@ export const tests = [
   } },
   { name: 'tous les onglets et vues du Camp s\'affichent', fn: async (b, t) => {
     const p = t.track(await newPage(b));
-    const views = [['equip'], ['arsenal', 'coffre'], ['arsenal', 'rec'], ['arsenal', 'mine'], ['arsenal', 'recy'], ['relics'], ['mods'], ['pets'],
+    const views = [['equip'], ['equip', 'gear:arme'], ['equip', 'gear:armure'], ['equip', 'gear:anneau2'], ['equip', 'tal'], ['equip', 'prest'], ['equip', 'look'], ['arsenal', 'coffre'], ['arsenal', 'rec'], ['arsenal', 'recy'], ['relics'], ['mods'], ['pets'],
       ['forge', 'up'], ['forge', 'affix'], ['forge', 'fuse'], ['forge', 'seals']];
     for (const [tab, sub] of views) {
       await campView(p, tab, sub);

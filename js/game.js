@@ -70,7 +70,7 @@ function sandTick(dt){
     else{G.stormIn-=dt;if(G.stormIn<=0){G.stormIn=0;G.storm=STORM_LEN}}}
   const on=G.storm>0;if(on&&!G._stormOn){banner('Tempête de sable · on y voit moins loin','#e0b870',1,true);SND.play('wave')}G._stormOn=on;
   // sable porté par le vent (bien plus dense pendant la tempête)
-  const k=stormK();let m=dt*(5+120*k);
+  const k=stormK(),area=clamp(G.vw*G.vh/(620*1100),.5,3);let m=dt*(5+120*k)*area;
   while(m>0&&G.parts.length<420){if(m<1&&Math.random()>m)break;m--;
     G.parts.push({x:G.cam.x+rand(-G.vw/2-160,G.vw/2),y:G.cam.y+rand(-G.vh/2,G.vh/2),vx:rand(140,240)*(.5+k),vy:rand(-8,16),life:rand(1,1.8),max:1.8,col:pick(SAND_C),size:rand(.8,2)*(1+k*.6),w:1})}}
 function farPoint(dmin){const P=G.P;for(let k=0;k<300;k++){const x=rand(160,MAP-160),y=rand(160,MAP-160);if(Math.hypot(x-P.x,y-P.y)>=dmin&&!blocked(x,y,60))return {x,y}}return {x:MAP-200,y:MAP-200}}
@@ -516,7 +516,7 @@ function update(dt){
   if(P.cbT>0){P.cbT-=dt;if(Math.random()<dt*24){const a=rand(0,Math.PI*2);G.parts.push({x:P.x+Math.cos(a)*P.r*1.4,y:P.y+Math.sin(a)*P.r*1.4,vx:Math.cos(a)*30,vy:-50,life:.45,max:.45,col:'#ffd34d',size:3})}if(P.cbT<=0){P.cbT=0;refreshStats()}}
   if(G.cls==='magicien'&&hasTal('m_shield')){P.noHit+=dt;if(P.noHit>4)P.shield=Math.min(S.hp*.25,P.shield+S.hp*.08*dt)}
   if(moving){P.dx=iv.x/iv.m;P.dy=iv.y/iv.m;P.face=Math.atan2(P.dy,P.dx)}
-  P._sand=inSand(P);if(P._sand&&moving&&!P.down&&Math.random()<dt*14)G.parts.push({x:P.x+rand(-10,10),y:P.y+rand(4,12),vx:rand(-20,20),vy:rand(-25,-5),life:.5,max:.5,col:'#c9a25e',size:rand(1.5,3)});
+  P._sand=inSand(P)&&!(P.berT>0);if(P._sand&&moving&&!P.down&&Math.random()<dt*14)G.parts.push({x:P.x+rand(-10,10),y:P.y+rand(4,12),vx:rand(-20,20),vy:rand(-25,-5),life:.5,max:.5,col:'#c9a25e',size:rand(1.5,3)});
   let sp=P.down?0:S.speed*iv.m*(P.frzT>0&&!(P.berT>0)?.62:1)*(P._sand?.6:1);
   if(P.dashT>0){P.dashT-=dt;sp=S.speed*3.4;P.x+=P.dx*sp*dt;P.y+=P.dy*sp*dt;if(Math.random()<.6)G.parts.push({x:P.x,y:P.y,vx:0,vy:0,life:.25,max:.25,col:'#9fc2b8',size:P.r*.8})}
   else if(P.leapT>0){P.leapT-=dt;P.x+=P.leapVx*dt;P.y+=P.leapVy*dt;if(Math.random()<.7)G.parts.push({x:P.x,y:P.y,vx:0,vy:0,life:.25,max:.25,col:'#9fc2b8',size:P.r*.8});if(P.leapT<=0){P.leapT=0;P.leapLand=1}}

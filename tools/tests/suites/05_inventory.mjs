@@ -19,10 +19,16 @@ export const tests = [
     const ms = await p.evaluate(() => { const r = {}; for (const [k, f] of [['coffre', () => { arsView = 'coffre'; drawCamp(); }], ['recycler', () => { arsView = 'recy'; drawCamp(); }], ['fusion', () => { campTab = 'forge'; forgeSub = 'fuse'; drawCamp(); }], ['affixes', () => { campTab = 'forge'; forgeSub = 'affix'; drawCamp(); }]]) { f(); const a = performance.now(); for (let i = 0; i < 3; i++) f(); r[k] = Math.round((performance.now() - a) / 3); } return r; });
     t.ok(Object.values(ms).every((v) => v < 200), `1 500 objets : moins de 200 ms par affichage (${JSON.stringify(ms)})`);
   } },
-  { name: 'Héros › « Ouvrir le coffre » mène à Armurerie › Coffre', fn: async (b, t) => {
+  { name: 'Héros › Équipement › « Ouvrir le coffre » mène à Arsenal › Coffre, filtré sur l\'emplacement choisi (v137)', fn: async (b, t) => {
     const p = t.track(await newPage(b));
-    await openCamp(p); await p.click('[data-cact="gocoffre"]');
-    t.eq(await p.evaluate(() => [campTab, arsView, !!document.querySelector('#invGrid')]), ['arsenal', 'coffre', true], 'vue');
+    await p.evaluate(() => { meta.slotU = { anneau2: true }; meta.gear.anneau2 = null; for (let i = 0; i < 12; i++) meta.stash.push(genItem(20, i % 3)); saveMeta(); });
+    await campView(p, 'equip', 'gear:anneau2'); await p.click('[data-cact="gocoffre"]');
+    t.eq(await p.evaluate(() => [campTab, arsView, !!document.querySelector('#invGrid'), stF, document.querySelector('[data-cact="sfilter"][aria-pressed="true"]').dataset.arg]), ['arsenal', 'coffre', true, 'anneau', 'anneau'], 'coffre ouvert, filtre Anneau choisi');
+    t.ok(await p.evaluate(() => invList('equip').every((i) => i.slot === 'anneau')), 'seulement des anneaux');
+    await campView(p, 'equip', 'gear:arme'); await p.click('[data-cact="gocoffre"]');
+    t.eq(await p.evaluate(() => stF), 'arme', 'depuis l\'arme : filtre Arme');
+    await campView(p, 'equip', 'gear:dos'); await p.evaluate(() => { meta.slotU = { anneau2: true, dos: true }; meta.gear.dos = null; drawCamp(); }); await p.click('[data-cact="gocoffre"]');
+    t.ok(await p.evaluate(() => stF === 'dos' && !!document.querySelector('[data-cact="sfilter"][data-arg="dos"][aria-pressed="true"]')), 'Dos : puce affichée et choisie même sans objet de dos');
   } },
   { name: 'fiche : équiper depuis le coffre', fn: async (b, t) => {
     const p = t.track(await newPage(b));

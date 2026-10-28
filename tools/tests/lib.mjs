@@ -43,7 +43,8 @@ export async function campView(p, tab, sub) {
   await openCamp(p);
   await p.evaluate(([t, s]) => {
     campTab = t; campSel = null; campBack = null;
-    if (t === 'equip') heroSub = s || 'main';
+    // 'gear:anneau2' : Héros › Équipement ouvert sur un emplacement (v137)
+    if (t === 'equip') { const [h, g] = (s || 'main').split(':'); heroSub = h; if (g) gearSlot = g; }
     if (t === 'forge' && s) forgeSub = s;
     if (t === 'arsenal' && s) arsView = s;
     drawCamp();

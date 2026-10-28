@@ -1,36 +1,90 @@
 // Crypte des Cendres — ui.js
 /* ---------- Fiches partagées ---------- */
 function statRows(St){
-  const rows=[['Dégâts',Math.round(St.dmg)],['Attaques / s',St.aps.toFixed(2)],['Critique',Math.round(St.crit)+' %'],['Dégâts critiques',Math.round(St.critDmg)+' %'],['Puissance (DPS)',Math.round(dps(St))],['Vie',Math.round(St.hp)],['Réduction',Math.round(St.armor)+' %'],['Vitesse',Math.round(St.speed/2.2)+' %'],['Portée des compétences',Math.round(100+St.skillRad)+' %'],...(heroCls==='magicien'?[['Rayon d\'explosion',Math.round(100+St.splash)+' %']]:[]),heroCls==='guerrier'?['Ondes par coup',St.waves]:['Projectiles par tir',(1+St.multi).toFixed(St.multi%1?2:0)],['Double attaque',St.echo+' %'],['Dégâts de compétence',Math.round(St.nova)]];
+  const rows=[['Dégâts',Math.round(St.dmg)],['Attaques / s',St.aps.toFixed(2)],['Critique',Math.round(St.crit)+' %'],['Dégâts critiques',Math.round(St.critDmg)+' %'],['Puissance',Math.round(power(St))],...(()=>{const W=powerOf(St);return [['· attaques',Math.round(W.atk)],['· sort',Math.round(W.skill)],['· ultime',Math.round(W.ult+W.pulse)],...(W.pet?[['· familier',Math.round(W.pet)]]:[])]})(),['Vie',Math.round(St.hp)],['Réduction',Math.round(St.armor)+' %'],['Vitesse',Math.round(St.speed/2.2)+' %'],['Portée des compétences',Math.round(100+St.skillRad)+' %'],...(heroCls==='magicien'?[['Rayon d\'explosion',Math.round(100+St.splash)+' %']]:[]),heroCls==='guerrier'?['Ondes par coup',St.waves]:['Projectiles par tir',(1+St.multi).toFixed(St.multi%1?2:0)],['Double attaque',St.echo+' %'],['Dégâts de compétence',Math.round(St.nova)]];
   return rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join('');
 }
 function slotsHtml(eq,click,selSlot){
   return Object.keys(SLOT).map(k=>{if(!slotOpen(k))return `<div class="slot locked" aria-disabled="true"><span>${SLOT[k]}</span><strong style="color:var(--muted)">Verrouillé</strong></div>`;const it=eq[k],tag=click?'button':'div';
     return `<${tag} class="slot${selSlot===k?' sel':''}"${click?` data-slot="${k}"`:''}><span>${SLOT[k]}</span><strong style="color:${it?RAR[it.r].c:'var(--muted)'}">${it?itemName(it):'Vide'}${it&&it.lock?`<span class="li" aria-label="verrouillé">${LOCK_SVG}</span>`:''}</strong></${tag}>`}).join('');
 }
-function better(it){return memoOn('better',it,()=>{const e=curEq(),k=tgtKey(e,it);if(!k)return false;return itemScore({...e,[k]:it})>itemScore(e)*1.0001})}
+// ▲ : l'objet augmente la Puissance du héros (ou, à Puissance égale, sa survie).
+function better(it){return memoOn('better',it,()=>{const e=curEq(),k=tgtKey(e,it);if(!k)return false;return eqGt(eqVal({...e,[k]:it}),eqVal(e))})}
 const LOCK_SVG='<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 const cellHtml=(it,attr,sel,up)=>`<button class="cell${sel?' sel':''}${up?' up':''}${it.lock?' locked':''}" data-${attr}="${it.id}" style="border-color:${RAR[it.r].c};color:${RAR[it.r].c}" aria-label="${itemName(it)}${it.lock?', verrouillé':''}">${it.lock?`<span class="lk">${LOCK_SVG}</span>`:''}${it.up?`<span class="cup">R${it.up+1}</span>`:''}${GLYPH[it.slot]}</button>`;
 // Clé d'une composition d'équipement (héros, arme, objets) pour le cache d'affichage.
 const eqKey=e=>heroCls+'|'+Object.keys(e).map(k=>{const it=e[k];return it?(it.wid?'w'+it.wid+'.'+(meta.wlv[it.wid]|0):it.id+'.'+(it.up|0)):'-'}).join(',');
-const itemScore=e=>drawCache?memo('sc|'+eqKey(e),()=>itemScore0(e)):itemScore0(e);
-const itemScore0=e=>{const x=stats(e);let d=dps(x)*(1+x.abSoul*.06)*(1+x.abExec*.015)*(1+x.crit/100*x.abRift/100*2.1)*(1+x.abHunt*.0025)+x.dmg*x.abPulse/100*.8;d*=1+x.execute*.003+x.bossDmg*.0015+x.lowDmg*.001+x.shock*.01+x.chill*.003+x.ultPct*.001+x.fury*.002;
-  // Malédiction (v136) : part du temps où la cible est maudite (une chance par coup, 5 s), puis +15 % et les dégâts contre maudits sur cette part.
-  {const cu=Math.min(60,x.curse||0)/100,up=cu?1-Math.pow(1-cu,Math.max(1,x.aps*5*(1+x.multi*.8))):0;d*=1+up*(.15+(x.hex||0)/100+(x.doom||0)*.004)}
-  // Attaque et survie pèsent ensemble (moyenne géométrique) : gagner 10 % de vie vaut à peu près gagner 12 % de dégâts, quel que soit le niveau.
-  const v=(x.hp+x.abWard*8)/(1-Math.min(60,x.armor)/200)*(1+x.lowArmor*.003+x.potHeal*.001+x.antidote*.001+x.auraSlow*.003)+x.regen*15;
-  return Math.pow(Math.max(1,d),.55)*Math.pow(Math.max(1,v),.45)};
-// Meilleur équipement : pour chaque emplacement, l'objet qui donne le meilleur score (puissance et vie).
+/* ---------- Puissance (v137) ----------
+   Dégâts par seconde estimés dans une horde : attaques + sort + ultime (+ Onde du Vide). Tout y compte : dégâts, cadence, critique
+   et dégâts critiques, projectiles, transpercement, portée de frappe, rayon d'explosion, dégâts de compétence, recharge, portée et
+   durée des compétences, dégâts et charge de l'ultime, brûlure, éléments, bonus conditionnels et pouvoirs abyssaux.
+   C'est le chiffre « Puissance » des fiches, et ce que visent « Équiper le meilleur » et ▲ ; la survie ne fait que départager.
+   PW : hypothèses de l'estimation (ennemis touchés par une zone de taille de départ, part des coups concernés par un bonus…).
+   kills : ennemis abattus par seconde, pour la charge de l'ultime ; mesuré avec le bot du banc de progression (v137) : 4 à 19 par seconde
+   selon le niveau et la classe (1,5 en difficulté), on garde 5. */
+const PW={kills:5,low:.1,exec:.25,boss:.15,hunt:.2,shock:1.8,pierce:.5,reachT:1.2,splashT:.3,pulseT:5,shard:.5,doom:.5,
+  // c : dégâts d'un lancer en multiples de la puissance de compétence (cibles comprises) ; cr : critique possible ;
+  // area : × (1 + portée des compétences) ; rng : × (1 + rng × portée des compétences), carreaux et éclairs qui vont plus loin ;
+  // reach : × (1 + portée de frappe) ; splash : × (1 + rayon d'explosion) ; dur : × (1 + durée)
+  sk:{volee:{c:24*.35*.4,rng:.5},chasseur:{c:3*1.6*1.5,cr:1,rng:.3},recul:{c:9*.5*.5,cr:1,rng:.3},tourbillon:{c:.22*8*3,cr:1,area:1,reach:1,dur:1},
+    bond:{c:1.4*3.5,cr:1,area:1,reach:1},cri:{buff:.2},nova:{c:4,cr:1,area:1},eclair:{c:1.2*5.217,cr:1,rng:.2},transfert:{c:2*.6*2,area:1,splash:1}},
+  // ultimes : c (dégâts d'un lancer), ou renfort de t secondes (berserk : × 1,6 ; faucon : cadence × 2 et tout critique ; surcharge : sort toutes les 0,5 s et cadence × 2)
+  ul:{titan:{c:3*8,area:1},rempart:{c:0},berserk:{t:8,x:1.6},pluie:{c:100*.7,cr:1},faucon:{t:6,hawk:1},tempete:{c:152*.3*.4,cr:1,rng:.5},
+    meteores:{c:3*3*5,cr:1,area:1},blizzard:{c:17*.5*6,cr:1,area:1},surcharge:{t:6,sur:1}}};
+function powerOf(x,cls=heroCls,kit=kitOf(cls)){
+  const cr=Math.min(75,x.crit)/100,cm=1+cr*(x.critDmg/100-1),hits=Math.max(1,x.aps*(1+x.multi*.8));
+  // part du temps où une cible porte un effet de durée t, posé à chaque coup avec la chance c
+  const upT=(c,t)=>c>0?1-Math.pow(1-Math.min(1,c),Math.max(1,hits*t)):0;
+  const cu=upT(Math.min(60,x.curse||0)/100,5),sl=Math.max(upT((x.chill||0)/100,2*(1+x.skillDur/100)),upT((x.frz||0)/100,1.5*(1+x.skillDur/100)));
+  // chaque coup : bonus conditionnels (part des coups concernés), éléments, pouvoirs abyssaux
+  const hitM=(1+PW.low*x.lowDmg/100)*(1+PW.exec*x.execute/100)*(1+PW.boss*x.bossDmg/100)*(1+PW.hunt*x.abHunt/100)*(1+.06*x.abSoul)*(1+.015*x.abExec)
+    *(1+sl*x.cold/100)*(1+cu*(.15+(x.hex||0)/100))*(1+PW.shock*x.shock/100)*(1+cr*x.abRift/100*2.1)*(1+PW.shard*x.shard/100)*(1+cu*PW.doom*(x.doom||0)/100);
+  // attaques : ennemis touchés par coup selon la classe
+  const tg=cls==='archer'?1+PW.pierce*x.pierce:cls==='guerrier'?PW.reachT*(1+x.reach/100):1+PW.splashT*(1+x.splash/100);
+  const atk=(x.dmg*x.aps*cm*(1+x.multi*.8)*(1+x.echo/100)*(1+x.waves*.5)+x.burn)*tg*hitM;
+  // sort
+  const sp=SPELLS[cls].s[kit.s]||SPELLS[cls].s[0],K=PW.sk[sp.k],sr=1+x.skillRad/100,cd=Math.max(.5,sp.cd*(1-x.cdr/100)*(x.seals&&x.seals.sablier?.8:1)*(x.seals&&x.seals.vif?.85:1));
+  let skill=0,buff=1,cast=0;
+  if(K.buff)buff=1+K.buff*Math.min(1,6*(1+x.skillDur/100)/cd);
+  else{cast=x.nova*K.c*(K.dur?1+x.skillDur/100:1)*(K.area?sr:1)*(K.reach?1+x.reach/100:1)*(K.splash?1+x.splash/100:1)*(K.rng?1+K.rng*x.skillRad/100:1)*(K.cr?cm:1)*hitM;skill=cast/cd}
+  // ultime : chargé en ennemis abattus (PW.kills par seconde)
+  const U=SPELLS[cls].u[kit.u]||SPELLS[cls].u[0],Q=PW.ul[U.k],um=1+(x.ultPct||0)/100,T=Math.max(10,Math.round(ULT_N*(1-Math.min(60,x.fury||0)/100)))/PW.kills/(x.seals&&x.seals.cri?1.2:1);
+  let ult=0;
+  if(Q.c)ult=x.nova*Q.c*(Q.area?sr:1)*(Q.rng?1+Q.rng*x.skillRad/100:1)*(Q.cr?cm:1)*um*hitM/T;
+  else if(Q.hawk)ult=atk*Q.t*(2*(x.critDmg/100)/cm*um-1)/T;
+  else if(Q.x)ult=atk*Q.t*(Q.x*um-1)/T;
+  else if(Q.sur)ult=(atk*(2*um-1)+(cast?cast*um/.5-skill:0))*Q.t/T;
+  const pulse=x.abPulse?x.dmg*x.abPulse/100*PW.pulseT*(1+x.skillRad/200)/5:0;
+  // familier : corbeau (piqué toutes les 1,2 s), golem (épines pendant l'attirance, 4 s sur 11, 3 ennemis) ; il frappe avec tes dégâts et tes dégâts critiques
+  const ps=(typeof started!=='undefined'&&started&&G&&G.petS)?G.petS:(typeof petStats==='function'?memo('petS',petStats):null);let pet=0;
+  if(ps){const pm=ps.mul*(1+ps.pDmg/100),pr=1+ps.pAps/100,pc=1+Math.min(75,5+ps.pCrit)/100*(x.critDmg/100-1);
+    if(ps.t==='corbeau')pet=x.dmg*.6*pm*pc*(1+Math.round(ps.pMulti))*pr/1.2*hitM;
+    else if(ps.t==='golem')pet=x.dmg*.3*pm*pc*(1+ps.pThorns/100)*3/.5*(4*(1+ps.pHp/100))/(4*(1+ps.pHp/100)+7/pr)*hitM}
+  const p=(atk+skill+ult+pulse+pet)*buff;
+  return {p,atk:atk*buff,skill:skill*buff,ult:ult*buff,pulse:pulse*buff,pet:pet*buff}}
+const power=x=>powerOf(x).p;
+// Survie (départage) : vie effective, réduction, protections, soins.
+const survOf=x=>(x.hp+x.abWard*8)/(1-Math.min(60,x.armor)/200)*(1+x.lowArmor*.003+x.potHeal*.001+x.antidote*.001+x.auraSlow*.003)+x.regen*15;
+// Valeur d'un équipement (gardée le temps d'un affichage) et comparaison : la Puissance d'abord (0,01 % près), puis la survie.
+const eqVal=e=>drawCache?memo('ev|'+eqKey(e),()=>eqVal0(e)):eqVal0(e);
+function eqVal0(e){const x=stats(e);return {p:power(x),v:survOf(x)}}
+const eqGt=(a,b)=>a.p>b.p*(1+1e-4)+1e-9||(a.p>=b.p*(1-1e-4)&&a.v>b.v*(1+1e-4)+1e-9);
+// Ancien nom gardé pour les outils (banc de progression) : la Puissance.
+const itemScore=e=>eqVal(e).p;
+// Meilleur équipement : pour chaque emplacement, l'objet qui donne la plus haute Puissance (puis la meilleure survie).
 // wpn (au Camp) : compare aussi les armes possédées du héros, chacune avec ses propres mods et sa maîtrise.
 function bestPlan(e,pool,wpn){if(drawCache&&pool===meta.stash)return memo('bp|'+eqKey(e)+'|'+!!wpn,()=>bestPlan0(e,pool,wpn));return bestPlan0(e,pool,wpn)}
 function bestPlan0(e,pool,wpn){const cur={...e},pick={};
-  for(let pass=0;pass<2;pass++)for(const sl of Object.keys(e).filter(k=>k!=='arme')){let best=cur[sl],bs=itemScore(cur);
-    for(const it of pool){if(it.slot!==keySlot(sl)||Object.values(cur).includes(it)&&cur[sl]!==it||Object.values(pick).includes(it)&&pick[sl]!==it)continue;const sc=itemScore({...cur,[sl]:it});if(sc>bs+1e-6){bs=sc;best=it}}
+  for(let pass=0;pass<2;pass++)for(const sl of Object.keys(e).filter(k=>k!=='arme')){let best=cur[sl],bs=eqVal(cur);
+    for(const it of pool){if(it.slot!==keySlot(sl)||Object.values(cur).includes(it)&&cur[sl]!==it||Object.values(pick).includes(it)&&pick[sl]!==it)continue;const sc=eqVal({...cur,[sl]:it});if(eqGt(sc,bs)){bs=sc;best=it}}
     if(best!==cur[sl]){cur[sl]=best;pick[sl]=best}}
-  if(wpn&&!started){const c=heroCls,w0=meta.wpn[c],now=curWid(c);let bs=itemScore(cur),bw=null;
-    try{for(const w of WPN[c])if(w.id!==now&&ownedW(w.id)){meta.wpn[c]=w.id;const sc=itemScore({...cur,arme:weaponItem(c,w.id)});if(sc>bs+1e-6){bs=sc;bw=w.id}}}finally{meta.wpn[c]=w0}
-    if(bw)pick.arme=weaponItem(c,bw)}
+  if(wpn&&!started){const c=heroCls,bw=bestWeapon(cur);if(bw)pick.arme=weaponItem(c,bw)}
   return pick}
+// Valeur avec une autre arme du héros : ses mods et sa maîtrise à elle (meta.wpn changé le temps du calcul).
+function withWeapon(e,id,f){const c=heroCls,w0=meta.wpn[c];try{meta.wpn[c]=id;return f({...e,arme:weaponItem(c,id)})}finally{meta.wpn[c]=w0}}
+function bestWeapon(e){const c=heroCls,now=curWid(c);let bs=eqVal(e),bw=null;
+  for(const w of WPN[c])if(w.id!==now&&ownedW(w.id)){const sc=withWeapon(e,w.id,eqVal0);if(eqGt(sc,bs)){bs=sc;bw=w.id}}
+  return bw}
 /* ---------- Pause ---------- */
 let runSel=null;
 function openBag(){if(G.over)return;paused=true;resetJoy();$('bag').hidden=false;runSel=null;modSel=null;quitAsk=false;G.fresh=0;$('bag').querySelectorAll('details[data-more]').forEach(d=>d.open=!!(typeof moreOpen!=='undefined'&&moreOpen[d.dataset.more]));$('rendTxt').textContent=PX?'Rendu WebGL (PixiJS)':'Rendu standard';$('rendBtn').textContent=PX?'Passer au rendu standard':'Essayer WebGL';drawBag()}

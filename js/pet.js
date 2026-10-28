@@ -2,8 +2,8 @@
 const PETS={
   corbeau:{n:'Corbeau de cendre',role:'Attaque',c:'#e8853b',d:'Pique l\'ennemi le plus proche toutes les 1,2 s.'},
   follet:{n:'Feu follet',role:'Soutien',c:'#7fe08a',d:'Te soigne de 1 % de vie par seconde, le double quand tu ne bouges pas.'},
-  golem:{n:'Golem de poche',role:'Défense',c:'#a9bccf',d:'Toutes les 7 s, attire pendant 4 s les monstres proches, qui le frappent au lieu de toi ; blesse ceux qui le touchent.'},
-  furet:{n:'Furet pilleur',role:'Butin',c:'#f0cf4a',d:'Rapporte l\'or, les cristaux et les objets de plus loin, et +5 % de chances d\'objet.'},
+  golem:{n:'Golem de poche',role:'Défense',c:'#a9bccf',d:'Attire pendant 4 s les monstres proches, qui le frappent au lieu de toi, puis attend 7 s ; blesse ceux qui le touchent.'},
+  furet:{n:'Furet pilleur',role:'Butin',c:'#f0cf4a',d:'Attire l\'or, l\'expérience et les objets de plus loin, et +5 % de chances d\'objet (× sa puissance).'},
 };
 const PET_IDS=Object.keys(PETS),PET_RK=5,PET_LV=20,PET_FUSE=r=>100*r;
 const petRkMul=r=>1+.35*(r-1),petLvMul=l=>1+.05*(l-1),petNeed=l=>50*l;

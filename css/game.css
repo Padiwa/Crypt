@@ -1066,7 +1066,8 @@ body{font-family:var(--font-body)}
 .cx-cell,.cell{border-width:3px;border-radius:12px;background:radial-gradient(circle at 50% 38%,color-mix(in srgb,currentColor 30%,transparent) 0%,rgba(14,10,17,.96) 72%);box-shadow:0 0 0 2px var(--outline),inset 0 0 12px color-mix(in srgb,currentColor 28%,transparent),0 3px 0 var(--outline)}
 .cx-cell{color:var(--rar)}
 .cx-cell::after,.cell::before{content:"";position:absolute;top:-6px;left:-6px;width:9px;height:9px;transform:rotate(45deg);background:currentColor;border:2px solid var(--outline);pointer-events:none}
-.cell.up::after{content:"▲";top:-9px;right:-9px;left:auto;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font:900 10px/1 var(--font-body);color:#08200f;background:radial-gradient(circle at 35% 30%,#d6ffc9,#45b55e 60%,#25713a);border:2px solid #f0ffe8;box-shadow:0 0 0 1px var(--outline)}
+/* v137 : objet meilleur que le tien = petit triangle vert dans le coin haut droit de l'icône, sans pastille */
+.cell.up::after{content:"";top:4px;right:4px;left:auto;width:12px;height:10px;background:#62d67e;clip-path:polygon(50% 0,100% 100%,0 100%);filter:drop-shadow(0 0 1px rgba(0,0,0,.9)) drop-shadow(0 1px 0 rgba(0,0,0,.8))}
 .cx-cell__up{font:800 11px/1 var(--font-num);color:#bfe9ff;text-shadow:0 1px 0 var(--outline)}
 .slot,.cx-slot{border:2px solid #3a2f42;border-radius:12px;background:linear-gradient(180deg,#241c29,#141017);box-shadow:0 0 0 1px var(--outline)}
 .slot span{font:700 11px/1.2 var(--font-num);letter-spacing:.1em;color:#d9b98a}
@@ -1257,6 +1258,40 @@ body:has(#over:not([hidden])) .tabbar,body:has(#settings:not([hidden])) .tabbar{
 .htile small{font:500 11px/1.2 var(--font-body);color:var(--muted)}
 .htile .cx-tab__badge{top:-7px;right:-7px}
 .hsub__t{margin:0;font:900 18px/1.1 var(--font-display);letter-spacing:.06em;text-transform:uppercase;color:var(--gold2)}
+/* v137 : tuiles verrouillées (Mods, Familier) ; Héros › Équipement (emplacements, objet porté, liste classée par Puissance) */
+.htile.is-locked{opacity:.62}
+.htile.is-locked .htile__i svg{stroke:var(--muted);width:24px;height:24px}
+.gslots{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 8px;width:100%;max-width:380px;margin:0 auto}
+.gslot{--rar:#5c4a66;position:relative;box-sizing:border-box;flex:0 0 calc((100% - 24px)/4);max-width:88px;height:62px;margin:0;padding:0 0 14px;display:grid;place-items:center;color:var(--rar);cursor:pointer;border:3px solid var(--rar);border-radius:12px;background:radial-gradient(circle at 50% 38%,color-mix(in srgb,var(--rar) 26%,transparent) 0%,rgba(14,10,17,.96) 72%);box-shadow:0 0 0 2px var(--outline),0 3px 0 var(--outline);-webkit-tap-highlight-color:transparent}
+.gslot__i svg{display:block;width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.gslot small{position:absolute;bottom:5px;left:0;right:0;text-align:center;font:800 9.5px/1 var(--font-num);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.gslot.is-empty{border-style:dashed;color:#8f8494}
+.gslot[aria-selected="true"]{box-shadow:0 0 0 3px #fff3e0,0 0 14px rgba(255,240,200,.5)}
+.gslot[aria-selected="true"] small{color:var(--gold2)}
+.gslot.is-up::after{content:"";position:absolute;top:4px;right:4px;width:12px;height:10px;background:#62d67e;clip-path:polygon(50% 0,100% 100%,0 100%);filter:drop-shadow(0 0 1px rgba(0,0,0,.9))}
+.gslot--lock{border:2px dashed #b07cff;background:rgba(42,29,58,.7);color:#d6b8ff}
+.gslot--lock small{color:#d6b8ff}
+.gslot--lock .gslot__i svg{width:18px;height:18px;stroke-width:2.4}
+.gslot .dot{position:absolute;top:-6px;right:-6px;width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff9a8a,#e3242c 60%,#9e1219);border:2px solid #fff3e8}
+.gearl{display:flex;flex-direction:column;gap:8px}
+.gearr,.gearcur{box-sizing:border-box;display:flex;align-items:center;gap:12px;width:100%;min-height:66px;margin:0;padding:8px 12px 8px 10px;text-align:left;font:inherit;color:var(--ink);cursor:pointer;border:2px solid #3a2f42;border-radius:14px;background:linear-gradient(180deg,#1c1520,#120d15);box-shadow:0 0 0 1px var(--outline);-webkit-tap-highlight-color:transparent}
+.gearr:focus-visible,.gearcur:focus-visible,.gslot:focus-visible{outline:2px solid var(--ember-hi);outline-offset:2px}
+.gearr.is-sel,.gearcur.is-sel{border-color:var(--ember-hi);box-shadow:0 0 0 1px var(--outline),0 0 0 3px rgba(255,170,90,.35)}
+.gearcur{border-color:#5a4632;background:linear-gradient(180deg,#2a2018,#160f0c)}
+.gearcur.is-empty{cursor:default;border-style:dashed;border-color:#3a2f42;background:transparent}
+.gearr__ic{flex:0 0 48px;width:48px;cursor:inherit}
+.gearr__ic svg{width:24px;height:24px}
+.gearr.is-up .gearr__ic::before{content:"";position:absolute;top:3px;right:3px;width:11px;height:9px;background:#62d67e;clip-path:polygon(50% 0,100% 100%,0 100%);filter:drop-shadow(0 0 1px rgba(0,0,0,.9))}
+.gearr__t{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:3px}
+.gearr__t b{font:700 15px/1.2 var(--font-body);overflow-wrap:anywhere}
+.gearr__t small{font:500 12px/1.3 var(--font-body);color:var(--muted)}
+.gearr__d{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;gap:3px;text-align:right}
+.gearr__d b{font:800 16px/1 var(--font-num);letter-spacing:.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.gearr__d small{font:600 10.5px/1.1 var(--font-body);color:var(--muted);white-space:nowrap}
+.gearr__d.is-gain b{color:var(--heal)}
+.gearr__d.is-loss b{color:var(--blood-ink)}
+.gearr__d.is-same b{color:var(--muted)}
+.gearcur__go{flex:0 0 auto;font:800 12px/1 var(--font-num);letter-spacing:.06em;text-transform:uppercase;color:var(--gold2)}
 /* =====================================================================
    Parcours (feuille)
    ===================================================================== */

@@ -22,7 +22,7 @@ function tabBadges(){
     pets:meta.eggs>0?{n:meta.eggs,t:`${meta.eggs} œuf${meta.eggs>1?'s':''} à faire éclore`}:null,
     forge:(ups+fz)?{n:fz||ups,t:fz?`${fz} fusion${fz>1?'s':''} possible${fz>1?'s':''}`:`${ups} amélioration${ups>1?'s':''} achetable${ups>1?'s':''}`}:null};
   // onglets verrouillés : pas de pastille ; nouveautés débloquées : « ! » jusqu'à « Compris »
-  const TN={equip:['sets','slots'],arsenal:['craft','arms','recy'],relics:['relics'],mods:['mods','hmods','align'],pets:['pets'],forge:['bonus','affix','fuse','seals']};
+  const TN={equip:['sets','slots','arms'],arsenal:['craft','recy'],relics:['relics'],mods:['mods','hmods','align'],pets:['pets'],forge:['bonus','affix','fuse','seals']};
   for(const t in TN){if(tabLocked(t)){B[t]=null;continue}const nw=TN[t].filter(k=>meta.unlNew.includes(k));if(nw.length)B[t]={n:'!',t:`Nouveau : ${nw.map(k=>UNL_BY[k].n).join(', ')}`}}
   if(!isUnl('fuse')&&B.forge&&!isUnl('bonus'))B.forge=null;
   campB=B;if(typeof navBadges==='function')navBadges(B);return B}
@@ -33,13 +33,12 @@ document.addEventListener('toggle',e=>{const d=e.target;if(!d.matches||!d.matche
 const subTabs=(items,cur,act)=>`<div class="cx-tabs" role="tablist">${items.map(([k,l,n,lk])=>`<button class="cx-tab${lk?' is-locked':''}" role="tab" data-cact="${act}" data-arg="${k}" aria-selected="${cur===k}">${l}${n?`<span class="cx-tab__badge">${n}</span>`:''}</button>`).join('')}</div>`;
 const CAMP_MORE={
   ars_heros:['Ce que porte chaque héros. Touche un objet pour voir sa fiche.','<p>Le héros joué vient en premier. Touche un objet porté par un autre héros pour le lui reprendre et l\'équiper sur le héros joué (« Équiper sur… »). Pour équiper un autre héros, choisis-le en haut de l\'onglet Héros (ou avec les flèches de l\'accueil). Un objet n\'est porté que par un héros à la fois.</p>'],
-  ars_coffre:['Touche un objet pour voir sa fiche et l\'équiper.','<p>Le coffre montre aussi ce que portent tes héros : la pastille A, G ou M indique l\'Archer, le Guerrier ou le Magicien, et le filtre « Portés » n\'affiche qu\'eux. ▲ signale un objet meilleur que celui que tu portes, le cadenas un objet verrouillé (ni recyclé, ni sacrifié par une fusion, ni utilisé comme source d\'affixe). « Équiper le meilleur », en bas, choisit pour chaque emplacement l\'objet qui donne le plus de puissance et de vie, et la meilleure arme de ton héros.</p>'],
-  equip:['L\'équipement de ce héros et ses statistiques. Touche un emplacement pour voir sa fiche.','<p>Chaque héros a son équipement ; un objet n\'est porté que par un héros à la fois. « Enregistrer l\'équipement porté » le garde pour le remettre plus tard. Le coffre (tout ce que tu possèdes, objets portés compris) est dans l\'onglet Arsenal, comme le recyclage. « Équiper le meilleur », en bas, choisit pour chaque emplacement l\'objet du coffre qui donne le plus de puissance et de vie.</p><p>Les tuiles Sorts et talents, Prestige et Apparence ouvrent les réglages propres à ce héros : choix du sort et de l\'ultime, talents, prestige, couleurs. Le prestige s\'ouvre quand toutes les améliorations de la Forge sont au maximum.</p>'],
-  ars_mine:['Tes armes, leur rang et leur maîtrise. Touche « Équiper » pour changer celle de ton héros.','<p>Les armes communes, magiques et rares tombent des monstres ; les légendaires et plus rares se fabriquent (Recettes). Un double se fusionne avec l\'arme pour la faire monter de rang (Forge › Fusion).</p>'],
-  arsenal:['Fabrique les objets légendaires et plus rares avec leurs 3 fragments.','<p>Les fragments viennent des reliques, ouvertes en mission : Ossuaire (légendaires), Ancestrale (ancestraux), Sanguine (sanguins), Abyssale (abyssaux). Un objet sort au niveau d\'objet de ta plus haute mission réussie. Fabriquer une arme que tu as déjà donne un double, à fusionner à la Forge.</p><p>L\'onglet « Armes » montre tes armes, leur rang et leur DPS comparé à celle que tu portes.</p>'],
+  ars_coffre:['Touche un objet pour voir sa fiche et l\'équiper.','<p>Le coffre montre aussi ce que portent tes héros : la pastille A, G ou M indique l\'Archer, le Guerrier ou le Magicien, et le filtre « Portés » n\'affiche qu\'eux. ▲ signale un objet meilleur que celui que tu portes, le cadenas un objet verrouillé (ni recyclé, ni sacrifié par une fusion, ni utilisé comme source d\'affixe). « Équiper le meilleur », en bas, choisit pour chaque emplacement l\'objet qui donne le plus de Puissance (à Puissance égale, le plus de survie), et la meilleure arme de ton héros.</p>'],
+  equip:['Ton héros, son équipement et ses réglages. Touche un emplacement ou une tuile.','<p>Chaque héros a son équipement ; un objet n\'est porté que par un héros à la fois. Toucher un emplacement, ou la tuile Équipement, ouvre l\'équipement emplacement par emplacement : l\'objet porté, tous tes objets possibles classés par Puissance, les équipements enregistrés et les emplacements à débloquer. « Équiper le meilleur », en bas, choisit pour chaque emplacement l\'objet du coffre qui donne le plus de Puissance (à Puissance égale, le plus de survie), et la meilleure arme du héros.</p><p>Les autres tuiles ouvrent les réglages propres à ce héros : Sorts et talents, Prestige, Mods (héros et arme), Familier, Apparence. Le prestige s\'ouvre quand toutes les améliorations de la Forge sont au maximum.</p>'],
+  arsenal:['Fabrique les objets légendaires et plus rares avec leurs 3 fragments.','<p>Les fragments viennent des reliques, ouvertes en mission : Ossuaire (légendaires), Ancestrale (ancestraux), Sanguine (sanguins), Abyssale (abyssaux). Un objet sort au niveau d\'objet de ta plus haute mission réussie. Fabriquer une arme que tu as déjà donne un double, à fusionner à la Forge.</p><p>Tes armes, leur rang, leur maîtrise et leur Puissance comparée à celle que tu portes sont dans Héros › Équipement › Arme.</p>'],
   relics:['Équipe des reliques : elles s\'ouvrent pendant la mission.',`<p>En mission, ${REACT_N} réactifs (ennemis au halo doré) ouvrent la première relique de la liste, puis la suivante. En Tourment il en faut moins : ${Math.round((BAL.tormReact||0)*100)} % de moins par palier, et encore moins à mesure que tu restes dans la mission, où les reliques tombent aussi plus souvent. Chaque relique ouverte donne un fragment d\'un objet de sa rareté et +25 essence, à la réussite de la mission.</p><p>Le type de relique dépend de la difficulté et du niveau de mission : Ossuaire en Normal, Difficile et Cauchemar ; Ancestrale en Tourment I et plus, dès le niveau ${BAL.relicLv[0]} ; Sanguine et Abyssale en Tourment VI et plus, dès les niveaux ${BAL.relicLv[1]} et ${BAL.relicLv[2]}. Sous le niveau requis, c'est la relique du dessous. Trois reliques d\'un même type donnent une relique forgée qui vise l\'objet de ton choix. Le raffinage (50 essence) rend une relique éclatante : elle donne deux fragments.</p>`],
   mods:['Place tes mods dans les cases du héros et de l\'arme.','<p>Chaque mod coûte de la capacité ; la maîtrise, gagnée en mission, en ajoute. Une case alignée sur une polarité divise par deux le coût des mods de cette polarité. Un mod au rang maximum se surcharge avec ses copies (jusqu\'à 5 étoiles).</p>'],
-  pets:['Ton familier te suit en mission ; fais éclore tes œufs ici.',`<p>Les œufs tombent parfois en ouvrant une relique (${EGG_CH.map((c,t)=>`${RTIER[t].n} ${fmtN(c*BAL.eggMul*100)} %`).join(', ')}). Deux familiers identiques de même rang fusionnent en un seul du rang au-dessus (★★★★★ au maximum). Un familier équipé gagne des niveaux (jusqu\'à 20) avec les ennemis abattus.</p>`],
+  pets:['Ton familier suit tous tes héros en mission ; fais éclore tes œufs ici.',`<p>Les œufs tombent parfois en ouvrant une relique (${EGG_CH.map((c,t)=>`${RTIER[t].n} ${fmtN(c*BAL.eggMul*100)} %`).join(', ')}). Deux familiers identiques de même rang fusionnent en un seul du rang au-dessus (★★★★★ au maximum). Un familier équipé gagne des niveaux (jusqu\'à 20) avec les ennemis abattus.</p>`],
   forge_up:['L\'or du Camp achète des améliorations permanentes pour tous tes héros.','<p>Chaque rang s\'applique à tous tes héros. Les talents, propres à chaque héros, sont dans l\'onglet Héros › Sorts et talents. Quand toutes les améliorations sont au maximum, le <b>Prestige</b> s\'ouvre (onglet Héros › Prestige).</p><p>La sauvegarde (exporter, importer) se trouve dans <b>Réglages</b> : touche ton portrait sur l\'accueil.</p>'],
   forge_affix:['Touche l\'objet qui reçoit l\'affixe (la cible), choisis l\'affixe, puis l\'objet sacrifié.','<p>La liste déroulante de la source montre les affixes que tes autres objets peuvent donner à la cible : celles qu\'elle a déjà (fusion) et les nouvelles (ajout). Choisis-en une : tous les objets qui la portent s\'affichent, avec ce que la cible obtiendrait. La source est détruite ; son affixe passe sur la cible, qui la gagne, la renforce ou la remplace. Le coût en essence dépend de la rareté de la source. Une affixe déjà plus forte sur la cible ne peut pas être remplacée par une plus faible.</p>'],
   ars_recy:['Touche les objets à recycler, puis Recycler en bas.','<p>Recycler détruit un objet contre de l\'essence, selon sa rareté et son rang. Les objets portés et verrouillés ne se recyclent pas. Filtre par rareté puis « Tout sélectionner » pour recycler un lot d\'un coup.</p>'],
@@ -49,15 +48,16 @@ const CAMP_MORE={
 const TAB_UNL={relics:'relics',mods:'mods',pets:'pets',forge:'bonus'},FSUB_UNL={up:'bonus',affix:'affix',fuse:'fuse',seals:'seals'};
 const tabLocked=t=>t==='forge'?!['bonus','affix','fuse','seals'].some(isUnl):!!TAB_UNL[t]&&!isUnl(TAB_UNL[t]);
 // Cartes « Nouveau » propres à une vue.
-const viewNew=()=>campTab==='equip'?['sets','slots']:campTab==='mods'?['mods','hmods','align']:campTab==='pets'?['pets']:campTab==='relics'?['relics']:campTab==='forge'?[FSUB_UNL[forgeSub]]:[];
+const viewNew=()=>campTab==='equip'?[]:campTab==='mods'?['mods','hmods','align']:campTab==='pets'?['pets']:campTab==='relics'?['relics']:campTab==='forge'?[FSUB_UNL[forgeSub]]:[];
 function drawCamp(){if(drawCache)return drawCamp0();drawCache=new Map();try{return drawCamp0()}finally{drawCache=null}}
 function drawCamp0(){
   unlockCheck(false);
   if(campTab==='affix'){campTab='forge';forgeSub='affix'}
   if(COLL.includes(campTab))collLast=campTab;
-  $('campTitle').textContent={equip:'Héros',arsenal:'Arsenal',forge:'Forge'}[campTab]||'Collection';
+  $('campTitle').textContent={equip:'Héros',mods:'Héros',pets:'Héros',arsenal:'Arsenal',forge:'Forge'}[campTab]||'Collection';
   if(campTab==='forge'&&forgeSub==='recy'){campTab='arsenal';arsView='recy'}
-  const fk=campTab==='forge'?'forge_'+forgeSub:campTab==='arsenal'?(arsView==='recy'?'ars_recy':arsView==='coffre'?'ars_coffre':arsView==='heros'?'ars_heros':arsView==='mine'?'ars_mine':'arsenal'):campTab;
+  if(arsView==='mine')arsView='coffre'; // v137 : l'onglet Armes est devenu Héros › Équipement › Arme
+  const fk=campTab==='forge'?'forge_'+forgeSub:campTab==='arsenal'?(arsView==='recy'?'ars_recy':arsView==='coffre'?'ars_coffre':arsView==='heros'?'ars_heros':'arsenal'):campTab==='equip'?(heroSub==='gear'?'equip_gear':'equip'):campTab;
   {const h=document.getElementById('campHelp');if(h)h.href='aide/index.html#'+(campTab==='arsenal'&&(arsView==='coffre'||arsView==='recy'||arsView==='heros')?'camp-coffre':campTab==='pets'?'familiers':campTab==='forge'?(forgeSub==='affix'?'camp-affix':forgeSub==='seals'?'camp-affix':forgeSub==='fuse'?'camp-fusion':'camp-forge'):'camp-'+campTab)}
   // montants courts : sur téléphone, l'en-tête garde la place de l'aide et de la croix ; le montant exact reste en info-bulle
   $('campGold').innerHTML=`<span class="g"><span class="coin"></span>${fmtBig(meta.gold)}</span><span class="e"><span class="essi"></span>${fmtBig(meta.essence)}</span>`;$('campGold').title=`${(meta.gold|0).toLocaleString('fr-FR')} or · ${(meta.essence|0).toLocaleString('fr-FR')} essence`;
@@ -65,15 +65,19 @@ function drawCamp0(){
   const body=$('campBody'),M=CAMP_MORE[fk],more=M?cxMore(fk,M[0],M[1]):'';
   let h='';
   const LK=l=>`<span class="lockmini" aria-hidden="true">${LOCK_SVG}</span>${l}`,cb=k=>campB[k]&&campB[k].n?campB[k].n:0;
-  const collTabs=COLL.includes(campTab)?subTabs(COLL.map(k=>[k,tabLocked(k)?LK({mods:'Mods',pets:'Familiers',relics:'Reliques'}[k]):{mods:'Mods',pets:'Familiers',relics:'Reliques'}[k],tabLocked(k)?0:cb(k),tabLocked(k)]),campTab,'coll'):'';
+  const collTabs=COLL.length>1&&COLL.includes(campTab)?subTabs(COLL.map(k=>[k,tabLocked(k)?LK({mods:'Mods',pets:'Familiers',relics:'Reliques'}[k]):{mods:'Mods',pets:'Familiers',relics:'Reliques'}[k],tabLocked(k)?0:cb(k),tabLocked(k)]),campTab,'coll'):'';
   if(campTab==='forge'&&tabLocked('forge'))h=lockedHtml('bonus');
   else if(campTab==='forge'){const fl=k=>!isUnl(FSUB_UNL[k]),lab=(k,l)=>fl(k)?LK(l):l;
     h=subTabs([['affix',lab('affix','Affixes'),0,fl('affix')],['fuse',lab('fuse','Fusion'),fl('fuse')?0:fuseGroups().n,fl('fuse')],['up',lab('up','Bonus'),0,fl('up')],['seals',lab('seals','Sceaux'),!fl('seals')&&SEAL_IDS.some(id=>meta.seals[id]>0)&&!Object.values(meta.gear).some(i=>i&&i.seal)?1:0,fl('seals')]],forgeSub,'fsub')
       +(fl(forgeSub)?lockedHtml(FSUB_UNL[forgeSub]):NC+more+(forgeSub==='affix'?campAffix():forgeSub==='seals'?campSeals():forgeSub==='fuse'?campFusion():campForge()))}
+  // v137 : Mods et Familier sont des vues du héros (tuiles de l'onglet Héros), plus des onglets de la Collection
+  else if(campTab==='mods'||campTab==='pets')h=heroHead(campTab==='mods'?'Mods':'Familier')+(tabLocked(campTab)?lockedHtml(TAB_UNL[campTab]):NC+more+'<div id="modsCamp" class="col"></div>');
   else if(tabLocked(campTab))h=collTabs+lockedHtml(TAB_UNL[campTab]);
-  else if(campTab==='mods'||campTab==='pets')h=collTabs+NC+more+'<div id="modsCamp" class="col"></div>';
   else h=collTabs+NC+(campTab==='equip'?campEquip():more+(campTab==='arsenal'?campArsenal2():campTab==='relics'?campRelics():''));
   body.innerHTML=h;
+  // v137 : la puce de filtre choisie reste visible dans sa rangée qui défile (ex. Anneau, choisi depuis Héros › Équipement)
+  for(const pc of body.querySelectorAll('.cx-toolbar .cx-chips [aria-pressed="true"]')){const row=pc.parentElement,a=pc.getBoundingClientRect(),r=row.getBoundingClientRect();
+    if(a.left<r.left||a.right>r.right)row.scrollLeft+=a.left-r.left-(r.width-a.width)/2}
   if(campTab==='equip'){lookPaint();heroPaint(document.getElementById('heroStage'),heroCls,-Math.PI/2,.9)}
   if(tabLocked(campTab)){}
   else if(campTab==='pets'){if(modTab!=='p'){modTab='p';modSel=null;modSF=null;modPF='all';alSel=null}renderMods('modsCamp')}
@@ -84,11 +88,11 @@ function drawCamp0(){
 }
 // L'action principale de l'onglet, collée en bas de la feuille.
 function campFootHtml(){
-  if(tabLocked(campTab)||(campTab==='forge'&&!isUnl(FSUB_UNL[forgeSub]))||(campTab==='arsenal'&&({rec:'craft',mine:'arms',recy:'recy'})[arsView]&&!isUnl(({rec:'craft',mine:'arms',recy:'recy'})[arsView])))return '';
+  if(tabLocked(campTab)||(campTab==='forge'&&!isUnl(FSUB_UNL[forgeSub]))||(campTab==='arsenal'&&({rec:'craft',recy:'recy'})[arsView]&&!isUnl(({rec:'craft',recy:'recy'})[arsView])))return '';
   if(campTab==='forge'&&forgeSub==='affix')return affixFoot();
   if(isRecy())return recyFoot();
   if(campTab==='forge'&&forgeSub==='fuse')return fusionFoot();
-  if(campTab==='equip'&&heroSub!=='main')return '';
+  if(campTab==='equip'&&heroSub!=='main'&&heroSub!=='gear')return '';
   if(campTab==='equip'||isCoffre()){const pn=Object.keys(bestPlan(curEq(),meta.stash,true)).length;return pn?`<button class="cx-btn cx-btn--primary" data-cact="bestall">Équiper le meilleur · ${pn}</button>`:''}
   if(campTab==='relics'){relicQFix();const ne=relToEquip(relTier);if(!ne)return '';const sh=relTier==='g'?'Givre':relTier==='f'?'Forgées':relTier==='all'?'':RTIER[+relTier].n;return `<button class="cx-btn cx-btn--primary" data-cact="rqtype">Tout équiper${sh?' · '+sh:''} · ${ne}</button>`}
   return '';
@@ -100,7 +104,7 @@ $('campSheet').addEventListener('click',e=>{
 // Actions du Camp (v135 : table d'actions). CAMP_ACT[nom](a, arg, bouton, dataset) ; chaque fichier du Camp ajoute les siennes
 // (Object.assign(CAMP_ACT,{…})). Une action qui ne renvoie pas CAMP_GO s'arrête là : ni enregistrement ni nouvel affichage.
 // Aussi appelées depuis Réglages pour la sauvegarde.
-const CAMP_GO=1,CAMP_ACT={};
+const CAMP_GO=1,CAMP_ACT={};let campTop=false;
 function campClick(b){
   const d=b.dataset;
   if(d.slot)campSel={slot:d.slot};
@@ -108,6 +112,7 @@ function campClick(b){
   else if(d.wsel)campSel={wpn:d.wsel};
   else if(d.cact){const a=d.cact,arg=d.arg;campMsg='';const f=CAMP_ACT[a];if(f&&f(a,arg,b,d)!==CAMP_GO)return;saveMeta();syncEq()}
   drawCamp();if(!$('settings').hidden)drawSettings();
+  if(campTop){campTop=false;$('campBody').parentElement.scrollTop=0}
   if(xfJump){xfJump=false;const e=$('campBody').querySelector('.cx-roles'),c=$('campBody').parentElement;if(e&&e.getBoundingClientRect().top<c.getBoundingClientRect().top)e.scrollIntoView({block:'start'})}
 }
 
@@ -119,7 +124,13 @@ Object.assign(CAMP_ACT,{
   arsv:function(a,arg,b,d){{arsView=arg;campSel=null;campBack=null}return CAMP_GO},
   fsub:function(a,arg,b,d){{forgeSub=arg;campSel=null;fzc=null;fzRole='a'}return CAMP_GO},
   coll:function(a,arg,b,d){{campTab=arg;campSel=null;campBack=null}return CAMP_GO},
-  hsub:function(a,arg,b,d){{heroSub=arg;campSel=null}return CAMP_GO},
+  hsub:function(a,arg,b,d){{if(campTab==='mods'||campTab==='pets'){modSel=null;modSF=null;alSel=null}campTab='equip';heroSub=arg;campSel=null;campTop=true;
+    // Équipement : ouvre sur le premier emplacement qu'« Équiper le meilleur » changerait, sinon sur le dernier ouvert
+    if(arg==='gear'){const pl=Object.keys(bestPlan(curEq(),meta.stash,true)),f=GEAR_ALL.find(k=>pl.includes(k));if(f)gearSlot=f;gearMore=0}}return CAMP_GO},
+  hview:function(a,arg,b,d){{if(arg==='mods'||arg==='pets'){campTab=arg;campSel=null;modSel=null;campTop=true}}return CAMP_GO},
+  gslot:function(a,arg,b,d){{if(GEAR_ALL.includes(arg)){if(!(campTab==='equip'&&heroSub==='gear'))campTop=true;campTab='equip';heroSub='gear';gearSlot=arg;gearMore=0;campSel=null}}return CAMP_GO},
+  gsort:function(a,arg,b,d){{gearSort=arg;gearMore=0}return CAMP_GO},
+  gmore:function(a,arg,b,d){{gearMore++}return CAMP_GO},
   hcls:function(a,arg,b,d){{if(CLS[arg]&&arg!==heroCls){campSel=null;pickCls(arg);return}}return CAMP_GO},
   tutoff:function(a,arg,b,d){{meta.tutOff=true;toast('Parcours masqué : « Réafficher le parcours » en bas de l\'onglet Héros.')}return CAMP_GO},
   tuton:function(a,arg,b,d){{meta.tutOff=false}return CAMP_GO},
@@ -130,7 +141,7 @@ function openCamp(){$('camp').hidden=false;campSel=null;campMsg='';fzc=null;fzRo
 function closeCamp(){$('camp').hidden=true;if(!started)newGame();refreshMenus()}
 // Accueil : lignes résumées (Biome, Niveau, Difficulté, Reliques) ; Lancer et le Camp restent en bas.
 function diffLine(i){const D=i===3?dif3():DIFF[i],iv=Math.round(D.iv*(meta.mode==='capture'?1.5:1));
-  return (i===3?`Monstres : vie ×${fmtN(D.hp)}, dégâts ×${fmtN(D.dm)} · affixes +${Math.round(D.aq*100)} % · réactifs −${Math.round(Math.min(BAL.reactCutMax||0,Math.max(1,meta.torm|0)*(BAL.tormReact||0))*100)} %, plus en restant · `:'')+`${D.cnt>1?`${D.cnt} Gardiens`:'1 Gardien'} toutes les ${iv} s · ${D.loot?`butin et or +${Math.round(D.loot*100)} %`:'butin normal'}`}
+  return (i===3?`Monstres : vie ×${fmtN(D.hp)}, dégâts ×${fmtN(D.dm)} · affixes +${Math.round(D.aq*100)} % · réactifs −${Math.round(Math.min(BAL.reactCutMax||0,Math.max(1,meta.torm|0)*(BAL.tormReact||0))*100)} %, plus en restant · `:'')+`${D.cnt>1?`${D.cnt} Gardiens`:'1 Gardien'} toutes les ${iv} s · ${D.loot?`or +${fmtN(D.loot*50)} %, chance d'objet +${fmtN(D.loot*15)} %`:'butin normal'}`}
 const dif3=()=>{const sv=meta.diff;meta.diff=3;const D=dif();meta.diff=sv;return D};
 function refreshMenus(){
   try{tabBadges()}catch(err){noteErr('pastilles',err)}

@@ -7,7 +7,10 @@ export const tests = [
     const p = t.track(await newPage(b, { locked: true }));
     await campView(p, 'mods');
     t.ok(await p.evaluate(() => !!document.querySelector('.lockc') && /Réussis 2 missions/.test($('campBody').textContent)), 'Mods : carte verrouillée et condition');
-    t.eq(await p.evaluate(() => ['mods', 'pets', 'relics'].map((k) => document.querySelector(`[data-cact="coll"][data-arg="${k}"]`).classList.contains('is-locked'))), [true, true, true], 'Collection : Mods, Familiers, Reliques verrouillés');
+    await campView(p, 'equip');
+    t.eq(await p.evaluate(() => ['mods', 'pets'].map((k) => document.querySelector(`.htile[data-arg="${k}"]`).classList.contains('is-locked'))), [true, true], 'Héros : tuiles Mods et Familier verrouillées (v137)');
+    await campView(p, 'relics');
+    t.ok(await p.evaluate(() => !!document.querySelector('.lockc') && !document.querySelector('[data-cact="coll"]')), 'Collection : Reliques verrouillées, sans sous-onglets');
     t.eq(await p.evaluate(() => ['coll', 'forge', 'heros'].map((k) => document.querySelector(`#tabbar [data-nav="${k}"]`).classList.contains('is-locked'))), [true, true, false], 'barre : Collection et Forge verrouillées, Héros ouvert');
     await campView(p, 'arsenal', 'recy');
     t.ok(await p.evaluate(() => !!document.querySelector('.lockc') && !document.querySelector('#invGrid')), 'Recyclage verrouillé');

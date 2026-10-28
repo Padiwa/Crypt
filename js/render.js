@@ -397,6 +397,8 @@ function initPixi(){
     if(B.obel){obeliskShape(0,0,r,B);return}const gr=ctx.createRadialGradient(-r*.3,-r*.3,2,0,0,r);gr.addColorStop(0,B.pil[0]);gr.addColorStop(1,B.pil[1]);ctx.fillStyle=gr;circle(0,0,r);ctx.fill();ctx.strokeStyle='#0c0a0e';ctx.lineWidth=2;ctx.stroke()},2));T.pillar=T.pillars[0];
   T.brazier=mkTex(24,24,()=>{ctx.fillStyle='#2a2228';circle(0,0,9);ctx.fill();ctx.strokeStyle='#4a3e44';ctx.lineWidth=2;ctx.stroke()});
   T.dark=mkTex(512,512,()=>{const gr=ctx.createRadialGradient(0,0,256*.3/1.3,0,0,256/1.3);gr.addColorStop(0,'rgba(6,4,9,0)');gr.addColorStop(1,'rgba(6,4,9,.74)');ctx.fillStyle=gr;ctx.fillRect(-256,-256,512,512)},1);
+  // Obscurité de la tempête de sable (v137) : même taille que l'obscurité normale (tout l'écran), lumière resserrée au centre.
+  T.darkS=mkTex(512,512,()=>{const gr=ctx.createRadialGradient(0,0,256*.3/1.3*.5,0,0,256/1.3*.45);gr.addColorStop(0,'rgba(6,4,9,0)');gr.addColorStop(1,'rgba(6,4,9,.94)');ctx.fillStyle=gr;ctx.fillRect(-256,-256,512,512)},1);
   PIXI.BitmapFont.from('dmg',{fontFamily:'Alegreya Sans, system-ui, sans-serif',fontSize:40,fontWeight:'700',fill:'#ffffff',stroke:'#000000',strokeThickness:6},
     {chars:[['a','z'],['A','Z'],['0','9'],PX_CHARS],resolution:1});
   const L={};
@@ -406,15 +408,16 @@ function initPixi(){
   L.fxG=Gr();L.shot=C();L.eb=C();L.part=C();L.glow=C();L.glowStatic=C();L.glow.addChild(L.glowStatic);
   world.addChild(L.floor,L.staticG,L.sand,L.underG,L.beam,L.drop,L.static,L.shadow,L.aura,L.en,L.player,L.fxG,L.shot,L.eb,L.part,L.glow);
   const dark=new PIXI.Sprite(T.dark);dark.anchor.set(.5);
+  const darkS=new PIXI.Sprite(T.darkS);darkS.anchor.set(.5);darkS.visible=false;
   const veil=new PIXI.Sprite(PIXI.Texture.WHITE);veil.tint=0x96703c;veil.visible=false; // voile de la tempête de sable (v136)
   L.txt=C();top.addChild(L.txt);L.uiG=Gr();L.uiTxt=C();ui.addChild(L.uiG,L.uiTxt);
-  stage.addChild(world,dark,veil,top,ui);
+  stage.addChild(world,dark,darkS,veil,top,ui);
   const pool=(layer,mk)=>({layer,mk,arr:[],n:0});
   const spr=()=>{const s=new PIXI.Sprite(PIXI.Texture.WHITE);s.anchor.set(.5);return s};
   const txt=()=>{const t=new PIXI.BitmapText('',{fontName:'dmg',fontSize:16});t.anchor.set(.5,1);return t};
   const P={sh:pool(L.shadow,spr),aura:pool(L.aura,spr),en:pool(L.en,spr),beam:pool(L.beam,()=>{const s=spr();s.anchor.set(.5,1);return s}),drop:pool(L.drop,spr),
     shot:pool(L.shot,spr),eb:pool(L.eb,spr),part:pool(L.part,spr),glow:pool(L.glow,()=>{const s=spr();s.blendMode=PIXI.BLEND_MODES.ADD;return s}),txt:pool(L.txt,txt),utxt:pool(L.uiTxt,txt)};
-  PX={R,stage,world,top,ui,dark,veil,T,L,P,statics:[]};
+  PX={R,stage,world,top,ui,dark,darkS,veil,T,L,P,statics:[]};
   cv.width=cv.width;
   return true;
 }
@@ -530,8 +533,10 @@ function renderPixi(){
   for(const b of G.eb){if(!vis(b.x,b.y,20))continue;const s=take(PP.eb);s.texture=T.eb;s.position.set(b.x,b.y);s.scale.set(b.r/8);s.tint=0xffffff;s.alpha=1}
   for(const p of G.parts){if(!vis(p.x,p.y,10))continue;const s=take(PP.part);s.texture=T.circle;s.position.set(p.x,p.y);if(p.w)s.scale.set(p.size*3/8,p.size*.5/8);else s.scale.set(p.size/8);s.tint=hexc(p.col);s.alpha=Math.max(0,p.life/p.max)}
   // obscurité
-  const sk=stormK(),out=Math.max(vw,vh)*.62*(1-.6*sk);dark.position.set((P.x-ox)*z,(P.y-oy)*z);dark.width=dark.height=out*2*1.3*z;
-  {const v=PX.veil;v.visible=sk>0;if(sk>0){v.width=innerWidth;v.height=innerHeight;v.alpha=.38*sk}}
+  // tempête (v137) : l'obscurité garde sa taille (elle couvre tout l'écran, quel que soit le zoom) ; on passe en fondu à la version resserrée
+  const sk=stormK(),out=Math.max(vw,vh)*.62,ds=PX.darkS;dark.position.set((P.x-ox)*z,(P.y-oy)*z);dark.width=dark.height=out*2*1.3*z;dark.alpha=1-sk;
+  ds.visible=sk>0;if(sk>0){ds.position.set(dark.position.x,dark.position.y);ds.width=ds.height=dark.width;ds.alpha=sk}
+  {const v=PX.veil;v.visible=sk>0;if(sk>0){v.position.set(0,0);v.width=innerWidth;v.height=innerHeight;v.alpha=.38*sk}}
   // textes
   for(const tx of G.texts){if(!vis(tx.x,tx.y,30))continue;const b=take(PP.txt);if(b.text!==tx.txt)b.text=String(tx.txt);b.fontSize=tx.size;b.tint=hexc(tx.col);b.alpha=Math.max(0,1-tx.t/.8);b.position.set(tx.x,tx.y-tx.t*40+4)}
   // interface : flèches, joystick

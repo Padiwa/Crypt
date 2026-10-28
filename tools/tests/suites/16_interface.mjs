@@ -60,6 +60,8 @@ export const tests = [
     t.eq(await p.evaluate(() => [...document.querySelectorAll('[data-cact="fsub"]')].map((x) => x.textContent.replace(/\d+$/, '').trim())), ['Affixes', 'Fusion', 'Bonus', 'Sceaux'], 'sous-onglets : Affixes, Fusion, Bonus, Sceaux');
     t.eq(await p.evaluate(() => [document.querySelector('[data-cact="fsub"][aria-selected="true"]').dataset.arg, document.querySelectorAll('[data-cact="afmode"]').length]), ['fuse', 0], 'Fusion choisie, plus de puces de mode');
     await p.click('[data-cact="fzr"][data-arg="5"]'); await p.click('[data-cact="fzr"][data-arg="3"]');
+    // le prix et le nombre se calculent juste après l'affichage du pied (« calcul du coût… ») : on attend la fin du calcul
+    await p.waitForFunction(() => !/calcul du coût/.test($('campFoot').textContent), null, { timeout: 5000 }).catch(() => {});
     t.ok(await p.evaluate(() => /Fusionner ces raretés · 2/.test($('campFoot').textContent)), 'pied : « Fusionner ces raretés · 2 »');
     await p.click('[data-cact="fuseall"]');
     const r = await p.evaluate(() => meta.stash.map((i) => [i.r, i.up | 0]).sort((a, b) => a[0] - b[0] || a[1] - b[1]));

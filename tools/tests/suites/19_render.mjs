@@ -75,6 +75,13 @@ export const tests = [
     const v = await p.evaluate(() => ({ px: !!PX, veil: PX.veil.visible, a: +PX.veil.alpha.toFixed(2), noFallback: !/Rendu WebGL interrompu/.test(document.body.textContent) }));
     t.eq(r, { sand: r.n, n: 9, tile: true }, 'sables mouvants dessinés, sol des sables');
     t.eq(v, { px: true, veil: true, a: .38, noFallback: true }, 'voile de la tempête, rendu WebGL toujours en service');
+    // v137 : l'obscurité de la tempête et le voile couvrent tout l'écran, au zoom le plus bas comme au plus haut
+    for (const zm of [.7, 1.4]) {
+      const c = await p.evaluate((zm) => { SET.zoom = zm; G.storm = STORM_LEN / 2; render(); const W = innerWidth, H = innerHeight, d = PX.darkS, v = PX.veil;
+        const box = (o) => [o.position.x - o.width / 2, o.position.y - o.height / 2, o.position.x + o.width / 2, o.position.y + o.height / 2];
+        const [x0, y0, x1, y1] = box(d); return { dark: d.visible && x0 <= 0 && y0 <= 0 && x1 >= W && y1 >= H && d.alpha === 1 && PX.dark.alpha === 0, veil: v.visible && v.position.x <= 0 && v.position.y <= 0 && v.width >= W && v.height >= H }; }, zm);
+      t.eq(c, { dark: true, veil: true }, `zoom ${zm} : obscurité et voile sur tout l'écran`);
+    }
     t.eq(p.errs, [], 'aucune erreur');
   } },
 ];

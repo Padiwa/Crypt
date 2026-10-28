@@ -5,9 +5,11 @@ export const tests = [
   { name: 'déblocage dans l\'ordre, coûts en harnais et en or', fn: async (b, t) => {
     const p = t.track(await newPage(b));
     await p.evaluate(() => { meta.gold = 9000; meta.hfrag = 40; saveMeta(); });
-    await campView(p, 'equip');
+    await campView(p, 'equip', 'gear:anneau2');
     t.ok(await p.evaluate(() => document.querySelector('[data-cact="slotopen"][data-arg="dos"]').disabled), 'dos fermé avant l\'anneau 2');
     await p.click('[data-cact="slotopen"][data-arg="anneau2"]');
+    t.eq(await p.evaluate(() => [gearSlot, !!document.querySelector('.gslot[data-arg="anneau2"]:not(.gslot--lock)'), !!document.querySelector('[data-cact="slotopen"]')]), ['anneau2', true, false], 'anneau 2 ouvert : sa liste remplace le déblocage');
+    await p.click('.gslot[data-arg="dos"]');
     await p.click('[data-cact="slotopen"][data-arg="dos"]');
     t.eq(await p.evaluate(() => [GEAR_KEYS().join(), meta.hfrag, meta.gold]), ['armure,amulette,bottes,anneau,anneau2,dos', 3, 2000], 'résultat');
   } },

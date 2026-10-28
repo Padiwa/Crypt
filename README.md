@@ -10,18 +10,18 @@ Action-RPG de crypte en hordes, jouable au pouce sur mobile et au clavier. Site 
 | `js/data.js` | Constantes, classes, armes, reliques, mods, affixes, sauvegarde `meta` |
 | `js/game.js` | État de partie, ennemis, combat, apparitions, butin, mise à jour |
 | `js/render.js` | Rendu Canvas 2D, rendu WebGL (PixiJS 7.4.2) et HUD |
-| `js/ui.js` | Fiches d'objets, Pause, bonus de niveau, Mods, fin de mission |
+| `js/ui.js` | Fiches d'objets, Puissance (`powerOf`) et « Équiper le meilleur », Pause, bonus de niveau, Mods, fin de mission |
 | `js/camp.js` | Cœur du Camp : état, affichage des onglets et du pied, table d'actions `CAMP_ACT` (chaque fichier du Camp y ajoute les siennes), accueil, feuille de choix |
 | `js/heros.js` | Onglet Héros : couleurs, prestige, sorts et talents, équipements enregistrés (actions) |
-| `js/arsenal.js` | Onglet Arsenal : plans et fragments, fabrication, armes possédées |
+| `js/arsenal.js` | Onglet Arsenal : Coffre, Recettes (plans, fragments, fabrication), Recycler |
 | `js/forge.js` | Onglet Forge : transfert d'affixe, liste de souhaits, Bonus |
 | `js/collection.js` | Collection › Reliques : file d'ouverture, reliques forgées, raffinage |
 | `js/save.js` | Réglages › Sauvegarde : exporter, importer, recommencer à zéro |
 | `js/shell.js` | Navigation de la refonte : barre des 5 onglets, accueil Combat (héros dessiné, carte de mission), écran Mission, feuille du Parcours |
-| `js/inv.js` | Arsenal › Coffre et Recycler, fiche d'objet ancrée, grilles de 120 cases |
+| `js/inv.js` | Onglet Héros (six tuiles) et Héros › Équipement (emplacement par emplacement, objets classés par Puissance), Arsenal › Coffre et Recycler, fiche d'objet ancrée, grilles de 120 cases |
 | `js/fuse.js` | Fusion de rang (armes et équipements) et son écran, Forge › Fusion |
 | `js/seal.js` | Sceaux légendaires de la Brèche (Forge › Sceaux) |
-| `js/pet.js` | Familiers |
+| `js/pet.js` | Familiers (Héros › Familier) |
 | `js/tut.js` | Parcours du joueur nouveau |
 | `js/unlock.js` | Déblocages progressifs du Camp et des choix de mission (conditions, cartes « Nouveau ») |
 | `js/rythmes/` | Rythmes de progression (`rapide.js` publié, `long.js`) |
@@ -62,7 +62,7 @@ Le rythme chargé est celui de la balise `<script src="js/rythmes/….js">` d'`i
 Une suite unique vérifie le jeu dans un vrai navigateur (Chromium sans affichage) : démarrage, butin, reliques, fabrication et fusion, coffre, affixes, emplacements, missions, contrôles, sauvegarde, parcours, coopération.
 ```
 npm i playwright && npx playwright install chromium
-node tools/tests/run.mjs            # tout (126 tests, ≈ 4 min 30)
+node tools/tests/run.mjs            # tout (130 tests, ≈ 4 min 30)
 node tools/tests/run.mjs --quick    # sans la coopération
 node tools/tests/run.mjs fusion     # seulement les suites dont le fichier contient « fusion »
 ```

@@ -47,8 +47,8 @@ export const tests = [
   { name: 'équipements enregistrés : enregistrer, changer, porter, objets manquants', fn: async (b, t) => {
     const p = t.track(await newPage(b));
     await p.evaluate(() => { heroCls = 'archer'; meta.gear.armure = rgItem('L1', 50); meta.gear.anneau = rgItem('L7', 50); saveMeta(); });
-    await campView(p, 'equip');
-    t.ok(await p.evaluate(() => !!document.querySelector('#setsSec [data-cact="setsave"]')), 'section sur la vue principale du héros');
+    await campView(p, 'equip', 'gear');
+    t.ok(await p.evaluate(() => !!document.querySelector('#setsSec [data-cact="setsave"]')), 'section dans Héros › Équipement');
     await p.click('[data-cact="setsave"]');
     t.eq(await p.evaluate(() => setsOf('archer').length), 1, 'enregistré');
     await p.fill('[data-setname="0"]', 'Boss'); await p.press('[data-setname="0"]', 'Tab');
@@ -72,7 +72,7 @@ export const tests = [
       build('w').load[0] = W[0]; build('w').load[1] = W[1]; build('h').load[0] = H[0]; meta.aura.archer = A[0] || null; petBuild().load[0] = P[0];
       saveMeta(); return { W, H, A, P };
     });
-    await campView(p, 'equip');
+    await campView(p, 'equip', 'gear');
     await p.click('#setsSec [data-cact="setsave"]');
     t.ok(await p.evaluate(() => /5 mods/.test(document.getElementById('setsSec').textContent) && /Feu follet/.test(document.getElementById('setsSec').textContent)), 'la ligne montre les mods et le familier');
     // tout change : autres mods, autre aura, autre familier
@@ -95,7 +95,7 @@ export const tests = [
   { name: 'Armurerie › Par héros : ce que porte chaque héros, objet repris sur le héros joué', fn: async (b, t) => {
     const p = t.track(await newPage(b));
     await p.evaluate(() => { heroCls = 'archer'; meta.gear.armure = rgItem('L1', 50); meta.gearBy.guerrier.bottes = rgItem('L2', 50); meta.gearBy.guerrier.bottes.slot = 'bottes'; saveMeta(); });
-    await campView(p, 'equip');
+    await campView(p, 'equip', 'gear');
     await p.click('[data-cact="goheros"]');
     t.eq(await p.evaluate(() => [arsView, [...document.querySelectorAll('.hgear h3')].map((h) => h.textContent.slice(1).split(' · ')[0])]), ['heros', ['Archer', 'Guerrier', 'Magicien']], 'trois héros, le héros joué en premier');
     t.ok(await p.evaluate(() => /Rien de porté/.test(document.querySelectorAll('.hgear')[2].textContent)), 'héros sans équipement : conseil');

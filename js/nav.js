@@ -13,6 +13,7 @@ function navClose(){
     if(shown('campDock')){if((campTab==='mods'||campTab==='pets')&&modSel){modSel=null}else campSel=null;drawCamp();return true}
     if(campBack){const B=campBack;campBack=null;campTab=B.tab;campSel=B.sel;drawCamp();$('campBody').parentElement.scrollTop=B.scroll||0;return true}
     if(campTab==='equip'&&heroSub!=='main'){heroSub='main';drawCamp();return true}
+    if(campTab==='mods'||campTab==='pets'){modSel=null;campTab='equip';heroSub='main';drawCamp();return true}
     closeCamp();return true}
   if(shown('mission')){closeMission();return true}
   if(shown('bag')){if(shown('bagDock')){runSel=null;modSel=null;drawBag();return true}closeBag();return true}

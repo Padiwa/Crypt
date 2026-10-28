@@ -19,7 +19,7 @@ export const tests = [
     t.ok(/\d+ fusions? /i.test(fa), 'nombre de fusions sur le bouton');
     // Héros › Emplacements : fragments de harnais et or, ce qui manque en rouge
     await p.evaluate(() => { meta.hfrag = 3; meta.gold = 100000; saveMeta(); });
-    await campView(p, 'equip');
+    await campView(p, 'equip', 'gear:anneau2');
     t.ok(/12 fragments de harnais/i.test(await txt('[data-cact="slotopen"]')) && await p.evaluate(() => !!document.querySelector('[data-cact="slotopen"] .cost__p.is-short')), 'emplacement : fragments de harnais (manquants en rouge) et or');
     // Mods : monter de rang · N essence
     await p.evaluate(() => { meta.essence = 10; modTab = 'w'; modSel = 'ferocite'; saveMeta(); });

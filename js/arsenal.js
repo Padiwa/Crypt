@@ -1,4 +1,4 @@
-// Crypte des Cendres — arsenal.js : onglet Arsenal (plans et fragments, fabrication, armes possédées) et ses actions. Découpé de camp.js en v135.
+// Crypte des Cendres — arsenal.js : onglet Arsenal (coffre, plans et fragments, fabrication, recyclage) et ses actions. Les armes possédées sont dans Héros › Équipement › Arme depuis la v137. Découpé de camp.js en v135.
 // Héros : les objets dont tu as des fragments, avec un lien vers l'Arsenal.
 function fragInv(){
   const ids=craftIds().filter(id=>(meta.parts[id]||[]).some(n=>n>0)).sort((a,b)=>fragStatus(b)-fragStatus(a)||bpdef(b).r-bpdef(a).r);
@@ -42,32 +42,15 @@ function arsBar(){const cp=craftPlan();
     h+=`<div class="card"><p style="margin:0;font-size:14px">Fabriquer ${cp.plan.length} objet${cp.plan.length>1?'s':''} pour <b><span class="coin"></span> ${cp.cost} or</b> : ${Object.keys(cnt).map(id=>`<b style="color:${RAR[bpdef(id).r].c}">${esc(bpdef(id).n)}</b>${cnt[id]>1?' ×'+cnt[id]:''}`).join(', ')}.</p><div class="actions"><button class="btn main cost-btn" data-cact="craftall"><span>Fabriquer</span>${costHtml([['or',cp.cost],['pf',cp.plan.length*3]])}</button><button class="btn" data-cact="arsno">Annuler</button></div></div>`}
   return h}
 let arsView='coffre',arsR='w';
-// Arsenal › Mes armes : toutes les armes possédées, avec leurs valeurs réelles (rang et affixes ajoutées comprises).
-function myWeapons(){const order=[heroCls,...Object.keys(CLS).filter(c=>c!==heroCls)];
-  const all=order.flatMap(c=>WPN[c].filter(w=>ownedW(w.id)).map(w=>({c,w})));const tot=Object.values(WPN).flat().length;
-  const base=curEq(),dpsOf=id=>dps(stats({...base,arme:weaponItem(heroCls,id)})),cur=dpsOf(curWid());
-  let h=`<p class="cx-hint" style="margin:0">${all.length} arme${all.length>1?'s':''} possédée${all.length>1?'s':''} sur ${tot}. Valeurs avec rang et affixes ajoutées. Pour ton héros, la ligne DPS compare chaque arme à celle équipée, avec ton équipement actuel.</p>`;
-  for(const c of order){const L=all.filter(x=>x.c===c);if(!L.length)continue;
-    h+=`<h3>${CLS[c].n}${c===heroCls?' · ton héros':''} <span class="cx-hint" style="margin:0;font-weight:400">${L.length} / ${WPN[c].length}</span></h3>`;
-    h+=L.sort((a,b)=>b.w.r-a.w.r).map(({w})=>{const it=weaponItem(c,w.id),m=upMul(it.up),r=RAR[w.r],eq=curWid(c)===w.id,mine=c===heroCls;
-      const mods=(meta.wload[w.id]||[]).filter(Boolean).length,mt=(meta.wmast[w.id]||{r:0}).r,sp=wSpares(w.id).length,fp=wFusePlan(w.id);
-      const d=mine?dpsOf(w.id):0,diff=mine&&!eq&&cur?Math.round((d/cur-1)*100):0;
-      return `<div class="wpn${eq&&mine?' on':''}"><div class="nm" style="color:${r.c}">${esc(w.n)} <span style="color:var(--ink)">${rkTxt(it.up)}</span></div>
-        <div class="meta">${r.n} · ${fmtN(w.dmg*m)} dégâts de base · maîtrise ${mt} / 10 · ${mods} mod${mods>1?'s':''}${sp?` · ${sp} double${sp>1?'s':''}`:''}</div>
-        <ul>${Object.keys(it.aff).map(k=>`<li${AFF[k].aby?' class="abyp"':''}>${AFF[k].t(NOSCALE[k]?it.aff[k]:fmtN(it.aff[k]*m))}</li>`).join('')||'<li>Aucun bonus</li>'}</ul>
-        ${mine?`<div class="meta">DPS estimé <b style="color:var(--ink)">${fmtN(Math.round(d))}</b>${eq?'':` · <b style="color:${diff>=0?'var(--heal)':'var(--blood)'}">${diff>=0?'+':''}${diff} %</b> par rapport à l'arme équipée`}</div>`:''}
-        <div class="wfoot">${eq?`<span class="owned">Équipée${mine?'':' · '+CLS[c].n}</span>`:mine?`<button class="btn main" data-cact="wequip" data-arg="${w.id}">Équiper</button>`:`<span class="owned">${CLS[c].n}</span>`}${fp.n?`<button class="btn" data-cact="wfuse" data-arg="${w.id}">Fusionner · ${rkTxt(fp.R)} · <span class="coin"></span>${fp.cost}</button>`:fp.need?`<button class="btn" disabled>Fusionner · <span class="coin"></span>${fp.need}</button>`:''}</div></div>`}).join('')}
-  return h}
 function campArsenal2(){
   const nOwn=Object.values(WPN).flat().filter(w=>ownedW(w.id)).length;
   const cur=arsView==='heros'?'coffre':arsView,tv=(k,lab,n)=>`<button class="cx-tab" role="tab" data-cact="arsv" data-arg="${k}" aria-selected="${cur===k}">${lab}${n!=null?` <span class="n">${n}</span>`:''}</button>`;
-  const ak={rec:'craft',mine:'arms',recy:'recy'},lk=k=>ak[k]&&!isUnl(ak[k]);
+  const ak={rec:'craft',recy:'recy'},lk=k=>ak[k]&&!isUnl(ak[k]);
   const tv2=(k,lab,n)=>lk(k)?tv(k,`<span class="lockmini" aria-hidden="true">${LOCK_SVG}</span>${lab}`).replace('class="cx-tab"','class="cx-tab is-locked"'):tv(k,lab,n);
-  const tabs=`<div class="cx-tabs" role="tablist" aria-label="Arsenal">${tv('coffre','Coffre')}${tv2('mine','Armes')}${tv2('rec','Recettes')}${tv2('recy','Recycler')}</div>`
+  const tabs=`<div class="cx-tabs" role="tablist" aria-label="Arsenal">${tv('coffre','Coffre')}${tv2('rec','Recettes')}${tv2('recy','Recycler')}</div>`
     +(cur==='coffre'?`<div class="cx-chips ars__sub" role="radiogroup" aria-label="Affichage du coffre"><button class="cx-chip cx-chip--sm" role="radio" data-cact="arsv" data-arg="coffre" aria-checked="${arsView==='coffre'}">Tout le coffre <span class="n">${stashN()}</span></button><button class="cx-chip cx-chip--sm" role="radio" data-cact="arsv" data-arg="heros" aria-checked="${arsView==='heros'}">Par héros</button></div>`:'');
   if(lk(arsView))return `${campMsg}${tabs}${lockedHtml(ak[arsView])}`;
   const nc=ak[arsView]?newCard(ak[arsView]):'';
-  if(arsView==='mine')return `${campMsg}${tabs}${nc}${myWeapons()}`;
   if(arsView==='coffre')return `${campMsg}${tabs}${campCoffre()}`;
   if(arsView==='heros')return `${campMsg}${tabs}${herosView()}`;
   if(arsView==='recy')return `${campMsg}${tabs}${nc}${campRecycle()}`;
@@ -87,7 +70,8 @@ function campArsenal2(){
 
 Object.assign(CAMP_ACT,{
   toarsenal:function(a,arg,b,d){{campTab='arsenal';campSel=null}return CAMP_GO},
-  gocoffre:function(a,arg,b,d){{campTab='arsenal';arsView='coffre';campSel=null}return CAMP_GO},
+  // depuis Héros › Équipement, le coffre s'ouvre filtré sur l'emplacement choisi (arg = arme, armure, anneau…)
+  gocoffre:function(a,arg,b,d){{campTab='arsenal';arsView='coffre';campSel=null;if(arg&&(arg==='arme'||SLOT[arg])){stF=arg;campTop=true}}return CAMP_GO},
   goheros:function(a,arg,b,d){{campTab='arsenal';arsView='heros';campSel=null}return CAMP_GO},
   craftask:function(a,arg,b,d){{arsAsk=arsAsk==='craft'?null:'craft'}return CAMP_GO},
   arsno:function(a,arg,b,d){{arsAsk=null}return CAMP_GO},

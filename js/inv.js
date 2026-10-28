@@ -27,7 +27,7 @@ function invToolbar(list,kind){const all=kind==='equip'||kind==='affix',W=invWea
   const ch=(k,l)=>`<button class="cx-chip cx-chip--sm" data-cact="sfilter" data-arg="${k}" aria-pressed="${stF===k}">${l} <span class="n">${counts[k]||0}</span></button>`;
   return `<div class="cx-toolbar"><div class="cx-toolbar__row"><label class="cx-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input type="search" data-inv="q" value="${esc(invQ)}" placeholder="Chercher une affixe : vitesse, critique…" aria-label="Chercher dans le coffre" enterkeyhint="search"></label>
     <select class="cx-sort" data-inv="sort" aria-label="Trier le coffre">${Object.keys(SORT_N).map(k=>`<option value="${k}"${stS===k?' selected':''}>${SORT_N[k]}</option>`).join('')}</select></div>
-    <div class="cx-chips">${ch('all','Tout')}${all?ch('porte','Portés'):''}${ch('arme','Arme')}${['armure','amulette','bottes','anneau',...(counts.dos?['dos']:[])].map(k=>ch(k,SLOT[k])).join('')}</div>
+    <div class="cx-chips">${ch('all','Tout')}${all?ch('porte','Portés'):''}${ch('arme','Arme')}${['armure','amulette','bottes','anneau',...(counts.dos||stF==='dos'?['dos']:[])].map(k=>ch(k,SLOT[k])).join('')}</div>
     <span class="cx-count" id="invCount">${invCountTxt(list)}</span></div>`}
 /* Grilles longues (v135) : 120 cases à la fois ; « Afficher plus » ajoute les suivantes. Retour à 120 quand la vue, le filtre,
    la recherche ou le tri change. L'objet choisi reste toujours affiché. */
@@ -46,7 +46,7 @@ $('campBody').addEventListener('input',e=>{if(e.target.dataset.inv==='q'){invQ=e
 $('campBody').addEventListener('change',e=>{if(e.target.dataset.inv==='sort'){stS=e.target.value;drawCamp()}});
 
 /* ---------- Onglet Héros ---------- */
-function keyStats(St){return `<div class="cx-keystats"><div><span>Puissance</span><b>${Math.round(dps(St))}</b></div><div><span>Vie</span><b>${Math.round(St.hp)}</b></div><div><span>Réduction</span><b>${Math.round(St.armor)} %</b></div></div>`}
+function keyStats(St){return `<div class="cx-keystats"><div><span>Puissance</span><b>${Math.round(power(St))}</b></div><div><span>Vie</span><b>${Math.round(St.hp)}</b></div><div><span>Réduction</span><b>${Math.round(St.armor)} %</b></div></div>`}
 // Vues de l'Arsenal qui montrent le coffre (fiche ancrée) ou le recyclage.
 const isCoffre=()=>campTab==='arsenal'&&arsView==='coffre',isRecy=()=>campTab==='arsenal'&&arsView==='recy',isHerosV=()=>campTab==='arsenal'&&arsView==='heros';
 // Arsenal › Par héros : ce que porte chaque héros, le héros joué en premier. Toucher un objet ouvre sa fiche (le donner au héros joué, le retirer…).
@@ -61,37 +61,115 @@ function herosView(){const order=[heroCls,...Object.keys(CLS).filter(c=>c!==hero
 const stashN=()=>meta.stash.length+allWorn().length+invWeapons(true).length;
 // Porter un objet dans un emplacement : l'objet qu'il remplace retourne au coffre.
 const wearGear=(sl,it)=>{const old=meta.gear[sl];if(old)meta.stash.push(old);meta.gear[sl]=it};
-// Onglet Héros (v130) : le héros au centre, ses emplacements autour ; sous-vues Talents, Prestige, Apparence (heroSub, shell.js). Les équipements enregistrés restent sur la vue principale, sous les tuiles.
-function heroSlot(k,eq){const it=eq[k],sel=campSel&&campSel.slot===k;
+// Onglet Héros (v130, v137) : le héros au centre, ses emplacements autour, ses chiffres clés et six tuiles :
+// Équipement (heroSub 'gear'), Sorts et talents, Prestige, Mods et Familier (campTab 'mods' et 'pets'), Apparence.
+// Toucher un emplacement ouvre Héros › Équipement sur cet emplacement.
+function heroSlot(k,eq){const it=eq[k],sel=gearOn()&&gearSlot===k;
   if(!slotOpen(k)){const u=SLOT_U.find(x=>x.k===k),ok=!u.need||slotOpen(u.need),hf=meta.hfrag|0,can=slotCan(u);
-    return `<div class="hslot hslot--lock${can?' is-ready':''}" role="img" aria-label="${SLOT[k]} verrouillé${ok?` : ${Math.min(hf,u.hf)} fragments de harnais sur ${u.hf}`:''}"><span class="hslot__lk" aria-hidden="true">${LOCK_SVG}</span><small>${ok&&isUnl('slots')?`${Math.min(hf,u.hf)} / ${u.hf}`:SLOT[k]}</small>${can?'<span class="dot" aria-hidden="true"></span>':''}</div>`}
+    return `<button class="hslot hslot--lock${can?' is-ready':''}" data-cact="gslot" data-arg="${k}" aria-label="${SLOT[k]} verrouillé${ok?` : ${Math.min(hf,u.hf)} fragments de harnais sur ${u.hf}`:''}"><span class="hslot__lk" aria-hidden="true">${LOCK_SVG}</span><small>${ok&&isUnl('slots')?`${Math.min(hf,u.hf)} / ${u.hf}`:SLOT[k]}</small>${can?'<span class="dot" aria-hidden="true"></span>':''}</button>`}
   const up=it&&it.up?`<span class="cx-cell__up">R${it.up+1}</span>`:'',lk=it&&it.lock?`<span class="cx-cell__lock">${LOCK_SVG}</span>`:'';
-  return `<button class="hslot${it?'':' is-empty'}${sel?' is-sel':''}" data-slot="${k}" style="--rar:${it?RARV[it.r]:'#5c4a66'}" aria-label="${SLOT[k]} : ${it?esc(itemName(it))+', '+RAR[it.r].n.toLowerCase():'vide'}">${GLYPH[k==='anneau2'?'anneau':k]}${up}${lk}<small>${SLOT[k]}</small></button>`}
+  return `<button class="hslot${it?'':' is-empty'}${sel?' is-sel':''}" data-cact="gslot" data-arg="${k}" style="--rar:${it?RARV[it.r]:'#5c4a66'}" aria-label="${SLOT[k]} : ${it?esc(itemName(it))+', '+RAR[it.r].n.toLowerCase():'vide'}">${GLYPH[k==='anneau2'?'anneau':k]}${up}${lk}<small>${SLOT[k]}</small></button>`}
+// En-tête des vues du héros : choix du héros, retour, titre.
+function heroCls3(){return `<div class="cx-tabs hcls" role="tablist" aria-label="Héros">${Object.keys(CLS).map(c=>`<button class="cx-tab" role="tab" data-cact="hcls" data-arg="${c}" aria-selected="${c===heroCls}" style="--hc:${CLS[c].col}">${CLS[c].n}</button>`).join('')}</div>`}
+const heroHead=t=>`${heroCls3()}<button class="cx-back" data-cact="hsub" data-arg="main">Retour au héros</button><h3 class="hsub__t">${t}</h3>`;
+const HT_SVG={gear:'<svg viewBox="0 0 24 24"><path d="M6 4l6 2 6-2 2.5 5-3 2v9h-11v-9l-3-2z"/><path d="M9.5 11.5h5"/></svg>',
+  tal:'<svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.3L22 9l-5 4.8L18.2 21 12 17.5 5.8 21 7 13.8 2 9l7.1-.7z"/></svg>',
+  prest:'<svg viewBox="0 0 24 24"><path d="M3 18h18l-2-10-4 4-3-7-3 7-4-4z"/><path d="M3 21h18"/></svg>',
+  mods:'<svg viewBox="0 0 24 24"><path d="M12 2.5 20 12l-8 9.5L4 12z"/><path d="M4 12h16M12 2.5 9 12l3 9.5 3-9.5z"/></svg>',
+  pets:'<svg viewBox="0 0 24 24"><circle cx="6.5" cy="10" r="2"/><circle cx="10" cy="6" r="2"/><circle cx="14" cy="6" r="2"/><circle cx="17.5" cy="10" r="2"/><path d="M8 18.5c0-3.2 1.8-5.5 4-5.5s4 2.3 4 5.5c0 1.6-1.4 2.5-4 2.5s-4-.9-4-2.5z"/></svg>',
+  look:'<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-2 0-3 2-1 3-1c2.5 0 4-1.5 4-4 0-4.5-4-8-9-8z"/><circle cx="7.5" cy="11" r="1.4"/><circle cx="11" cy="7" r="1.4"/><circle cx="16" cy="8" r="1.4"/></svg>'};
 function campEquip(){
-  const eq=curEq(),St=stats(eq),n=stashN(),sets=isUnl('sets')?setsOf().length:0;
-  const cls=`<div class="cx-tabs hcls" role="tablist" aria-label="Héros">${Object.keys(CLS).map(c=>`<button class="cx-tab" role="tab" data-cact="hcls" data-arg="${c}" aria-selected="${c===heroCls}" style="--hc:${CLS[c].col}">${CLS[c].n}</button>`).join('')}</div>`;
-  const sub=(t)=>`${cls}<button class="cx-back" data-cact="hsub" data-arg="main">Retour au héros</button><h3 class="hsub__t">${t}</h3>`;
-  if(heroSub==='tal')return sub('Sorts, ultimes et talents')+heroTalents();
-  if(heroSub==='prest')return sub('Prestige')+prestSection();
-  if(heroSub==='look')return sub('Apparence')+lookHtml();
+  const eq=curEq(),St=stats(eq);
+  if(heroSub==='tal')return heroHead('Sorts, ultimes et talents')+heroTalents();
+  if(heroSub==='prest')return heroHead('Prestige')+prestSection();
+  if(heroSub==='look')return heroHead('Apparence')+lookHtml();
+  if(heroSub==='gear')return heroHead('Équipement')+gearView();
   const L=['arme','armure','amulette','bottes'],R=['anneau','anneau2','dos'];
   const o=prOf(heroCls),prOn=prOpen()||o.lv>0,pf=prOn?prFree():0,nmax=UPG.filter(u=>lv(u.k)>=u.max).length,tn=TAL[heroCls].filter(t=>hasTal(t.k)).length,tb=isUnl('bonus')?TAL[heroCls].filter(t=>!hasTal(t.k)&&meta.gold>=t.cost).length:0;
-  const tile=(k,ico,t,sm,badge)=>`<button class="htile" data-cact="hsub" data-arg="${k}"><span class="htile__i" aria-hidden="true">${ico}</span><b>${t}</b><small>${sm}</small>${badge?`<span class="cx-tab__badge">${badge}</span>`:''}</button>`;
-  const mt=mastOf(heroCls);
-  return `${campMsg}${cls}
+  const nw=ks=>ks.some(k=>meta.unlNew.includes(k))?'!':0;
+  const tile=(k,t,sm,badge,act='hsub',lock=false)=>`<button class="htile${lock?' is-locked':''}" data-cact="${act}" data-arg="${k}"><span class="htile__i" aria-hidden="true">${lock?LOCK_SVG:HT_SVG[k]}</span><b>${t}</b><small>${sm}</small>${badge?`<span class="cx-tab__badge">${badge}</span>`:''}</button>`;
+  const mt=mastOf(heroCls),open=['arme',...GEAR_KEYS()],worn=open.filter(k=>eq[k]).length;
+  const gb=nw(['sets','slots','arms'])||(Object.keys(bestPlan(eq,meta.stash,true)).length+SLOT_U.filter(slotCan).length);
+  const ml=tabLocked('mods'),pl=tabLocked('pets'),pe=pl?null:petEq();
+  const mn=ml?0:['w',...(isUnl('hmods')?['h']:[])].reduce((a,t)=>a+build(t).load.filter(Boolean).length,0);
+  return `${campMsg}${heroCls3()}
     <section class="hstage" aria-label="Équipement du ${CLS[heroCls].n.toLowerCase()}">
       <div class="hstage__col">${L.map(k=>heroSlot(k,eq)).join('')}</div>
       <div class="hstage__mid"><canvas id="heroStage" width="360" height="360" aria-hidden="true"></canvas><span class="hstage__name">${CLS[heroCls].n}</span><small>${o.lv?`Prestige ${o.lv} · `:''}maîtrise ${mt.r} / 10</small></div>
       <div class="hstage__col">${R.map(k=>heroSlot(k,eq)).join('')}</div>
     </section>
     ${keyStats(St)}
-    <div class="cx-actions hacts" style="margin:0"><button class="cx-btn cx-btn--sm" data-cact="gocoffre">Coffre · ${n}</button><button class="cx-btn cx-btn--sm" data-cact="goheros">Par héros</button>${isUnl('sets')?`<button class="cx-btn cx-btn--sm" data-cact="gosets">Équipements · ${sets}</button>`:''}</div>
-    <div class="htiles">${tile('tal','<svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.3L22 9l-5 4.8L18.2 21 12 17.5 5.8 21 7 13.8 2 9l7.1-.7z"/></svg>','Sorts et talents',`talents ${tn} / ${TAL[heroCls].length}`,tb)}
-      ${tile('prest','<svg viewBox="0 0 24 24"><path d="M3 18h18l-2-10-4 4-3-7-3 7-4-4z"/><path d="M3 21h18"/></svg>','Prestige',prOn?`niveau ${o.lv}${pf?` · ${pf} point${pf>1?'s':''}`:''}`:`Forge ${nmax} / ${UPG.length}`,pf)}
-      ${tile('look','<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-2 0-3 2-1 3-1c2.5 0 4-1.5 4-4 0-4.5-4-8-9-8z"/><circle cx="7.5" cy="11" r="1.4"/><circle cx="11" cy="7" r="1.4"/><circle cx="16" cy="8" r="1.4"/></svg>','Apparence','couleurs')}</div>
-    ${setsHtml()}${slotUnlockHtml()}
+    <div class="htiles">${tile('gear','Équipement',`${worn} / ${open.length} portés`,gb)}
+      ${tile('tal','Sorts et talents',`talents ${tn} / ${TAL[heroCls].length}`,tb)}
+      ${tile('prest','Prestige',prOn?`niveau ${o.lv}${pf?` · ${pf} point${pf>1?'s':''}`:''}`:`Forge ${nmax} / ${UPG.length}`,pf)}
+      ${tile('mods','Mods',ml?'verrouillé':`${mn} placé${mn>1?'s':''}`,ml?0:nw(['mods','hmods','align']),'hview',ml)}
+      ${tile('pets','Familier',pl?'verrouillé':pe?esc(PETS[pe.t].n):meta.eggs>0?`${meta.eggs} œuf${meta.eggs>1?'s':''}`:'aucun',pl?0:nw(['pets'])||(meta.eggs>0?meta.eggs:0),'hview',pl)}
+      ${tile('look','Apparence','couleurs',0)}</div>
     ${cxMore('equip_stats','Toutes les statistiques',`<div class="statgrid">${statRows(St)}</div>`,'Afficher')}
     ${meta.tutOff&&tutStep()>=0?'<div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm cx-btn--ghost" data-cact="tuton">Réafficher le parcours</button></div>':''}`;
+}
+/* ---------- Héros › Équipement (v137) : un emplacement à la fois ---------- */
+// Les emplacements en haut ; dessous, l'objet porté puis tous les objets possibles pour cet emplacement (coffre et autres héros ;
+// pour l'arme, les armes du héros), classés par Puissance, avec l'écart si on l'équipe. Toucher une ligne ouvre la fiche ancrée.
+const GEAR_ALL=['arme','armure','amulette','bottes','anneau','anneau2','dos'],GEAR_PAGE=40;
+let gearSlot='arme',gearSort='pow',gearMore=0;
+const gearOn=()=>campTab==='equip'&&heroSub==='gear';
+// Case visée par la fiche et par « Équiper » : l'emplacement ouvert dans Héros › Équipement s'il convient à l'objet (2e anneau compris), sinon tgtKey.
+function slotFor(eq,it){if(it&&!it.wid&&gearOn()&&!$('camp').hidden&&GEAR_KEYS().includes(gearSlot)&&keySlot(gearSlot)===it.slot)return gearSlot;return it?tgtKey(eq,it):null}
+// Puissance et survie de l'équipement e avec x dans l'emplacement k (une arme compte avec ses propres mods et sa maîtrise).
+const gearVal=(e,k,x)=>k==='arme'?withWeapon(e,x.wid,eqVal):eqVal({...e,[k]:x});
+// Objets possibles : armes possédées du héros (sauf la portée) ; objets du coffre et ceux que portent les autres héros.
+function gearPool(k){if(k==='arme')return WPN[heroCls].filter(w=>ownedW(w.id)&&w.id!==curWid()).map(w=>weaponItem(heroCls,w.id));
+  const s=keySlot(k);return [...meta.stash.filter(i=>i.slot===s),...allWorn().filter(i=>i.slot===s&&wornBy(i)!==heroCls)]}
+function gearRows(k){return memo('gr|'+heroCls+'|'+k+'|'+gearSort+'|'+meta.stash.length,()=>{const e=curEq(),b=eqVal(e);
+  const L=gearPool(k).map(it=>{const v=gearVal(e,k,it);return {it,v,dp:b.p?v.p/b.p-1:0,dv:b.v?v.v/b.v-1:0,gt:eqGt(v,b)}});
+  const f=gearSort==='pow'?(x,y)=>y.v.p-x.v.p||y.v.v-x.v.v:gearSort==='new'?(x,y)=>(y.it.wid?-1:y.it.id)-(x.it.wid?-1:x.it.id):(x,y)=>(invSortFn[gearSort]||invSortFn.rar)(x.it,y.it);
+  return {L:L.sort(f),b}})}
+const gearList=()=>gearRows(gearSlot).L.map(r=>r.it);
+const gPct=x=>`${x>=0?'+':'−'}${fmtN(Math.abs(x*100))} %`;
+function gearRow(r){const it=r.it,R=RAR[it.r],w=wornBy(it),eq=Math.abs(r.dp)<5e-4;
+  let sub;if(it.wid){const mods=(meta.wload[it.wid]||[]).filter(Boolean).length,mt=(meta.wmast[it.wid]||{r:0}).r,sp=wSpares(it.wid).length;sub=`${R.n} · ${rkTxt(it.up)} · maîtrise ${mt} / 10 · ${mods} mod${mods>1?'s':''}${sp?` · ${sp} double${sp>1?'s':''}`:''}`}
+  else sub=`${R.n} · niveau ${it.lvl} · ${rkTxt(it.up)}${w?` · porté ${parCls(w)}`:''}`;
+  const dv=Math.abs(r.dv)>=.005?`<small>survie ${gPct(r.dv)}</small>`:'';
+  return `<button class="gearr${isSel(it)?' is-sel':''}${r.gt?' is-up':''}" ${it.wid?`data-wsel="${it.wid}"`:`data-stash="${it.id}"`} aria-label="${esc(itemName(it))}, ${R.n.toLowerCase()}${w?', porté '+parCls(w):''} : Puissance ${eq?'égale':gPct(r.dp)}${r.gt?', meilleur que ton équipement':''}">
+    <span class="cx-cell gearr__ic" style="--rar:${RARV[it.r]}" aria-hidden="true">${cellIn(it)}${whoTag(w)}</span>
+    <span class="gearr__t"><b style="color:${R.c}">${esc(itemName(it))}</b><small>${sub}</small></span>
+    <span class="gearr__d ${eq?'is-same':r.dp>0?'is-gain':'is-loss'}" aria-hidden="true"><b>${eq?'=':gPct(r.dp)}</b><small>Puissance</small>${dv}</span></button>`}
+// L'objet porté dans l'emplacement k : ce qu'il apporte ; le toucher ouvre sa fiche (Verrouiller, Retirer, Fusionner, affixes).
+function gearCur(k,e,b){const it=e[k],G=GLYPH[keySlot(k)];
+  if(!it)return `<div class="gearcur is-empty"><span class="cx-cell gearr__ic" style="--rar:#5c4a66" aria-hidden="true">${G}</span><span class="gearr__t"><b>Rien de porté</b><small>Choisis un objet dans la liste.</small></span></div>`;
+  const R=RAR[it.r];let gain;
+  if(k==='arme'){const mods=(meta.wload[it.wid]||[]).filter(Boolean).length,mt=(meta.wmast[it.wid]||{r:0}).r;gain=`${fmtN(it.base.v*upMul(it.up))} dégâts de base · maîtrise ${mt} / 10 · ${mods} mod${mods>1?'s':''}`}
+  else{const v=eqVal({...e,[k]:null}),dp=b.p?1-v.p/b.p:0,dv=b.v?1-v.v/b.v:0;gain=`Apporte ${fmtN(Math.max(0,dp)*100)} % de ta Puissance${dv>=.005?` et ${fmtN(dv*100)} % de ta survie`:''}`}
+  const af=Object.keys(it.aff).length;
+  return `<button class="gearcur${campSel&&campSel.slot===k?' is-sel':''}" data-slot="${k}" aria-label="${SLOT[k]} : ${esc(itemName(it))}, voir sa fiche">
+    <span class="cx-cell gearr__ic" style="--rar:${RARV[it.r]}" aria-hidden="true">${cellIn(it)}</span>
+    <span class="gearr__t"><b style="color:${R.c}">${esc(itemName(it))}</b><small>${R.n}${it.wid?'':` · niveau ${it.lvl}`} · ${rkTxt(it.up)} · ${af} affixe${af>1?'s':''}${it.seal?' · sceau':''}</small><small>${gain}</small></span>
+    <span class="gearcur__go" aria-hidden="true">Fiche ›</span></button>`}
+function gslotBtn(k,e,plan){const on=k===gearSlot,lab=SLOT[k];
+  if(k!=='arme'&&!slotOpen(k)){const u=SLOT_U.find(x=>x.k===k),can=slotCan(u);
+    return `<button class="gslot gslot--lock" role="tab" aria-selected="${on}" data-cact="gslot" data-arg="${k}" aria-label="${lab} verrouillé"><span class="gslot__i">${LOCK_SVG}</span><small>${lab}</small>${can?'<span class="dot" aria-hidden="true"></span>':''}</button>`}
+  const it=e[k],up=!!plan[k];
+  return `<button class="gslot${it?'':' is-empty'}${up?' is-up':''}" role="tab" aria-selected="${on}" data-cact="gslot" data-arg="${k}" style="--rar:${it?RARV[it.r]:'#5c4a66'}" aria-label="${lab}${it?' : '+esc(itemName(it)):' : vide'}${up?', meilleur objet disponible':''}"><span class="gslot__i">${GLYPH[keySlot(k)]}</span><small>${lab}</small></button>`}
+function gearView(){
+  if(!GEAR_ALL.includes(gearSlot))gearSlot='arme';
+  const e=curEq(),k=gearSlot,open=k==='arme'||slotOpen(k),plan=bestPlan(e,meta.stash,true),n=stashN();
+  const nc=['arms','sets','slots'].map(newCard).join('');
+  const more=cxMore('equip_gear','Touche un emplacement, puis un objet pour sa fiche.','<p>La liste montre tous tes objets pour cet emplacement : ceux du coffre et ceux que portent tes autres héros (pastille A, G ou M). Le pourcentage à droite est l\'écart de Puissance si tu l\'équipes à la place de l\'objet porté ; l\'écart de survie (vie, réduction, régénération) s\'affiche quand il compte. Le triangle vert marque un objet meilleur que le tien : plus de Puissance, ou autant de Puissance et plus de survie.</p><p>Touche une ligne : sa fiche le compare affixe par affixe et propose Équiper, Verrouiller, Fusionner, Prendre ou Recevoir une affixe, Recycler. Pour l\'arme, la liste montre les armes de ce héros, chacune avec son rang, sa maîtrise et ses propres mods. Le 2e anneau se remplit depuis son propre emplacement.</p>');
+  const strip=`<div class="gslots" role="tablist" aria-label="Emplacements">${GEAR_ALL.map(s=>gslotBtn(s,e,plan)).join('')}</div>`;
+  if(!open)return nc+more+strip+`<p class="cx-hint" style="margin:0">${SLOT[k]} : emplacement verrouillé, commun à tous tes héros.</p>`+(slotUnlockHtml()||lockedHtml('slots'));
+  const {L,b}=gearRows(k),show=L.slice(0,GEAR_PAGE*(1+gearMore)),rest=L.length-show.length;
+  const sc=(v,l)=>`<button class="cx-chip cx-chip--sm" role="radio" aria-checked="${gearSort===v}" data-cact="gsort" data-arg="${v}">${l}</button>`;
+  const nb=L.filter(r=>r.gt).length,isW=k==='arme';
+  const empty=isW?`Aucune autre arme ${deCls(heroCls)}. Les armes communes à rares tombent des monstres ; les légendaires et plus se fabriquent (Arsenal › Recettes).`:`Aucun autre objet pour cet emplacement. Sors vivant d'une mission pour en ramener ; les plus rares se fabriquent (Arsenal › Recettes).`;
+  return `${nc}${more}${strip}
+    <section class="cx-section"><h3 class="cx-section__label">${SLOT[k]} · porté</h3>${gearCur(k,e,b)}</section>
+    <section class="cx-section"><h3 class="cx-section__label">${isW?`Tes armes ${deCls(heroCls)}`:'Tes objets'} · ${L.length}${nb?` · ${nb} meilleur${nb>1?'s':''}`:''}</h3>
+      ${L.length>1?`<div class="cx-chips" role="radiogroup" aria-label="Trier">${sc('pow','Puissance')}${sc('rar','Rareté')}${isW?'':sc('lvl','Niveau')+sc('new','Récents')}</div>`:''}
+      ${L.length?`<div class="gearl">${show.map(gearRow).join('')}</div>${rest?`<button class="cx-btn cx-btn--sm cx-btn--block gridmore" data-cact="gmore">Afficher ${Math.min(GEAR_PAGE,rest)} de plus · encore ${rest}</button>`:''}`:`<p class="cx-hint" style="margin:0">${empty}</p>`}
+    </section>
+    <div class="cx-actions hacts" style="margin:0"><button class="cx-btn cx-btn--sm" data-cact="gocoffre" data-arg="${keySlot(k)}" aria-label="Ouvrir le coffre, filtré sur ${SLOT[keySlot(k)].toLowerCase()}">Ouvrir le coffre · ${SLOT[keySlot(k)]}</button><button class="cx-btn cx-btn--sm" data-cact="goheros">Par héros</button></div>
+    ${setsHtml()}`;
 }
 // Héros › Équipements enregistrés : jusqu'à SET_MAX par héros ; « Porter » reprend chaque objet dans le coffre ou sur un autre héros.
 function setsHtml(){if(!isUnl('sets'))return '';const L=setsOf(),eq=curEq();
@@ -123,9 +201,9 @@ const XSVG={x:'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',
   take:'<svg viewBox="0 0 24 24"><path d="M4 8h14l-4-4M20 16H6l4 4"/></svg>',recy:'<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',out:'<svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>'};
 const recyGain=it=>RAR[it.r].shard*2*2**(it.up|0);
 // Statistiques du héros comparées (avant, après) : [libellé, avant, après, décimales, unité] ; les trois premières dans la fiche.
-const statPairs=(a,b)=>[['Puissance',dps(a),dps(b),0,''],['Vie',a.hp,b.hp,0,''],['Réduction',a.armor,b.armor,1,' %'],['Dégâts',a.dmg,b.dmg,1,''],['Critique',a.crit,b.crit,1,' %'],['Attaques / s',a.aps,b.aps,2,''],['Vitesse',a.speed/2.2,b.speed/2.2,0,' %'],['Recharge',a.cdr,b.cdr,1,' %']];
+const statPairs=(a,b)=>[['Puissance',power(a),power(b),0,''],['Vie',a.hp,b.hp,0,''],['Réduction',a.armor,b.armor,1,' %'],['Dégâts',a.dmg,b.dmg,1,''],['Critique',a.crit,b.crit,1,' %'],['Attaques / s',a.aps,b.aps,2,''],['Vitesse',a.speed/2.2,b.speed/2.2,0,' %'],['Recharge',a.cdr,b.cdr,1,' %']];
 const fmtDc=(v,dc)=>(Math.round(v*10**dc)/10**dc).toLocaleString('fr-FR',{maximumFractionDigits:dc});
-function cmpRows(e,it){const tk=tgtKey(e,it)||it.slot,a=stats(e),b=stats({...e,[tk]:it});
+function cmpRows(e,it){const tk=slotFor(e,it)||it.slot,a=stats(e),b=stats({...e,[tk]:it});
   const R=statPairs(a,b),f=fmtDc;
   const rows=R.filter(([,x,y,dc])=>Math.abs(y-x)>=.5/10**dc).slice(0,6).map(([l,x,y,dc,u])=>{const d=y-x,up=d>0;return `<div><span>${l}</span><b style="color:${up?'var(--heal)':'var(--blood-ink)'}">${up?'▲ +':'▼ −'}${f(Math.abs(d),dc)}${u}</b></div>`}).join('');
   return rows?`<div class="cx-stats">${rows}</div>`:'<p class="cx-hint" style="margin:0">Aucun changement de statistique.</p>'}
@@ -140,7 +218,7 @@ const cmpD=(k,d)=>Math.abs(d)<1e-9?'<span class="d eq">=</span>':`<span class="d
 const affLi=(k,txt,c=heroCls)=>affOff(k,c)?`<li class="affoff"><s>${txt}</s> <span class="affoff__tag">sans effet · ${affOnly(k)}</span></li>`:`<li${AFF[k]&&AFF[k].aby?' class="abyp"':''}>${txt}</li>`;
 const affV=(it,k)=>it&&it.aff[k]!=null?(NOSCALE[k]?it.aff[k]:it.aff[k]*upMul(it.up)):null;
 function cmpObjet(eq,it,heroRows=true){
-  const tk=tgtKey(eq,it)||it.slot,cur=eq[tk];
+  const tk=slotFor(eq,it)||it.slot,cur=eq[tk];
   // une affixe d'une autre classe est grisée, marquée « sans effet », et ne compte ni en gain ni en perte
   const row=(cls,k,lab,o,n)=>{const off=affOff(k);return `<div class="cx-cmp__row${off?cls.replace(/ is-(gain|lost)/,'')+' is-off':cls}"><span class="k"${off?` data-off="${affOnly(k)}"`:''}>${lab}</span><span class="o">${cmpV(k,o)}</span><span class="n">${cmpV(k,n)}</span>${off?'<span class="d eq">—</span>':cmpD(k,(n||0)-(o||0))}</div>`};
   const bk=it.base.k,bo=cur&&cur.base?cur.base.v*upMul(cur.up):null,bn=it.base.v*upMul(it.up);
@@ -176,18 +254,18 @@ function campDockHtml(){
   else if(campSel.slot){it=eq[campSel.slot];worn=true;key=campSel.slot==='arme'?'w:'+curWid():'g:'+campSel.slot}
   else if(campSel.oth){const [c,k]=campSel.oth.split('|');it=(meta.gearBy[c]||{})[k]||null;othC=c;key='o:'+(it&&it.id)}
   if(!it)return '';
-  const list=invList('equip'),idx=!isHerosV()&&(isCoffre()||campSel.stash||campSel.wpn)?list.findIndex(isSel):-1,r=RAR[it.r];
+  const list=gearOn()?gearList():invList('equip'),idx=!isHerosV()&&(isCoffre()||campSel.stash||campSel.wpn)?list.findIndex(isSel):-1,r=RAR[it.r];
   const wc=it.wid?wornBy(it):null,whoW=othC||(wc&&wc!==heroCls?wc:null);
   const nav=idx>=0?`<span class="cx-dock__nav"><button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-cact="dnav" data-arg="-1" ${idx>0?'':'disabled'} aria-label="Objet précédent">${XSVG.prev}</button><button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-cact="dnav" data-arg="1" ${idx<list.length-1?'':'disabled'} aria-label="Objet suivant">${XSVG.next}</button></span>`:'';
   const n=it.up||0;
   const affs=`<ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.35"><li>${baseTxtOf(it.slot,fmtN(it.base.v*upMul(it.up)))}</li>${Object.keys(it.aff).map(kk=>affLi(kk,AFF[kk].t(NOSCALE[kk]?it.aff[kk]:fmtN(it.aff[kk]*upMul(it.up))),it.wid?it.cls:heroCls)).join('')}${it.seal&&SEALS[it.seal]?`<li class="sealp">${sealTxt(it.seal)}</li>`:''}</ul>`;
-  const tk=it.wid?'arme':tgtKey(eq,it),cur=tk?eq[tk]:null;
+  const tk=it.wid?'arme':slotFor(eq,it),cur=tk?eq[tk]:null;
   let main='',more=[];
   const btn=(cls,act,arg,svg,lab,dis)=>`<button class="cx-btn${cls}" data-cact="${act}"${arg!=null?` data-arg="${arg}"`:''} ${dis?'disabled':''}>${svg}${lab}</button>`;
   const other=it.wid&&it.cls!==heroCls,wb=it.wid?bpdef(it.wid):null;
   if(!worn&&it.wid)main=other?`<p class="cx-hint" style="margin:0">Arme ${deCls(it.cls)} : change de héros pour l'équiper.</p>`:`<button class="cx-btn cx-btn--primary cx-btn--block" data-cact="wequip" data-arg="${it.wid}">Équiper · remplace ${esc(itemName(cur))}</button>`;
   else if(othC)main=tk?`<button class="cx-btn cx-btn--primary cx-btn--block" data-cact="equipoth">Équiper sur ${esc(CLS[heroCls].n)} · retiré ${parCls(othC).replace('par ','à ').replace("à le ","au ")}</button>`:`<p class="cx-hint" style="margin:0">Emplacement ${SLOT[it.slot]} verrouillé.</p>`;
-  else if(!worn&&!tk)main=`<p class="cx-hint" style="margin:0">Emplacement ${SLOT[it.slot]} verrouillé : débloque-le dans l'onglet Héros (fragments de harnais).</p>`;
+  else if(!worn&&!tk)main=`<p class="cx-hint" style="margin:0">Emplacement ${SLOT[it.slot]} verrouillé : débloque-le dans Héros › Équipement (fragments de harnais).</p>`;
   else if(!worn)main=`<button class="cx-btn cx-btn--primary cx-btn--block" data-cact="equip">Équiper${cur?` · remplace ${esc(itemName(cur))}`:''}</button>`;
   // Fusion de rang : un double identique libre (objet) ou les doubles de l'arme.
   let fuse='';

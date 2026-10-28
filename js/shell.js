@@ -1,6 +1,7 @@
 // Crypte des Cendres — shell.js : navigation de la refonte (v130).
 // Barre des 5 onglets en bas (Héros, Arsenal, Combat, Forge, Collection), accueil Combat, écran Mission, feuille du Parcours.
-// Les onglets du Camp restent ceux de camp.js (campTab : equip, arsenal, forge, mods, pets, relics) ; Collection regroupe les trois derniers.
+// Les onglets du Camp restent ceux de camp.js (campTab : equip, arsenal, forge, mods, pets, relics). Depuis la v137, Mods et Familier sont des vues
+// de l'onglet Héros (tuiles) et la Collection ne garde que les Reliques.
 
 /* ---------- Dessin du héros et du familier (mêmes dessins qu'en mission) ---------- */
 // rot : orientation du dessin (le héros regarde vers la droite à 0) ; k : taille du héros dans le cadre.
@@ -13,12 +14,12 @@ function petPaint(el,p){if(!el||!el.getContext)return;const g=el.getContext('2d'
 
 /* ---------- Barre des onglets ---------- */
 const NAV_TAB={heros:'equip',arsenal:'arsenal',forge:'forge'};
-const navOf=t=>t==='equip'?'heros':t==='arsenal'?'arsenal':t==='forge'?'forge':['mods','pets','relics'].includes(t)?'coll':'heros';
-const COLL=['mods','pets','relics'];
-let collLast='mods',heroSub='main';
+const navOf=t=>t==='arsenal'?'arsenal':t==='forge'?'forge':t==='relics'?'coll':'heros';
+const COLL=['relics'];
+let collLast='relics',heroSub='main';
 // Collection : la dernière vue ouverte, sinon la première débloquée.
 const collFirst=()=>!tabLocked(collLast)?collLast:COLL.find(t=>!tabLocked(t))||collLast;
-// Onglet verrouillé (Forge, ou Collection dont les trois vues sont fermées) : grisé avec un cadenas, mais il s'ouvre et dit comment le débloquer.
+// Onglet verrouillé (Forge, ou Collection tant que les Reliques sont fermées) : grisé avec un cadenas, mais il s'ouvre et dit comment le débloquer.
 const navLocked=k=>k==='forge'?tabLocked('forge'):k==='coll'?COLL.every(tabLocked):false;
 function navSync(){const cur=!$('camp').hidden?navOf(campTab):'combat';
   document.querySelectorAll('#tabbar [data-nav]').forEach(b=>{const on=b.dataset.nav===cur,lk=navLocked(b.dataset.nav);b.classList.toggle('is-on',on);b.classList.toggle('is-locked',lk);if(lk)b.setAttribute('aria-description','verrouillé');else b.removeAttribute('aria-description');if(on)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')})}
@@ -32,8 +33,8 @@ function navGo(k){
   if(!open)openCamp();else drawCamp();
   sc.scrollTop=same?0:campScroll[campTab]||0;navSync()}
 $('tabbar').addEventListener('click',e=>{const b=e.target.closest('[data-nav]');if(b)navGo(b.dataset.nav)});
-// Pastilles de la barre : une par onglet (Collection additionne Reliques, Mods et Familier).
-function navBadges(B){const N={heros:[B.equip],arsenal:[B.arsenal],forge:[B.forge],coll:[B.relics,B.mods,B.pets]};
+// Pastilles de la barre : une par onglet (Héros additionne l'équipement, les talents, le prestige, les Mods et le Familier).
+function navBadges(B){const N={heros:[B.equip,B.mods,B.pets],arsenal:[B.arsenal],forge:[B.forge],coll:[B.relics]};
   document.querySelectorAll('#tabbar [data-nav]').forEach(b=>{const L=(N[b.dataset.nav]||[]).filter(Boolean);let el=b.querySelector('.tabbar__badge');
     if(!L.length){if(el)el.remove();return}
     const nw=L.some(x=>x.n==='!'),n=L.reduce((a,x)=>a+(x.n==='!'?0:+x.n||0),0),txt=nw?'!':n>9?'9+':String(n);
@@ -82,7 +83,7 @@ $('heroPrev').onclick=()=>{const o=heroOrder();pickCls(o[(o.indexOf(heroCls)+o.l
 $('heroNext').onclick=()=>{const o=heroOrder();pickCls(o[(o.indexOf(heroCls)+1)%o.length])};
 // Glisser sur le héros change de héros.
 {let x0=null;const st=$('heroCv');st.addEventListener('pointerdown',e=>{x0=e.clientX});st.addEventListener('pointerup',e=>{if(x0==null)return;const d=e.clientX-x0;x0=null;if(Math.abs(d)>40)(d<0?$('heroNext'):$('heroPrev')).click()})}
-$('petBtn').onclick=()=>{collLast='pets';navGo('coll')};
+$('petBtn').onclick=()=>{navGo('heros');campTab='pets';campSel=null;modSel=null;drawCamp();navSync()};
 $('relicHomeBtn').onclick=()=>{collLast='relics';navGo('coll')};
 
 /* ---------- Écran Mission ---------- */
