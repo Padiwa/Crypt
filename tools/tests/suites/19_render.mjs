@@ -61,4 +61,20 @@ export const tests = [
     t.ok(n >= 20 && n <= 34, `mission : environ 30 images par seconde (${n})`);
     t.eq(await p.evaluate(() => [dpr, cv.width === Math.round(innerWidth)]), [1, true], 'résolution 1×');
   } },
+  { name: 'Nécropole des Sables en WebGL (maquette) : sables mouvants, obélisques, tempête, momies, malédiction, sans erreur (v136)', fn: async (b, t) => {
+    const p = t.track(await glPage(b));
+    await p.evaluate(() => { meta.biome = 2; meta.start = 25; saveMeta(); });
+    await p.click('#startBtn'); await sleep(p, 500);
+    const r = await p.evaluate(() => {
+      const q = G.sands[0]; G.P.x = q.x; G.P.y = q.y; G.storm = STORM_LEN / 2;
+      spawnEnemy({ type: 'scarab', x: G.P.x + 120, y: G.P.y }); spawnEnemy({ type: 'mummy', x: G.P.x - 120, y: G.P.y }); spawnEnemy({ type: 'mummyR', x: G.P.x, y: G.P.y + 120 });
+      G.en[G.en.length - 1].curse = 3; G.spawns.push({ type: 'mummyR', x: G.P.x + 60, y: G.P.y - 80, t: 1, split: 1, rise: 1 });
+      return { sand: PX.L.sand.children.length, n: G.sands.length, tile: PX.L.floor.texture === PX.T.tiles[2] };
+    });
+    await sleep(p, 400);
+    const v = await p.evaluate(() => ({ px: !!PX, veil: PX.veil.visible, a: +PX.veil.alpha.toFixed(2), noFallback: !/Rendu WebGL interrompu/.test(document.body.textContent) }));
+    t.eq(r, { sand: r.n, n: 9, tile: true }, 'sables mouvants dessinés, sol des sables');
+    t.eq(v, { px: true, veil: true, a: .38, noFallback: true }, 'voile de la tempête, rendu WebGL toujours en service');
+    t.eq(p.errs, [], 'aucune erreur');
+  } },
 ];

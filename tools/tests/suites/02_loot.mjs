@@ -12,7 +12,7 @@ export const tests = [
     const p = t.track(await newPage(b));
     t.eq(await p.evaluate(() => ['L1', 'N1', 'S2', 'B2', 'B11'].map((id) => Object.keys(rgItem(id, 97).aff).length)), [4, 5, 6, 7, 7], 'affixes');
     t.ok(await p.evaluate(() => { const v = ['L1', 'N1', 'S2', 'B2'].map((id) => rgItem(id, 97).base.v); return v.every((x, i) => !i || x > v[i - 1]); }), 'base croissante avec la rareté');
-    t.eq(await p.evaluate(() => Object.keys(RGEAR).length), 38, '8 + 8 + 10 + 12 objets de reliques');
+    t.eq(await p.evaluate(() => Object.keys(RGEAR).length), 42, '8 + 8 + 12 + 14 objets de reliques (dont 4 de givre et 4 des sables)');
   } },
   { name: 'à niveau égal, une rareté plus haute est plus forte (médianes)', fn: async (b, t) => {
     const p = t.track(await newPage(b));

@@ -39,6 +39,8 @@ const UNL=[
     learn:'Des cavernes de glace : monstres plus coriaces, mais 30 % de butin en plus et les seules affixes et objets de givre.',home:1,help:'difficulte'},
   {k:'align',n:'Alignement des mods',when:()=>maxL()>=15,need:'Réussis une mission de niveau 15.',
     learn:'Aligne une case de mod sur une polarité : un mod de la même polarité y coûte moitié moins de capacité. Ça coûte de l\'essence et remet la maîtrise à 0.',go:['mods'],help:'camp-mods'},
+  {k:'sables',n:'Biome Nécropole des Sables',when:()=>maxL()>=25,need:'Réussis une mission de niveau 25.',
+    learn:'Des tombeaux sous le désert : monstres bien plus coriaces, sables mouvants et tempêtes de sable, mais 60 % de butin en plus et les seules affixes de malédiction et objets des sables.',home:1,help:'difficulte'},
   {k:'diff3',n:'Tourment',when:()=>(meta.bestDiff|0)>=2,need:'Réussis une mission en Cauchemar.',
     learn:'Dix paliers, chacun débloqué en réussissant le précédent. Dès le niveau 30, les reliques deviennent Ancestrales ; au palier VI, Sanguines puis Abyssales.',home:1,help:'difficulte'},
   {k:'seals',n:'Forge · Sceaux',when:()=>(typeof SEAL_IDS!=='undefined'&&SEAL_IDS.some(id=>(meta.seals||{})[id]>0))||(meta.lshard|0)>0,need:'Trouve un sceau ou un éclat légendaire en Brèche (à plusieurs).',

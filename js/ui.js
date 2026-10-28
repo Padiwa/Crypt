@@ -14,7 +14,10 @@ const cellHtml=(it,attr,sel,up)=>`<button class="cell${sel?' sel':''}${up?' up':
 // Clé d'une composition d'équipement (héros, arme, objets) pour le cache d'affichage.
 const eqKey=e=>heroCls+'|'+Object.keys(e).map(k=>{const it=e[k];return it?(it.wid?'w'+it.wid+'.'+(meta.wlv[it.wid]|0):it.id+'.'+(it.up|0)):'-'}).join(',');
 const itemScore=e=>drawCache?memo('sc|'+eqKey(e),()=>itemScore0(e)):itemScore0(e);
-const itemScore0=e=>{const x=stats(e);let d=dps(x)*(1+x.abSoul*.06)*(1+x.abExec*.015)*(1+x.crit/100*x.abRift/100*2.1)*(1+x.abHunt*.0025)+x.dmg*x.abPulse/100*.8;d*=1+x.execute*.003+x.bossDmg*.0015+x.lowDmg*.001+x.shock*.01+x.chill*.003+x.ultPct*.001+x.fury*.002;// Attaque et survie pèsent ensemble (moyenne géométrique) : gagner 10 % de vie vaut à peu près gagner 12 % de dégâts, quel que soit le niveau.
+const itemScore0=e=>{const x=stats(e);let d=dps(x)*(1+x.abSoul*.06)*(1+x.abExec*.015)*(1+x.crit/100*x.abRift/100*2.1)*(1+x.abHunt*.0025)+x.dmg*x.abPulse/100*.8;d*=1+x.execute*.003+x.bossDmg*.0015+x.lowDmg*.001+x.shock*.01+x.chill*.003+x.ultPct*.001+x.fury*.002;
+  // Malédiction (v136) : part du temps où la cible est maudite (une chance par coup, 5 s), puis +15 % et les dégâts contre maudits sur cette part.
+  {const cu=Math.min(60,x.curse||0)/100,up=cu?1-Math.pow(1-cu,Math.max(1,x.aps*5*(1+x.multi*.8))):0;d*=1+up*(.15+(x.hex||0)/100+(x.doom||0)*.004)}
+  // Attaque et survie pèsent ensemble (moyenne géométrique) : gagner 10 % de vie vaut à peu près gagner 12 % de dégâts, quel que soit le niveau.
   const v=(x.hp+x.abWard*8)/(1-Math.min(60,x.armor)/200)*(1+x.lowArmor*.003+x.potHeal*.001+x.antidote*.001+x.auraSlow*.003)+x.regen*15;
   return Math.pow(Math.max(1,d),.55)*Math.pow(Math.max(1,v),.45)};
 // Meilleur équipement : pour chaque emplacement, l'objet qui donne le meilleur score (puissance et vie).

@@ -10,6 +10,9 @@ const ETYPE={
   poison:{r:15,hp:22,spd:80,dmg:6,col:'#8a3d7e'},
   pyro:{r:15,hp:24,spd:80,dmg:6,col:'#b5532a'},
   givrin:{r:15,hp:26,spd:108,dmg:7,col:'#9cc8e8'},
+  scarab:{r:9,hp:5,spd:190,dmg:4,col:'#3d4a24'},
+  mummy:{r:17,hp:30,spd:66,dmg:11,col:'#cdb98c'},
+  mummyR:{r:17,hp:16,spd:96,dmg:12,col:'#8d7a52'},
   slime:{r:22,hp:34,spd:72,dmg:8,col:'#3f9e8c'},
   boss:{r:50,hp:650,spd:60,dmg:22,col:'#3d2150'},
 };
@@ -26,8 +29,8 @@ function newGame(){
     shield:0,noHit:0,psn:0,psnT:0,psnD:0,brnT:0,brnD:0,swings:0,critShots:0,dashHit:new Set()};
   if(heroCls==='magicien'&&hasTal('m_shield'))G.P.shield=S.hp*.25;
   G.cam={x:G.P.x,y:G.P.y};
-  genMap();
   G.biome=clamp(meta.biome|0,0,BIOMES.length-1);if(floorPat&&floorPat.__b!==G.biome)floorPat=null;
+  genMap();G.storm=0;G.stormIn=FAST?8:rand(40,55);
   G.mode=meta.mode==='breche'?'survie':meta.mode;G.relic=null;G.react=0;G.cracked=false;G.ult=0;G.bossT=bossIv();G.pod=null;G.target=null;G.exitPt=null;G.capT=0;G.extT=0;G.capN=0;G.nextTgt=0;
   relicQFix();G.relQ=meta.relicQ.map(q=>({id:q.id,rad:!!q.rad}));G.relI=0;G.opened=[];G.shared=[];G.relic=G.relQ[0]||null;
   if(G.mode==='defense'){const m=1200*(1+.5*(L-1));G.pod={x:MAP/2,y:MAP/2,r:28,hp:m,max:m,flash:0};G.pillars.push(G.pod);G.P.y+=110;G.cam.y=G.P.y;G.wave=0;G.waveState='break';G.waveT=3;G.toSpawn=0}
@@ -48,7 +51,28 @@ function genMap(){
   for(let i=0;i<14;i++)G.runes.push({x:rand(250,MAP-250),y:rand(250,MAP-250),r:rand(80,140)});
   G.runes.push({x:c,y:c,r:120});
   G.wells=[];for(let i=0;i<6;i++){const w={r:30,on:true,cd:0};placeWell(w);G.wells.push(w)}
+  G.sands=[];if(G.biome===2)genSands();
 }
+/* ---------- Nécropole des Sables (v136) ----------
+   Sables mouvants : 9 mares qui ralentissent le héros (×0,6) et les monstres (×0,65 ; ni les scarabées ni les Gardiens).
+   Tempête de sable : toutes les STORM_IV secondes environ, STORM_LEN secondes de vue réduite (décidée par l'hôte en coopération). */
+const STORM_IV=FAST?16:90,STORM_LEN=FAST?6:15,SAND_C=['#d8b878','#c9a25e','#e6cf9a','#b8915a'];
+function genSands(){const c=MAP/2;
+  for(let k=0;G.sands.length<9&&k<800;k++){const r=rand(70,115),x=rand(160+r,MAP-160-r),y=rand(160+r,MAP-160-r);
+    if(Math.hypot(x-c,y-c)<r+260)continue;
+    if(G.pillars.some(p=>Math.hypot(p.x-x,p.y-y)<r+p.r+12)||G.braziers.some(b=>Math.hypot(b.x-x,b.y-y)<r+12)||G.wells.some(w=>Math.hypot(w.x-x,w.y-y)<r+w.r+30)||G.sands.some(q=>Math.hypot(q.x-x,q.y-y)<r+q.r+140))continue;
+    G.sands.push({x,y,r,dir:Math.random()<.5?-1:1})}}
+const inSand=o=>{const L=G.sands;if(!L||!L.length)return false;for(const q of L){const dx=o.x-q.x,dy=o.y-q.y;if(dx*dx+dy*dy<q.r*q.r)return true}return false};
+// Force de la tempête (0 à 1), avec 2 s de montée et de descente.
+const stormK=()=>!G||!(G.storm>0)?0:Math.max(0,Math.min(1,(STORM_LEN-G.storm)/2,G.storm/2));
+function sandTick(dt){
+  if(!NET.guest){if(G.storm>0){G.storm=Math.max(0,G.storm-dt);if(G.storm===0)G.stormIn=STORM_IV*rand(.85,1.15)}
+    else{G.stormIn-=dt;if(G.stormIn<=0){G.stormIn=0;G.storm=STORM_LEN}}}
+  const on=G.storm>0;if(on&&!G._stormOn){banner('Tempête de sable · on y voit moins loin','#e0b870',1,true);SND.play('wave')}G._stormOn=on;
+  // sable porté par le vent (bien plus dense pendant la tempête)
+  const k=stormK();let m=dt*(5+120*k);
+  while(m>0&&G.parts.length<420){if(m<1&&Math.random()>m)break;m--;
+    G.parts.push({x:G.cam.x+rand(-G.vw/2-160,G.vw/2),y:G.cam.y+rand(-G.vh/2,G.vh/2),vx:rand(140,240)*(.5+k),vy:rand(-8,16),life:rand(1,1.8),max:1.8,col:pick(SAND_C),size:rand(.8,2)*(1+k*.6),w:1})}}
 function farPoint(dmin){const P=G.P;for(let k=0;k<300;k++){const x=rand(160,MAP-160),y=rand(160,MAP-160);if(Math.hypot(x-P.x,y-P.y)>=dmin&&!blocked(x,y,60))return {x,y}}return {x:MAP-200,y:MAP-200}}
 // Capture : après chaque capture, tant qu'on ne s'est pas extrait, une nouvelle cible apparaît (CAP_NEXT secondes plus tard).
 // Chaque capture rapporte une relique de la difficulté et du Tourment, sans le plafond de niveau de mission des autres reliques
@@ -74,6 +98,8 @@ function spawnEnemy(s){
   if(G.pod&&s.type!=='boss'&&Math.random()<.6)e.tgtPod=true;
   if(s.kx){e.kx=s.kx;e.ky=s.ky}if(s.tgtPod!=null)e.tgtPod=s.tgtPod;
   if((G.relic||(NET.host&&NET.peers.some(p=>p.relic)))&&!G.cracked&&s.type!=='boss'&&!s.split&&Math.random()<BAL.corrupt){e.corr=true;e.hp*=1.3;e.max*=1.3}
+  // Momie relevée (v136) : garde la corruption de la première vie, se relève dans un nuage de sable.
+  if(s.rise){if(s.corr){e.corr=true;e.hp*=1.3;e.max*=1.3}burst(s.x,s.y,16,'#d8c08a',150,3)}
   e.id=++G.eid;if(NET.host&&NET.on){const k=coopHp()*(G.breche?1.25:1);e.hp*=k;e.max*=k}
   G.en.push(e);
   if(s.fx)burst(s.x,s.y,10,'#9a6bc4',120);
@@ -87,16 +113,16 @@ function ringPos(extra=60){
 function chooseType(tt,L){const x=Math.random();
   if((tt>40||L>1)&&x>.92)return ['poison',1];
   if((tt>60||L>2)&&x>.86&&x<=.92)return ['pyro',1];
-  if(tt>20&&x<.14)return ['bat',ri(5,8)];
+  if(tt>20&&x<.14)return G.biome===2?['scarab',ri(6,9)]:['bat',ri(5,8)];
   if((tt>50||L>1)&&x<.26)return ['brute',1];
   if((tt>30||L>1)&&x>=.5&&x<.58)return ['slime',ri(1,2)];
   if(tt>25&&x<.5)return ['archer',ri(1,2)];
-  return G.biome===1&&x>.35?['givrin',ri(2,3)]:['ghoul',ri(2,4)];}
+  return G.biome===1&&x>.35?['givrin',ri(2,3)]:G.biome===2&&x>.35?['mummy',ri(1,2)]:['ghoul',ri(2,4)];}
 const ELITE={rapide:{n:'Rapide',c:'#8fd3e0'},bouclier:{n:'Bouclier',c:'#c8d6e6'},vampire:{n:'Vampire',c:'#ff5a6a'},explosif:{n:'Explosif',c:'#ff8a3a'}};
 function makeElite(e){const k=pick(Object.keys(ELITE));e.elite=k;e.hp*=4;e.max*=4;e.r*=1.25;e.dmg*=1.3;if(k==='rapide')e.spd*=1.55;e.corr=false;
   SND.play('elite');banner(`Élite ${ELITE[k].n} en approche`,ELITE[k].c,1)}
 function spawnPack(type,n){const p=ringPos();let k=0,first=null;for(let i=0;i<n;i++){const q={x:clamp(p.x+rand(-40,40),EDGE+30,MAP-EDGE-30),y:clamp(p.y+rand(-40,40),EDGE+30,MAP-EDGE-30)};if(!blocked(q.x,q.y,14)){spawnEnemy({type,...q});if(!first)first=G.en[G.en.length-1];k++}}
-  const pE=Math.min(.15,.025+.012*dsel().d+.01*dif().tier);if(first&&type!=='bat'&&Math.random()<pE)makeElite(first);return k}
+  const pE=Math.min(.15,.025+.012*dsel().d+.01*dif().tier);if(first&&type!=='bat'&&type!=='scarab'&&type!=='mummy'&&Math.random()<pE)makeElite(first);return k}
 function defenseTick(dt){
   if(G.waveState==='break'){G.waveT-=dt;if(G.waveT<=0){G.wave++;G.waveState='fight';G.toSpawn=Math.min(160,Math.round((10+G.wave*4+(G.level-1)*10)*1.15));G.spawnT=.5;
       const bn=dif().cnt;SND.play('wave');if(G.wave%DEF_N===0)banner(`Vague ${G.wave} · ${bn>1?bn+' Gardiens arrivent':'un Gardien arrive'}`,'#b06ae0',2,true);
@@ -141,6 +167,9 @@ function buildTile(bi){
   for(let i=0;i<4;i++){const x=rand(70,S-70),y=rand(70,S-70),r=rand(20,50),gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,`rgba(${B.stain},.22)`);gr.addColorStop(1,`rgba(${B.stain},0)`);g.fillStyle=gr;g.fillRect(x-r,y-r,r*2,r*2)}
   g.strokeStyle=`rgba(${B.chip},.16)`;g.lineWidth=3;g.lineCap='round';
   for(let i=0;i<4;i++){const x=rand(40,S-40),y=rand(40,S-40),a=rand(0,6);g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(a)*16,y+Math.sin(a)*16);g.stroke()}
+  if(B.dunes){g.lineCap='round';g.strokeStyle='rgba(235,205,150,.09)';g.lineWidth=2;
+    for(let i=0;i<14;i++){const x=rand(30,S-170),y=rand(30,S-30),ph=rand(0,6);g.beginPath();g.moveTo(x,y);for(let k=1;k<=9;k++)g.lineTo(x+k*15,y+Math.sin(k*.8+ph)*4);g.stroke()}
+    for(let i=0;i<10;i++){const x=rand(30,S-30),y=rand(30,S-30);g.fillStyle=`rgba(${B.chip},${rand(.08,.16).toFixed(2)})`;g.beginPath();g.ellipse(x,y,rand(2,4.5),rand(1.5,3),rand(0,3),0,7);g.fill()}}
   return c;
 }
 
@@ -166,6 +195,7 @@ function dmgEnemy(e,d,crit,dot){
   if(S.bossDmg&&e.type==='boss')d*=1+S.bossDmg/100;
   if(e.elite==='bouclier'&&e.hp>e.max*.5)d*=.5;
   if(S.cold&&(e.slow>0||e.frz>0))d*=1+S.cold/100;
+  if(e.curse>0)d*=1+(15+(S.hex||0))/100;
   if(S.abHunt&&(e.type==='boss'||e.elite))d*=1+S.abHunt/100;
   if(S.abSoul&&G.P.soulN)d*=1+G.P.soulN*S.abSoul/100;
   if(NET.guest){if(dot)return;if(S.abExec&&e.type!=='boss'&&e.hp-d<e.max*S.abExec/100)d=Math.max(d,e.hp);
@@ -191,12 +221,22 @@ function lootFlash(w,it){const now=performance.now(),el=$('lootFlash');
 }
 function shatter(e){G.rings.push({x:e.x,y:e.y,t:0,max:95,col:'170,225,255'});burst(e.x,e.y,14,'#cfefff',180,3);SND.play('crit');G._sh=(G._sh||0)+1;
   if(G._sh<4)for(const o of G.en){if(!o.dead&&o!==e&&Math.abs(o.x-e.x)<120&&Math.hypot(o.x-e.x,o.y-e.y)<85+o.r){slowE(o,1.5);dmgEnemy(o,S.dmg*1.5,false)}}G._sh--}
+// Momie (v136) : la première mort la fait seulement tomber ; elle se relève 1,8 s plus tard (momie relevée, plus rapide, moins de vie).
+// Pas de butin ni d'expérience à la première mort. L'hôte décide ; l'invité ne montre que la chute.
+function mummyFall(e){burst(e.x,e.y,16,'#cdb98c',150,3);burst(e.x,e.y,8,'#7dff8a',90,2);if(NET.guest)return;
+  if(NET.host)netSend({t:'kill',id:e.id,type:'mummy',x:e.x|0,y:e.y|0,elite:0,corr:0,gen:0,nl:1});
+  G.spawns.push({type:'mummyR',x:e.x,y:e.y,t:1.8,split:1,rise:1,tgtPod:!!e.tgtPod,corr:!!e.corr})}
+// Malédiction contagieuse (v136) : l'ennemi maudit tué maudit ses voisins et leur inflige 150 % des dégâts.
+function doomBurst(e){G.rings.push({x:e.x,y:e.y,t:0,max:95,col:'214,170,80'});burst(e.x,e.y,16,'#d8b060',180,3);SND.play('crit');G._dm=(G._dm||0)+1;
+  if(G._dm<4)for(const o of G.en){if(!o.dead&&o!==e&&Math.abs(o.x-e.x)<120&&Math.hypot(o.x-e.x,o.y-e.y)<85+o.r){o.curse=Math.max(o.curse||0,slowT(5));dmgEnemy(o,S.dmg*1.5,false)}}G._dm--}
 function kill(e){
+  if(e.type==='mummy'){e.dead=true;mummyFall(e);return}
   e.dead=true;G.kills++;if(e.type==='boss')G.bossK=(G.bossK|0)+1;
   if(NET.host)netSend({t:'kill',id:e.id,type:e.type,x:e.x|0,y:e.y|0,elite:e.elite||0,corr:e.corr?1:0,gen:e.gen||0,nl:e.noLoot?1:0});
   if(S.abSoul){G.P.soulN=Math.min(10,(G.P.soulN||0)+1);G.P.soulT=5}
   if(S.abWard)G.P.shield=Math.max(G.P.shield||0,Math.min(S.hp*.3,(G.P.shield||0)+S.abWard));
   if(S.shard&&Math.random()*100<S.shard)shatter(e);
+  if(S.doom&&e.curse>0&&Math.random()*100<S.doom)doomBurst(e);
   if(e.type==='slime'&&e.gen<2&&!NET.guest){burst(e.x,e.y,14,'#7fe0c8',150,3);
     for(const sd of[-1,1]){const a=rand(0,Math.PI*2)*0+Math.atan2(e.y-G.P.y,e.x-G.P.x)+sd*Math.PI/2+rand(-.4,.4);
       G.spawns.push({type:'slime',gen:e.gen+1,split:1,tgtPod:e.tgtPod,x:clamp(e.x+Math.cos(a)*e.r*.6,EDGE+30,MAP-EDGE-30),y:clamp(e.y+Math.sin(a)*e.r*.6,EDGE+30,MAP-EDGE-30),kx:Math.cos(a)*260,ky:Math.sin(a)*260,t:.12})}}
@@ -217,19 +257,19 @@ function kill(e){
     if(!G.en.some(o=>o.type==='boss'&&!o.dead))$('bossBar').hidden=true;
   }else{
     const t=e.type;
-    if(Math.random()<({ghoul:.006,bat:.002,archer:.008,poison:.008,pyro:.008,brute:.035,slime:.0035,givrin:.007})[t]*lm*st)push({kind:'item',item:genItem(itemLvl())});
-    if(Math.random()<({ghoul:.003,bat:.001,archer:.004,poison:.004,pyro:.004,brute:.025,slime:.0018,givrin:.0035})[t]*BAL.relicMob*(1+tormBoost().relic)*st)push({kind:'relic',id:relicDrop()});
-    if(L>1&&Math.random()<({ghoul:.0015,bat:.0005,archer:.002,poison:.002,pyro:.002,brute:.012,slime:.0009,givrin:.0018})[t]*(lm-1)*st)push({kind:'part',part:rollPart()});
+    if(Math.random()<({ghoul:.006,bat:.002,archer:.008,poison:.008,pyro:.008,brute:.035,slime:.0035,givrin:.007,scarab:.002,mummyR:.009})[t]*lm*st)push({kind:'item',item:genItem(itemLvl())});
+    if(Math.random()<({ghoul:.003,bat:.001,archer:.004,poison:.004,pyro:.004,brute:.025,slime:.0018,givrin:.0035,scarab:.001,mummyR:.0045})[t]*BAL.relicMob*(1+tormBoost().relic)*st)push({kind:'relic',id:relicDrop()});
+    if(L>1&&Math.random()<({ghoul:.0015,bat:.0005,archer:.002,poison:.002,pyro:.002,brute:.012,slime:.0009,givrin:.0018,scarab:.0005,mummyR:.0022})[t]*(lm-1)*st)push({kind:'part',part:rollPart()});
     if(e.corr)push({kind:'react'},6);
-    if(Math.random()<({ghoul:.006,bat:.002,archer:.008,poison:.008,pyro:.008,brute:.06,slime:.004,givrin:.007})[t]*st)push({kind:'mod',id:rollMod(false)});
+    if(Math.random()<({ghoul:.006,bat:.002,archer:.008,poison:.008,pyro:.008,brute:.06,slime:.004,givrin:.007,scarab:.002,mummyR:.009})[t]*st)push({kind:'mod',id:rollMod(false)});
     if(Math.random()<(t==='brute'?.05:.005))push({kind:'potion'});
   }
   if(e.elite){push({kind:'item',item:genItem(itemLvl(),1)},30);if(Math.random()<.4*st)push({kind:'item',item:genItem(itemLvl(),1)},30);if(Math.random()<BAL.relicElite*(1+tormBoost().relic)*st)push({kind:'relic',id:relicDrop()},30);
     if(e.elite==='explosif'&&!NET.guest)G.lobs.push({x0:e.x,y0:e.y,tx:e.x,ty:e.y,t:0,T:.7,kind:'pyro',r:95,dps:2*diff().ds});
     burst(e.x,e.y,30,ELITE[e.elite].c,240,4);SND.play('bossdie');toast(`<b style="color:${ELITE[e.elite].c}">Élite ${ELITE[e.elite].n} vaincue</b>`)}
-  const gv=({ghoul:1,bat:.6,archer:1.5,poison:1.5,pyro:1.5,brute:5,boss:50,slime:.8,givrin:1.2})[e.type]*goldMul(L)*dl*(e.elite?5:1),n=boss?8:e.elite?5:(Math.random()<Math.min(1,(e.type==='bat'?.35:.65)*(1+.05*(L-1)))?1:0);
+  const gv=({ghoul:1,bat:.6,archer:1.5,poison:1.5,pyro:1.5,brute:5,boss:50,slime:.8,givrin:1.2,scarab:.6,mummyR:1.6})[e.type]*goldMul(L)*dl*(e.elite?5:1),n=boss?8:e.elite?5:(Math.random()<Math.min(1,(e.type==='bat'||e.type==='scarab'?.35:.65)*(1+.05*(L-1)))?1:0);
   for(let i=0;i<n;i++)push({kind:'gold',amt:Math.max(1,Math.round(gv/(boss?8:1)*rand(.7,1.3)))},boss?45:15);
-  const xv=({ghoul:1,bat:1,archer:2,poison:2,pyro:2,brute:5,boss:30,slime:1,givrin:1})[e.type]*(e.elite?6:1);
+  const xv=({ghoul:1,bat:1,archer:2,poison:2,pyro:2,brute:5,boss:30,slime:1,givrin:1,scarab:1,mummyR:2})[e.type]*(e.elite?6:1);
   if(G.nxp>220){for(let k=0;k<12;k++){const o=G.drops[Math.floor(Math.random()*G.drops.length)];if(o&&o.kind==='xp'){o.v+=xv;break}}}
   else{push({kind:'xp',v:xv},6);G.nxp++}
   if(G.cls==='guerrier'&&hasTal('g_blood'))heal(S.hp*.02);
@@ -247,7 +287,7 @@ function hurt(d){
 function heal(v){G.P.hp=Math.min(S.hp,G.P.hp+v)}
 // Durée d'un ralentissement : allongée par la durée des compétences (affixe, Persistance, Prolongation) ; un ralentissement plus long en cours est gardé.
 const slowT=t=>t*(1+(S.skillDur||0)/100),slowE=(e,t)=>{e.slow=Math.max(e.slow||0,slowT(t))};
-function onHit(e,d){if(S.frz&&e.type!=='boss'&&Math.random()*100<S.frz){e.frz=1;slowE(e,1.5)}if(S.chill&&Math.random()*100<S.chill)slowE(e,2);if(S.shock&&Math.random()*100<S.shock)chain(e,d*.6)}
+function onHit(e,d){if(S.curse&&Math.random()*100<S.curse)e.curse=Math.max(e.curse||0,slowT(5));if(S.frz&&e.type!=='boss'&&Math.random()*100<S.frz){e.frz=1;slowE(e,1.5)}if(S.chill&&Math.random()*100<S.chill)slowE(e,2);if(S.shock&&Math.random()*100<S.shock)chain(e,d*.6)}
 function gainMod(id){
   const m=MODS[id],c=MOD_RAR[m.r].c;
   if(meta.mods[id]==null){
@@ -465,6 +505,7 @@ function update(dt){
   compact(G.zones,z=>z.life>0);
   if(P.psnT>0){P.psnT-=dt;dotHurt(P.psn*P.psnD*dt);if(P.psnT<=0){P.psn=0;P.psnD=0}}
   if(P.frzT>0)P.frzT-=dt;
+  if(G.biome===2)sandTick(dt);
   if(G.biome===1&&Math.random()<dt*16&&G.parts.length<420)G.parts.push({x:G.cam.x+rand(-G.vw/2,G.vw/2),y:G.cam.y+rand(-G.vh/2,G.vh/2),vx:rand(-12,12),vy:rand(18,42),life:2.4,max:2.4,col:'#e4f4ff',size:rand(1,2.2)});
   if(P.brnT>0){P.brnT-=dt;dotHurt(P.brnD*dt);if(Math.random()<dt*10)G.parts.push({x:P.x+rand(-8,8),y:P.y+rand(-6,6),vx:0,vy:-60,life:.5,max:.5,col:'#ff8a3a',size:3})}
   if(G.over)return;
@@ -475,7 +516,8 @@ function update(dt){
   if(P.cbT>0){P.cbT-=dt;if(Math.random()<dt*24){const a=rand(0,Math.PI*2);G.parts.push({x:P.x+Math.cos(a)*P.r*1.4,y:P.y+Math.sin(a)*P.r*1.4,vx:Math.cos(a)*30,vy:-50,life:.45,max:.45,col:'#ffd34d',size:3})}if(P.cbT<=0){P.cbT=0;refreshStats()}}
   if(G.cls==='magicien'&&hasTal('m_shield')){P.noHit+=dt;if(P.noHit>4)P.shield=Math.min(S.hp*.25,P.shield+S.hp*.08*dt)}
   if(moving){P.dx=iv.x/iv.m;P.dy=iv.y/iv.m;P.face=Math.atan2(P.dy,P.dx)}
-  let sp=P.down?0:S.speed*iv.m*(P.frzT>0&&!(P.berT>0)?.62:1);
+  P._sand=inSand(P);if(P._sand&&moving&&!P.down&&Math.random()<dt*14)G.parts.push({x:P.x+rand(-10,10),y:P.y+rand(4,12),vx:rand(-20,20),vy:rand(-25,-5),life:.5,max:.5,col:'#c9a25e',size:rand(1.5,3)});
+  let sp=P.down?0:S.speed*iv.m*(P.frzT>0&&!(P.berT>0)?.62:1)*(P._sand?.6:1);
   if(P.dashT>0){P.dashT-=dt;sp=S.speed*3.4;P.x+=P.dx*sp*dt;P.y+=P.dy*sp*dt;if(Math.random()<.6)G.parts.push({x:P.x,y:P.y,vx:0,vy:0,life:.25,max:.25,col:'#9fc2b8',size:P.r*.8})}
   else if(P.leapT>0){P.leapT-=dt;P.x+=P.leapVx*dt;P.y+=P.leapVy*dt;if(Math.random()<.7)G.parts.push({x:P.x,y:P.y,vx:0,vy:0,life:.25,max:.25,col:'#9fc2b8',size:P.r*.8});if(P.leapT<=0){P.leapT=0;P.leapLand=1}}
   else{P.x+=iv.x/(iv.m||1)*sp*dt;P.y+=iv.y/(iv.m||1)*sp*dt}
@@ -568,13 +610,14 @@ function update(dt){
         else{e.wob+=dt*.7;mx=Math.cos(e.wob)*.4;my=Math.sin(e.wob*1.3)*.4}
       }
     }
-    else if(e.type==='ghoul'||e.type==='givrin'){mx=ux;my=uy}
+    else if(e.type==='ghoul'||e.type==='givrin'||e.type==='mummy'||e.type==='mummyR'){mx=ux;my=uy}
     else if(e.type==='slime'){e.timer-=dt;
       if(e.state==='walk'){const h=Math.max(0,Math.sin(G.t*5+e.wob));mx=ux*(.35+1.3*h);my=uy*(.35+1.3*h);
         if(e.timer<=0){if(d<170+e.r){e.state='wind';e.timer=[.45,.38,.3][e.gen];e.ang=Math.atan2(dy,dx)}else e.timer=.4}}
       else if(e.state==='wind'){if(e.timer<=0){e.state='charge';e.timer=.28;burst(e.x,e.y+e.r*.5,6,'#7fe0c8',90,2)}}
       else if(e.state==='charge'){mx=Math.cos(e.ang)*5.2;my=Math.sin(e.ang)*5.2;if(e.timer<=0){e.state='walk';e.timer=rand(1.4,2.4)*[1,.85,.7][e.gen]}}}
     else if(e.type==='bat'){e.wob+=dt*6;mx=ux-uy*Math.sin(e.wob)*.6;my=uy+ux*Math.sin(e.wob)*.6}
+    else if(e.type==='scarab'){e.wob+=dt*7;const zz=Math.sin(e.wob)>0?.75:-.75;mx=ux-uy*zz;my=uy+ux*zz}
     else if(e.type==='poison'||e.type==='pyro'){
       e.noLos=(e.noLos||0)-dt;
       if(e.noLos>0){mx=ux;my=uy}else if(d<240){mx=-ux;my=-uy}else if(d>380){mx=ux;my=uy}else{mx=-uy*e.side*.6;my=ux*e.side*.6}
@@ -594,13 +637,14 @@ function update(dt){
           if(boss){e.cycle++;if(e.cycle%3===0){e.state='wind';e.timer=.75;e.ang=Math.atan2(dy,dx)}else{if(d<700)ring(e,half?20:14,half?220:190);e.timer=half?1.5:2.3}}
           else if(d<380){e.state='wind';e.timer=.55;e.ang=Math.atan2(dy,dx)}else e.timer=.5;
         }
-        if(boss&&half){e.sum-=dt;if(e.sum<=0){e.sum=7;for(let i=0;i<3;i++)G.spawns.push({type:'ghoul',x:clamp(e.x+rand(-90,90),EDGE+40,MAP-EDGE-40),y:clamp(e.y+rand(-90,90),EDGE+40,MAP-EDGE-40),t:.8})}}
+        if(boss&&half){e.sum-=dt;if(e.sum<=0){e.sum=7;const sc=G.biome===2;for(let i=0;i<(sc?5:3);i++)G.spawns.push({type:sc?'scarab':'ghoul',x:clamp(e.x+rand(-90,90),EDGE+40,MAP-EDGE-40),y:clamp(e.y+rand(-90,90),EDGE+40,MAP-EDGE-40),t:.8})}}
       }else if(e.state==='wind'){if(e.timer<=0){e.state='charge';e.timer=boss?.65:.45}}
       else if(e.state==='charge'){mx=Math.cos(e.ang)*(boss?7.5:6.5);my=Math.sin(e.ang)*(boss?7.5:6.5);
         if(Math.random()<.5)G.parts.push({x:e.x,y:e.y+e.r*.6,vx:rand(-30,30),vy:rand(-30,30),life:.4,max:.4,col:'#5b4a52',size:4});
         if(e.timer<=0){e.state='walk';e.timer=boss?1.3:rand(2.5,4)}}
     }
-    e.slow-=dt;if(e.frz>0)e.frz-=dt;let sm=e.frz>0?0:e.slow>0?.4:1;if(S.auraSlow&&dP<180)sm*=1-S.auraSlow/100;
+    e.slow-=dt;if(e.frz>0)e.frz-=dt;if(e.curse>0)e.curse-=dt;let sm=e.frz>0?0:e.slow>0?.4:1;if(S.auraSlow&&dP<180)sm*=1-S.auraSlow/100;
+    if(e.type!=='scarab'&&e.type!=='boss'&&inSand(e))sm*=.65;
     e.x+=(mx*e.spd*sm+e.kx)*dt;e.y+=(my*e.spd*sm+e.ky)*dt;
     const f=Math.pow(.002,dt);e.kx*=f;e.ky*=f;
     if(resolve(e)&&e.state==='charge'){e.state='walk';e.timer=e.type==='boss'?1.6:e.type==='slime'?1.5:2.5;G.shake=Math.max(G.shake,e.type==='boss'?8:4);burst(e.x,e.y,10,'#6b5a60',150)}
@@ -636,7 +680,7 @@ function update(dt){
   }
   compact(G.drops,d=>!d.gone);
   // particules, textes, anneaux
-  for(const p of G.parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.92;p.vy*=.92;p.life-=dt}
+  for(const p of G.parts){p.x+=p.vx*dt;p.y+=p.vy*dt;if(!p.w){p.vx*=.92;p.vy*=.92}p.life-=dt}
   compact(G.parts,p=>p.life>0);
   for(const t of G.texts)t.t+=dt;compact(G.texts,t=>t.t<.8);
   for(const r of G.rings)r.t+=dt;compact(G.rings,r=>r.t<.45);

@@ -688,6 +688,7 @@ body:has(#camp:not([hidden])) .banner,body:has(#bag:not([hidden])) .banner{displ
 .frow .btn{margin:0 0 3px;flex:1 0 100%}
 .ftgt{display:flex;flex-direction:column;gap:6px;padding:0 2px}
 .stf{background:rgba(150,210,255,.18);color:#bfe6ff;border:1px solid rgba(150,210,255,.55)}
+.stq{background:rgba(224,184,112,.18);color:#f0d49a;border:1px solid rgba(224,184,112,.55)}
 .rs.sang{color:#fff;background:#b8222d}
 /* ---------- Barre de vie plus lisible ---------- */
 .hp{max-width:300px}
@@ -1207,8 +1208,11 @@ body:has(#over:not([hidden])) .tabbar,body:has(#settings:not([hidden])) .tabbar{
 .msn__bio b{font:800 14px/1.1 var(--font-display);letter-spacing:.03em}
 .msn__bio small{font:500 12px/1.25 var(--font-body);color:var(--muted)}
 .msn__bio--givre b{color:var(--frost,#9fd0ff)}
+.msn__bio--sables b{color:#e8c57a}
+.msn__bio:last-child:nth-child(odd){grid-column:1/-1}
 .msn__bio[aria-checked="true"]{background:linear-gradient(180deg,#3a1d12,#1e1012) padding-box,var(--frame) border-box;box-shadow:0 0 0 2px var(--outline),0 0 16px rgba(240,199,102,.3)}
 .msn__bio--givre[aria-checked="true"]{background:linear-gradient(180deg,#16242f,#0d151c) padding-box,linear-gradient(180deg,#e2f3ff,#9fd0ff 40%,#2c62a8 70%,#9fd0ff) border-box}
+.msn__bio--sables[aria-checked="true"]{background:linear-gradient(180deg,#2e2414,#18120a) padding-box,linear-gradient(180deg,#fff0c8,#e0b870 40%,#8a5a20 70%,#e0b870) border-box}
 .msn__bio.is-locked{opacity:.6}
 .msn__diff{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
 .msn__diff .cx-tab{color:var(--dc)}

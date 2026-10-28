@@ -53,6 +53,20 @@ export const tests = [
     t.ok(await A.evaluate(() => G.mates.length === 1), 'l\'hôte voit l\'invité');
     t.ok(await B.evaluate(() => G.mates.length === 1 && G.en.length > 0), 'l\'invité voit l\'hôte et les monstres');
   } },
+  { name: 'Nécropole des Sables à deux : mêmes sables mouvants ; tempête, momie relevée et malédiction vues par l\'invité (v136)', fn: async (b, t) => {
+    const [A, B] = await pair(b, t);
+    await A.evaluate(() => { meta.biome = 2; meta.start = 25; saveMeta(); });
+    await A.click('#startBtn'); await wf(B, () => started && G && G.biome === 2, 'B attend la Nécropole', 8000, A);
+    const sa = await A.evaluate(() => G.sands.map((q) => [q.x | 0, q.y | 0, q.r | 0])), sb = await B.evaluate(() => G.sands.map((q) => [q.x, q.y, q.r]));
+    t.ok(sa.length === 9, '9 sables mouvants chez l\'hôte'); t.eq(sb, sa, 'les mêmes chez l\'invité');
+    await A.evaluate(() => { G.stormIn = .01; G.spawnT = 99; G.bossT = 999; G.en = []; spawnEnemy({ type: 'mummy', x: G.P.x + 260, y: G.P.y }); window.__mid = G.en[G.en.length - 1].id; });
+    await wf(B, () => G.storm > 0 && G.en.some((e) => e.type === 'mummy'), 'B voit la tempête et la momie', 5000, A);
+    await A.evaluate(() => { dmgEnemy(G.en.find((e) => e.id === __mid), 1e9, false); });
+    await wf(B, () => G.en.some((e) => e.type === 'mummyR'), 'B voit la momie se relever', 5000, A);
+    await A.evaluate(() => { G.en.find((e) => e.type === 'mummyR').curse = 4; });
+    await wf(B, () => G.en.some((e) => e.type === 'mummyR' && e.curse > 0), 'B voit la malédiction', 5000, A);
+    t.eq([A.errs, B.errs], [[], []], 'aucune erreur');
+  } },
   { name: 'changer de héros et de mission dans le salon ne coupe pas la connexion ; Défense à deux ; retour au Camp', fn: async (b, t) => {
     const [A, B] = await pair(b, t);
     await pickHero(B, 'magicien'); await sleep(A, 600);

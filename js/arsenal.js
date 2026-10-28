@@ -24,7 +24,7 @@ function bpCard(b){
   if(craftable)foot=`<div class="parts">${b.frag.map((n,i)=>`<span class="part${pc[i]?' have':''}">${n}${pc[i]>1?' ×'+pc[i]:''}</span>`).join('')}</div>
     <button class="btn main buy cost-btn" data-cact="craft" data-arg="${b.id}" ${ready&&meta.gold>=cost?'':'disabled'}><span>${isW&&own?'Fabriquer un double':'Fabriquer'}</span>${costHtml([['or',cost],['pf',3,pc.filter(x=>x>0).length]])}</button>`;
   if(isW&&own&&!eq&&mine)foot+=`<button class="btn" data-cact="wequip" data-arg="${b.id}">Équiper</button>`;
-  return `<div class="wpn${eq&&mine?' on':''}"><div class="nm" style="color:${r.c}">${esc(b.n)}</div><div class="meta">${r.n} · ${isW?'Arme · '+CLS[b.cls].n:SLOT[b.slot]+(b.bio?' · ❄ Abîmes gelés':'')} · ${baseTxt}${!isW?` · niveau ${lvl}`:''}</div>
+  return `<div class="wpn${eq&&mine?' on':''}"><div class="nm" style="color:${r.c}">${esc(b.n)}</div><div class="meta">${r.n} · ${isW?'Arme · '+CLS[b.cls].n:SLOT[b.slot]+(b.bio&&BIOMES[b.bio]?` · ${BIOMES[b.bio].ic} ${BIOMES[b.bio].n}`:'')} · ${baseTxt}${!isW?` · niveau ${lvl}`:''}</div>
     <ul>${lines||'<li>Aucun bonus</li>'}</ul>
     <div class="meta">${srcTxt(b)}${isW&&!craftable?'':''}</div>${st}<div class="wfoot">${foot}</div></div>`;
 }

@@ -73,7 +73,7 @@ function homeDraw(){
     $('missionCard').style.setProperty('--mc',MODE_C[m]);
     $('missionCard').innerHTML=`<span class="home__mico"><svg viewBox="0 0 24 24">${MODE_SVG[m]}</svg><b>${MODES[m].n}</b></span>
       <span class="home__minfo"><span class="home__mlv"><b>Niveau ${st}</b><span class="home__pill" style="--c:${di?DIFF[di].c:'#bdb6a8'}">${esc(D.n)}</span></span>
-      <small>${bi?'❄ ':''}${esc(BIOMES[bi].n)} · ${D.cnt>1?D.cnt+' Gardiens':'1 Gardien'} toutes les ${iv} s</small>
+      <small>${BIOMES[bi].ic?BIOMES[bi].ic+' ':''}${esc(BIOMES[bi].n)} · ${D.cnt>1?D.cnt+' Gardiens':'1 Gardien'} toutes les ${iv} s</small>
       <span class="home__tags">${relTag}<span class="home__tag">${rq?`${rq} relique${rq>1?'s':''} équipée${rq>1?'s':''}`:'Aucune relique équipée'}</span></span></span>
       <span class="home__chev" aria-hidden="true">›</span>`;
     $('missionCard').setAttribute('aria-label',`Mission : ${MODES[m].n}, niveau ${st}, ${D.n}, ${BIOMES[bi].n}. Toucher pour changer.`)}
@@ -91,8 +91,8 @@ function closeMission(){$('mission').hidden=true;refreshMenus()}
 $('missionCard').onclick=openMission;$('msnBack').onclick=closeMission;
 function missionDraw(){
   const bi=Math.max(0,Math.min(BIOMES.length-1,meta.biome|0));
-  $('bioCards').innerHTML=BIOMES.map((b,i)=>{const lock=i&&!isUnl('givre');
-    return `<button class="msn__bio${i?' msn__bio--givre':''}${lock?' is-locked':''}" role="radio" data-bio="${i}" aria-checked="${i===bi}" ${lock?'aria-disabled="true"':''}><b>${i?'❄ ':''}${esc(b.n)}</b><small>${lock?`<span class="lockmini" aria-hidden="true">${LOCK_SVG}</span>${esc(UNL_BY.givre.need)}`:i?'Vie ×1,3 · butin +30 %':'Braseros, monstres connus'}</small></button>`}).join('');
+  $('bioCards').innerHTML=BIOMES.map((b,i)=>{const lock=!!b.unl&&!isUnl(b.unl);
+    return `<button class="msn__bio${i?' msn__bio--'+b.id:''}${lock?' is-locked':''}" role="radio" data-bio="${i}" aria-checked="${i===bi}" ${lock?'aria-disabled="true"':''}><b>${b.ic?b.ic+' ':''}${esc(b.n)}</b><small>${lock?`<span class="lockmini" aria-hidden="true">${LOCK_SVG}</span>${esc(UNL_BY[b.unl].need)}`:b.tag}</small></button>`}).join('');
   const di=Math.max(0,Math.min(3,meta.diff|0));
   $('diffSeg').innerHTML=DIFF.map((d,i)=>{const lock=!diffOk(i);return `<button class="cx-tab${lock?' is-locked':''}" role="radio" data-diff="${i}" aria-checked="${i===di}" aria-selected="${i===di}" ${lock?'aria-disabled="true"':''} style="--dc:${i?d.c:'#d8d0c4'}">${lock?`<span class="lockmini" aria-hidden="true">${LOCK_SVG}</span>`:''}${d.n}</button>`}).join('');
   const tm=di===3;$('tormRow').hidden=!tm;
@@ -102,7 +102,7 @@ function missionDraw(){
   const st=clamp(meta.start|0||1,1,LV_MAX),m=MODES[meta.mode]||MODES.survie;
   $('startBtn2').innerHTML=`Lancer<small>${esc(m.n)} · niveau ${st} · ${esc(dif().n)}</small>`}
 $('bioCards').addEventListener('click',e=>{const b=e.target.closest('[data-bio]');if(!b)return;const i=+b.dataset.bio;
-  if(b.getAttribute('aria-disabled')==='true'){toast(`${UNL_BY.givre.n} : ${UNL_BY.givre.need.replace(/^./,c=>c.toLowerCase())}`);return}
+  if(b.getAttribute('aria-disabled')==='true'){const u=UNL_BY[BIOMES[i].unl];toast(`${u.n} : ${u.need.replace(/^./,c=>c.toLowerCase())}`);return}
   meta.biome=i;saveMeta();newGame();refreshMenus()});
 $('diffSeg').addEventListener('click',e=>{const b=e.target.closest('[data-diff]');if(!b)return;const i=+b.dataset.diff;
   if(b.getAttribute('aria-disabled')==='true'){toast(`${UNL_BY['diff'+i].n} : ${UNL_BY['diff'+i].need.replace(/^./,c=>c.toLowerCase())}`);return}

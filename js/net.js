@@ -5,7 +5,7 @@
 const netFresh=()=>({on:false,host:false,guest:false,pc:null,dc:null,state:'idle',code:'',err:'',hits:[],snap:null,tick:null,peers:[],slot:0,roster:[],hostCls:null,hostName:'',hostPr:0,hostLook:null,via:'',hostBgAt:0,ready:false,ebUsed:new Set(),fdc:null,hq:0,sq:0,hT:0,hostMode:null});
 const NET=netFresh();
 const NET_MAX=4; // joueurs, hôte compris
-const NET_V=9;
+const NET_V=10;
 const NET_TIMEOUT=20000; // silence toléré en mission (une notification ou un écran qui s'éteint ne doit pas couper la partie)   // version du protocole : deux appareils de versions différentes refusent de jouer ensemble
 const ICE=[{urls:'stun:stun.l.google.com:19302'}];
 // Relais du jeu (Cloudflare) : le mode par défaut, même si js/relais.js manque ou est vide (page en cache ancienne).
@@ -206,7 +206,7 @@ function coopForget(){try{sessionStorage.removeItem(COOP_SS)}catch{}}
 /* ---------- Démarrage de la mission ---------- */
 const SPAWN_OFF=[[0,0],[80,0],[-80,0],[0,80]];
 const mateNew=(slot,cls,x,y)=>({slot,cls:cls||'guerrier',x,y,face:0,hp:1,max:1,down:false,r:17,flash:0,dashT:0,spin:0,shield:0});
-const startMsg=()=>({t:'start',br:G.breche?1:0,mode:G.mode,nd:{d:meta.diff|0,t:meta.torm|0},level:G.level,biome:G.biome,n:coopN(),map:{pil:G.pillars.filter(p=>p!==G.pod).map(p=>[p.x|0,p.y|0,+p.r.toFixed(1)]),bra:G.braziers.map(b=>[b.x|0,b.y|0]),run:G.runes.map(r=>[r.x|0,r.y|0,r.r|0])},x:G.P.x|0,y:G.P.y|0});
+const startMsg=()=>({t:'start',br:G.breche?1:0,mode:G.mode,nd:{d:meta.diff|0,t:meta.torm|0},level:G.level,biome:G.biome,n:coopN(),map:{pil:G.pillars.filter(p=>p!==G.pod).map(p=>[p.x|0,p.y|0,+p.r.toFixed(1)]),bra:G.braziers.map(b=>[b.x|0,b.y|0]),run:G.runes.map(r=>[r.x|0,r.y|0,r.r|0]),qs:(G.sands||[]).map(q=>[q.x|0,q.y|0,q.r|0,q.dir|0])},x:G.P.x|0,y:G.P.y|0});
 function netStartHost(){ // appelé par l'hôte au lancement (main.js)
   const open=NET.peers.filter(p=>p.state==='open'),now=performance.now();for(const p of open)p.lastRx=now;
   G.breche=meta.mode==='breche'&&open.length>0;for(const p of open)p.left=false;
@@ -217,7 +217,7 @@ function netStartFor(peer){peer.lastRx=performance.now();peer.left=false;const o
   G.mates=(G.mates||[]).filter(x=>x.slot!==peer.slot);G.mates.push(q);netSendTo(peer,startMsg())}
 // L'invité joue la mission de l'hôte : même mode, même difficulté, même carte ; sa sauvegarde garde ses propres choix.
 function netStartGuest(m){const sv=meta.mode;meta.mode=MODES[m.mode]?m.mode:'survie';newGame();meta.mode=sv;G.nd=m.nd||null;G.bossT=bossIv();G.breche=!!m.br;G.level=m.level;G.biome=m.biome;if(floorPat)floorPat=null;
-  G.pillars=m.map.pil.map(a=>({x:a[0],y:a[1],r:a[2]}));G.braziers=m.map.bra.map(a=>({x:a[0],y:a[1],ph:rand(0,6)}));G.runes=m.map.run.map(a=>({x:a[0],y:a[1],r:a[2]}));if(G.pod)G.pillars.push(G.pod);
+  G.pillars=m.map.pil.map(a=>({x:a[0],y:a[1],r:a[2]}));G.braziers=m.map.bra.map(a=>({x:a[0],y:a[1],ph:rand(0,6)}));G.runes=m.map.run.map(a=>({x:a[0],y:a[1],r:a[2]}));G.sands=(m.map.qs||[]).map(a=>({x:a[0],y:a[1],r:a[2],dir:a[3]||1}));if(G.pod)G.pillars.push(G.pod);
   {const o=SPAWN_OFF[NET.slot]||[40,0];G.P.x=m.x+o[0];G.P.y=m.y+o[1];resolve(G.P)}G.cam.x=G.P.x;G.cam.y=G.P.y;G.en=[];G.mates=[];
   if(PX)try{buildStatic()}catch(err){dropPixi(err)}
   ['over','extract','lvlup','camp','bag','coop','settings','mission'].forEach(id=>{const el=$(id);if(el)el.hidden=true});$('intro').hidden=true;
@@ -260,14 +260,14 @@ function netTick(){if(!NET.on||!started||!G)return;const now=performance.now();
   if(NET.host){
     for(const p of NET.peers.slice())if(p.state==='open'&&p.lastRx&&now-p.lastRx>NET_TIMEOUT&&!G.over&&!G.hold&&document.visibilityState==='visible')netPeerLost(p,false,'timeout');
     if(!NET.on)return;
-    const en=G.en.filter(e=>!e.dead).map(e=>[e.id,e.type,e.x|0,e.y|0,Math.ceil(e.hp),Math.ceil(e.max),r1(e.r),(e.corr?1:0)|(e.frz>0?2:0)|(e.slow>0?4:0)|(e.flash>0?8:0)|(e.burnT>0?16:0)|(e.downed?32:0),e.elite||0,e.gen||0,Math.round(e.dmg),e.state==='walk'?0:e.state==='wind'?1:2,r1(e.ang||0)]);
+    const en=G.en.filter(e=>!e.dead).map(e=>[e.id,e.type,e.x|0,e.y|0,Math.ceil(e.hp),Math.ceil(e.max),r1(e.r),(e.corr?1:0)|(e.frz>0?2:0)|(e.slow>0?4:0)|(e.flash>0?8:0)|(e.burnT>0?16:0)|(e.downed?32:0)|(e.curse>0?64:0),e.elite||0,e.gen||0,Math.round(e.dmg),e.state==='walk'?0:e.state==='wind'?1:2,r1(e.ang||0)]);
     const ps=[[0,...heroPack(G.P)]],osh=[[0,shotPack(G.shots,60)]];
     for(const p of NET.peers)if(p.state==='open'&&p.Q){ps.push([p.slot,p.Q.x|0,p.Q.y|0,p.Q.face,Math.ceil(p.Q.hp),p.Q.max,p.Q.cls,(p.Q.down?1:0)|(p.Q.dashT>0?2:0)|(p.Q.spin>0?4:0)|(p.Q.flash>0?8:0)|(p.Q.inv>0?16:0),p.Q.shield|0,p.Q.aur|0]);if(p.shRaw)osh.push([p.slot,p.shRaw.slice(0,40)])}
     NET.sSeq=(NET.sSeq||0)+1;sendFast({t:'s',sq:NET.sSeq,lv:G.level,tl:r1(G.tl),bt:r1(G.bossT),en,eb:G.eb.slice(0,150).map(b=>[b.id,b.x|0,b.y|0,b.vx|0,b.vy|0,b.r,Math.round(b.d),r1(b.life)]),
-      lb:G.lobs.map(l=>[l.x0|0,l.y0|0,l.tx|0,l.ty|0,+l.t.toFixed(2),l.T,l.kind,l.r|0]),z:G.zones.map(z=>[z.id,z.x|0,z.y|0,z.r|0,z.kind,+z.dps.toFixed(2),r1(z.life),z.max]),ps,osh,md:modeSnap()});
+      lb:G.lobs.map(l=>[l.x0|0,l.y0|0,l.tx|0,l.ty|0,+l.t.toFixed(2),l.T,l.kind,l.r|0]),z:G.zones.map(z=>[z.id,z.x|0,z.y|0,z.r|0,z.kind,+z.dps.toFixed(2),r1(z.life),z.max]),ps,osh,md:modeSnap(),ss:G.biome===2?[r1(G.storm||0),r1(G.stormIn||0)]:0});
   }else{
     if(NET.lastRx&&now-NET.lastRx>NET_TIMEOUT&&!G.over&&!G.hold&&document.visibilityState==='visible'){netLost('timeout');return}
-    const st=[];for(const e of G.en){const s0=e._s||{};if(e.slow>(s0.slow||0)+.05||e.frz>(s0.frz||0)+.05||(e.burnT>0&&e.burnT>(s0.burnT||0)+.05)||e.kx||e.ky){st.push([e.id,r1(e.slow||0),r1(e.frz||0),r1(e.burnT||0),r1(e.burnDps||0),e.kx|0,e.ky|0]);e.kx=e.ky=0;e._s={slow:e.slow,frz:e.frz,burnT:e.burnT}}}
+    const st=[];for(const e of G.en){const s0=e._s||{};if(e.slow>(s0.slow||0)+.05||e.frz>(s0.frz||0)+.05||(e.burnT>0&&e.burnT>(s0.burnT||0)+.05)||(e.curse||0)>(s0.curse||0)+.05||e.kx||e.ky){st.push([e.id,r1(e.slow||0),r1(e.frz||0),r1(e.burnT||0),r1(e.burnDps||0),e.kx|0,e.ky|0,r1(e.curse||0)]);e.kx=e.ky=0;e._s={slow:e.slow,frz:e.frz,burnT:e.burnT,curse:e.curse||0}}}
     netSend({t:'g',p:heroPack(G.P),sh:shotPack(G.shots),h:NET.hits.splice(0),st,rel:!!G.relic});
   }}
 function netHit(e,d,crit){NET.hits.push([e.id,Math.round(d*10)/10,crit?1:0])}
@@ -291,7 +291,7 @@ function netRecvHost(peer,m){
     G.oshots=NET.peers.flatMap(p=>p.state==='open'?p.sh||[]:[]);
     if(m.h.length||m.st.length){const by=new Map();for(const e of G.en)by.set(e.id,e);
       for(const [id,d] of m.h){const e=by.get(id);if(!e||e.dead)continue;let dd=d;if(e.elite==='bouclier'&&e.hp>e.max*.5)dd*=.5;e.hp-=dd;e.flash=1;e.shown=2;if(e.hp<=0&&!e.dead)kill(e)}
-      for(const [id,slow,frz,bt,bd,kx,ky] of m.st){const e=by.get(id);if(!e||e.dead)continue;if(slow>e.slow)e.slow=slow;if(frz>(e.frz||0))e.frz=frz;if(bt>e.burnT){e.burnT=bt;e.burnDps=Math.max(e.burnDps||0,bd)}if(e.type!=='boss'){e.kx+=kx;e.ky+=ky}}}
+      for(const [id,slow,frz,bt,bd,kx,ky,cu] of m.st){const e=by.get(id);if(!e||e.dead)continue;if(cu>(e.curse||0))e.curse=cu;if(slow>e.slow)e.slow=slow;if(frz>(e.frz||0))e.frz=frz;if(bt>e.burnT){e.burnT=bt;e.burnDps=Math.max(e.burnDps||0,bd)}if(e.type!=='boss'){e.kx+=kx;e.ky+=ky}}}
     coopCheckFail();return}
 }
 function netRecvGuest(m){
@@ -324,9 +324,9 @@ function netApplySnap(){const m=NET.snap;if(!m)return;NET.snap=null;
   for(const a of m.en){let e=by.get(a[0]);const d=ETYPE[a[1]];
     if(!e){e={id:a[0],type:a[1],x:a[2],y:a[3],col:d?d.col:'#888',flash:0,hitCd:0,kx:0,ky:0,burnT:0,burnDps:0,slow:0,frz:0,shown:0,wob:rand(0,6),rot:0,tgtPod:false}}
     e.tx=a[2];e.ty=a[3];e.hp=Math.min(e.hp==null?a[4]:e.hp,a[4]);if(a[4]>e.hp+1)e.hp=a[4];e.max=a[5];e.r=a[6];e.corr=!!(a[7]&1);
-    if(a[7]&2)e.frz=Math.max(e.frz||0,.1);if(a[7]&4)e.slow=Math.max(e.slow||0,.1);if(a[7]&8)e.flash=Math.max(e.flash,.5);
+    if(a[7]&2)e.frz=Math.max(e.frz||0,.1);if(a[7]&4)e.slow=Math.max(e.slow||0,.1);if(a[7]&8)e.flash=Math.max(e.flash,.5);if(a[7]&64)e.curse=Math.max(e.curse||0,.1);
     e.elite=a[8]||undefined;e.gen=a[9];e.dmg=a[10];e.state=a[11]===0?'walk':a[11]===1?'wind':'charge';e.ang=a[12];e.downed=!!(a[7]&32);out.push(e)}
-  G.en=out;G.target=out.find(e=>e.type==='cible')||null;modeApply(m.md);
+  G.en=out;G.target=out.find(e=>e.type==='cible')||null;modeApply(m.md);if(m.ss){G.storm=m.ss[0];G.stormIn=m.ss[1]}
   G.eb=m.eb.filter(b=>!NET.ebUsed.has(b[0])).map(b=>({id:b[0],x:b[1],y:b[2],vx:b[3],vy:b[4],r:b[5],d:b[6],life:b[7]}));
   if(NET.ebUsed.size>800)NET.ebUsed=new Set([...NET.ebUsed].slice(-300));
   G.lobs=m.lb.map(l=>({x0:l[0],y0:l[1],tx:l[2],ty:l[3],t:l[4],T:l[5],kind:l[6],r:l[7]}));
@@ -340,7 +340,7 @@ function matesFrom(ps){if(!G||!ps)return;const old=new Map((G.mates||[]).map(q=>
 // Côté invité : mouvement interpolé des monstres et coups au contact.
 function netGuestEnemies(dt,P){const k=Math.min(1,dt*14);
   for(const e of G.en){if(e.tx!=null){e.x+=(e.tx-e.x)*k;e.y+=(e.ty-e.y)*k}
-    e.flash=Math.max(0,e.flash-dt*7);e.hitCd-=dt;e.shown-=dt;if(e.slow>0)e.slow-=dt;if(e.frz>0)e.frz-=dt;if(e.burnT>0)e.burnT-=dt;e.wob+=dt*6;
+    e.flash=Math.max(0,e.flash-dt*7);e.hitCd-=dt;e.shown-=dt;if(e.slow>0)e.slow-=dt;if(e.frz>0)e.frz-=dt;if(e.burnT>0)e.burnT-=dt;if(e.curse>0)e.curse-=dt;e.wob+=dt*(e.type==='scarab'?7:6);
     if(P.down||e.type==='archer'||e.type==='cible'||e.hitCd>0)continue;
     if(Math.hypot(P.x-e.x,P.y-e.y)<e.r+P.r){hurt(e.state==='charge'?e.dmg*1.4:e.dmg);e.hitCd=.8;if(e.type==='givrin')P.frzT=2.2*(1-Math.min(60,S.antidote||0)/100)}}}
 // Monstre ciblé (hôte) : le héros debout le plus proche.

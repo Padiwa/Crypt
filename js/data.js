@@ -33,13 +33,18 @@ function tgtKey(eq,it){const ks=GEAR_KEYS().filter(k=>keySlot(k)===it.slot);if(!
 // Fragments de harnais : seulement sur les Gardiens, plus souvent dans les difficultés hautes.
 const hfChance=()=>{const D=dif();return .03*BAL.hfMul*(1+.5*Math.min(3,dsel().d))*(1+.05*(D.tier||0))};
 const BIOMES=[
-  {id:'crypte',n:'Crypte des Cendres',d:'La crypte d\'origine : braseros, sang séché, monstres connus.',hp:1,dm:1,loot:1,
+  {id:'crypte',n:'Crypte des Cendres',ic:'',tag:'Braseros, monstres connus',d:'La crypte d\'origine : braseros, sang séché, monstres connus.',hp:1,dm:1,loot:1,
    tile:{h:285,s:9,l:12.5},stain:'110,25,30',chip:'214,204,180',pil:['#4a4050','#231d27'],wall:['#211a26','#3d3440'],rune:'232,133,59',light:'255,140,60',flame:'255,190,90',tint:0xff8c3c},
-  {id:'givre',n:'Abîmes gelés',d:'Cavernes de glace sous la crypte. Monstres plus coriaces (vie ×1,3, dégâts ×1,2), Revenants de givre qui ralentissent, butin +30 %. Seul biome où tombent les affixes de givre et les objets de givre des reliques Sanguine et Abyssale.',hp:1.3,dm:1.2,loot:1.3,
+  {id:'givre',n:'Abîmes gelés',ic:'❄',unl:'givre',tag:'Vie ×1,3 · butin +30 %',d:'Cavernes de glace sous la crypte. Monstres plus coriaces (vie ×1,3, dégâts ×1,2), Revenants de givre qui ralentissent, butin +30 %. Seul biome où tombent les affixes de givre et les objets de givre des reliques Sanguine et Abyssale.',hp:1.3,dm:1.2,loot:1.3,
    tile:{h:205,s:24,l:14},stain:'150,210,255',chip:'220,240,255',pil:['#5d7f96','#1b2c3a'],wall:['#142231','#3b5a73'],rune:'140,200,255',light:'120,190,255',flame:'190,230,255',tint:0x78beff},
+  // v136 : obel = piliers en obélisques (octogones), dunes = rides de sable sur le sol ; braseros à flamme verte (feux des embaumeurs), halo doré.
+  {id:'sables',n:'Nécropole des Sables',ic:'☀',unl:'sables',tag:'Vie ×1,6 · butin +60 %',d:'Tombeaux ensevelis sous le désert. Monstres bien plus coriaces (vie ×1,6, dégâts ×1,4), nuées de scarabées, momies qui se relèvent une fois, sables mouvants qui ralentissent, tempêtes de sable qui cachent la vue, butin +60 %. Seul biome où tombent les affixes de malédiction et les objets des sables des reliques Sanguine et Abyssale.',hp:1.6,dm:1.4,loot:1.6,
+   tile:{h:38,s:34,l:19},stain:'210,170,100',chip:'245,225,180',pil:['#a08658','#3a2c18'],wall:['#2a1f12','#6a5434'],rune:'230,190,110',light:'230,190,110',flame:'180,255,160',tint:0xe6be6e,obel:1,dunes:1},
 ];
 const biome=()=>BIOMES[Math.max(0,Math.min(BIOMES.length-1,(typeof G!=='undefined'&&G&&G.biome!=null)?G.biome:(meta.biome|0)))];
 const BASES_GIVRE={armure:['Pelisse givrée','Cuirasse de glace'],amulette:['Talisman de givre','Pendentif cristallin'],bottes:['Bottes fourrées','Grèves de glace'],anneau:['Anneau de givre','Bague cristalline']};
+// Objets propres à un biome (it.bio = numéro du biome) : 1 Abîmes gelés, 2 Nécropole des Sables.
+const BASES_BIO={1:BASES_GIVRE,2:{armure:['Linceul de lin','Cuirasse de grès'],amulette:['Scarabée d\'or','Pectoral des dunes'],bottes:['Sandales des dunes','Grèves de bronze'],anneau:['Anneau des sables','Sceau du tombeau']}};
 const BASES={armure:['Cuirasse','Brigandine','Cotte de mailles','Manteau de chasseur'],amulette:['Talisman','Amulette','Médaillon'],bottes:['Bottes de cuir','Grèves','Solerets','Bottes de pèlerin'],anneau:['Anneau','Chevalière','Bague']};
 const SUFFIX=['du Corbeau','des Cendres','de la Veuve','du Pèlerin',"de l'Ossuaire",'du Loup gris','de la Lune noire','des Murmures','du Bourreau','de Fer-Sang'];
 const GLYPH={
@@ -180,9 +185,9 @@ const REL_SRC=['Normal, Difficile et Cauchemar (et plus haut sous le niveau requ
 function relicTierNow(free){const D=dif();if(!D.tier)return 0;let t=D.tier<=5?1:Math.random()<BAL.abyss[0]+BAL.abyss[1]*(D.tier-6)?3:2;
   if(free)return t;const L=(typeof G!=='undefined'&&G&&G.level)||1;while(t>0&&L<BAL.relicLv[t-1])t--;return t}
 const relicName=id=>RELICS[id].n;
-// Contenu d'une relique : les objets de sa rareté (armes du héros comprises). Objets de givre seulement dans les Abîmes gelés.
-function relPool(t,cls=heroCls){const r=t+3,frost=typeof G!=='undefined'&&G&&G.biome===1;
-  return [...WPN[cls].filter(w=>w.r===r).map(w=>w.id),...Object.keys(RGEAR).filter(id=>RGEAR[id].r===r&&(!RGEAR[id].bio||frost))]}
+// Contenu d'une relique : les objets de sa rareté (armes du héros comprises). Objets d'un biome (givre, sables) seulement dans ce biome.
+function relPool(t,cls=heroCls){const r=t+3,bio=typeof G!=='undefined'&&G?G.biome|0:0;
+  return [...WPN[cls].filter(w=>w.r===r).map(w=>w.id),...Object.keys(RGEAR).filter(id=>RGEAR[id].r===r&&(!RGEAR[id].bio||RGEAR[id].bio===bio))]}
 const SANG={
   s1:{n:'Cœur du Martyr',slot:'amulette',aff:['dmgPct','critDmg','crit','leech','apsPct','lowDmg']},
   s2:{n:'Cuirasse de la Veuve rouge',slot:'armure',aff:['hp','armor','regen','dmgPct','leech','lowArmor']},
@@ -194,6 +199,8 @@ const SANG={
   s8:{n:"Sceau de l'Ichor",slot:'anneau',aff:['dmgPct','apsPct','leech','regen','critDmg','bossDmg']},
   s9:{n:'Cœur gelé du Martyr',slot:'amulette',bio:1,aff:['cold','frz','critDmg','dmgPct','crit','shard']},
   s10:{n:"Anneau de l'Hiver sanglant",slot:'anneau',bio:1,aff:['shard','cold','crit','apsPct','frz','dmgPct']},
+  s11:{n:'Linceul du Roi-Momie',slot:'armure',bio:2,aff:['hp','curse','armor','hex','regen','doom']},
+  s12:{n:'Sandales de la Tempête',slot:'bottes',bio:2,aff:['speed','curse','hex','dmgPct','crit','doom']},
 };
 const ABY={
   a1:{n:'Œil du Néant',slot:'amulette',aff:['dmgPct','critDmg','crit','apsPct','bossDmg','cdr'],pw:'abRift'},
@@ -208,6 +215,8 @@ const ABY={
   a11:{n:'Cape du Néant',slot:'dos',aff:['hp','armor','regen','lowArmor','leech','potHeal'],pw:'abWard'},
   a12:{n:'Ailes de l\'Éclipse',slot:'dos',aff:['hp','armor','regen','antidote','auraSlow','dashCd'],pw:'abSoul'},
   a10:{n:'Anneau du Néant gelé',slot:'anneau',bio:1,aff:['shard','cold','apsPct','frz','crit','critDmg'],pw:'abExec'},
+  a13:{n:'Bandelettes du Néant',slot:'armure',bio:2,aff:['hp','armor','curse','hex','regen','doom'],pw:'abWard'},
+  a14:{n:'Pas du Simoun',slot:'bottes',bio:2,aff:['speed','curse','hex','doom','crit','dmgPct'],pw:'abSoul'},
 };
 for(const k in SANG)RGEAR['S'+k.slice(1)]={...SANG[k],r:5,sang:k};
 for(const k in ABY)RGEAR['B'+k.slice(1)]={...ABY[k],r:6,aby:k};
@@ -222,7 +231,7 @@ const rgAff=(T,c=heroCls)=>{const out=[];for(const k of T.aff)out.push(affOff(k,
 // Fabrique un objet des reliques au niveau d'objet l.
 function rgItem(id,l){const T=RGEAR[id],slot=T.slot,r=T.r;
   const it={id:uid++,slot,r,lvl:l,base:{k:BASE_STAT[slot],v:Math.round(baseRoll(slot,l)*RB[r])},aff:{},name:T.n,type:RAR[r].n,rid:id};
-  if(T.sang)it.sang=T.sang;if(T.aby)it.aby=T.aby;if(T.bio)it.bio=1;
+  if(T.sang)it.sang=T.sang;if(T.aby)it.aby=T.aby;if(T.bio)it.bio=T.bio;
   for(const k of rgAff(T)){const A=AFF[k];const v=A.r?A.r(l):5;it.aff[k]=Math.max(1,Math.round(v*RK[r]))}
   if(T.pw)it.aff[T.pw]=AFF[T.pw].r(l);return it}
 // Niveau de mission le plus haut atteint, et le niveau d'objet qui en découle.
@@ -484,6 +493,10 @@ const AFF={
   frz:{t:v=>`+${v} % de chances de geler l'ennemi 1 s`,r:l=>ri(4,8)+Math.floor(l*.04),bio:1},
   cold:{t:v=>`+${v} % de dégâts contre les ennemis ralentis ou gelés`,r:l=>ri(12,22)+Math.floor(l*.3),bio:1},
   shard:{t:v=>`${v} % de chances qu'un ennemi tué éclate en glace`,r:l=>ri(6,12)+Math.floor(l*.05),bio:1},
+  // Malédiction (Nécropole des Sables, v136) : un ennemi maudit (5 s) subit 15 % de dégâts en plus, plus « hex ».
+  curse:{t:v=>`+${v} % de chances de maudire l'ennemi touché (5 s : +15 % de dégâts subis)`,r:l=>ri(5,10)+Math.floor(l*.05),bio:2},
+  hex:{t:v=>`+${v} % de dégâts contre les ennemis maudits`,r:l=>ri(12,22)+Math.floor(l*.3),bio:2},
+  doom:{t:v=>`${v} % de chances qu'un ennemi maudit tué maudisse et blesse ses voisins`,r:l=>ri(6,12)+Math.floor(l*.05),bio:2},
   skillRad:{t:v=>`+${v} % de portée des compétences`,r:l=>ri(10,20)+Math.floor(l*.5)},
   novaPct:{t:v=>`+${v} % de dégâts de compétence`,r:l=>ri(20,45)},
   burn:{t:v=>`Embrase : ${v} dégâts par seconde`,w:1},
@@ -533,7 +546,7 @@ function genItem(l,minR=0){
   if(bio){const fr=pool.filter(k=>AFF[k].bio);if(Math.random()<.45){const k=pick(fr);chosen.push(k);pool=pool.filter(x=>x!==k)}}
   while(chosen.length<RAR[r].aff&&pool.length){const k=affPick(pool);pool=pool.filter(x=>x!==k);chosen.push(k)}
   for(const k of chosen){const v=Math.round(AFF[k].r(l)*RK[r]*(1+(DQ.aq||0)));it.aff[k]=Math.max(1,v)}
-  const base=pick(bio?BASES_GIVRE[slot]:BASES[slot]);if(bio)it.bio=bio;
+  const base=pick(bio?BASES_BIO[bio][slot]:BASES[slot]);if(bio)it.bio=bio;
   it.name=r===0?base:`${base} ${pick(SUFFIX)}`;
   it.type=base;
   return it;
@@ -564,7 +577,7 @@ function gainWeapon(id){if(!ownedW(id)){meta.built[id]=true;return 'new'}(meta.w
 const partLabel=p=>{if(p.hf)return '<span style="color:var(--rar-aby)">Fragment de harnais</span>';const w=bpdef(p.w);return p.full?`<span style="color:${RAR[w.r].c}">${w.n}</span> · arme ${RAR[w.r].n.toLowerCase()}`:`<span style="color:${RAR[w.r].c}">${w.n}</span> · ${w.frag[p.p]}`};
 
 function stats(eq){
-  const b=CLS[heroCls].base,s={regenPct:0,dmg:b.dmg,aps:b.aps,hp:b.hp,crit:b.crit,critDmg:150,multi:0,pierce:0,burn:0,armor:b.armor,speed:b.speed,regen:0,cdr:b.cdr,novaPct:0,dmgPct:0,apsPct:0,leech:0,reach:0,splash:0,burnPct:0,chill:0,shock:0,skillRad:0,skillDur:0,dashCd:0,potHeal:0,magnetPct:0,lowArmor:0,lowDmg:0,auraSlow:0,goldPct:0,antidote:0,execute:0,bossDmg:0,xpPct:0,lootPct:0,fury:0,ultPct:0,frz:0,cold:0,shard:0,abSoul:0,abWard:0,abPulse:0,abExec:0,abRift:0,abHunt:0};
+  const b=CLS[heroCls].base,s={regenPct:0,dmg:b.dmg,aps:b.aps,hp:b.hp,crit:b.crit,critDmg:150,multi:0,pierce:0,burn:0,armor:b.armor,speed:b.speed,regen:0,cdr:b.cdr,novaPct:0,dmgPct:0,apsPct:0,leech:0,reach:0,splash:0,burnPct:0,chill:0,shock:0,skillRad:0,skillDur:0,dashCd:0,potHeal:0,magnetPct:0,lowArmor:0,lowDmg:0,auraSlow:0,goldPct:0,antidote:0,execute:0,bossDmg:0,xpPct:0,lootPct:0,fury:0,ultPct:0,frz:0,cold:0,shard:0,curse:0,hex:0,doom:0,abSoul:0,abWard:0,abPulse:0,abExec:0,abRift:0,abHunt:0};
   for(const it of Object.values(eq))if(it){const m=upMul(it.up);s[it.base.k]+=it.base.v*m;for(const k in it.aff)if(!affOff(k))s[k]+=NOSCALE[k]?it.aff[k]:it.aff[k]*m}
   s.seals={};for(const it of Object.values(eq))if(it&&it.seal)s.seals[it.seal]=1;
   for(const id of allMods(heroCls))s[MODS[id].k]+=modVal(id,meta.mods[id]);
@@ -586,7 +599,7 @@ function stats(eq){
   if(bf.surT>0){apsX*=2;s.splash+=50;dmgX*=ub}
   const dmg=s.dmg*(1+s.dmgPct/100)*dmgX;
   return {shotSpd:cb&&heroCls==='archer'?1.5:1,dmg,aps:s.aps*(1+s.apsPct/100)*apsX,hp:s.hp,crit:Math.min(s.crit,75),critDmg:s.critDmg,multi:s.multi,pierce:s.pierce,burn:s.burn+dmg*s.burnPct/100,chill:s.chill,shock:s.shock,
-    armor:Math.min(s.armor,60),speed:220*(1+s.speed/100),regen:s.regen,cdr:Math.min(s.cdr,50),nova:dmg*4*(1+s.novaPct/100),leech:s.leech,reach:s.reach,splash:Math.min(s.splash,300),magnet:s.magnet,skillRad:Math.min(s.skillRad,300),skillDur:s.skillDur,dashCd:Math.min(s.dashCd,60),potHeal:s.potHeal,lowArmor:Math.min(s.lowArmor,60),lowDmg:s.lowDmg,auraSlow:Math.min(s.auraSlow,50),goldPct:s.goldPct,antidote:s.antidote,execute:s.execute||0,fury:Math.min(s.fury||0,60),ultPct:s.ultPct||0,bossDmg:s.bossDmg||0,xpPct:s.xpPct||0,lootPct:s.lootPct||0,echo:s.echo||0,waves:s.waves||0,frz:Math.min(s.frz,40),cold:s.cold,shard:Math.min(s.shard,60),abSoul:Math.min(s.abSoul,6),abWard:s.abWard,abPulse:s.abPulse,abExec:Math.min(s.abExec,20),abRift:Math.min(s.abRift,60),abHunt:s.abHunt,seals:s.seals};
+    armor:Math.min(s.armor,60),speed:220*(1+s.speed/100),regen:s.regen,cdr:Math.min(s.cdr,50),nova:dmg*4*(1+s.novaPct/100),leech:s.leech,reach:s.reach,splash:Math.min(s.splash,300),magnet:s.magnet,skillRad:Math.min(s.skillRad,300),skillDur:s.skillDur,dashCd:Math.min(s.dashCd,60),potHeal:s.potHeal,lowArmor:Math.min(s.lowArmor,60),lowDmg:s.lowDmg,auraSlow:Math.min(s.auraSlow,50),goldPct:s.goldPct,antidote:s.antidote,execute:s.execute||0,fury:Math.min(s.fury||0,60),ultPct:s.ultPct||0,bossDmg:s.bossDmg||0,xpPct:s.xpPct||0,lootPct:s.lootPct||0,echo:s.echo||0,waves:s.waves||0,frz:Math.min(s.frz,40),cold:s.cold,shard:Math.min(s.shard,60),curse:Math.min(s.curse,60),hex:s.hex,doom:Math.min(s.doom,60),abSoul:Math.min(s.abSoul,6),abWard:s.abWard,abPulse:s.abPulse,abExec:Math.min(s.abExec,20),abRift:Math.min(s.abRift,60),abHunt:s.abHunt,seals:s.seals};
 }
 const dps=S=>S.dmg*S.aps*(1+S.crit/100*(S.critDmg/100-1))*(1+S.multi*.8)*(1+S.echo/100)*(1+S.waves*.5)*(heroCls==='archer'?1:1.2)+S.burn;
 /* ---------- Migration v91 : rangs, reliques par rareté, fin des objets Prime ---------- */

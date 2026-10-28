@@ -145,7 +145,7 @@ function refreshMenus(){
     const nxt=['defense','capture'].find(mLock);
     $('modeDesc').textContent=MODES[meta.mode].d+(nxt?` ${UNL_BY[nxt].n.replace('Mission ','')} : ${UNL_BY[nxt].need.replace(/^./,c=>c.toLowerCase())}`:'')+(coopOk?'':' Brèche : à plusieurs seulement, héberge une partie (bouton Coop de l\'accueil) pour la choisir.')}
   if(!diffOk(meta.diff|0)){meta.diff=0;saveMeta()}if((meta.diff|0)===3&&(meta.torm|0)>tormMax()){meta.torm=Math.max(1,tormMax());saveMeta()}
-  if(meta.biome&&!isUnl('givre')){meta.biome=0;saveMeta()}
+  {const B=BIOMES[meta.biome|0];if(meta.biome&&(!B||(B.unl&&!isUnl(B.unl)))){meta.biome=0;saveMeta()}}
   if(!started)unlockHomeSeen();
   if(typeof NET!=='undefined'&&NET.host&&NET.on)sendRoster();
   relicQFix();const rn=meta.relicQ.length;
