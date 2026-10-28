@@ -36,7 +36,7 @@ SIM.camp = function () {
     SIM.mile('craft' + bpdef(id).r);
   }
   // Avant « Tout fusionner », qui dépense tout l'or : emplacements à débloquer, talents, et le prestige avec la moitié de l'or au plus.
-  for (const u of SLOT_U) if (U('slots') && !slotOpen(u.k) && (!u.need || slotOpen(u.need)) && (meta.hfrag | 0) >= u.hf && meta.gold >= u.gold) { meta.hfrag -= u.hf; meta.gold -= u.gold; meta.slotU[u.k] = true; meta.gear[u.k] = null; SIM.mile('slot_' + u.k); }
+  for (const u of SLOT_U) if (U('slots') && !slotOpen(u.k) && (!u.need || slotOpen(u.need)) && (meta.hfrag | 0) >= u.hf && meta.gold >= u.gold) { meta.hfrag -= u.hf; meta.gold -= u.gold; (meta.slotU[heroCls] || (meta.slotU[heroCls] = {}))[u.k] = true; meta.gear[u.k] = null; SIM.mile('slot_' + u.k); }
   if (U('bonus')) for (const t of TAL[heroCls]) if (!meta.tal[t.k] && meta.gold >= t.cost + 200) { meta.gold -= t.cost; meta.tal[t.k] = true; }
   { let bud = meta.gold * .5; for (let g = 0; g < 50; g++) { const o = prOf(), c = prCost(o.lv); if (!(prOpen() || o.lv) || bud < c.gold || meta.essence < c.ess + 50) break; bud -= c.gold; meta.gold -= c.gold; meta.essence -= c.ess; o.lv++; } }
   if (U('fuse')) fuseAll();

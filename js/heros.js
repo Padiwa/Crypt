@@ -60,7 +60,7 @@ Object.assign(CAMP_ACT,{
   setdel:function(a,arg,b,d){{const L=setsOf(),i=+arg,s=L[i];if(s){L.splice(i,1);cxUndo(`<b>${esc(s.n)}</b> supprimé`,()=>{setsOf().splice(i,0,s)})}}return CAMP_GO},
   unequip:function(a,arg,b,d){{const s=campSel.slot,it=meta.gear[s];if(it){meta.stash.push(it);meta.gear[s]=null;campSel={stash:it.id}}}return CAMP_GO},
   wequip:function(a,arg,b,d){{if(ownedW(arg)&&wclsOf(arg)===heroCls){meta.wpn[heroCls]=arg;if(campTab==='equip'||isCoffre())campSel={slot:'arme'}}}return CAMP_GO},
-  slotopen:function(a,arg,b,d){{const u=SLOT_U.find(x=>x.k===arg);if(u&&slotCan(u)){meta.hfrag-=u.hf;meta.gold-=u.gold;meta.slotU[u.k]=true;meta.gear[u.k]=null;SND.play('leg');toast(`Emplacement <b>${u.n}</b> débloqué`)}}return CAMP_GO},
+  slotopen:function(a,arg,b,d){{const u=SLOT_U.find(x=>x.k===arg);if(u&&slotCan(u)){meta.hfrag-=u.hf;meta.gold-=u.gold;(meta.slotU[heroCls]||(meta.slotU[heroCls]={}))[u.k]=true;meta.gear[u.k]=null;SND.play('leg');toast(`Emplacement <b>${u.n}</b> débloqué ${pourCls(heroCls)}`)}}return CAMP_GO},
   dclose:function(a,arg,b,d){{campSel=null}return CAMP_GO},
   dmore:function(a,arg,b,d){{dockMore=!dockMore}return CAMP_GO},
   dall:function(a,arg,b,d){{dockAll=!dockAll}return CAMP_GO},

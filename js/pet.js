@@ -31,8 +31,16 @@ Object.assign(MODS,{
   pecho:{type:'p',n:'Écho élémentaire',r:2,max:1,drain:4,k:'pEcho',v:1,t:()=>'Les coups du familier appliquent la brûlure et le ralentissement de ton arme'},
 });
 Object.assign(MOD_POL,{pcrocs:'b',pviv:'b',pcara:'r',plien:'s',pbec:'b',pnuee:'b',plum:'r',ppur:'r',pprov:'r',pepine:'b',pflair:'s',ppoche:'s',ppartage:'r',pecho:'s'});
-function petBuild(){const p=petEq(),rk=p?p.rk:1,lv=p?p.lv:1;
-  return {kind:'p',key:'pet',load:arrOf(meta.pload,'pet',4),pol:arrOf(meta.ppol,'pet',4),mast:{r:Math.min(10,Math.floor(lv/2)),xp:0},slots:rk>=3?4:3,alignStore:meta.palign,cap0:8+2*rk,name:p?PETS[p.t].n:'Familier',de:'du familier'}}
+/* v139 : chaque familier a son build (cases, mods, alignements), rangé sous son numéro : meta.pload[uid], meta.ppol[uid], meta.palign[uid].
+   Sans familier équipé, un build vide qui n'est pas enregistré. */
+function petBuild(p=petEq()){const rk=p?p.rk:1,lv=p?p.lv:1,key=p?String(p.uid):null;
+  return {kind:'p',key,load:key?arrOf(meta.pload,key,4):Array(4).fill(null),pol:key?arrOf(meta.ppol,key,4):Array(4).fill(null),mast:{r:Math.min(10,Math.floor(lv/2)),xp:0},slots:rk>=3?4:3,alignStore:key?meta.palign:{},cap0:8+2*rk,name:p?PETS[p.t].n:'Familier',de:p?`du ${PETS[p.t].n}`:'du familier'}}
+// Retire le build d'un familier disparu (fusion) ; copie un build sur un autre familier.
+const petBuildDel=uid=>{const k=String(uid);delete meta.pload[k];delete meta.ppol[k];delete meta.palign[k]};
+const petBuildCopy=(from,to)=>{const a=String(from),b=String(to);meta.pload[b]=(meta.pload[a]||[]).slice();meta.ppol[b]=(meta.ppol[a]||[]).slice();if(meta.palign[a])meta.palign[b]=meta.palign[a];else delete meta.palign[b]};
+// Sauvegarde d'avant la v139 : un seul build pour tous les familiers ; chaque familier possédé le garde.
+if(meta.pload.pet||meta.ppol.pet||meta.palign.pet!=null){for(const q of meta.pets){const k=String(q.uid);meta.pload[k]=(meta.pload.pet||[]).slice();meta.ppol[k]=(meta.ppol.pet||[]).slice();if(meta.palign.pet)meta.palign[k]=meta.palign.pet}
+  delete meta.pload.pet;delete meta.ppol.pet;delete meta.palign.pet;saveMeta()}
 // Statistiques du familier équipé : rang, niveau et mods actifs.
 function petStats(){const p=petEq();if(!p)return null;const o={t:p.t,rk:p.rk,lv:p.lv,mul:petRkMul(p.rk)*petLvMul(p.lv),pDmg:0,pAps:0,pHp:0,pLink:0,pCrit:0,pMulti:0,pHeal:0,pCleanse:0,pTaunt:0,pThorns:0,pLoot:0,pPocket:0,pLeech:0,pEcho:0};
   for(const id of bActive(petBuild()))if(!MODS[id].pt||MODS[id].pt===p.t)o[MODS[id].k]+=modVal(id,meta.mods[id]);return o}
@@ -102,7 +110,7 @@ function petPanel(){const eq=petEq();
   h+=`<div class="cx-rows"><div class="cx-row"><span class="cx-row__k" style="color:var(--ink)">Œufs · ${meta.eggs}<small>Un familier au hasard</small></span><button class="cx-btn cx-btn--sm${meta.eggs?' cx-btn--primary':''}" data-pet="hatch" style="margin:0" ${meta.eggs?'':'disabled'}>Faire éclore</button></div>
     <button class="cx-row" data-pet="coll" aria-expanded="${petColl}"><span class="cx-row__k">Collection</span><span class="cx-row__v">${meta.pets.length} familier${meta.pets.length>1?'s':''}${fusN?` · ${fusN} fusion${fusN>1?'s':''} possible${fusN>1?'s':''}`:''}</span></button></div>`;
   if(petColl&&meta.pets.length)h+=`<ul class="petl">${meta.pets.slice().sort((a,b)=>(b.uid===meta.petEq)-(a.uid===meta.petEq)||b.rk-a.rk||b.lv-a.lv).map(p=>{const P=PETS[p.t],g=groups[p.t+'|'+p.rk],canF=p.rk<PET_RK&&g.length>=2,on=p.uid===meta.petEq,ps=petRkMul(p.rk)*petLvMul(p.lv);
-    return `<li class="${on?'on':''}"><span class="petic" style="--pc:${P.c}">${p.t==='corbeau'?'▲':p.t==='golem'?'■':p.t==='furet'?'⬮':'●'}</span><div class="petinfo"><b style="color:${P.c}">${P.n}</b> <span class="pstar">${RKS.repeat(p.rk)}</span><span class="cx-hint" style="margin:0">${P.role} · niveau ${p.lv} / ${PET_LV} · puissance ×${fmtN(ps)}</span></div>
+    return `<li class="${on?'on':''}"><span class="petic" style="--pc:${P.c}">${p.t==='corbeau'?'▲':p.t==='golem'?'■':p.t==='furet'?'⬮':'●'}</span><div class="petinfo"><b style="color:${P.c}">${P.n}</b> <span class="pstar">${RKS.repeat(p.rk)}</span><span class="cx-hint" style="margin:0">${P.role} · niveau ${p.lv} / ${PET_LV} · puissance ×${fmtN(ps)}${(()=>{const n=(meta.pload[String(p.uid)]||[]).filter(Boolean).length;return n?` · ${n} mod${n>1?'s':''}`:''})()}</span></div>
       <div class="cx-actions" style="margin:0">${on?`<button class="cx-btn cx-btn--sm cx-btn--ghost" data-pet="uneq">Retirer</button>`:`<button class="cx-btn cx-btn--sm" data-pet="eq" data-arg="${p.uid}">Équiper</button>`}${canF?`<button class="cx-btn cx-btn--sm cost-btn" data-pet="fuse" data-arg="${p.uid}" ${meta.essence<PET_FUSE(p.rk)?'disabled':''}><span>Fusionner → ${RKS.repeat(p.rk+1)}</span>${costHtml([['ess',PET_FUSE(p.rk)]])}</button>`:''}</div></li>`}).join('')}</ul>`;
   return h}
 function petAct(a,arg){petMsg='';
@@ -112,6 +120,8 @@ function petAct(a,arg){petMsg='';
   else if(a==='uneq'){meta.petEq=null}
   else if(a==='fuse'){const p=meta.pets.find(x=>x.uid===+arg);if(!p||p.rk>=PET_RK)return;const c=PET_FUSE(p.rk);if(meta.essence<c)return;
     const o=meta.pets.filter(x=>x!==p&&x.t===p.t&&x.rk===p.rk).sort((a,b)=>(a.uid===meta.petEq)-(b.uid===meta.petEq)||a.lv-b.lv)[0];if(!o)return;
-    meta.essence-=c;const keepEq=meta.petEq===o.uid||meta.petEq===p.uid;p.lv=Math.max(p.lv,o.lv);p.xp=Math.max(p.xp|0,o.xp|0);p.rk++;meta.pets=meta.pets.filter(x=>x!==o);if(keepEq)meta.petEq=p.uid;
+    meta.essence-=c;const keepEq=meta.petEq===o.uid||meta.petEq===p.uid;p.lv=Math.max(p.lv,o.lv);p.xp=Math.max(p.xp|0,o.xp|0);p.rk++;meta.pets=meta.pets.filter(x=>x!==o);
+    // v139 : le familier gardé prend le build de celui qui était équipé
+    if(meta.petEq===o.uid)petBuildCopy(o.uid,p.uid);petBuildDel(o.uid);if(keepEq)meta.petEq=p.uid;
     petMsg=`${PETS[p.t].n} passe ${RKS.repeat(p.rk)} : puissance ×${fmtN(petRkMul(p.rk)*petLvMul(p.lv))}.`;SND.play('relic')}
   saveMeta();if(typeof syncEq==='function')syncEq();modsChanged()}

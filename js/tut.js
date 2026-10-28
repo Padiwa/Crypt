@@ -14,9 +14,9 @@ const TUT=[
   {n:'Premières reliques',tip:'Garde toujours des reliques équipées : elles s\'ouvrent avec les ennemis au halo doré. Pousse ta plus haute mission avant de fabriquer : l\'objet en prend le niveau.',
     o:[['Ouvre une relique en mission',()=>meta.relOpened>=1],['Fabrique un objet légendaire',()=>ownedRar(3)],['Réussis une mission de niveau 20',()=>maxL()>=20]]},
   {n:'Difficile et Cauchemar',tip:'Plus de butin et plus de Gardiens : leurs fragments de harnais débloquent le 2e anneau (onglet Héros).',
-    o:[['Réussis une mission en Cauchemar',()=>meta.bestDiff>=2],['Débloque le 2e anneau',()=>slotOpen('anneau2')]]},
+    o:[['Réussis une mission en Cauchemar',()=>meta.bestDiff>=2],['Débloque le 2e anneau',()=>slotAny('anneau2')]]},
   {n:'Tourment',tip:'Tourment I à V : reliques Ancestrales. VI à X : Sanguines et Abyssales, et le dos. Le prestige s\'ouvre quand la Forge est au maximum.',
-    o:[['Réussis une mission en Tourment',()=>meta.bestDiff>=3],['Fabrique un objet ancestral',()=>ownedRar(4)],['Débloque le dos',()=>slotOpen('dos')]]},
+    o:[['Réussis une mission en Tourment',()=>meta.bestDiff>=3],['Fabrique un objet ancestral',()=>ownedRar(4)],['Débloque le dos',()=>slotAny('dos')]]},
 ];
 const tutStep=()=>TUT.findIndex(s=>!s.o.every(([,f])=>f()));
 // Appelé à la réussite d'une mission (bank).

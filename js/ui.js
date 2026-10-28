@@ -155,6 +155,12 @@ function gainXp(v){
   if(G.pend&&$('lvlup').hidden&&!G.over)showLevelUp();
 }
 let luShown=0;
+// v139 : sous l'effet d'un bonus, ce qu'il te donne déjà (rang actuel) → ce qu'il donnera si tu le prends ; le plafond est signalé quand la statistique l'atteint.
+function luCum(u,rk){
+  if(u.k==='fiole'){const n=G.potions|0,m=potMax();return `<span class="choice__cum"><span class="choice__cumk">Potions</span> ${n} → <span class="choice__cumv">${Math.min(m,n+1)}</span> sur ${m}</span>`}
+  const f=RUP_CU[u.k];if(!f||!u.max)return '';const cp=RUP_CAP[u.k];let cap='';
+  if(cp){const R=G.run;let s1=null;R[u.k]=rk+1;try{s1=stats(G.eq)}catch{}finally{if(rk)R[u.k]=rk;else delete R[u.k]}if(s1&&s1[cp[0]]>=cp[1])cap=` · plafond ${cp[1]} % atteint`}
+  return `<span class="choice__cum"><span class="choice__cumk">Cumul</span> ${f(rk)} → <span class="choice__cumv">${f(rk+1)}</span>${cap}</span>`}
 function showLevelUp(){SND.play('lvl');
   paused=true;resetJoy();$('bag').hidden=true;
   const capped={crit:S.crit>=75,cdr:S.cdr>=50,refl:S.dashCd>=60,endu:S.antidote>=60};
@@ -165,8 +171,8 @@ function showLevelUp(){SND.play('lvl');
   // v130 : cartes verticales (catégorie, nom, effet, rangs) ; la couleur de catégorie reste celle du jeu.
   const CAT={[C_ATK]:'Attaque',[C_DEF]:'Défense',[C_UTI]:'Utilité',[C_ELE]:'Élément'};
   $('choices').innerHTML=out.map((u,i)=>{const rk=G.run[u.k]||0;
-    const d=u.k==='purse'?`+${20*G.level} or`:u.d,rkt=u.max?(rk+1>=u.max&&rk?`rang ${rk+1} / ${u.max} · dernier`:rk?`rang ${rk} → ${rk+1} / ${u.max}`:`rang 1 / ${u.max}`):'';
-    return `<button class="choice${!rk&&u.max?' is-new':''}" data-k="${u.k}" style="--cc:${u.c||'var(--gold2)'}"><span class="k">${i+1}</span>${CAT[u.c]?`<span class="choice__cat">${CAT[u.c]}</span>`:''}${!rk&&u.max?'<span class="choice__new">Nouveau</span>':''}<b>${u.n}</b><p>${d}</p>${u.max?`<span class="pips" aria-hidden="true">${Array.from({length:u.max},(_,j)=>`<i class="${j<rk?'on':j===rk?'nx':''}"></i>`).join('')}</span><small${rk+1>=u.max&&rk?' class="last"':''}>${rkt}</small>`:''}</button>`}).join('');
+    const d=u.k==='purse'?`+${20*G.level} or`:u.d,rkt=u.max?(rk+1>=u.max&&rk?`rang ${rk+1} / ${u.max} · dernier`:rk?`rang ${rk} → ${rk+1} / ${u.max}`:`rang 1 / ${u.max}`):'',cum=luCum(u,rk);
+    return `<button class="choice${!rk&&u.max?' is-new':''}${cum?' has-cum':''}" data-k="${u.k}" style="--cc:${u.c||'var(--gold2)'}"><span class="k">${i+1}</span>${CAT[u.c]?`<span class="choice__cat">${CAT[u.c]}</span>`:''}${!rk&&u.max?'<span class="choice__new">Nouveau</span>':''}<b>${u.n}</b><p>${d}</p>${cum}${u.max?`<span class="pips" aria-hidden="true">${Array.from({length:u.max},(_,j)=>`<i class="${j<rk?'on':j===rk?'nx':''}"></i>`).join('')}</span><small${rk+1>=u.max&&rk?' class="last"':''}>${rkt}</small>`:''}</button>`}).join('');
   $('choices').querySelectorAll('.choice').forEach(b=>b.onclick=()=>{if(performance.now()-luShown<350)return;pickUp(b.dataset.k)});
   luShown=performance.now();
   $('lvlup').hidden=false;
@@ -271,11 +277,13 @@ function renderMods(rootId){
     const id=b.load[i],p=b.pol[i];return `<div class="cx-modslot${modSF===i?' fsel':''}"><button class="cx-modslot__pol" data-act="slotf" data-i="${i}" aria-pressed="${modSF===i}" aria-label="Filtrer les mods pour la case ${i+1} (${p?POL[p].n:'neutre'})" style="color:${p?POL[p].c:'var(--muted)'}">${p?POL[p].s+' '+POL[p].n:'Neutre'}</button>${id?modTile(id,(modSel===id?' is-sel':'')+(act.includes(id)?'':' off'),i,b):'<div class="cx-mod cx-mod--empty"><b>Libre</b></div>'}</div>`};
   const buyBox=modTab==='h'&&b.slots<HSLOT_MAX&&inCamp?(()=>{const c=HSLOT_COST[b.slots-3],have=fragTotal();
     return `<div class="cx-rows"><div class="cx-row"><span class="cx-row__k" style="color:var(--ink)">Case ${b.slots+1} du héros<small>${c} fragments de relique, pris parmi ceux que tu as en plus grand nombre · tu en as ${have}</small></span><button class="cx-btn cx-btn--sm cost-btn" data-act="slotbuy" style="margin:0" ${have<c?'disabled':''}><span>Débloquer</span>${costHtml([['frag',c,have]])}</button></div></div>`})():'';
-  const petTab=inCamp&&campTab==='pets',bn=modTab==='h'?`Build ${deCls(heroCls)}`:modTab==='w'?`Build ${b.de}`:'Build du familier';
+  const petTab=inCamp&&campTab==='pets',bn=modTab==='h'?`Build ${deCls(heroCls)}`:`Build ${b.de}`;
+  // v139 : sans familier équipé, pas de build à remplir (chaque familier a le sien)
+  if(petTab&&!petEq()){root.innerHTML=petPanel();root.querySelectorAll('[data-pet]').forEach(x=>x.onclick=()=>petAct(x.dataset.pet,x.dataset.arg));return}
   const over=u>cap;
   root.innerHTML=`${petTab?petPanel():`<div class="cx-tabs" role="tablist"><button class="cx-tab${isUnl('hmods')?'':' is-locked'}" role="tab" data-act="mtab" data-t="h" aria-selected="${modTab==='h'}">${isUnl('hmods')?'':`<span class="lockmini" aria-hidden="true">${LOCK_SVG}</span>`}Héros · ${CLS[heroCls].n}</button><button class="cx-tab" role="tab" data-act="mtab" data-t="w" aria-selected="${modTab==='w'}">Arme · ${wdef(curWid()).n}</button>${inCamp?'':`<button class="cx-tab" role="tab" data-act="mtab" data-t="p" aria-selected="${modTab==='p'}">Familier</button>`}</div>`}
     <div class="cx-meter${over?' is-over':''}"><div class="cx-meter__top"><span>Capacité</span><b>${u} / ${cap}</b></div><div class="cx-meter__bar"><i style="--v:${Math.min(100,cap?u/cap*100:0)}%"></i></div></div>
-    <p class="cx-hint" style="margin:0">${over?'<span style="color:var(--blood-ink)">Capacité dépassée : les mods en trop sont inactifs (grisés). Retire un mod ou regagne de la maîtrise.</span>':b.kind==='p'?`Bonus de niveau du familier +${mt.r} · capacité qui monte avec son rang et son niveau`:`Maîtrise ${b.kind==='w'?'arme':'héros'} ${mt.r} / 10${mt.r<10?` · ${mt.xp} / ${mastNeed(mt.r)}`:''} · gagne de la capacité en mission`}</p>
+    <p class="cx-hint" style="margin:0">${over?'<span style="color:var(--blood-ink)">Capacité dépassée : les mods en trop sont inactifs (grisés). Retire un mod ou regagne de la maîtrise.</span>':b.kind==='p'?`Build propre à ce familier · bonus de niveau +${mt.r} · capacité qui monte avec son rang et son niveau`:`Maîtrise ${b.kind==='w'?'arme':'héros'} ${mt.r} / 10${mt.r<10?` · ${mt.xp} / ${mastNeed(mt.r)}`:''} · gagne de la capacité en mission`}</p>
     ${modTab==='h'?`<div class="aurarow"><div class="cx-modslot"><span class="cx-modslot__pol" style="color:${AURA_C};cursor:default">✦ Aura</span>${b.aura?modTile(b.aura,modSel===b.aura?' is-sel':''):'<div class="cx-mod cx-mod--empty"><b>Aura libre</b></div>'}</div><p class="cx-hint" style="margin:0">Une aura rapporte de la capacité au lieu d'en coûter, et donne un effet permanent.</p></div>`:''}
     <section class="cx-section"><h3 class="cx-section__label">${bn} · ${b.load.slice(0,b.slots).filter(Boolean).length} / ${b.slots} cases</h3><div class="cx-build">${Array.from({length:slotsN},(_,i)=>slotHtml(i)).join('')}</div></section>
     ${buyBox}

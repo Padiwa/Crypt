@@ -21,10 +21,13 @@ if(typeof RYTHME==='undefined')console.error('Rythme de progression manquant : c
 // Coût en or de la fabrication (Légendaire et au-dessus : fragments des reliques).
 const CRAFT_G=[0,0,0,300,600,1000,1500].map(g=>Math.round(g*BAL.craftMul));
 const SLOT={arme:'Arme',armure:'Armure',amulette:'Amulette',bottes:'Bottes',anneau:'Anneau',anneau2:'Anneau 2',dos:'Dos'};
-/* Emplacements à débloquer avec des fragments de harnais (Gardiens) : d'abord le 2e anneau, puis le dos. */
+/* Emplacements à débloquer avec des fragments de harnais (Gardiens) : d'abord le 2e anneau, puis le dos.
+   v139 : chaque héros débloque les siens, meta.slotU[classe] = {anneau2, dos} ; c par défaut : le héros choisi. */
 const SLOT_U=[{k:'anneau2',n:'Anneau 2',hf:12,gold:2000},{k:'dos',n:'Dos',hf:25,gold:5000,need:'anneau2'}];
-const slotOpen=k=>!SLOT_U.some(u=>u.k===k)||!!(meta.slotU&&meta.slotU[k]);
-const GEAR_KEYS=()=>['armure','amulette','bottes','anneau','anneau2','dos'].filter(slotOpen);
+const slotCls=c=>{if(c)return c;try{return curCls()}catch{return 'archer'}};
+const slotOpen=(k,c)=>{if(!SLOT_U.some(u=>u.k===k))return true;const s=meta.slotU&&meta.slotU[slotCls(c)];return !!(s&&s[k])};
+const slotAny=k=>Object.keys(CLS).some(c=>slotOpen(k,c));
+const GEAR_KEYS=c=>['armure','amulette','bottes','anneau','anneau2','dos'].filter(k=>slotOpen(k,c));
 const keySlot=k=>k==='anneau2'?'anneau':k;
 // Case où va un objet : la sienne s'il est porté, sinon une case vide de son type, sinon celle où il apporte le plus.
 function tgtKey(eq,it){const ks=GEAR_KEYS().filter(k=>keySlot(k)===it.slot);if(!ks.length)return null;
@@ -362,6 +365,13 @@ const RUP=[
   {k:'fiole',n:'Fiole de réserve',d:'+1 potion tout de suite',max:3,c:C_DEF},
 ];
 const RUP_FILL=[{k:'heal',n:'Soin',d:'Rend 40 % de ta vie',max:0,c:C_DEF},{k:'purse',n:'Bourse',d:'Gagne de l\'or tout de suite',max:0,c:'#f0cf4a'}];
+/* Cumul d'un bonus de partie au rang n (v139, écran de montée de niveau : « ce que le bonus donne déjà → ce qu'il donnera si tu le prends »).
+   Les valeurs suivent stats() ; le texte du bonus, juste au-dessus, dit de quoi il s'agit. RUP_CAP : statistique plafonnée et son plafond. */
+const rupP=(v,sg='+')=>n=>n?`${sg}${fmtN(v*n)} %`:'0 %',rupN=n=>n?`+${n}`:'0';
+const RUP_CU={dmg:rupP(12),aps:rupP(10),crit:rupP(5),cdmg:rupP(30),multi:rupN,fan:n=>n?`+${2*n} projectiles et −${10*n} %`:'0',echo:rupP(20),wave:rupN,pierce:rupN,
+  reach:rupP(15),splash:rupP(25),nova:rupP(25),fury:rupP(15),ultp:rupP(30),hp:rupP(15),regen:rupP(1.5),leech:rupP(1.5),spd:rupP(8),mag:rupP(40),cdr:rupP(8,'−'),
+  burn:n=>n?`${10*n} %`:'0 %',chill:rupP(10),shock:rupP(6),srad:rupP(20),sdur:rupP(15),exec:rupP(40),slay:rupP(20),refl:rupP(15,'−'),endu:rupP(20,'−'),know:rupP(20),luck:rupP(15)};
+const RUP_CAP={crit:['crit',75],cdr:['cdr',50],fury:['fury',50],refl:['dashCd',60],endu:['antidote',60]};
 const xpNeed=l=>Math.round(120*Math.pow(1.32,l-1)+20*l);
 /* ---------- Sorts et ultimes (v132) ----------
    Trois sorts (compétence, touche E) et trois ultimes (touche F) par héros. Le 1er de chaque liste est celui d'origine ;
@@ -626,6 +636,9 @@ if(!meta.v5){
   meta.essence=(meta.essence|0)+ess;meta.maxL=Math.max(meta.maxL|0,meta.start|0,meta.cp|0,1);meta.wcp=meta.wcp||{};meta.v5=1;saveMeta();
 }
 meta.wcp=meta.wcp||{};meta.slotU=meta.slotU||{};meta.hfrag=meta.hfrag|0;
+// v139 : emplacements par héros. Une sauvegarde d'avant ({anneau2, dos} pour tous) les garde ouverts pour chaque héros.
+if(SLOT_U.some(u=>u.k in meta.slotU)){const o=meta.slotU,n={};for(const c in CLS){n[c]={};for(const u of SLOT_U)if(o[u.k])n[c][u.k]=true}meta.slotU=n;saveMeta()}
+for(const c in CLS)if(!meta.slotU[c]||typeof meta.slotU[c]!=='object')meta.slotU[c]={};
 /* ---------- v106 : chaque héros a son équipement ----------
    meta.gearBy[classe] = ses emplacements ; meta.gear désigne toujours celui du héros choisi (propriété calculée, non sauvegardée).
    Une ancienne sauvegarde donne son équipement au dernier héros joué. Un objet n'est porté que par un héros à la fois. */
@@ -644,6 +657,7 @@ const wornSlot=(it,c)=>{const g=meta.gearBy[c]||{};for(const k in g)if(g[k]===it
 const allWorn=()=>Object.keys(CLS).flatMap(c=>Object.values(meta.gearBy[c]||{}).filter(Boolean));
 // « par l'Archer », « par le Guerrier »…
 const parCls=c=>/^[AEIOUÉ]/.test(CLS[c].n)?`par l'${CLS[c].n}`:`par le ${CLS[c].n}`;
+const pourCls=c=>parCls(c).replace(/^par /,'pour ');
 const findItem=id=>meta.stash.find(i=>i.id===id)||allWorn().find(i=>i.id===id)||null;
 // Retire l'objet au héros qui le porte (s'il en a un) ; renvoie la classe du héros dépouillé.
 function unwear(it){const c=wornBy(it);if(!c||it.wid)return null;const k=wornSlot(it,c);meta.gearBy[c][k]=null;return c}
@@ -652,7 +666,7 @@ function unwear(it){const c=wornBy(it);if(!c||it.wid)return null;const k=wornSlo
    (un équipement enregistré avant n'a pas ces champs, « Porter » laisse alors les mods et le familier tels quels). */
 const SET_MAX=6;
 const setsOf=(c=heroCls)=>meta.sets[c]||(meta.sets[c]=[]);
-function setSave(i,c=heroCls){const L=setsOf(c),g={};for(const k of GEAR_KEYS())g[k]=meta.gearBy[c][k]?meta.gearBy[c][k].id:null;
+function setSave(i,c=heroCls){const L=setsOf(c),g={};for(const k of GEAR_KEYS(c))g[k]=meta.gearBy[c][k]?meta.gearBy[c][k].id:null;
   const s={n:L[i]?L[i].n:`Équipement ${L.length+1}`,g,w:curWid(c),wm:build('w',c).load.slice(),hm:build('h',c).load.slice(),au:meta.aura[c]||null,
     pet:meta.petEq==null?null:meta.petEq,pm:petBuild().load.slice()};
   if(L[i])L[i]=s;else if(L.length<SET_MAX)L.push(s);return s}
@@ -667,7 +681,7 @@ function setModsSame(s,c=heroCls){if(!('hm' in s))return true;const eq=(a,b)=>a.
   return eq(build('w',c).load,s.wm||[])&&eq(build('h',c).load,s.hm||[])&&(meta.aura[c]||null)===(s.au||null)&&(meta.petEq==null?null:meta.petEq)===s.pet&&eq(petBuild().load,s.pm||[])}
 // Porte un équipement enregistré : chaque objet est pris dans le coffre ou sur un autre héros. Renvoie {done, miss, from}.
 function setWear(i,c=heroCls){const s=setsOf(c)[i];if(!s)return null;const g=meta.gearBy[c];let done=0,miss=0;const from=new Set();
-  for(const k of GEAR_KEYS()){if(!(k in s.g))continue;const id=s.g[k],cur=g[k]||null;if(cur&&cur.id===id)continue;
+  for(const k of GEAR_KEYS(c)){if(!(k in s.g))continue;const id=s.g[k],cur=g[k]||null;if(cur&&cur.id===id)continue;
     if(id==null){if(cur){meta.stash.push(cur);g[k]=null;done++}continue}
     const it=findItem(id);if(!it||keySlot(k)!==it.slot){miss++;continue}
     const o=unwear(it);if(o)from.add(o);meta.stash=meta.stash.filter(x=>x!==it);if(cur)meta.stash.push(cur);g[k]=it;done++}

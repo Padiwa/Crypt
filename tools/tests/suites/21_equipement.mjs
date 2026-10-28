@@ -42,7 +42,7 @@ export const tests = [
     await p.click('.gearr[data-wsel="a2"]'); await p.click('#campDock [data-cact="wequip"][data-arg="a2"]');
     t.eq(await p.evaluate(() => [meta.wpn.archer, [...document.querySelectorAll('.gearl .gearr')].map((x) => x.dataset.wsel).sort()]), ['a2', ['a0', 'a3']], 'arme équipée depuis la fiche');
     // 2e anneau : l'objet va dans l'emplacement ouvert, même si le 1er anneau est vide
-    const ring = await p.evaluate(() => { meta.slotU = { anneau2: true }; meta.gear.anneau = null; meta.gear.anneau2 = null; const it = rgItem('L7', 50); meta.stash.push(it); saveMeta(); campSel = null; drawCamp(); return it.id; });
+    const ring = await p.evaluate(() => { meta.slotU[heroCls] = { anneau2: true }; meta.gear.anneau = null; meta.gear.anneau2 = null; const it = rgItem('L7', 50); meta.stash.push(it); saveMeta(); campSel = null; drawCamp(); return it.id; });
     await p.click('.gslot[data-arg="anneau2"]'); await p.click(`.gearr[data-stash="${ring}"]`); await p.click('#campDock [data-cact="equip"]');
     t.eq(await p.evaluate(() => [meta.gear.anneau2 && meta.gear.anneau2.rid, meta.gear.anneau]), ['L7', null], 'anneau posé dans le 2e emplacement');
     // retour arrière : la fiche, puis la vue principale du héros

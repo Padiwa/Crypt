@@ -37,7 +37,7 @@ export const tests = [
   } },
   { name: 'export puis import par fichier : identique', fn: async (b, t) => {
     const p = t.track(await newPage(b, { downloads: true }));
-    await p.evaluate(() => { meta.gold = 4321; meta.essence = 765; meta.maxL = 27; meta.slotU = { anneau2: true }; meta.hfrag = 7; meta.built.a3 = true; meta.wlv.a3 = 2; meta.wcp.a3 = [0, 1];
+    await p.evaluate(() => { meta.gold = 4321; meta.essence = 765; meta.maxL = 27; meta.slotU = { archer: { anneau2: true }, guerrier: {}, magicien: { anneau2: true, dos: true } }; meta.hfrag = 7; meta.built.a3 = true; meta.wlv.a3 = 2; meta.wcp.a3 = [0, 1];
       meta.parts = { L3: [1, 0, 1] }; meta.relics = { os: [3, 1], F_a4: [1, 0] }; meta.relicQ = [{ id: 'os', rad: true }]; meta.wins = 12; meta.tutOff = true;
       const r1 = rgItem('L7', 100); r1.up = 3; meta.gear.anneau = r1; meta.gear.anneau2 = rgItem('L8', 100); meta.stash.push(rgItem('B11', 100)); meta.stash[0].lock = true; saveMeta(); });
     const before = await snap(p);

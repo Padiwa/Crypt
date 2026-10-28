@@ -12,12 +12,13 @@ export const tests = [
     await p.click('.gslot[data-arg="dos"]');
     await p.click('[data-cact="slotopen"][data-arg="dos"]');
     t.eq(await p.evaluate(() => [GEAR_KEYS().join(), meta.hfrag, meta.gold]), ['armure,amulette,bottes,anneau,anneau2,dos', 3, 2000], 'résultat');
+    t.eq(await p.evaluate(() => [GEAR_KEYS('guerrier').join(), GEAR_KEYS('magicien').join()]), ['armure,amulette,bottes,anneau', 'armure,amulette,bottes,anneau'], 'v139 : les autres héros gardent leurs emplacements fermés');
   } },
   { name: 'deux anneaux différents, dos non équipable avant déblocage', fn: async (b, t) => {
     const p = t.track(await newPage(b));
     const r = await p.evaluate(() => {
       const d = rgItem('B11', 100), before = tgtKey(curEq(), d);
-      meta.slotU = { anneau2: true, dos: true }; meta.gear.anneau2 = null; meta.gear.dos = null;
+      meta.slotU[heroCls] = { anneau2: true, dos: true }; meta.gear.anneau2 = null; meta.gear.dos = null;
       meta.stash = [rgItem('L7', 100), rgItem('L8', 100), d];
       const plan = bestPlan(curEq(), meta.stash);
       return [before, !!plan.anneau && !!plan.anneau2 && plan.anneau !== plan.anneau2, plan.dos === d];
