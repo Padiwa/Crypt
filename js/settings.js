@@ -32,7 +32,6 @@ function drawSettings(){
     <section class="cx-section"><h3 class="cx-section__label">Rendu</h3>
       <div class="setrow"><div><b>${PX?'WebGL (PixiJS)':'Standard (Canvas)'}</b><span>WebGL est plus fluide ; le rendu standard sert de secours.</span></div><button class="cx-btn cx-btn--sm" id="setRend">${PX?'Passer au standard':'Essayer WebGL'}</button></div></section>`+`<section class="cx-section setsave">${typeof saveSection==='function'?saveSection():''}</section>`+(typeof updSection==='function'?updSection():'');
 }
-document.addEventListener('DOMContentLoaded',()=>{});
 (function wireSettings(){
   const body=$('setBody');
   body.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.cact){if(!b.disabled)campClick(b);return}
@@ -41,7 +40,7 @@ document.addEventListener('DOMContentLoaded',()=>{});
     else if(b.dataset.hand){SET.hand=b.dataset.hand;applyHand()}
     else if(b.dataset.pick){SET.pickSnd=b.dataset.pick}
     else if(b.dataset.mouse){SET.mouse=b.dataset.mouse}
-    else if(b.id==='setRend'){$('rendBtn').click();return}
+    else if(b.id==='setRend'){rendToggle();return}
     else if(b.id==='setUpd'){UPD.check();return}
     else if(b.id==='setUpdGo'){location.reload();return}
     saveSet();drawSettings();SND.play('ui')});

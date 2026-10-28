@@ -66,4 +66,4 @@ const SND=(()=>{
       setTimeout(bell,3500+Math.random()*4500)};setTimeout(bell,2500)}
   return {play,vol,unlock};
 })();
-addEventListener('click',e=>{if(e.target.closest('.btn,.cx-btn,.chip,.cx-chip,.tab,.cls,.cx-cell,.cx-slot,.cell,.mod,.rtile,.cx-role,.cx-pick,.cx-row,.cx-tab,.cx-mod'))SND.play('ui')},true);
+addEventListener('click',e=>{if(e.target.closest('.btn,.cx-btn,.chip,.cx-chip,.cx-cell,.cell,.cx-role,.cx-pick,.cx-row,.cx-tab,.cx-mod'))SND.play('ui')},true);

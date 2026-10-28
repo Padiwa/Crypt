@@ -1,5 +1,5 @@
 // Crypte des Cendres — camp.js : cœur du Camp (état, affichage des onglets, pied, table d'actions CAMP_ACT, accueil, feuille de choix).
-// Les onglets sont dans heros.js, arsenal.js, forge.js, collection.js, inv.js (coffre, recyclage), fuse.js (fusion), seal.js, pet.js ; la sauvegarde dans save.js.
+// Les onglets sont dans heros.js, arsenal.js, forge.js, collection.js, inv.js (coffre), gearview.js et dock.js (équipement, fiche ancrée), recycle.js (recyclage), fuse.js (fusion), seal.js, pet.js ; la sauvegarde dans save.js.
 /* ---------- Camp ---------- */
 let campTab='equip',campSel=null;
 function syncEq(){if(G&&(!started||G.over)){G.eq=curEq();S=stats(G.eq);G.P.hp=S.hp}}
@@ -94,7 +94,7 @@ function campFootHtml(){
   if(campTab==='forge'&&forgeSub==='fuse')return fusionFoot();
   if(campTab==='equip'&&heroSub!=='main'&&heroSub!=='gear')return '';
   if(campTab==='equip'||isCoffre()){const pn=Object.keys(bestPlan(curEq(),meta.stash,true)).length;return pn?`<button class="cx-btn cx-btn--primary" data-cact="bestall">Équiper le meilleur · ${pn}</button>`:''}
-  if(campTab==='relics'){relicQFix();const ne=relToEquip(relTier);if(!ne)return '';const sh=relTier==='g'?'Givre':relTier==='f'?'Forgées':relTier==='all'?'':RTIER[+relTier].n;return `<button class="cx-btn cx-btn--primary" data-cact="rqtype">Tout équiper${sh?' · '+sh:''} · ${ne}</button>`}
+  if(campTab==='relics'){relicQFix();const ne=relToEquip();if(!ne)return '';return `<button class="cx-btn cx-btn--primary" data-cact="rqall">Tout équiper · ${ne}</button>`}
   return '';
 }
 const campScroll={};
@@ -134,8 +134,7 @@ Object.assign(CAMP_ACT,{
   hcls:function(a,arg,b,d){{if(CLS[arg]&&arg!==heroCls){campSel=null;pickCls(arg);return}}return CAMP_GO},
   tutoff:function(a,arg,b,d){{meta.tutOff=true;toast('Parcours masqué : « Réafficher le parcours » en bas de l\'onglet Héros.')}return CAMP_GO},
   tuton:function(a,arg,b,d){{meta.tutOff=false}return CAMP_GO},
-  gosets:function(a,arg,b,d){{const e=$('setsSec');if(e)e.scrollIntoView({behavior:'smooth',block:'start'});return}return CAMP_GO},
-  goback:function(a,arg,b,d){{const B=campBack;campBack=null;if(B){campTab=B.tab;campSel=B.sel;drawCamp();$('campBody').parentElement.scrollTop=B.scroll||0;return}}return CAMP_GO},
+  goback:function(a,arg,b,d){{if(campBack){campRestore();return}}return CAMP_GO},
 });
 function openCamp(){$('camp').hidden=false;campSel=null;campMsg='';fzc=null;fzRole='a';drawCamp();navSync()}
 function closeCamp(){$('camp').hidden=true;if(!started)newGame();refreshMenus()}

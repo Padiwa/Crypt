@@ -97,7 +97,7 @@ function campFusion(){const g=fuseGroups();
   const a=fzc&&!fzc.w&&fzItem(fzc.a),b=fzc&&!fzc.w&&fzItem(fzc.b),W=fzc&&fzc.w;
   const role=(side,lab,it,v)=>`<button class="cx-role cx-role--${side==='a'?'dst':'src'}" data-cact="fzpick" data-arg="${side}" aria-pressed="${fzRole===side}"><span class="cx-role__k"><i>${side==='a'?'+':'−'}</i>${lab}</span><span class="cx-role__v${v?'':' is-empty'}" ${it?`style="color:${RARV[it.r]}"`:''}>${v||'Choisir un objet'}</span></button>`;
   h+=`<div class="cx-roles">${role('b','Source · sacrifiée',b,b?esc(itemName(b)):W?'Ses doubles':'')}${(()=>{const w=fzSwapWhy();return swapBtn('fzswap',!w,w)})()}${role('a','Cible · gardée',W?{r:wdef(W).r}:a,W?esc(wdef(W).n):a?esc(itemName(a)):'')}</div>`;
-  if(W){const w=wdef(W),q=wFusePlan(W),p=wFusePlan(W,1e15);
+  if(W){const q=wFusePlan(W),p=wFusePlan(W,1e15);
     h+=`<p class="cx-hint" style="margin:0">Une arme ne garde qu'un exemplaire : ses ${wSpares(W).length} double${wSpares(W).length>1?'s':''} n'ont pas d'affixes à eux et fusionnent tous dans l'arme, ${rkTxt(meta.wlv[W])} → ${rkTxt(q.n?q.R:p.R)}.</p>`}
   else if(a){
     const same=gearAll().filter(x=>x!==a&&mKey(x)===mKey(a)),mates=same.filter(x=>(x.up|0)===(a.up|0)),other=same.filter(x=>(x.up|0)!==(a.up|0));
@@ -122,7 +122,7 @@ function fzCards(a,b){const sel=fzc.sel,cap=fzCap(a,b),n=fzCount(sel),R=(a.up|0)
     <p class="cx-hint" style="margin:0">À gauche, touche les affixes de la source à prendre ; à droite, touche une affixe de la cible pour la retirer ou la remettre. ${n} affixe${n>1?'s':''} sur ${cap} au plus.</p>
     <div class="cx-diff fzdiff"><div class="cx-diff__card cx-diff__card--src"><span class="cx-diff__lab">− Source · sacrifiée</span><span class="cx-diff__nm" style="color:${RARV[b.r]}">${esc(b.name)}</span><span class="cx-diff__sub">${RAR[b.r].n} · ${fzWhy(b)||'coffre'}</span><ul>${sLines}</ul></div><div class="cx-diff__card cx-diff__card--dst"><span class="cx-diff__lab">+ Cible · ${rkTxt(a.up)} → ${rkTxt(R)}</span><span class="cx-diff__nm" style="color:${RARV[a.r]}">${esc(sel.base==='b'?b.name:a.name)}</span><span class="cx-diff__sub">${RAR[a.r].n} · ${fzWhy(a)||'coffre'} · +10 % au rang suivant</span><ul>${tLines}</ul></div></div>`}
 // Pied du mode Fusion : la paire choisie, l'arme choisie, sinon tout fusionner (ou seulement les raretés choisies).
-function fusionFoot(){if(fzc&&fzc.w){const W=fzc.w,q=wFusePlan(W),p=wFusePlan(W,1e15),ok=q.n>0;
+function fusionFoot(){if(fzc&&fzc.w){const W=fzc.w,q=wFusePlan(W),ok=q.n>0;
     return `<div class="row"><button class="cx-btn cx-btn--ghost" data-cact="fzno">Annuler</button><button class="cx-btn cx-btn--primary cost-btn" data-cact="wfuse" data-arg="${W}" ${ok?'':'disabled'}><span>Fusionner</span>${costHtml([['or',ok?q.cost:q.need]])}</button></div><p class="cx-hint">${ok?`${esc(wdef(W).n)} passe au ${rkTxt(q.R)}.`:`Il te manque ${q.need-meta.gold} or.`}</p>`}
   if(fzc){const a=fzItem(fzc.a),b=fzItem(fzc.b);if(fzPair(a,b)&&fzc.sel){const sel=fzc.sel,cost=gFuseCost(a),over=fzCount(sel)-fzCap(a,b),poor=meta.gold<cost,ok=!poor&&fzValid(a,b,sel);
     return `<div class="row"><button class="cx-btn cx-btn--ghost" data-cact="fzno">Annuler</button><button class="cx-btn cx-btn--primary cost-btn" data-cact="fzok" ${ok?'':'disabled'}><span>Fusionner</span>${costHtml([['or',cost]])}</button></div><p class="cx-hint">${over>0?`${over} affixe${over>1?'s':''} de trop : retires-en ${over>1?over:'une'}.`:poor?`Il te manque ${cost-meta.gold} or.`:`${esc(b.name)} niv. ${b.lvl} sera sacrifié.`}</p>`}
@@ -157,8 +157,8 @@ Object.assign(CAMP_ACT,{
   fzall:function(a,arg,b,d){if(fzc){{fzc.sel=fzBest(fzItem(fzc.a),fzItem(fzc.b))}return CAMP_GO}return CAMP_GO},
   fzkeep:function(a,arg,b,d){if(fzc){{fzc.sel=fzKeepA(fzItem(fzc.a),fzItem(fzc.b))}return CAMP_GO}return CAMP_GO},
   fzb:function(a,arg,b,d){{const B=fzItem(+arg);if(B&&fuseFree(B))fzSetB(B)}return CAMP_GO},
-  fzno:function(a,arg,b,d){{fzc=null;fzRole='a';if(campBack){const B=campBack;campBack=null;campTab=B.tab;campSel=B.sel;drawCamp();$('campBody').parentElement.scrollTop=B.scroll||0;return}}return CAMP_GO},
-  fzok:function(a,arg,b,d){if(fzc){{const A=fzItem(fzc.a),B=fzItem(fzc.b);if(A&&B&&fuseGear(A,B,fzc.sel)){SND.play('leg');toast(`<b style="color:${RAR[A.r].c}">${esc(A.name)}</b> passe au ${rkTxt(A.up)} · ${esc(B.name)} sacrifié`);fzc=null;fzRole='a';if(campBack){const K=campBack;campBack=null;campTab=K.tab;campSel=K.sel;saveMeta();syncEq();drawCamp();$('campBody').parentElement.scrollTop=K.scroll||0;return}}}return CAMP_GO}return CAMP_GO},
+  fzno:function(a,arg,b,d){{fzc=null;fzRole='a';if(campBack){campRestore();return}}return CAMP_GO},
+  fzok:function(a,arg,b,d){if(fzc){{const A=fzItem(fzc.a),B=fzItem(fzc.b);if(A&&B&&fuseGear(A,B,fzc.sel)){SND.play('leg');toast(`<b style="color:${RAR[A.r].c}">${esc(A.name)}</b> passe au ${rkTxt(A.up)} · ${esc(B.name)} sacrifié`);fzc=null;fzRole='a';if(campBack){campRestore(()=>{saveMeta();syncEq()});return}}}return CAMP_GO}return CAMP_GO},
   fzr:function(a,arg,b,d){{const r=+arg;if(fuseR.has(r))fuseR.delete(r);else fuseR.add(r)}return CAMP_GO},
   fzrall:function(a,arg,b,d){{fuseR.clear();}return CAMP_GO},
   fuseall:function(a,arg,b,d){{const n=fuseAll(fuseOk);if(n){SND.play('leg');toast(`${n} fusion${n>1?'s':''} faite${n>1?'s':''}`)}}return CAMP_GO},

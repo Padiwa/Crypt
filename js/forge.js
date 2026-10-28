@@ -91,7 +91,6 @@ function xfDiffCard(kind,it,where,lines,gone,top=''){const src=kind==='src';
     <ul><li class="cx-line cx-line--base">${baseTxtOf(it.slot,fmtN(it.base.v*upMul(it.up)))}</li>${lines}</ul>`:`<span class="cx-diff__sub">${src?(top?(xf.k?'Touche l\'objet à sacrifier dans la liste.':'Choisis l\'affixe, puis l\'objet sacrifié.'):'Choisis l\'objet source.'):'Choisis la cible.'}</span>`}</div>`}
 // Onglet Forge › Affixes et fusion (v127) : deux opérations sur les mêmes objets, chacune selon son déblocage (forgeSub 'affix' ou 'fuse').
 const afMode=()=>forgeSub==='fuse'?'fuse':'affix';
-let afLast=null;
 // Bouton ⇄ entre Source et Cible : intervertir les deux rôles si on s'est trompé (désactivé, avec la raison, quand la cible ne peut pas être sacrifiée).
 const SWAP_SVG='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h15M15 4l4 4-4 4M20 16H5M9 12l-4 4 4 4"/></svg>';
 const swapBtn=(act,ok,why)=>`<button type="button" class="cx-swap" data-cact="${act}" aria-label="Intervertir source et cible" title="${ok?'Intervertir source et cible':esc(why||'')}" ${ok?'':'disabled'}>${SWAP_SVG}</button>`;
@@ -168,7 +167,6 @@ function campForge(){
 $('campBody').addEventListener('change',e=>{if(e.target.id==='xfAff'){xf.k=e.target.value;xf.rep='';xf.op='';const s=xfGet(xf.src);if(s&&(!xf.k||s.aff[xf.k]==null))xf.src='';xf.pick='src';drawCamp()}else if(e.target.id==='xfSrc'){xf={src:e.target.value,k:'',dst:xf.dst===e.target.value?'':xf.dst,rep:''};drawCamp()}else if(e.target.id==='xfDst'){xf.dst=e.target.value;xf.rep='';drawCamp()}});
 
 Object.assign(CAMP_ACT,{
-  afmode:function(a,arg,b,d){{forgeSub=afLast=arg==='fuse'?'fuse':'affix';campSel=null;fzc=null;fzRole='a'}return CAMP_GO},
   xftake:function(a,arg,b,d){{const sc=$('campBody').parentElement.scrollTop;campBack={tab:campTab,sel:campSel,scroll:sc,label:{equip:'Héros',arsenal:arsView==='coffre'?'Coffre':'Arsenal'}[campTab]||'Héros',mode:a==='xfrecv'?'recv':'take'};
       xf=a==='xftake'?{src:arg,k:'',dst:'',rep:'',pick:'dst'}:{src:'',k:'',dst:arg,rep:'',pick:'src'};campTab='forge';forgeSub='affix';campSel=null;drawCamp();$('campBody').parentElement.scrollTop=0;return}return CAMP_GO},
   xfk:function(a,arg,b,d){{xf.k=arg;xf.rep='';xf.op=''}return CAMP_GO},

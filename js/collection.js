@@ -1,9 +1,6 @@
 // Crypte des Cendres — collection.js : Collection › Reliques (tableau par rareté, cartes par type, file d’ouverture, reliques forgées, raffinage en nombre) et ses actions. Découpé de camp.js en v135, gestion refaite en v140.
-let relTier='all'; // filtre gardé pour le bouton du bas (toutes les reliques depuis la v140)
-// Filtre : 'all', un type (0–3) ou 'f' (forgées)
-const relMatch=(id,f=relTier)=>{const R=RELICS[id];return f==='all'||(f==='f'?!!R.fz:String(R.t)===f&&!R.fz)};
-const relToEquip=f=>Object.keys(RELICS).filter(id=>meta.relics[id]&&relMatch(id,f)).reduce((n,id)=>n+[true,false].reduce((m,rad)=>m+Math.max(0,(meta.relics[id][rad?1:0]|0)-relicQN(id,rad)),0),0);
-const relInQ=f=>meta.relicQ.filter(q=>RELICS[q.id]&&relMatch(q.id,f)).length;
+// Reliques possédées qui ne sont pas encore dans la file d'ouverture (bouton « Tout équiper »).
+const relToEquip=()=>Object.keys(RELICS).filter(id=>meta.relics[id]).reduce((n,id)=>n+[true,false].reduce((m,rad)=>m+Math.max(0,(meta.relics[id][rad?1:0]|0)-relicQN(id,rad)),0),0);
 const FUSE_COST=[20,40,80,150];
 // Reliques non forgées d'un type, celles hors de la file d'ouverture d'abord, les intactes avant les éclatantes.
 function relAvail(t){const out=[];for(const id in RELICS){if(RELICS[id].t!==t||RELICS[id].fz)continue;const a=meta.relics[id];if(!a)continue;
@@ -108,9 +105,7 @@ Object.assign(CAMP_ACT,{
   rqnone:function(a,arg,b,d){{meta.relicQ=[]}return CAMP_GO},
   rqrad:function(a,arg,b,d){{for(const id in RELICS)relSetN(id,true,relOwn(id,true))}return CAMP_GO},
   rqsimple:function(a,arg,b,d){{for(const id in RELICS)relSetN(id,false,relOwn(id,false))}return CAMP_GO},
-  rqtype:function(a,arg,b,d){{const ids=Object.keys(RELICS).filter(id=>meta.relics[id]&&relMatch(id)).sort((x,y)=>RELICS[x].t-RELICS[y].t);for(const id of ids)for(const rad of [true,false])relSetN(id,rad,relOwn(id,rad))}return CAMP_GO},
-  rqtypeoff:function(a,arg,b,d){{meta.relicQ=meta.relicQ.filter(q=>!RELICS[q.id]||!relMatch(q.id))}return CAMP_GO},
-  rqall:function(a,arg,b,d){{for(const id in RELICS)for(const rad of [true,false])relSetN(id,rad,relOwn(id,rad))}return CAMP_GO},
+  rqall:function(a,arg,b,d){{const ids=Object.keys(RELICS).filter(id=>meta.relics[id]).sort((x,y)=>RELICS[x].t-RELICS[y].t);for(const id of ids)for(const rad of [true,false])relSetN(id,rad,relOwn(id,rad))}return CAMP_GO},
   rrefn:function(a,arg,b,d){{const [id,n]=arg.split('|');relRef[id]=Math.max(0,+n||0)}return CAMP_GO},
   // Raffinage en nombre (v140) : « id|n » ; « id » seul = une relique
   refine:function(a,arg,b,d){{const [id,n]=arg.split('|'),k=relRefine(id,n==null?1:+n);if(k){SND.play('relic');toast(`${k} relique${k>1?'s':''} ${RELICS[id].fz?'forgée'+(k>1?'s':''):RTIER[RELICS[id].t].n} raffinée${k>1?'s':''} : éclatante${k>1?'s':''}`)}}return CAMP_GO},

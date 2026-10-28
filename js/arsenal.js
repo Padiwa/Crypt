@@ -43,7 +43,6 @@ function arsBar(){const cp=craftPlan();
   return h}
 let arsView='coffre',arsR='w';
 function campArsenal2(){
-  const nOwn=Object.values(WPN).flat().filter(w=>ownedW(w.id)).length;
   const cur=arsView==='heros'?'coffre':arsView,tv=(k,lab,n)=>`<button class="cx-tab" role="tab" data-cact="arsv" data-arg="${k}" aria-selected="${cur===k}">${lab}${n!=null?` <span class="n">${n}</span>`:''}</button>`;
   const ak={rec:'craft',recy:'recy'},lk=k=>ak[k]&&!isUnl(ak[k]);
   const tv2=(k,lab,n)=>lk(k)?tv(k,`<span class="lockmini" aria-hidden="true">${LOCK_SVG}</span>${lab}`).replace('class="cx-tab"','class="cx-tab is-locked"'):tv(k,lab,n);
@@ -69,7 +68,6 @@ function campArsenal2(){
 }
 
 Object.assign(CAMP_ACT,{
-  toarsenal:function(a,arg,b,d){{campTab='arsenal';campSel=null}return CAMP_GO},
   // depuis Héros › Équipement, le coffre s'ouvre filtré sur l'emplacement choisi (arg = arme, armure, anneau…)
   gocoffre:function(a,arg,b,d){{campTab='arsenal';arsView='coffre';campSel=null;if(arg&&(arg==='arme'||SLOT[arg])){stF=arg;campTop=true}}return CAMP_GO},
   goheros:function(a,arg,b,d){{campTab='arsenal';arsView='heros';campSel=null}return CAMP_GO},

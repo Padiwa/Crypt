@@ -7,10 +7,20 @@ Action-RPG de crypte en hordes, jouable au pouce sur mobile et au clavier. Site 
 | --- | --- |
 | `index.html` | Interface (HUD, accueil Combat, écran Mission, Camp, barre des 5 onglets, Réglages) et ordre de chargement des scripts |
 | `css/game.css` | Toute la feuille de style : mise en page et design system « Crypte » (tokens + composants `cx-`), puis l'habillage de la refonte v130, style « AAA mobile » (cadres dorés, boutons à relief, cases serties). `aaa.css` y est fusionné depuis la v135 |
-| `js/data.js` | Constantes, classes, armes, reliques, mods, affixes, sauvegarde `meta` |
-| `js/game.js` | État de partie, ennemis, combat, apparitions, butin, mise à jour |
-| `js/render.js` | Rendu Canvas 2D, rendu WebGL (PixiJS 7.4.2) et HUD |
-| `js/ui.js` | Fiches d'objets, Puissance (`powerOf`) et « Équiper le meilleur », Pause, bonus de niveau, Mods, fin de mission |
+| `js/data.js` | Outils communs, raretés, rythme (`BAL`), emplacements, biomes, classes, armes, reliques et objets des reliques |
+| `js/progress.js` | Sauvegarde `meta` et son chargement, Bonus de la Forge, talents, prestige, bonus de partie, sorts et ultimes |
+| `js/mods.js` | Statuts (constantes), mods d'arme et de héros, rangs, étoiles, capacité, conversions des mods (v141, v142) |
+| `js/items.js` | Affixes, objets (tirage, rang, fragments), statistiques du héros (`stats`) |
+| `js/equip.js` | Migrations v91 et v139, équipement par héros, équipements enregistrés |
+| `js/game.js` | État d'une mission (`newGame`), ennemis, apparitions, Nécropole des Sables, sol, effets |
+| `js/combat.js` | Dégâts, statuts, explosions, mort d'un ennemi et butin, coups reçus |
+| `js/spells.js` | Entrées (clavier, souris, tactile), sorts, ultimes, esquive et potion |
+| `js/step.js` | Grille spatiale et pas de simulation `update(dt)` |
+| `js/render.js` | Rendu Canvas 2D, formes communes aux deux rendus (sables, statuts, icônes de butin) et HUD |
+| `js/rendergl.js` | Rendu WebGL (PixiJS 7.4.2) : textures, formes des monstres et des héros, repli sur le Canvas |
+| `js/ui.js` | Fiches d'objets, Pause, bonus de niveau, fin de mission |
+| `js/power.js` | Puissance (`powerOf`, `survOf`) et « Équiper le meilleur » |
+| `js/modsui.js` | Interface des mods (Héros › Mods) : builds d'arme, de héros et de familier, collection, surcharge |
 | `js/camp.js` | Cœur du Camp : état, affichage des onglets et du pied, table d'actions `CAMP_ACT` (chaque fichier du Camp y ajoute les siennes), accueil, feuille de choix |
 | `js/heros.js` | Onglet Héros : couleurs, prestige, sorts et talents, équipements enregistrés (actions) |
 | `js/arsenal.js` | Onglet Arsenal : Coffre, Recettes (plans, fragments, fabrication), Recycler |
@@ -18,7 +28,10 @@ Action-RPG de crypte en hordes, jouable au pouce sur mobile et au clavier. Site 
 | `js/collection.js` | Collection › Reliques : file d'ouverture, reliques forgées, raffinage |
 | `js/save.js` | Réglages › Sauvegarde : exporter, importer, recommencer à zéro |
 | `js/shell.js` | Navigation de la refonte : barre des 5 onglets, accueil Combat (héros dessiné, carte de mission), écran Mission, feuille du Parcours |
-| `js/inv.js` | Onglet Héros (six tuiles) et Héros › Équipement (emplacement par emplacement, objets classés par Puissance), Arsenal › Coffre et Recycler, fiche d'objet ancrée, grilles de 120 cases |
+| `js/inv.js` | Inventaire unique (recherche, tri, filtres, grilles de 120 cases) et onglet Héros (six tuiles) |
+| `js/gearview.js` | Héros › Équipement (emplacement par emplacement, objets classés par Puissance), équipements enregistrés, Arsenal › Coffre |
+| `js/dock.js` | Fiche d'objet ancrée, comparaison, départ d'un transfert d'affixe, message « Annuler » |
+| `js/recycle.js` | Arsenal › Recycler |
 | `js/fuse.js` | Fusion de rang (armes et équipements) et son écran, Forge › Fusion |
 | `js/seal.js` | Sceaux légendaires de la Brèche (Forge › Sceaux) |
 | `js/pet.js` | Familiers (Héros › Familier) |
@@ -26,6 +39,7 @@ Action-RPG de crypte en hordes, jouable au pouce sur mobile et au clavier. Site 
 | `js/unlock.js` | Déblocages progressifs du Camp et des choix de mission (conditions, cartes « Nouveau ») |
 | `js/rythmes/` | Rythmes de progression (`rapide.js` publié, `long.js`) |
 | `js/net.js` | Coopération jusqu'à 4 (WebRTC) : par code à 4 chiffres (relais) ou par QR codes |
+| `js/netui.js` | Écran Coopération : salon, codes, QR code, caméra |
 | `js/relais.js` | Remplace l'adresse du relais (vide : relais du jeu, `RELAY_CF` dans `js/net.js` ; `off` : QR codes seulement) |
 | `relais/` | Le relais (Cloudflare Worker + Durable Objects, offre gratuite) et son déploiement |
 | `js/update.js` | Détection des nouvelles versions |
@@ -87,7 +101,7 @@ node tools/progression/builds.mjs resultats 4 tank feu   # exemples de builds, �
 
 ## Coopération
 
-`js/net.js` relie jusqu'à 4 appareils en pair à pair (WebRTC, canal de données), sans serveur de jeu. La mise en relation passe par le relais (code à 4 chiffres, le mode par défaut, voir plus bas) ou, sans relais, par les codes d'offre et de réponse (SDP compressé), échangés par QR code ou copier-coller. L'hôte simule les monstres et envoie un instantané 20 fois par seconde ; chaque joueur simule son héros, ses tirs (coups envoyés à l'hôte) et son propre butin. Le QR code utilise `qrcode-generator` (jsDelivr), chargé seulement à l'ouverture de l'écran Coopération. Fonctionne sur GitHub Pages (https) ; même réseau conseillé (un serveur STUN public est aussi indiqué).
+`js/net.js` relie jusqu'à 4 appareils en pair à pair (WebRTC, canal de données), sans serveur de jeu. La mise en relation passe par le relais (code à 4 chiffres, le mode par défaut, voir plus bas) ou, sans relais, par les codes d'offre et de réponse (SDP compressé), échangés par QR code ou copier-coller. L'hôte simule les monstres et envoie un instantané 20 fois par seconde ; chaque joueur simule son héros, ses tirs (coups envoyés à l'hôte) et son propre butin. Le QR code utilise `qrcode-generator` (jsDelivr), chargé seulement à l'ouverture de l'écran Coopération (`js/netui.js`). Fonctionne sur GitHub Pages (https) ; même réseau conseillé (un serveur STUN public est aussi indiqué).
 
 Chaque joueur se présente (message `hello`, protocole `NET_V`) avec son héros, son nom et le niveau de prestige de ce héros ; l'hôte renvoie la liste à tous (`roster`) à chaque changement. Le nom vient de `meta.pname` (Réglages › Compte, nettoyé par `cleanName`, 16 signes) ou, par défaut, de l'identifiant `meta.pid` tiré une fois (`Joueur-XXXXX`). Les deux font partie de la sauvegarde.
 

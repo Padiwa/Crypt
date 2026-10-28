@@ -1,4 +1,5 @@
-// Crypte des Cendres — ui.js
+// Crypte des Cendres — ui.js : fiches partagées, pause et sac, montée de niveau, coût d'une action, fin de niveau et écran de fin de mission.
+// Puissance : power.js ; interface des mods : modsui.js (v145).
 /* ---------- Fiches partagées ---------- */
 function statRows(St){
   const rows=[['Dégâts',Math.round(St.dmg)],['Attaques / s',St.aps.toFixed(2)],['Critique',Math.round(St.crit)+' %'],['Dégâts critiques',Math.round(St.critDmg)+' %'],['Puissance',Math.round(power(St))],...(()=>{const W=powerOf(St);return [['· attaques',Math.round(W.atk)],['· sort',Math.round(W.skill)],['· ultime',Math.round(W.ult+W.pulse)],...(W.pet?[['· familier',Math.round(W.pet)]]:[])]})(),['Vie',Math.round(St.hp)],['Réduction',Math.round(St.armor)+' %'],['Vitesse',Math.round(St.speed/2.2)+' %'],['Portée des compétences',Math.round(100+St.skillRad)+' %'],...(heroCls==='magicien'?[['Rayon d\'explosion',Math.round(100+St.splash)+' %']]:[]),heroCls==='guerrier'?['Ondes par coup',St.waves]:['Projectiles par tir',(1+St.multi).toFixed(St.multi%1?2:0)],['Double attaque',St.echo+' %'],['Dégâts de compétence',Math.round(St.nova)],
@@ -22,113 +23,9 @@ const LOCK_SVG='<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="1
 const cellHtml=(it,attr,sel,up)=>`<button class="cell${sel?' sel':''}${up?' up':''}${it.lock?' locked':''}" data-${attr}="${it.id}" style="border-color:${RAR[it.r].c};color:${RAR[it.r].c}" aria-label="${itemName(it)}${it.lock?', verrouillé':''}">${it.lock?`<span class="lk">${LOCK_SVG}</span>`:''}${it.up?`<span class="cup">R${it.up+1}</span>`:''}${GLYPH[it.slot]}</button>`;
 // Clé d'une composition d'équipement (héros, arme, objets) pour le cache d'affichage.
 const eqKey=e=>heroCls+'|'+Object.keys(e).map(k=>{const it=e[k];return it?(it.wid?'w'+it.wid+'.'+(meta.wlv[it.wid]|0):it.id+'.'+(it.up|0)):'-'}).join(',');
-/* ---------- Puissance (v137) ----------
-   Dégâts par seconde estimés dans une horde : attaques + sort + ultime (+ Onde du Vide). Tout y compte : dégâts, cadence, critique
-   et dégâts critiques, projectiles, transpercement, portée de frappe, rayon d'explosion, dégâts de compétence, recharge, portée et
-   durée des compétences, dégâts et charge de l'ultime, brûlure, éléments, bonus conditionnels et pouvoirs abyssaux.
-   C'est le chiffre « Puissance » des fiches, et ce que visent « Équiper le meilleur » et ▲ ; la survie ne fait que départager.
-   PW : hypothèses de l'estimation (ennemis touchés par une zone de taille de départ, part des coups concernés par un bonus…).
-   kills : ennemis abattus par seconde, pour la charge de l'ultime ; mesuré avec le bot du banc de progression (v137) : 4 à 19 par seconde
-   selon le niveau et la classe (1,5 en difficulté), on garde 5.
-   v141 : statuts. Poison et saignement en part des dégâts des coups (couches au plus, PW.dot : part touchée avant la mort de l'ennemi),
-   part du temps sous contrôle (étourdi, immobilisé, gelé) pour Brise-garde, part des coups sur un ennemi qui porte 1 ou 2 statuts
-   pour Œil du chasseur, Boucherie et Catalyse. Le Magicien ne pose les statuts que sur la cible touchée, sauf avec Déflagration. */
-// mark : part de tes dégâts sur une cible marquée par le corbeau (par cible piquée) ; dashT : une esquive toutes les 6 s environ (Instinct)
-const PW={kills:5,dot:.7,cont:.6,embr:.4,spK:3,low:.1,exec:.25,boss:.15,hunt:.2,shock:1.8,pierce:.5,reachT:1.2,splashT:.3,pulseT:5,shard:.5,doom:.5,mark:.3,dashT:6,
-  // c : dégâts d'un lancer en multiples de la puissance de compétence (cibles comprises) ; cr : critique possible ;
-  // area : × (1 + portée des compétences) ; rng : × (1 + rng × portée des compétences), carreaux et éclairs qui vont plus loin ;
-  // reach : × (1 + portée de frappe) ; splash : × (1 + rayon d'explosion) ; dur : × (1 + durée)
-  sk:{volee:{c:24*.35*.4,rng:.5},chasseur:{c:3*1.6*1.5,cr:1,rng:.3},recul:{c:9*.5*.5,cr:1,rng:.3},tourbillon:{c:.22*8*3,cr:1,area:1,reach:1,dur:1},
-    bond:{c:1.4*3.5,cr:1,area:1,reach:1},cri:{buff:.2},nova:{c:4,cr:1,area:1},eclair:{c:1.2*5.217,cr:1,rng:.2},transfert:{c:2*.6*2,area:1,splash:1}},
-  // ultimes : c (dégâts d'un lancer), ou renfort de t secondes (berserk : × 1,6 ; faucon : cadence × 2 et tout critique ; surcharge : sort toutes les 0,5 s et cadence × 2)
-  ul:{titan:{c:ULT_C.titan*8,area:1},rempart:{c:0},berserk:{t:8,x:1.6},pluie:{c:100*ULT_C.pluie,cr:1},faucon:{t:6,hawk:1},tempete:{c:152*ULT_C.tempete*.4,cr:1,rng:.5},
-    meteores:{c:3*ULT_C.meteores*5,cr:1,area:1},blizzard:{c:17*ULT_C.blizzard*6,cr:1,area:1},surcharge:{t:6,sur:1}}};
-function powerOf(x,cls=heroCls,kit=kitOf(cls)){
-  const cr=Math.min(75,x.crit)/100,hits=Math.max(1,x.aps*(1+x.multi*.8));
-  // part du temps où une cible porte un effet de durée t, posé à chaque coup avec la chance c
-  const upT=(c,t)=>c>0?1-Math.pow(1-Math.min(1,c),Math.max(1,hits*t)):0;
-  const dm=1+(x.stDur||0)/100,sd=1+x.skillDur/100;
-  const cu=upT(Math.min(60,x.curse||0)/100,5),sl=Math.max(upT((x.chill||0)/100,2*sd*dm),upT((x.frz||0)/100,1.5*sd));
-  // attaques : ennemis touchés par coup selon la classe
-  const tg=cls==='archer'?1+PW.pierce*x.pierce:cls==='guerrier'?PW.reachT*(1+x.reach/100):1+PW.splashT*(1+x.splash/100);
-  // statuts (v141) : chance par coup (Pointe de diamant : à coup sûr sur les ennemis transpercés), couches, temps sous contrôle
-  const pf=cls==='archer'&&x.diam&&tg>1?(tg-1)/tg:0,fc=c=>c>0?Math.min(1,c+(1-c)*pf):0;
-  const cP=fc((x.psnCh||0)/100),cB0=fc((x.bldCh||0)/100),cB=Math.min(1,cB0+(x.hemo?cr*(1-cB0):0)),cS=fc((x.stunCh||0)/100),cR=fc((x.rootCh||0)/100);
-  const rawP=hits*cP*PSN_T*dm,nP=Math.min(PSN_MAX,rawP),nB=Math.min(BLD_MAX,hits*cB*BLD_T*dm);
-  const upC=(c,t,imm)=>c>0&&t>0?t/(t+imm+1/(hits*c)):0;
-  const stU=Math.max(upC(cS,STUN_T,STUN_IMM),x.surt?upC((x.shock||0)/100*.5,x.surt,STUN_IMM):0),rtU=upC(cR,ROOT_T*sd*dm,ROOT_IMM),
-    fzU=x.cryo?upC((x.chill||0)/100*sl,x.cryo,1.5):0,ctl=1-(1-stU)*(1-rtU)*(1-fzU)*(1-upT((x.frz||0)/100,1));
-  const pr=[x.burn>0?1:0,upT(cP,PSN_T*dm),upT(cB,BLD_T*dm),sl,stU,rtU,cu];let p0=1,p1=0;for(const q of pr){p1=p1*(1-q)+p0*q;p0*=1-q}
-  const pSt=1-p0,p2=Math.max(0,1-p0-p1);
-  // critique : Œil du chasseur et Boucherie contre un ennemi qui porte un statut
-  const crS=Math.min(1,cr+(x.critSt||0)/100),crE=cr*(1-pSt)+crS*pSt,cm=1+crE*(x.critDmg/100-1)+pSt*crS*(x.cdSt||0)/100;
-  // poison et saignement en part des dégâts des coups ; Contagion, Peste
-  const dotM=(1+(x.dotPct||0)/100)*PW.dot*(1+PW.cont*(x.contag||0)/100);
-  const rP=nP*PSN_PCT/100/hits*(1+(x.peste?(rawP>=PSN_MAX?.12:.05)*x.peste:0)),rB=nB*BLD_PCT/100/BLD_T/hits*(1+(x.hemo&&cB>0?cr/cB*x.hemo/100:0));
-  const dotR=(rP+rB)*dotM,stTg=cls==='magicien'?(1+(tg-1)*Math.min(1,Math.max(x.defl||0,EXPL_ST)/100))/tg:1;
-  // poison et saignement d'un coup de sort ou d'ultime ; Imprégnation et Fléau (v142) multiplient la chance, plafonds gardés
-  const spDotM=k=>(Math.min(.6,cP*k)*PSN_PCT/100*PSN_T*dm+Math.min(.6,cB*k)*BLD_PCT/100*dm)*dotM,spDot=spDotM(x.impr||1),ulDot=spDotM(x.flea||1);
-  // chaque coup : bonus conditionnels (part des coups concernés), éléments, pouvoirs abyssaux, Catalyse, Brise-garde
-  const hitM=(1+PW.low*x.lowDmg/100)*(1+PW.exec*x.execute/100)*(1+PW.boss*x.bossDmg/100)*(1+PW.hunt*x.abHunt/100)*(1+.06*x.abSoul)*(1+.015*x.abExec)
-    *(1+sl*x.cold/100)*(1+cu*(.15+(x.hex||0)/100))*(1+PW.shock*x.shock/100*(x.surt?(3+surtJ(x.surt))/3:1))*(1+cr*x.abRift/100*2.1)*(1+PW.shard*x.shard/100)*(1+cu*PW.doom*(x.doom||0)/100)
-    *(1+p2*(x.cata||0)/100)*(1+ctl*(x.ccDmg||0)/100);
-  const atk=(x.dmg*x.aps*cm*(1+x.multi*.8)*(1+x.echo/100)*(1+x.waves*.5)*(1+dotR*stTg)+x.burn*(1+PW.embr*(x.embr||0)/150))*tg*hitM;
-  // sort
-  const sp=SPELLS[cls].s[kit.s]||SPELLS[cls].s[0],K=PW.sk[sp.k],sr=1+x.skillRad/100,cd=Math.max(.5,sp.cd*(1-x.cdr/100)*(x.seals&&x.seals.sablier?.8:1)*(x.seals&&x.seals.vif?.85:1)-Math.min(2,PW.spK*(x.flux||0)));
-  let skill=0,buff=1,cast=0;
-  if(K.buff)buff=1+K.buff*Math.min(1,6*(1+x.skillDur/100)/cd);
-  else{cast=x.nova*K.c*(K.dur?1+x.skillDur/100:1)*(K.area?sr:1)*(K.reach?1+x.reach/100:1)*(K.splash?1+x.splash/100:1)*(K.rng?1+K.rng*x.skillRad/100:1)*(K.cr?cm:1)*(1+spDot)*(1+pSt*(x.intSt||0)/100)*hitM;skill=cast/cd}
-  // ultime (v138) : 1 point de charge par seconde, plus les ennemis abattus (PW.kills par seconde, ULT_KILL chacun, au plus ULT_KMAX par seconde)
-  const U=SPELLS[cls].u[kit.u]||SPELLS[cls].u[0],Q=PW.ul[U.k],um=1+(x.ultPct||0)/100,uNeed=Math.max(ULT_MIN,Math.round(ULT_N*(1-(Math.min(50,x.fury||0)+(x.seals&&x.seals.cri?20:0))/100))),T=uNeed*(1-(x.rema||0)/100)/(1+Math.min(ULT_KMAX,ULT_KILL*PW.kills)),bd=1+(x.buffDur||0)/100;
-  let ult=0;
-  if(Q.c)ult=x.nova*Q.c*(U.k==='blizzard'?bd:1)*(Q.area?sr:1)*(Q.rng?1+Q.rng*x.skillRad/100:1)*(Q.cr?cm:1)*(1+ulDot)*um*hitM*(1+PW.boss*(ULT_GX-1))/T;
-  else if(Q.hawk)ult=atk*Q.t*bd*(2*(x.critDmg/100)/cm*um-1)/T;
-  else if(Q.x)ult=atk*Q.t*bd*(Q.x*um-1)/T;
-  else if(Q.sur)ult=(atk*(2*um-1)+(cast?cast*um/.5-skill:0))*Q.t*bd/T;
-  const pulse=x.abPulse?x.dmg*x.abPulse/100*PW.pulseT*(1+x.skillRad/200)/5:0;
-  // familier : corbeau (piqué toutes les 1,2 s), golem (épines pendant l'attirance, 4 s sur 11, 3 ennemis) ; il frappe avec tes dégâts et tes dégâts critiques
-  // v143 : Écho élémentaire (statuts de l'arme à 50 % de leur chance), Instinct (une action de plus à chaque esquive, au plus toutes les 4 à 6 s),
-  // Marque du corbeau (tes dégâts × (1 + marque) sur la part de tes coups qui touche une cible marquée)
-  const ps=petNow();let pet=0,mk=1;
-  if(ps){const pm=ps.mul*(1+ps.pDmg/100),pr=1+ps.pAps/100,pc=1+Math.min(75,5+ps.pCrit)/100*(x.critDmg/100-1),ic=ps.pInst>0?Math.max(petInstCd(ps.pInst),PW.dashT):0,ec=1+(ps.pEcho?spDotM(.5):0);
-    if(ps.t==='corbeau'){const n=1+Math.round(ps.pMulti);pet=x.dmg*.6*pm*pc*n*(pr/1.2+(ic?1/ic:0))*hitM*ec;if(ps.pMark>0)mk=1+Math.min(.6,PW.mark*n)*ps.pMark/100}
-    else if(ps.t==='golem'){const on=4*(1+ps.pHp/100),off=ic?Math.min(7/pr,ic):7/pr;pet=x.dmg*.3*pm*pc*(1+ps.pThorns/100)*3/.5*on/(on+off)*hitM*ec}}
-  const p=(atk+skill+ult+pulse+pet)*buff*mk,b=buff*mk;
-  return {p,atk:atk*b,skill:skill*b,ult:ult*b,pulse:pulse*b,pet:pet*b}}
-// Familier équipé : celui de la mission en cours, sinon celui du Camp (gardé le temps d'un affichage).
-const petNow=()=>(typeof started!=='undefined'&&started&&G&&G.petS)?G.petS:(typeof petStats==='function'?memo('petS',petStats):null);
-// Survie apportée par le familier : soin du follet (en PV par seconde, comme la régénération), Flamme protectrice, attirance du golem et Séisme.
-function petSurv(x){const ps=petNow();if(!ps)return {hp:0,m:1,hps:0};const ic=ps.pInst>0?Math.max(petInstCd(ps.pInst),PW.dashT):0;
-  if(ps.t==='follet')return {hp:x.hp*(ps.pFlame||0)/100*.5,m:1+(ps.pCleanse?.02:0),hps:x.hp*.01*ps.mul*(1+ps.pHeal/100)*1.5+(ic?x.hp*.04*ps.mul*(1+ps.pHeal/100)/ic:0)};
-  if(ps.t==='golem'){const on=4*(1+ps.pHp/100),pr=1+ps.pAps/100,off=ic?Math.min(7/pr,ic):7/pr,up=on/(on+off);return {hp:0,m:1+.15*up*(1+ps.pTaunt/100)+.8*(ps.pSeis||0)/(on+off),hps:0}}
-  return {hp:0,m:1,hps:0}}
-const power=x=>powerOf(x).p;
-// Survie (départage) : vie effective, réduction, protections, soins.
-const survOf=x=>{const q=petSurv(x);return (x.hp+x.abWard*8+q.hp)/(1-Math.min(60,x.armor)/200)*(1+x.lowArmor*.003+x.potHeal*.001+x.antidote*.001+x.auraSlow*.003+(x.thorns||0)*.002+(x.soif||0)*.01
-  +(x.gardA||0)*.012+(x.exFer||0)*.002+(x.peau||0)*.0025+(x.terr||0)*.008+(x.econ||0)*.003+(x.elan||0)*.001)*q.m+(x.regen+q.hps)*15};
-// Valeur d'un équipement (gardée le temps d'un affichage) et comparaison : la Puissance d'abord (0,01 % près), puis la survie.
-const eqVal=e=>drawCache?memo('ev|'+eqKey(e),()=>eqVal0(e)):eqVal0(e);
-function eqVal0(e){const x=stats(e);return {p:power(x),v:survOf(x)}}
-const eqGt=(a,b)=>a.p>b.p*(1+1e-4)+1e-9||(a.p>=b.p*(1-1e-4)&&a.v>b.v*(1+1e-4)+1e-9);
-// Ancien nom gardé pour les outils (banc de progression) : la Puissance.
-const itemScore=e=>eqVal(e).p;
-// Meilleur équipement : pour chaque emplacement, l'objet qui donne la plus haute Puissance (puis la meilleure survie).
-// wpn (au Camp) : compare aussi les armes possédées du héros, chacune avec ses propres mods et sa maîtrise.
-function bestPlan(e,pool,wpn){if(drawCache&&pool===meta.stash)return memo('bp|'+eqKey(e)+'|'+!!wpn,()=>bestPlan0(e,pool,wpn));return bestPlan0(e,pool,wpn)}
-function bestPlan0(e,pool,wpn){const cur={...e},pick={};
-  for(let pass=0;pass<2;pass++)for(const sl of Object.keys(e).filter(k=>k!=='arme')){let best=cur[sl],bs=eqVal(cur);
-    for(const it of pool){if(it.slot!==keySlot(sl)||Object.values(cur).includes(it)&&cur[sl]!==it||Object.values(pick).includes(it)&&pick[sl]!==it)continue;const sc=eqVal({...cur,[sl]:it});if(eqGt(sc,bs)){bs=sc;best=it}}
-    if(best!==cur[sl]){cur[sl]=best;pick[sl]=best}}
-  if(wpn&&!started){const c=heroCls,bw=bestWeapon(cur);if(bw)pick.arme=weaponItem(c,bw)}
-  return pick}
-// Valeur avec une autre arme du héros : ses mods et sa maîtrise à elle (meta.wpn changé le temps du calcul).
-function withWeapon(e,id,f){const c=heroCls,w0=meta.wpn[c];try{meta.wpn[c]=id;return f({...e,arme:weaponItem(c,id)})}finally{meta.wpn[c]=w0}}
-function bestWeapon(e){const c=heroCls,now=curWid(c);let bs=eqVal(e),bw=null;
-  for(const w of WPN[c])if(w.id!==now&&ownedW(w.id)){const sc=withWeapon(e,w.id,eqVal0);if(eqGt(sc,bs)){bs=sc;bw=w.id}}
-  return bw}
 /* ---------- Pause ---------- */
 let runSel=null;
-function openBag(){if(G.over)return;paused=true;resetJoy();$('bag').hidden=false;runSel=null;modSel=null;quitAsk=false;G.fresh=0;$('bag').querySelectorAll('details[data-more]').forEach(d=>d.open=!!(typeof moreOpen!=='undefined'&&moreOpen[d.dataset.more]));$('rendTxt').textContent=PX?'Rendu WebGL (PixiJS)':'Rendu standard';$('rendBtn').textContent=PX?'Passer au rendu standard':'Essayer WebGL';drawBag()}
+function openBag(){if(G.over)return;paused=true;resetJoy();$('bag').hidden=false;runSel=null;modSel=null;quitAsk=false;G.fresh=0;$('bag').querySelectorAll('details[data-more]').forEach(d=>d.open=!!(typeof moreOpen!=='undefined'&&moreOpen[d.dataset.more]));drawBag()}
 function closeBag(){$('bag').hidden=true;paused=false;quitAsk=false;last=performance.now()}
 /* ---------- Pause › Retour au Camp : abandonne la mission ----------
    Tout ce qui a été trouvé dans ce niveau est perdu (objets, reliques, armes, or, expérience) ; les reliques équipées ne sont pas consommées.
@@ -145,7 +42,8 @@ function abandonRun(){if(!G||G.over)return;
   q.addEventListener('click',()=>{quitAsk=true;drawBag()})}
 $('bagBtn').addEventListener('click',()=>{if(started&&!G.over&&$('extract').hidden&&$('lvlup').hidden)$('bag').hidden?openBag():closeBag()});
 $('closeBag').addEventListener('click',closeBag);$('closeBagX').addEventListener('click',closeBag);
-$('rendBtn').addEventListener('click',()=>{if(PX){dropPixi('choix du joueur');try{localStorage.setItem('crypte-nogl','1')}catch{}}else{try{localStorage.removeItem('crypte-nogl')}catch{}location.reload()}});
+// Bascule WebGL ↔ rendu standard (Réglages › Rendu).
+function rendToggle(){if(PX){dropPixi('choix du joueur');try{localStorage.setItem('crypte-nogl','1')}catch{}}else{try{localStorage.removeItem('crypte-nogl')}catch{}location.reload()}}
 function drawBag(){
   {const rq=G.relic?`${G.react|0} / ${reactNeed()}`:`${(G.opened||[]).length} / ${G.relQ.length}`;
     $('bagSum').innerHTML=`<span><b>${G.level}</b><small>niveau</small></span><span><b class="g">${G.gold}</b><small>or</small></span><span><b>${G.kills|0}</b><small>monstres</small></span><span><b class="r">${G.relQ.length?rq:'—'}</b><small>${G.relic?'réactifs':'reliques'}</small></span>`+(()=>{const b=Math.round(stayBonus()*100);return b?`<em class="bagsum__stay">Bonus de séjour · butin des monstres +${b} %</em>`:''})()}
@@ -237,135 +135,6 @@ function equipRun(id){
 }
 function refreshStats(){if(!G)return;const ratio=G.P.hp/S.hp;S=stats(G.eq);G.P.hp=Math.max(1,Math.min(S.hp,ratio*S.hp))}
 
-/* ---------- Mods (interface) ---------- */
-let modSel=null,alSel=null,modTab='h',modPF='all',modSF=null;
-const AURA_C='#f0cf4a';
-function modDetail(id){
-  const m=MODS[id],rk=meta.mods[id],k=modKind(id),isA=k==='a',b=build(bKind(id)),ok=modOk(id,heroCls);
-  const slot=isA?(b.aura===id?0:-1):b.load.indexOf(id),eq=slot>=0,u=bUsed(b),cap=bCap(b),fc=fuseCost(id,rk),maxed=rk>=m.max;
-  let act='',why='',fuseBlocked=false,costLine;
-  const where=k==='w'?`l'arme (${b.name})`:k==='p'?'le familier':'le héros';
-  if(isA){
-    costLine=`Aura du héros · rapporte +${m.cap+rk} de capacité`;
-    act=eq?'<button class="cx-btn" data-act="unequip">Retirer</button>':`<button class="cx-btn cx-btn--primary" data-act="equip">${b.aura?'Remplacer l\'aura':'Équiper l\'aura'}</button>`;
-    if(eq&&u>cap-(m.cap+rk)){why='Retirer cette aura ferait dépasser la capacité du héros : les mods en trop deviendraient inactifs.'}
-  }else{
-    const p=POL[MOD_POL[id]],bs0=bBest(b,id,rk),bs=(modSF!=null&&modSF<b.slots&&!b.load[modSF]&&b.kind===bKind(id))?{i:modSF,d:bDrain(b,id,rk,modSF)}:bs0,fits=bs.i>=0&&u+bs.d<=cap;
-    costLine=`Mod ${k==='w'?'d\'arme':k==='p'?'de familier':'de héros'} · <span style="color:${p.c}">${p.s} ${p.n}</span> · `+(eq?`coûte ${bDrain(b,id,rk,slot)} dans la case ${slot+1}`:`coûte ${modDrain(id,rk)}, ${Math.ceil(modDrain(id,rk)/2)} dans une case ${p.n}`);
-    if(!ok){why=`Réservé à : ${m.cls.map(x=>CLS[x].n).join(', ')}.`}
-    else if(m.pt&&!eq&&(!petEq()||petEq().t!==m.pt)){why=`Ne fonctionne qu'avec le ${PETS[m.pt].n}.`;act=`<button class="cx-btn" data-act="equip" ${!fits?'disabled':''}>Équiper quand même</button>`}
-    else if(eq)act='<button class="cx-btn" data-act="unequip">Retirer</button>';
-    else{act=`<button class="cx-btn cx-btn--primary" data-act="equip" ${!fits?'disabled':''}>Équiper${bs.i>=0?` · case ${bs.i+1}`:''}</button>`;
-      why=bs.i<0?`Toutes les cases de ${where} sont prises. Retire un mod d'abord.`:!fits?`Capacité insuffisante : il faut ${bs.d} points, il en reste ${Math.max(0,cap-u)}.`:''}
-    fuseBlocked=eq&&u-bDrain(b,id,rk,slot)+bDrain(b,id,rk+1,slot)>cap;
-  }
-  const fuse=maxed?'<span class="owned" style="align-self:center;flex:1;text-align:center">Rang max</span>':`<button class="cx-btn cost-btn" data-act="fuse" ${meta.essence<fc||fuseBlocked?'disabled':''}><span>Monter de rang</span>${costHtml([['ess',fc]])}</button>`;
-  if(!why&&fuseBlocked&&!maxed)why='Monter ce mod de rang dépasserait la capacité.';
-  return `<span class="cx-dock__meta">${MOD_RAR[m.r].n} · ${costLine} · ${m.max?`rang ${rk} / ${m.max}`:'rang unique'}</span>
-    <p>${m.t(modVal(id,rk))}${maxed?'':` <span style="color:var(--muted)">· rang ${rk+1} : ${m.t(modVal(id,rk+1))}</span>`}</p>
-    <div class="cx-actions">${act}${fuse}</div>${why?`<p class="cx-hint" style="margin:0">${why}</p>`:''}${modCanStar(id)?cxMore('star','Surcharge · '+'★'.repeat(modSt(id))+'☆'.repeat(MOD_ST_MAX-modSt(id))+(meta.modCp[id]?` · ${meta.modCp[id]} copie${meta.modCp[id]>1?'s':''}`:''),starBlock(id,b,k,slot),'Ouvrir'):''}`;
-}
-const polD=(b,id,i,d0)=>{const p=b.pol[i];return !p?d0:p===MOD_POL[id]?Math.ceil(d0/2):Math.ceil(d0*1.25)};
-function starBlock(id,b,k,slot){const m=MODS[id],rk=meta.mods[id],st=modSt(id),cp=meta.modCp[id]|0,maxed=rk>=m.max;
-  if(!modCanStar(id))return '';
-  const stars=`<span class="stars">${'<i class="on">★</i>'.repeat(st)}${'<i>★</i>'.repeat(MOD_ST_MAX-st)}</span>`;
-  const dis=cp?`<button class="btn" data-act="dissolve">Dissoudre ${cp} copie${cp>1?'s':''} · +${cp*8*(m.r+1)} essence</button>`:'';
-  if(st>=MOD_ST_MAX)return `<div class="surch"><div class="sh"><b>Surcharge</b>${stars}</div><p class="cx-hint" style="margin:0">Surcharge maximale : +${Math.round(MOD_ST_K*st*100)} % de valeur. Les prochains doublons rapportent de l'essence.</p>${dis?`<div class="actions">${dis}</div>`:''}</div>`;
-  const c=starCost(id,st),nd=modDrain(id,rk,st+1)-modDrain(id,rk,st);
-  const capOk=k==='a'||slot<0||bUsed(b)-bDrain(b,id,rk,slot)+polD(b,id,slot,modDrain(id,rk,st+1))<=bCap(b);
-  const ok=maxed&&cp>=c.cp&&meta.essence>=c.ess&&capOk;
-  const why=!maxed?`Monte d'abord ce mod au rang ${m.max}.`:cp<c.cp?`Il faut ${c.cp} copie${c.cp>1?'s':''} de ce mod (tu en as ${cp}). Les doublons trouvés en mission deviennent des copies.`:meta.essence<c.ess?`Il manque ${c.ess-meta.essence} essence.`:!capOk?'La surcharge dépasserait la capacité de ce build.':'';
-  return `<div class="surch"><div class="sh"><b>Surcharge</b>${stars}<span class="cx-hint" style="margin:0">${cp} copie${cp>1?'s':''}</span></div>
-    <p style="margin:0;font-size:14px">Étoile ${st+1} : <b>${m.t(modVal(id,rk,st+1))}</b>${!maxed?` (au rang ${m.max} : ${m.t(modVal(id,m.max,st+1))})`:''}${nd?` · coût en capacité +${nd}`:''}</p>
-    <div class="actions"><button class="btn buy cost-btn" data-act="star" ${ok?'':'disabled'}><span>Surcharger</span>${costHtml([['cp',c.cp,cp],['ess',c.ess]])}</button>${dis}</div>${why?`<p class="empty" style="font-size:13px;margin:0">${why}</p>`:''}</div>`}
-function alignPanel(b){
-  const cost=bAlignCost(b),mt=b.mast;
-  let h=`<h3>Alignement · ${b.kind==='w'?'arme':b.kind==='p'?'familier':'héros'}</h3><p class="empty" style="font-size:13px">Aligne une case sur une polarité : un mod de la même polarité y coûte moitié moins, un autre 25 % de plus. Chaque alignement coûte de l'essence (200, 400, 800 puis 1 600)${b.kind==='p'?'.':` et remet la maîtrise ${b.de} à 0.`}</p>
-    <div class="alrow">${b.pol.slice(0,b.slots).map((p,i)=>`<button class="chip" data-act="alslot" data-i="${i}" aria-pressed="${!!alSel&&alSel.i===i}">Case ${i+1} · ${p?`<span style="color:${POL[p].c}">${POL[p].s} ${POL[p].n}</span>`:'neutre'}</button>`).join('')}</div>`;
-  if(alSel){const cur=b.pol[alSel.i];
-    h+=`<div class="alrow">${Object.keys(POL).map(k=>`<button class="chip" data-act="alpol" data-p="${k}" aria-pressed="${alSel.p===k}" ${cur===k?'disabled':''}><span style="color:${POL[k].c}">${POL[k].s}</span> ${POL[k].n}</button>`).join('')}</div>`;
-    if(alSel.p)h+=`<div class="card"><p style="margin:0;font-size:14px">Aligner la case ${alSel.i+1} en <b style="color:${POL[alSel.p].c}">${POL[alSel.p].n}</b> pour <b>${cost} essence</b>.${b.kind==='p'?'':` La maîtrise ${b.de} repasse du rang ${mt.r} à 0${mt.r?` : −${mt.r} de capacité jusqu'à ce que tu la regagnes en mission`:''}.`}</p>
-      <div class="actions"><button class="btn main cost-btn" data-act="alok" ${meta.essence<cost?'disabled':''}><span>Aligner</span>${costHtml([['ess',cost]])}</button><button class="btn" data-act="alcancel">Annuler</button></div>
-      ${meta.essence<cost?`<p class="empty" style="font-size:13px">Il te manque ${cost-meta.essence} essence.</p>`:''}</div>`;
-    else h+='<p class="empty" style="font-size:13px">Choisis la polarité de cette case.</p>';
-  }
-  return h;
-}
-// Tuile de mod (ModCard du design system) : polarité, coût, nom, losanges de rang.
-function modTile(id,cls='',i,b){const m=MODS[id],rk=meta.mods[id],isA=modKind(id)==='a',p=isA?{c:AURA_C,s:'✦',n:'Aura'}:POL[MOD_POL[id]];
-  const d=isA?`+${MODS[id].cap+rk}`:(b&&i!==undefined?bDrain(b,id,rk,i):modDrain(id,rk)),st=modSt(id);
-  return `<button class="cx-mod${cls}" data-mod="${id}" style="--mc:${MOD_RAR[m.r].c}" aria-label="${m.n}, rang ${rk}, ${isA?'aura':'polarité '+p.n}, coût ${d}"><span class="cx-mod__pol" style="color:${p.c}">${p.s}</span><span class="cx-mod__cost">${d}</span><b>${m.n}</b>${st?`<span class="mst">${'★'.repeat(st)}</span>`:''}${meta.modCp[id]?`<span class="mcp" title="Copies">×${meta.modCp[id]}</span>`:''}<span class="cx-mod__pips">${'<i class="on"></i>'.repeat(rk)}${'<i></i>'.repeat(m.max-rk)}</span></button>`}
-function renderMods(rootId){
-  const root=$(rootId);if(!root)return;const inCamp=rootId==='modsCamp';
-  if(modTab==='h'&&!isUnl('hmods')){modTab='w';modSel=null;modSF=null;alSel=null} // mods du héros : débloqués plus tard
-  const b=build(modTab),u=bUsed(b),cap=bCap(b),act=bActive(b),mt=b.mast;
-  const owned=Object.keys(MODS).filter(id=>meta.mods[id]!=null);
-  if(modSel&&meta.mods[modSel]==null)modSel=null;
-  const fits=id=>bKind(id)===modTab,ptOff=id=>MODS[id].pt&&(!petEq()||petEq().t!==MODS[id].pt);
-  if(modSel&&!fits(modSel))modSel=null;
-  if(modSF!=null&&modSF>=b.slots)modSF=null;
-  const pool=owned.filter(id=>fits(id)&&!b.load.includes(id)&&b.aura!==id);
-  const sp=modSF!=null?b.pol[modSF]:null,polOf=id=>modKind(id)==='a'?'a':MOD_POL[id];
-  const pcount={all:pool.length};for(const id of pool){const q=polOf(id);pcount[q]=(pcount[q]||0)+1}
-  let rest=pool.filter(id=>modSF!=null?(polOf(id)!=='a'&&(!sp||polOf(id)===sp)):(modPF==='all'||polOf(id)===modPF));
-  rest.sort(modSF!=null?(x,y)=>(modOk(y,heroCls)-modOk(x,heroCls))||bDrain(b,x,meta.mods[x],modSF)-bDrain(b,y,meta.mods[y],modSF)||MODS[y].r-MODS[x].r
-    :(x,y)=>(modOk(y,heroCls)-modOk(x,heroCls))||(modKind(y)==='a')-(modKind(x)==='a')||MODS[y].r-MODS[x].r);
-  const pchip=(k,lab,c)=>`<button class="cx-chip cx-chip--sm" data-act="polf" data-p="${k}" aria-pressed="${modSF==null&&modPF===k}"${c&&!(modSF==null&&modPF===k)?` style="color:${c}"`:''}>${lab} <span class="n">${pcount[k]||0}</span></button>`;
-  const filt=`<div class="cx-chips" role="group" aria-label="Filtrer les mods par polarité">${pchip('all','Tous')}${Object.keys(POL).map(k=>pchip(k,`${POL[k].s} ${POL[k].n}`,POL[k].c)).join('')}${modTab==='h'&&pcount.a?pchip('a','✦ Aura',AURA_C):''}</div>
-    ${modSF!=null?`<p class="cx-hint" style="margin:0">Case ${modSF+1} · ${sp?`<b style="color:${POL[sp].c}">${POL[sp].s} ${POL[sp].n}</b> : seuls les mods ${POL[sp].n} (coût divisé par 2)`:'neutre : tous les mods'}, du moins cher au plus cher. <button class="cx-btn cx-btn--ghost cx-btn--sm" data-act="slotf" data-i="${modSF}" style="margin:0">Retirer le filtre</button></p>`:''}`;
-  const slotsN=modTab==='h'?HSLOT_MAX:4;
-  const slotHtml=i=>{if(i>b.slots)return '';if(i>=b.slots){const nx=i===b.slots;return `<div class="cx-modslot"><span class="cx-modslot__pol" style="cursor:default">Verrouillée</span><div class="cx-mod cx-mod--empty cx-mod--locked"><b>${b.kind==='p'?'Familier ★★★':nx?`${HSLOT_COST[b.slots-3]} fragments`:'—'}</b></div></div>`}
-    const id=b.load[i],p=b.pol[i];return `<div class="cx-modslot${modSF===i?' fsel':''}"><button class="cx-modslot__pol" data-act="slotf" data-i="${i}" aria-pressed="${modSF===i}" aria-label="Filtrer les mods pour la case ${i+1} (${p?POL[p].n:'neutre'})" style="color:${p?POL[p].c:'var(--muted)'}">${p?POL[p].s+' '+POL[p].n:'Neutre'}</button>${id?modTile(id,(modSel===id?' is-sel':'')+(act.includes(id)?'':' off'),i,b):'<div class="cx-mod cx-mod--empty"><b>Libre</b></div>'}</div>`};
-  const buyBox=modTab==='h'&&b.slots<HSLOT_MAX&&inCamp?(()=>{const c=HSLOT_COST[b.slots-3],have=fragTotal();
-    return `<div class="cx-rows"><div class="cx-row"><span class="cx-row__k" style="color:var(--ink)">Case ${b.slots+1} du héros<small>${c} fragments de relique, pris parmi ceux que tu as en plus grand nombre · tu en as ${have}</small></span><button class="cx-btn cx-btn--sm cost-btn" data-act="slotbuy" style="margin:0" ${have<c?'disabled':''}><span>Débloquer</span>${costHtml([['frag',c,have]])}</button></div></div>`})():'';
-  const petTab=inCamp&&campTab==='pets',bn=modTab==='h'?`Build ${deCls(heroCls)}`:`Build ${b.de}`;
-  // v139 : sans familier équipé, pas de build à remplir (chaque familier a le sien)
-  if(petTab&&!petEq()){root.innerHTML=petPanel();root.querySelectorAll('[data-pet]').forEach(x=>x.onclick=()=>petAct(x.dataset.pet,x.dataset.arg));return}
-  const over=u>cap;
-  const note=inCamp&&meta.modNote&&!petTab?`<div class="cx-card" style="border-color:var(--gold)"><p style="margin:0;font-size:14px">${modNoteTxt().replace(' Voir Héros › Mods.','')} ${meta.modNote.h?'Les mods de héros règlent maintenant tes capacités (sort, esquive, potion, ultime) ; la vie, la réduction et la vitesse brutes viennent des affixes. ':''}${meta.modNote.conv||meta.modNote.ref?'Les mods de dégâts et de cadence bruts sont devenus des affixes d\'objets ; les mods d\'arme posent des statuts (poison, saignement, étourdissement…). ':''}${meta.modNote.p?'Écho élémentaire, Purification et Poches profondes n\'ont qu\'un rang : l\'essence des rangs et des étoiles en plus est rendue.':''}</p><div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-act="modnote" style="margin:0">Compris</button></div></div>`:'';
-  root.innerHTML=`${note}${petTab?petPanel():`<div class="cx-tabs" role="tablist"><button class="cx-tab${isUnl('hmods')?'':' is-locked'}" role="tab" data-act="mtab" data-t="h" aria-selected="${modTab==='h'}">${isUnl('hmods')?'':`<span class="lockmini" aria-hidden="true">${LOCK_SVG}</span>`}Héros · ${CLS[heroCls].n}</button><button class="cx-tab" role="tab" data-act="mtab" data-t="w" aria-selected="${modTab==='w'}">Arme · ${wdef(curWid()).n}</button>${inCamp?'':`<button class="cx-tab" role="tab" data-act="mtab" data-t="p" aria-selected="${modTab==='p'}">Familier</button>`}</div>`}
-    <div class="cx-meter${over?' is-over':''}"><div class="cx-meter__top"><span>Capacité</span><b>${u} / ${cap}</b></div><div class="cx-meter__bar"><i style="--v:${Math.min(100,cap?u/cap*100:0)}%"></i></div></div>
-    <p class="cx-hint" style="margin:0">${over?'<span style="color:var(--blood-ink)">Capacité dépassée : les mods en trop sont inactifs (grisés). Retire un mod ou regagne de la maîtrise.</span>':b.kind==='p'?`Build propre à ce familier · bonus de niveau +${mt.r} · capacité qui monte avec son rang et son niveau`:`Maîtrise ${b.kind==='w'?'arme':'héros'} ${mt.r} / 10${mt.r<10?` · ${mt.xp} / ${mastNeed(mt.r)}`:''} · gagne de la capacité en mission`}</p>
-    ${modTab==='h'?`<div class="aurarow"><div class="cx-modslot"><span class="cx-modslot__pol" style="color:${AURA_C};cursor:default">✦ Aura</span>${b.aura?modTile(b.aura,modSel===b.aura?' is-sel':''):'<div class="cx-mod cx-mod--empty"><b>Aura libre</b></div>'}</div><p class="cx-hint" style="margin:0">Une aura rapporte de la capacité au lieu d'en coûter, et donne un effet permanent.</p></div>`:''}
-    <section class="cx-section"><h3 class="cx-section__label">${bn} · ${b.load.slice(0,b.slots).filter(Boolean).length} / ${b.slots} cases</h3><div class="cx-build">${Array.from({length:slotsN},(_,i)=>slotHtml(i)).join('')}</div></section>
-    ${buyBox}
-    <section class="cx-section"><h3 class="cx-section__label">Tes mods · ${pool.length}</h3>${filt}
-    <div class="cx-mods">${rest.map(id=>modTile(id,(modSel===id?' is-sel':'')+(modOk(id,heroCls)&&!ptOff(id)?'':' lock'),modSF!=null&&modKind(id)!=='a'?modSF:undefined,modSF!=null?b:undefined)).join('')||`<p class="cx-hint" style="grid-column:1/-1;margin:0">${pool.length?'Aucun mod pour ce filtre.':`Aucun autre mod ${modTab==='w'?'d\'arme':modTab==='p'?'de familier':'de héros'}.`} Les monstres en laissent parfois tomber, les Gardiens toujours.</p>`}</div></section>
-    ${inCamp&&isUnl('align')?cxMore('align_'+b.kind,'Alignement des cases',alignPanel(b),'Ouvrir'):''}`;
-  root.querySelectorAll('[data-mod]').forEach(x=>x.onclick=()=>{modSel=modSel===x.dataset.mod?null:x.dataset.mod;runSel=null;modsChanged()});
-  root.querySelectorAll('[data-act]').forEach(x=>x.onclick=()=>modAct(x.dataset.act,x.dataset));
-  root.querySelectorAll('[data-pet]').forEach(x=>x.onclick=()=>petAct(x.dataset.pet,x.dataset.arg));
-  if(!inCamp){const dk=$('bagDock');if(dk){const h=modSel?modDock(modSel):'';dk.innerHTML=h;dk.hidden=!h;if($('bagFoot'))$('bagFoot').hidden=!!h||!!runSel}}
-}
-// Détail d'un mod, ancré en bas de la feuille (cx-dock).
-function modDock(id){const html=modDetail(id);return `<div class="cx-dock__head"><h3 class="cx-dock__title" style="color:${MOD_RAR[MODS[id].r].c}">${MODS[id].n}</h3><button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-act="mclose" aria-label="Fermer le détail"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>${html}`}
-function modAct(a,ds){
-  const id=modSel,rk=id?meta.mods[id]:0;
-  if(a==='mclose'){modSel=null}
-  else if(a==='modnote'){delete meta.modNote}
-  else if(a==='mtab'){if(ds.t==='h'&&!isUnl('hmods')){toast(`${UNL_BY.hmods.n} : ${UNL_BY.hmods.need.replace(/^./,c=>c.toLowerCase())}`);return}modTab=ds.t;modSel=null;alSel=null;modSF=null;modPF='all'}
-  else if(a==='polf'){modPF=ds.p;modSF=null}
-  else if(a==='slotf'){const i=+ds.i;modSF=modSF===i?null:i}
-  else if(a==='equip'||a==='unequip'||a==='fuse'){
-    const k=modKind(id),b=build(bKind(id));
-    if(a==='equip'){if(!modOk(id,heroCls))return;if(k==='a')meta.aura[heroCls]=id;else{let bs=bBest(b,id,rk);if(modSF!=null&&modSF<b.slots&&!b.load[modSF]&&bKind(id)===modTab)bs={i:modSF,d:bDrain(b,id,rk,modSF)};if(bs.i<0||bUsed(b)+bs.d>bCap(b))return;b.load[bs.i]=id}}
-    else if(a==='unequip'){if(k==='a'){if(meta.aura[heroCls]===id){meta.aura[heroCls]=null;const hc=heroCls;cxUndo(`${MODS[id].n} retiré`,()=>{meta.aura[hc]=id;modSel=id;modsChanged()})}}else{const i=b.load.indexOf(id);if(i>=0){b.load[i]=null;cxUndo(`${MODS[id].n} retiré de la case ${i+1}`,()=>{if(!b.load[i])b.load[i]=id;modSel=id;modsChanged()})}}}
-    else{const c=fuseCost(id,rk);if(meta.essence<c||rk>=MODS[id].max)return;if(k!=='a'){const i=b.load.indexOf(id);if(i>=0&&bUsed(b)-bDrain(b,id,rk,i)+bDrain(b,id,rk+1,i)>bCap(b))return}meta.essence-=c;meta.mods[id]=rk+1}
-  }
-  else if(a==='star'){const k=modKind(id),b=build(bKind(id)),m=MODS[id],st=modSt(id),c=starCost(id,st);
-    if(!modCanStar(id)||rk<m.max||st>=MOD_ST_MAX||(meta.modCp[id]|0)<c.cp||meta.essence<c.ess)return;
-    if(k!=='a'){const i=b.load.indexOf(id);if(i>=0&&bUsed(b)-bDrain(b,id,rk,i)+polD(b,id,i,modDrain(id,rk,st+1))>bCap(b))return}
-    meta.modCp[id]-=c.cp;meta.essence-=c.ess;meta.modSt[id]=st+1;SND.play('relic');toast(`<b style="color:${MOD_RAR[m.r].c}">${m.n}</b> surchargé : ${'★'.repeat(st+1)}`)}
-  else if(a==='dissolve'){const cp=meta.modCp[id]|0;if(!cp)return;meta.essence+=cp*8*(MODS[id].r+1);meta.modCp[id]=0}
-  else if(a==='slotbuy'){const b=build('h');if(b.slots>=HSLOT_MAX)return;const c=HSLOT_COST[b.slots-3];if(fragTotal()<c)return;takeFrags(c);meta.hslots[heroCls]=b.slots+1;toast(`Case ${b.slots+1} du héros débloquée`)}
-  else if(a==='alslot'){const i=+ds.i;alSel=alSel&&alSel.i===i?null:{i,p:null}}
-  else if(a==='alpol'){if(alSel)alSel.p=ds.p}
-  else if(a==='alcancel'){alSel=null}
-  else if(a==='alok'){const b=build(modTab);if(!alSel||!alSel.p)return;const cost=bAlignCost(b);if(meta.essence<cost)return;
-    meta.essence-=cost;b.pol[alSel.i]=alSel.p;b.alignStore[b.key]=(b.alignStore[b.key]||0)+1;if(b.kind!=='p'){b.mast.r=0;b.mast.xp=0}
-    toast(`Case ${alSel.i+1} alignée en <b style="color:${POL[alSel.p].c}">${POL[alSel.p].n}</b>. ${b.kind==='p'?'':` Maîtrise ${b.de} remise à 0.`}`);alSel=null}
-  saveMeta();modsChanged();
-}
 /* ---------- Coût d'une action (v134) ----------
    Chaque ressource est nommée et a son icône : « 1 200 or », « 50 essence », « 3 fragments de l'objet », « 12 fragments de harnais »…
    Ce qui manque est en rouge, avec ce que tu as. parts : [[sorte, quantité, ce que tu as (facultatif), précision]]. */
