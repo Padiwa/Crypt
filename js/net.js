@@ -2,10 +2,10 @@
 // L'hôte fait tourner les monstres et relie chaque invité (connexion en étoile) ; chacun simule son propre héros,
 // ses tirs et son butin (instancié). Les invités ne se connectent qu'à l'hôte, qui relaie les héros des autres.
 // État de la coopération hors partie (au chargement et après chaque fin de connexion).
-const netFresh=()=>({on:false,host:false,guest:false,pc:null,dc:null,state:'idle',code:'',err:'',hits:[],snap:null,tick:null,peers:[],slot:0,roster:[],hostCls:null,hostName:'',hostPr:0,hostLook:null,via:'',hostBgAt:0,ready:false,ebUsed:new Set(),fdc:null,hq:0,sq:0,hT:0,hostMode:null});
+const netFresh=()=>({on:false,host:false,guest:false,pc:null,dc:null,state:'idle',code:'',err:'',hits:[],sa:[],snap:null,tick:null,peers:[],slot:0,roster:[],hostCls:null,hostName:'',hostPr:0,hostLook:null,via:'',hostBgAt:0,ready:false,ebUsed:new Set(),fdc:null,hq:0,sq:0,hT:0,hostMode:null});
 const NET=netFresh();
 const NET_MAX=4; // joueurs, hôte compris
-const NET_V=10;
+const NET_V=12;
 const NET_TIMEOUT=20000; // silence toléré en mission (une notification ou un écran qui s'éteint ne doit pas couper la partie)   // version du protocole : deux appareils de versions différentes refusent de jouer ensemble
 const ICE=[{urls:'stun:stun.l.google.com:19302'}];
 // Relais du jeu (Cloudflare) : le mode par défaut, même si js/relais.js manque ou est vide (page en cache ancienne).
@@ -260,7 +260,7 @@ function netTick(){if(!NET.on||!started||!G)return;const now=performance.now();
   if(NET.host){
     for(const p of NET.peers.slice())if(p.state==='open'&&p.lastRx&&now-p.lastRx>NET_TIMEOUT&&!G.over&&!G.hold&&document.visibilityState==='visible')netPeerLost(p,false,'timeout');
     if(!NET.on)return;
-    const en=G.en.filter(e=>!e.dead).map(e=>[e.id,e.type,e.x|0,e.y|0,Math.ceil(e.hp),Math.ceil(e.max),r1(e.r),(e.corr?1:0)|(e.frz>0?2:0)|(e.slow>0?4:0)|(e.flash>0?8:0)|(e.burnT>0?16:0)|(e.downed?32:0)|(e.curse>0?64:0),e.elite||0,e.gen||0,Math.round(e.dmg),e.state==='walk'?0:e.state==='wind'?1:2,r1(e.ang||0)]);
+    const en=G.en.filter(e=>!e.dead).map(e=>[e.id,e.type,e.x|0,e.y|0,Math.ceil(e.hp),Math.ceil(e.max),r1(e.r),(e.corr?1:0)|(e.frz>0?2:0)|(e.slow>0?4:0)|(e.flash>0?8:0)|(e.burnT>0?16:0)|(e.downed?32:0)|(e.curse>0?64:0)|(e.psnT>0?128:0)|(e.bldT>0?256:0)|(e.stun>0?512:0)|(e.root>0?1024:0),e.elite||0,e.gen||0,Math.round(e.dmg),e.state==='walk'?0:e.state==='wind'?1:2,r1(e.ang||0)]);
     const ps=[[0,...heroPack(G.P)]],osh=[[0,shotPack(G.shots,60)]];
     for(const p of NET.peers)if(p.state==='open'&&p.Q){ps.push([p.slot,p.Q.x|0,p.Q.y|0,p.Q.face,Math.ceil(p.Q.hp),p.Q.max,p.Q.cls,(p.Q.down?1:0)|(p.Q.dashT>0?2:0)|(p.Q.spin>0?4:0)|(p.Q.flash>0?8:0)|(p.Q.inv>0?16:0),p.Q.shield|0,p.Q.aur|0]);if(p.shRaw)osh.push([p.slot,p.shRaw.slice(0,40)])}
     NET.sSeq=(NET.sSeq||0)+1;sendFast({t:'s',sq:NET.sSeq,lv:G.level,tl:r1(G.tl),bt:r1(G.bossT),en,eb:G.eb.slice(0,150).map(b=>[b.id,b.x|0,b.y|0,b.vx|0,b.vy|0,b.r,Math.round(b.d),r1(b.life)]),
@@ -268,7 +268,7 @@ function netTick(){if(!NET.on||!started||!G)return;const now=performance.now();
   }else{
     if(NET.lastRx&&now-NET.lastRx>NET_TIMEOUT&&!G.over&&!G.hold&&document.visibilityState==='visible'){netLost('timeout');return}
     const st=[];for(const e of G.en){const s0=e._s||{};if(e.slow>(s0.slow||0)+.05||e.frz>(s0.frz||0)+.05||(e.burnT>0&&e.burnT>(s0.burnT||0)+.05)||(e.curse||0)>(s0.curse||0)+.05||e.kx||e.ky){st.push([e.id,r1(e.slow||0),r1(e.frz||0),r1(e.burnT||0),r1(e.burnDps||0),e.kx|0,e.ky|0,r1(e.curse||0)]);e.kx=e.ky=0;e._s={slow:e.slow,frz:e.frz,burnT:e.burnT,curse:e.curse||0}}}
-    netSend({t:'g',p:heroPack(G.P),sh:shotPack(G.shots),h:NET.hits.splice(0),st,rel:!!G.relic});
+    netSend({t:'g',p:heroPack(G.P),sh:shotPack(G.shots),h:NET.hits.splice(0),st,sa:NET.sa?NET.sa.splice(0):[],rel:!!G.relic});
   }}
 function netHit(e,d,crit){NET.hits.push([e.id,Math.round(d*10)/10,crit?1:0])}
 // Quelqu'un reste-t-il debout ? Sinon la mission échoue pour tous (décidé par l'hôte).
@@ -289,9 +289,11 @@ function netRecvHost(peer,m){
   if(m.t==='g'){if(peer.left||!started||G.over)return;if(!peer.Q){peer.Q=mateNew(peer.slot,peer.cls,G.P.x,G.P.y);if(G.mates&&!G.mates.includes(peer.Q))G.mates.push(peer.Q)}
     if(!peer.hT||performance.now()-peer.hT>400){heroUnpack(m.p,peer.Q);peer.Q.slot=peer.slot}peer.shRaw=m.sh;peer.sh=m.sh.map(shotObj);peer.relic=m.rel;
     G.oshots=NET.peers.flatMap(p=>p.state==='open'?p.sh||[]:[]);
-    if(m.h.length||m.st.length){const by=new Map();for(const e of G.en)by.set(e.id,e);
+    const sa=m.sa||[];if(m.h.length||m.st.length||sa.length){const by=new Map();for(const e of G.en)by.set(e.id,e);
       for(const [id,d] of m.h){const e=by.get(id);if(!e||e.dead)continue;let dd=d;if(e.elite==='bouclier'&&e.hp>e.max*.5)dd*=.5;e.hp-=dd;e.flash=1;e.shown=2;if(e.hp<=0&&!e.dead)kill(e)}
-      for(const [id,slow,frz,bt,bd,kx,ky,cu] of m.st){const e=by.get(id);if(!e||e.dead)continue;if(cu>(e.curse||0))e.curse=cu;if(slow>e.slow)e.slow=slow;if(frz>(e.frz||0))e.frz=frz;if(bt>e.burnT){e.burnT=bt;e.burnDps=Math.max(e.burnDps||0,bd)}if(e.type!=='boss'){e.kx+=kx;e.ky+=ky}}}
+      for(const [id,slow,frz,bt,bd,kx,ky,cu] of m.st){const e=by.get(id);if(!e||e.dead)continue;if(cu>(e.curse||0))e.curse=cu;if(slow>e.slow)e.slow=slow;if(frz>(e.frz||0))e.frz=frz;if(bt>e.burnT){e.burnT=bt;e.burnDps=Math.max(e.burnDps||0,bd)}if(e.type!=='boss'){e.kx+=kx;e.ky+=ky}}
+      // v141 : poses de statuts de l'invité (1 poison, 2 saignement, 3 étourdi, 4 immobilisé), tenues par l'hôte
+      for(const [id,k,v,t,n] of sa){const e=by.get(id);if(!e||e.dead)continue;if(k===1)psnAdd(e,v,n||1,t);else if(k===2)bldAdd(e,v,t);else if(k===3)stunE(e,t,1);else if(k===4)rootE(e,t,1)}}
     coopCheckFail();return}
 }
 function netRecvGuest(m){
@@ -325,6 +327,7 @@ function netApplySnap(){const m=NET.snap;if(!m)return;NET.snap=null;
     if(!e){e={id:a[0],type:a[1],x:a[2],y:a[3],col:d?d.col:'#888',flash:0,hitCd:0,kx:0,ky:0,burnT:0,burnDps:0,slow:0,frz:0,shown:0,wob:rand(0,6),rot:0,tgtPod:false}}
     e.tx=a[2];e.ty=a[3];e.hp=Math.min(e.hp==null?a[4]:e.hp,a[4]);if(a[4]>e.hp+1)e.hp=a[4];e.max=a[5];e.r=a[6];e.corr=!!(a[7]&1);
     if(a[7]&2)e.frz=Math.max(e.frz||0,.1);if(a[7]&4)e.slow=Math.max(e.slow||0,.1);if(a[7]&8)e.flash=Math.max(e.flash,.5);if(a[7]&64)e.curse=Math.max(e.curse||0,.1);
+    if(a[7]&128)e.psnT=Math.max(e.psnT||0,.1);if(a[7]&256)e.bldT=Math.max(e.bldT||0,.1);if(a[7]&512)e.stun=Math.max(e.stun||0,.1);if(a[7]&1024)e.root=Math.max(e.root||0,.1);
     e.elite=a[8]||undefined;e.gen=a[9];e.dmg=a[10];e.state=a[11]===0?'walk':a[11]===1?'wind':'charge';e.ang=a[12];e.downed=!!(a[7]&32);out.push(e)}
   G.en=out;G.target=out.find(e=>e.type==='cible')||null;modeApply(m.md);if(m.ss){G.storm=m.ss[0];G.stormIn=m.ss[1]}
   G.eb=m.eb.filter(b=>!NET.ebUsed.has(b[0])).map(b=>({id:b[0],x:b[1],y:b[2],vx:b[3],vy:b[4],r:b[5],d:b[6],life:b[7]}));
@@ -341,8 +344,9 @@ function matesFrom(ps){if(!G||!ps)return;const old=new Map((G.mates||[]).map(q=>
 function netGuestEnemies(dt,P){const k=Math.min(1,dt*14);
   for(const e of G.en){if(e.tx!=null){e.x+=(e.tx-e.x)*k;e.y+=(e.ty-e.y)*k}
     e.flash=Math.max(0,e.flash-dt*7);e.hitCd-=dt;e.shown-=dt;if(e.slow>0)e.slow-=dt;if(e.frz>0)e.frz-=dt;if(e.burnT>0)e.burnT-=dt;if(e.curse>0)e.curse-=dt;e.wob+=dt*(e.type==='scarab'?7:6);
-    if(P.down||e.type==='archer'||e.type==='cible'||e.hitCd>0)continue;
-    if(Math.hypot(P.x-e.x,P.y-e.y)<e.r+P.r){hurt(e.state==='charge'?e.dmg*1.4:e.dmg);e.hitCd=.8;if(e.type==='givrin')P.frzT=2.2*(1-Math.min(60,S.antidote||0)/100)}}}
+    if(e.psnT>0){e.psnT-=dt;if(e.psnT<=0)e.psnN=0}if(e.bldT>0)e.bldT-=dt;stTick(e,dt);
+    if(P.down||e.type==='archer'||e.type==='cible'||e.hitCd>0||e.stun>0)continue;
+    if(Math.hypot(P.x-e.x,P.y-e.y)<e.r+P.r){thornE(e,hurt((e.state==='charge'?e.dmg*1.4:e.dmg)*(S.terr>0?1-S.terr/100:1)));e.hitCd=.8;if(e.type==='givrin')P.frzT=2.2*(1-Math.min(60,S.antidote||0)/100)}}}
 // Monstre ciblé (hôte) : le héros debout le plus proche.
 function netNear(e,P){if(!NET.host||!G.mates||!G.mates.length)return P;let best=P.down?null:P,bd=P.down?1e12:(P.x-e.x)**2+(P.y-e.y)**2;
   for(const q of G.mates){if(q.down)continue;const d=(q.x-e.x)**2+(q.y-e.y)**2;if(d<bd){bd=d;best=q}}return best||P}

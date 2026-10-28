@@ -1,7 +1,15 @@
 // Crypte des Cendres — ui.js
 /* ---------- Fiches partagées ---------- */
 function statRows(St){
-  const rows=[['Dégâts',Math.round(St.dmg)],['Attaques / s',St.aps.toFixed(2)],['Critique',Math.round(St.crit)+' %'],['Dégâts critiques',Math.round(St.critDmg)+' %'],['Puissance',Math.round(power(St))],...(()=>{const W=powerOf(St);return [['· attaques',Math.round(W.atk)],['· sort',Math.round(W.skill)],['· ultime',Math.round(W.ult+W.pulse)],...(W.pet?[['· familier',Math.round(W.pet)]]:[])]})(),['Vie',Math.round(St.hp)],['Réduction',Math.round(St.armor)+' %'],['Vitesse',Math.round(St.speed/2.2)+' %'],['Portée des compétences',Math.round(100+St.skillRad)+' %'],...(heroCls==='magicien'?[['Rayon d\'explosion',Math.round(100+St.splash)+' %']]:[]),heroCls==='guerrier'?['Ondes par coup',St.waves]:['Projectiles par tir',(1+St.multi).toFixed(St.multi%1?2:0)],['Double attaque',St.echo+' %'],['Dégâts de compétence',Math.round(St.nova)]];
+  const rows=[['Dégâts',Math.round(St.dmg)],['Attaques / s',St.aps.toFixed(2)],['Critique',Math.round(St.crit)+' %'],['Dégâts critiques',Math.round(St.critDmg)+' %'],['Puissance',Math.round(power(St))],...(()=>{const W=powerOf(St);return [['· attaques',Math.round(W.atk)],['· sort',Math.round(W.skill)],['· ultime',Math.round(W.ult+W.pulse)],...(W.pet?[['· familier',Math.round(W.pet)]]:[])]})(),['Vie',Math.round(St.hp)],['Réduction',Math.round(St.armor)+' %'],['Vitesse',Math.round(St.speed/2.2)+' %'],['Portée des compétences',Math.round(100+St.skillRad)+' %'],...(heroCls==='magicien'?[['Rayon d\'explosion',Math.round(100+St.splash)+' %']]:[]),heroCls==='guerrier'?['Ondes par coup',St.waves]:['Projectiles par tir',(1+St.multi).toFixed(St.multi%1?2:0)],['Double attaque',St.echo+' %'],['Dégâts de compétence',Math.round(St.nova)],
+    // v141 : statuts posés par l'arme (chance par coup) et leurs bonus, montrés seulement s'ils servent
+    ...[['Brûlure par seconde',St.burn,''],['Poison',St.psnCh,' %'],['Saignement',St.bldCh,' %'],['Ralentir',St.chill,' %'],['Éclair en chaîne',St.shock,' %'],['Étourdir',St.stunCh,' %'],['Immobiliser',St.rootCh,' %'],
+      ['Durée des statuts',St.stDur,' %','+'],['Contagion',St.contag,' %'],['Dégâts des statuts',St.dotPct,' %','+'],['Brise-garde',St.ccDmg,' %','+'],['Épines',St.thorns,' %'],
+      // v142 : mods de héros (capacités)
+      ['Recharge du sort par ennemi abattu',St.flux,' s','−'],['Sort contre un statut',St.intSt,' %','+'],['Statuts du sort',St.impr,'','×'],['Étourdissement du sort',St.comm,' s'],['Bouclier au lancer du sort',St.gardA,' %'],
+      ['Vitesse après une esquive',St.elan,' %','+'],['Protection après une esquive',St.peau,' %','−'],['Statuts à l\'esquive',St.pasEl,' %'],['Riposte (étourdit)',St.ripo,' s'],
+      ['Potion gardée',St.econ,' %'],['Élixir de fer',St.exFer,' %','−'],['Élixir de rage',Math.floor(St.exRage||0),'','+'],['Durée des renforts',St.buffDur,' %','+'],['Jauge rendue au lancer',St.rema,' %'],['Statuts de l\'ultime',St.flea,'','×'],['Terreur (dégâts reçus)',St.terr,' %','−']
+      ].filter(r=>r[1]>0).map(([a,v,u,sg])=>[a,(sg||'')+(v>=10?Math.round(v):+(+v).toFixed(1)).toString().replace('.',',')+u])];
   return rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join('');
 }
 function slotsHtml(eq,click,selSlot){
@@ -21,8 +29,11 @@ const eqKey=e=>heroCls+'|'+Object.keys(e).map(k=>{const it=e[k];return it?(it.wi
    C'est le chiffre « Puissance » des fiches, et ce que visent « Équiper le meilleur » et ▲ ; la survie ne fait que départager.
    PW : hypothèses de l'estimation (ennemis touchés par une zone de taille de départ, part des coups concernés par un bonus…).
    kills : ennemis abattus par seconde, pour la charge de l'ultime ; mesuré avec le bot du banc de progression (v137) : 4 à 19 par seconde
-   selon le niveau et la classe (1,5 en difficulté), on garde 5. */
-const PW={kills:5,low:.1,exec:.25,boss:.15,hunt:.2,shock:1.8,pierce:.5,reachT:1.2,splashT:.3,pulseT:5,shard:.5,doom:.5,
+   selon le niveau et la classe (1,5 en difficulté), on garde 5.
+   v141 : statuts. Poison et saignement en part des dégâts des coups (couches au plus, PW.dot : part touchée avant la mort de l'ennemi),
+   part du temps sous contrôle (étourdi, immobilisé, gelé) pour Brise-garde, part des coups sur un ennemi qui porte 1 ou 2 statuts
+   pour Œil du chasseur, Boucherie et Catalyse. Le Magicien ne pose les statuts que sur la cible touchée, sauf avec Déflagration. */
+const PW={kills:5,dot:.7,cont:.6,embr:.4,spK:3,low:.1,exec:.25,boss:.15,hunt:.2,shock:1.8,pierce:.5,reachT:1.2,splashT:.3,pulseT:5,shard:.5,doom:.5,
   // c : dégâts d'un lancer en multiples de la puissance de compétence (cibles comprises) ; cr : critique possible ;
   // area : × (1 + portée des compétences) ; rng : × (1 + rng × portée des compétences), carreaux et éclairs qui vont plus loin ;
   // reach : × (1 + portée de frappe) ; splash : × (1 + rayon d'explosion) ; dur : × (1 + durée)
@@ -32,28 +43,47 @@ const PW={kills:5,low:.1,exec:.25,boss:.15,hunt:.2,shock:1.8,pierce:.5,reachT:1.
   ul:{titan:{c:ULT_C.titan*8,area:1},rempart:{c:0},berserk:{t:8,x:1.6},pluie:{c:100*ULT_C.pluie,cr:1},faucon:{t:6,hawk:1},tempete:{c:152*ULT_C.tempete*.4,cr:1,rng:.5},
     meteores:{c:3*ULT_C.meteores*5,cr:1,area:1},blizzard:{c:17*ULT_C.blizzard*6,cr:1,area:1},surcharge:{t:6,sur:1}}};
 function powerOf(x,cls=heroCls,kit=kitOf(cls)){
-  const cr=Math.min(75,x.crit)/100,cm=1+cr*(x.critDmg/100-1),hits=Math.max(1,x.aps*(1+x.multi*.8));
+  const cr=Math.min(75,x.crit)/100,hits=Math.max(1,x.aps*(1+x.multi*.8));
   // part du temps où une cible porte un effet de durée t, posé à chaque coup avec la chance c
   const upT=(c,t)=>c>0?1-Math.pow(1-Math.min(1,c),Math.max(1,hits*t)):0;
-  const cu=upT(Math.min(60,x.curse||0)/100,5),sl=Math.max(upT((x.chill||0)/100,2*(1+x.skillDur/100)),upT((x.frz||0)/100,1.5*(1+x.skillDur/100)));
-  // chaque coup : bonus conditionnels (part des coups concernés), éléments, pouvoirs abyssaux
-  const hitM=(1+PW.low*x.lowDmg/100)*(1+PW.exec*x.execute/100)*(1+PW.boss*x.bossDmg/100)*(1+PW.hunt*x.abHunt/100)*(1+.06*x.abSoul)*(1+.015*x.abExec)
-    *(1+sl*x.cold/100)*(1+cu*(.15+(x.hex||0)/100))*(1+PW.shock*x.shock/100)*(1+cr*x.abRift/100*2.1)*(1+PW.shard*x.shard/100)*(1+cu*PW.doom*(x.doom||0)/100);
+  const dm=1+(x.stDur||0)/100,sd=1+x.skillDur/100;
+  const cu=upT(Math.min(60,x.curse||0)/100,5),sl=Math.max(upT((x.chill||0)/100,2*sd*dm),upT((x.frz||0)/100,1.5*sd));
   // attaques : ennemis touchés par coup selon la classe
   const tg=cls==='archer'?1+PW.pierce*x.pierce:cls==='guerrier'?PW.reachT*(1+x.reach/100):1+PW.splashT*(1+x.splash/100);
-  const atk=(x.dmg*x.aps*cm*(1+x.multi*.8)*(1+x.echo/100)*(1+x.waves*.5)+x.burn)*tg*hitM;
+  // statuts (v141) : chance par coup (Pointe de diamant : à coup sûr sur les ennemis transpercés), couches, temps sous contrôle
+  const pf=cls==='archer'&&x.diam&&tg>1?(tg-1)/tg:0,fc=c=>c>0?Math.min(1,c+(1-c)*pf):0;
+  const cP=fc((x.psnCh||0)/100),cB0=fc((x.bldCh||0)/100),cB=Math.min(1,cB0+(x.hemo?cr*(1-cB0):0)),cS=fc((x.stunCh||0)/100),cR=fc((x.rootCh||0)/100);
+  const rawP=hits*cP*PSN_T*dm,nP=Math.min(PSN_MAX,rawP),nB=Math.min(BLD_MAX,hits*cB*BLD_T*dm);
+  const upC=(c,t,imm)=>c>0&&t>0?t/(t+imm+1/(hits*c)):0;
+  const stU=Math.max(upC(cS,STUN_T,STUN_IMM),x.surt?upC((x.shock||0)/100*.5,x.surt,STUN_IMM):0),rtU=upC(cR,ROOT_T*sd*dm,ROOT_IMM),
+    fzU=x.cryo?upC((x.chill||0)/100*sl,x.cryo,1.5):0,ctl=1-(1-stU)*(1-rtU)*(1-fzU)*(1-upT((x.frz||0)/100,1));
+  const pr=[x.burn>0?1:0,upT(cP,PSN_T*dm),upT(cB,BLD_T*dm),sl,stU,rtU,cu];let p0=1,p1=0;for(const q of pr){p1=p1*(1-q)+p0*q;p0*=1-q}
+  const pSt=1-p0,p2=Math.max(0,1-p0-p1);
+  // critique : Œil du chasseur et Boucherie contre un ennemi qui porte un statut
+  const crS=Math.min(1,cr+(x.critSt||0)/100),crE=cr*(1-pSt)+crS*pSt,cm=1+crE*(x.critDmg/100-1)+pSt*crS*(x.cdSt||0)/100;
+  // poison et saignement en part des dégâts des coups ; Contagion, Peste
+  const dotM=(1+(x.dotPct||0)/100)*PW.dot*(1+PW.cont*(x.contag||0)/100);
+  const rP=nP*PSN_PCT/100/hits*(1+(x.peste?(rawP>=PSN_MAX?.12:.05)*x.peste:0)),rB=nB*BLD_PCT/100/BLD_T/hits*(1+(x.hemo&&cB>0?cr/cB*x.hemo/100:0));
+  const dotR=(rP+rB)*dotM,stTg=cls==='magicien'?(1+(tg-1)*Math.min(1,(x.defl||0)/100))/tg:1;
+  // poison et saignement d'un coup de sort ou d'ultime ; Imprégnation et Fléau (v142) multiplient la chance, plafonds gardés
+  const spDotM=k=>(Math.min(.6,cP*k)*PSN_PCT/100*PSN_T*dm+Math.min(.6,cB*k)*BLD_PCT/100*dm)*dotM,spDot=spDotM(x.impr||1),ulDot=spDotM(x.flea||1);
+  // chaque coup : bonus conditionnels (part des coups concernés), éléments, pouvoirs abyssaux, Catalyse, Brise-garde
+  const hitM=(1+PW.low*x.lowDmg/100)*(1+PW.exec*x.execute/100)*(1+PW.boss*x.bossDmg/100)*(1+PW.hunt*x.abHunt/100)*(1+.06*x.abSoul)*(1+.015*x.abExec)
+    *(1+sl*x.cold/100)*(1+cu*(.15+(x.hex||0)/100))*(1+PW.shock*x.shock/100*(x.surt?(3+surtJ(x.surt))/3:1))*(1+cr*x.abRift/100*2.1)*(1+PW.shard*x.shard/100)*(1+cu*PW.doom*(x.doom||0)/100)
+    *(1+p2*(x.cata||0)/100)*(1+ctl*(x.ccDmg||0)/100);
+  const atk=(x.dmg*x.aps*cm*(1+x.multi*.8)*(1+x.echo/100)*(1+x.waves*.5)*(1+dotR*stTg)+x.burn*(1+PW.embr*(x.embr||0)/150))*tg*hitM;
   // sort
-  const sp=SPELLS[cls].s[kit.s]||SPELLS[cls].s[0],K=PW.sk[sp.k],sr=1+x.skillRad/100,cd=Math.max(.5,sp.cd*(1-x.cdr/100)*(x.seals&&x.seals.sablier?.8:1)*(x.seals&&x.seals.vif?.85:1));
+  const sp=SPELLS[cls].s[kit.s]||SPELLS[cls].s[0],K=PW.sk[sp.k],sr=1+x.skillRad/100,cd=Math.max(.5,sp.cd*(1-x.cdr/100)*(x.seals&&x.seals.sablier?.8:1)*(x.seals&&x.seals.vif?.85:1)-Math.min(2,PW.spK*(x.flux||0)));
   let skill=0,buff=1,cast=0;
   if(K.buff)buff=1+K.buff*Math.min(1,6*(1+x.skillDur/100)/cd);
-  else{cast=x.nova*K.c*(K.dur?1+x.skillDur/100:1)*(K.area?sr:1)*(K.reach?1+x.reach/100:1)*(K.splash?1+x.splash/100:1)*(K.rng?1+K.rng*x.skillRad/100:1)*(K.cr?cm:1)*hitM;skill=cast/cd}
+  else{cast=x.nova*K.c*(K.dur?1+x.skillDur/100:1)*(K.area?sr:1)*(K.reach?1+x.reach/100:1)*(K.splash?1+x.splash/100:1)*(K.rng?1+K.rng*x.skillRad/100:1)*(K.cr?cm:1)*(1+spDot)*(1+pSt*(x.intSt||0)/100)*hitM;skill=cast/cd}
   // ultime (v138) : 1 point de charge par seconde, plus les ennemis abattus (PW.kills par seconde, ULT_KILL chacun, au plus ULT_KMAX par seconde)
-  const U=SPELLS[cls].u[kit.u]||SPELLS[cls].u[0],Q=PW.ul[U.k],um=1+(x.ultPct||0)/100,uNeed=Math.max(ULT_MIN,Math.round(ULT_N*(1-Math.min(50,x.fury||0)/100))),T=uNeed/(1+Math.min(ULT_KMAX,ULT_KILL*PW.kills*(x.seals&&x.seals.cri?1.2:1)));
+  const U=SPELLS[cls].u[kit.u]||SPELLS[cls].u[0],Q=PW.ul[U.k],um=1+(x.ultPct||0)/100,uNeed=Math.max(ULT_MIN,Math.round(ULT_N*(1-Math.min(50,x.fury||0)/100))),T=uNeed*(1-(x.rema||0)/100)/(1+Math.min(ULT_KMAX,ULT_KILL*PW.kills*(x.seals&&x.seals.cri?1.2:1))),bd=1+(x.buffDur||0)/100;
   let ult=0;
-  if(Q.c)ult=x.nova*Q.c*(Q.area?sr:1)*(Q.rng?1+Q.rng*x.skillRad/100:1)*(Q.cr?cm:1)*um*hitM*(1+PW.boss*(ULT_GX-1))/T;
-  else if(Q.hawk)ult=atk*Q.t*(2*(x.critDmg/100)/cm*um-1)/T;
-  else if(Q.x)ult=atk*Q.t*(Q.x*um-1)/T;
-  else if(Q.sur)ult=(atk*(2*um-1)+(cast?cast*um/.5-skill:0))*Q.t/T;
+  if(Q.c)ult=x.nova*Q.c*(U.k==='blizzard'?bd:1)*(Q.area?sr:1)*(Q.rng?1+Q.rng*x.skillRad/100:1)*(Q.cr?cm:1)*(1+ulDot)*um*hitM*(1+PW.boss*(ULT_GX-1))/T;
+  else if(Q.hawk)ult=atk*Q.t*bd*(2*(x.critDmg/100)/cm*um-1)/T;
+  else if(Q.x)ult=atk*Q.t*bd*(Q.x*um-1)/T;
+  else if(Q.sur)ult=(atk*(2*um-1)+(cast?cast*um/.5-skill:0))*Q.t*bd/T;
   const pulse=x.abPulse?x.dmg*x.abPulse/100*PW.pulseT*(1+x.skillRad/200)/5:0;
   // familier : corbeau (piqué toutes les 1,2 s), golem (épines pendant l'attirance, 4 s sur 11, 3 ennemis) ; il frappe avec tes dégâts et tes dégâts critiques
   const ps=(typeof started!=='undefined'&&started&&G&&G.petS)?G.petS:(typeof petStats==='function'?memo('petS',petStats):null);let pet=0;
@@ -64,7 +94,8 @@ function powerOf(x,cls=heroCls,kit=kitOf(cls)){
   return {p,atk:atk*buff,skill:skill*buff,ult:ult*buff,pulse:pulse*buff,pet:pet*buff}}
 const power=x=>powerOf(x).p;
 // Survie (départage) : vie effective, réduction, protections, soins.
-const survOf=x=>(x.hp+x.abWard*8)/(1-Math.min(60,x.armor)/200)*(1+x.lowArmor*.003+x.potHeal*.001+x.antidote*.001+x.auraSlow*.003)+x.regen*15;
+const survOf=x=>(x.hp+x.abWard*8)/(1-Math.min(60,x.armor)/200)*(1+x.lowArmor*.003+x.potHeal*.001+x.antidote*.001+x.auraSlow*.003+(x.thorns||0)*.002+(x.soif||0)*.01
+  +(x.gardA||0)*.012+(x.exFer||0)*.002+(x.peau||0)*.0025+(x.terr||0)*.008+(x.econ||0)*.003+(x.elan||0)*.001)+x.regen*15;
 // Valeur d'un équipement (gardée le temps d'un affichage) et comparaison : la Puissance d'abord (0,01 % près), puis la survie.
 const eqVal=e=>drawCache?memo('ev|'+eqKey(e),()=>eqVal0(e)):eqVal0(e);
 function eqVal0(e){const x=stats(e);return {p:power(x),v:survOf(x)}}
@@ -220,7 +251,7 @@ function modDetail(id){
   }
   const fuse=maxed?'<span class="owned" style="align-self:center;flex:1;text-align:center">Rang max</span>':`<button class="cx-btn cost-btn" data-act="fuse" ${meta.essence<fc||fuseBlocked?'disabled':''}><span>Monter de rang</span>${costHtml([['ess',fc]])}</button>`;
   if(!why&&fuseBlocked&&!maxed)why='Monter ce mod de rang dépasserait la capacité.';
-  return `<span class="cx-dock__meta">${MOD_RAR[m.r].n} · ${costLine} · rang ${rk} / ${m.max}</span>
+  return `<span class="cx-dock__meta">${MOD_RAR[m.r].n} · ${costLine} · ${m.max?`rang ${rk} / ${m.max}`:'rang unique'}</span>
     <p>${m.t(modVal(id,rk))}${maxed?'':` <span style="color:var(--muted)">· rang ${rk+1} : ${m.t(modVal(id,rk+1))}</span>`}</p>
     <div class="cx-actions">${act}${fuse}</div>${why?`<p class="cx-hint" style="margin:0">${why}</p>`:''}${modCanStar(id)?cxMore('star','Surcharge · '+'★'.repeat(modSt(id))+'☆'.repeat(MOD_ST_MAX-modSt(id))+(meta.modCp[id]?` · ${meta.modCp[id]} copie${meta.modCp[id]>1?'s':''}`:''),starBlock(id,b,k,slot),'Ouvrir'):''}`;
 }
@@ -281,7 +312,8 @@ function renderMods(rootId){
   // v139 : sans familier équipé, pas de build à remplir (chaque familier a le sien)
   if(petTab&&!petEq()){root.innerHTML=petPanel();root.querySelectorAll('[data-pet]').forEach(x=>x.onclick=()=>petAct(x.dataset.pet,x.dataset.arg));return}
   const over=u>cap;
-  root.innerHTML=`${petTab?petPanel():`<div class="cx-tabs" role="tablist"><button class="cx-tab${isUnl('hmods')?'':' is-locked'}" role="tab" data-act="mtab" data-t="h" aria-selected="${modTab==='h'}">${isUnl('hmods')?'':`<span class="lockmini" aria-hidden="true">${LOCK_SVG}</span>`}Héros · ${CLS[heroCls].n}</button><button class="cx-tab" role="tab" data-act="mtab" data-t="w" aria-selected="${modTab==='w'}">Arme · ${wdef(curWid()).n}</button>${inCamp?'':`<button class="cx-tab" role="tab" data-act="mtab" data-t="p" aria-selected="${modTab==='p'}">Familier</button>`}</div>`}
+  const note=inCamp&&meta.modNote&&!petTab?`<div class="cx-card" style="border-color:var(--gold)"><p style="margin:0;font-size:14px">${modNoteTxt().replace(' Voir Héros › Mods.','')} ${meta.modNote.h?'Les mods de héros règlent maintenant tes capacités (sort, esquive, potion, ultime) ; la vie, la réduction et la vitesse brutes viennent des affixes. ':''}Les mods de dégâts et de cadence bruts sont devenus des affixes d'objets ; les mods d'arme posent des statuts (poison, saignement, étourdissement…).</p><div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-act="modnote" style="margin:0">Compris</button></div></div>`:'';
+  root.innerHTML=`${note}${petTab?petPanel():`<div class="cx-tabs" role="tablist"><button class="cx-tab${isUnl('hmods')?'':' is-locked'}" role="tab" data-act="mtab" data-t="h" aria-selected="${modTab==='h'}">${isUnl('hmods')?'':`<span class="lockmini" aria-hidden="true">${LOCK_SVG}</span>`}Héros · ${CLS[heroCls].n}</button><button class="cx-tab" role="tab" data-act="mtab" data-t="w" aria-selected="${modTab==='w'}">Arme · ${wdef(curWid()).n}</button>${inCamp?'':`<button class="cx-tab" role="tab" data-act="mtab" data-t="p" aria-selected="${modTab==='p'}">Familier</button>`}</div>`}
     <div class="cx-meter${over?' is-over':''}"><div class="cx-meter__top"><span>Capacité</span><b>${u} / ${cap}</b></div><div class="cx-meter__bar"><i style="--v:${Math.min(100,cap?u/cap*100:0)}%"></i></div></div>
     <p class="cx-hint" style="margin:0">${over?'<span style="color:var(--blood-ink)">Capacité dépassée : les mods en trop sont inactifs (grisés). Retire un mod ou regagne de la maîtrise.</span>':b.kind==='p'?`Build propre à ce familier · bonus de niveau +${mt.r} · capacité qui monte avec son rang et son niveau`:`Maîtrise ${b.kind==='w'?'arme':'héros'} ${mt.r} / 10${mt.r<10?` · ${mt.xp} / ${mastNeed(mt.r)}`:''} · gagne de la capacité en mission`}</p>
     ${modTab==='h'?`<div class="aurarow"><div class="cx-modslot"><span class="cx-modslot__pol" style="color:${AURA_C};cursor:default">✦ Aura</span>${b.aura?modTile(b.aura,modSel===b.aura?' is-sel':''):'<div class="cx-mod cx-mod--empty"><b>Aura libre</b></div>'}</div><p class="cx-hint" style="margin:0">Une aura rapporte de la capacité au lieu d'en coûter, et donne un effet permanent.</p></div>`:''}
@@ -300,6 +332,7 @@ function modDock(id){const html=modDetail(id);return `<div class="cx-dock__head"
 function modAct(a,ds){
   const id=modSel,rk=id?meta.mods[id]:0;
   if(a==='mclose'){modSel=null}
+  else if(a==='modnote'){delete meta.modNote}
   else if(a==='mtab'){if(ds.t==='h'&&!isUnl('hmods')){toast(`${UNL_BY.hmods.n} : ${UNL_BY.hmods.need.replace(/^./,c=>c.toLowerCase())}`);return}modTab=ds.t;modSel=null;alSel=null;modSF=null;modPF='all'}
   else if(a==='polf'){modPF=ds.p;modSF=null}
   else if(a==='slotf'){const i=+ds.i;modSF=modSF===i?null:i}

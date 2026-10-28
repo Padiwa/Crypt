@@ -69,14 +69,29 @@ SIM.camp = function () {
   return log;
 };
 
-// Mods : monte les rangs des mods utiles puis remplit les builds arme et héros par ordre de préférence.
-SIM.MODPREF = ['ferocite', 'cadence', 'oeil', 'boucherie', 'dedoublement', 'orage', 'vitalite', 'souffle', 'egide', 'intensite', 'flux', 'etendue', 'survivant', 'diamant', 'allonge', 'sangsue', 'deflagration', 'pas', 'dernier', 'alchimiste', 'braise', 'givre', 'persist', 'fantome', 'antidote', 'rapace'];
+// Mods : monte les rangs des mods portés (puis des autres), puis refait les builds.
+// v141 : build d'arme rempli au mieux de la Puissance (le mod qui la fait le plus monter, case après case, dans la capacité) ;
+// v142 : build de héros rempli de même, au mieux de Puissance × racine de la survie (les mods de défense passent par les capacités).
+SIM.MODPREF = ['venin', 'entaille', 'braise', 'givre', 'orage', 'oeil', 'boucherie', 'rafale', 'virulence', 'contagion', 'coup', 'entrave', 'peste', 'embrasement', 'hemorragie', 'cryogenie', 'surtension', 'catalyse', 'diamant', 'deflagration', 'soif',
+  'etendue', 'intensite', 'flux', 'persist', 'impregnation', 'commotion', 'garde', 'fantome', 'elan', 'peau', 'paselem', 'riposte', 'alchimiste', 'econome', 'elixfer', 'elixrage', 'ame', 'prolong', 'remanence', 'fleau'];
+SIM.fillW = function (own, kind = 'w') {
+  const b = build(kind, heroCls); b.load.fill(null);
+  const pw = kind === 'w' ? () => power(stats(curEq())) : () => { const x = stats(curEq()); return power(x) * Math.sqrt(survOf(x)); };
+  for (let g = 0; g < b.slots; g++) {
+    const base = pw(); let best = null, bv = base * (1 + 1e-4);
+    for (const id of own) { if (modKind(id) !== kind || b.load.includes(id)) continue; const bs = bBest(b, id, meta.mods[id]); if (bs.i < 0 || bUsed(b) + bs.d > bCap(b)) continue;
+      b.load[bs.i] = id; const v = pw(); b.load[bs.i] = null; if (v > bv) { bv = v; best = [bs.i, id]; } }
+    if (!best) break; b.load[best[0]] = best[1];
+  }
+};
 SIM.mods = function () {
-  const own = SIM.MODPREF.filter(id => meta.mods[id] != null && modOk(id, heroCls));
-  for (let g = 0; g < 30; g++) { const id = own.find(id => meta.mods[id] < MODS[id].max && meta.essence >= fuseCost(id, meta.mods[id]) + 30); if (!id) break; meta.essence -= fuseCost(id, meta.mods[id]); meta.mods[id]++; }
+  const own = SIM.MODPREF.filter(id => MODS[id] && meta.mods[id] != null && modOk(id, heroCls));
+  const worn = () => { const L = [...build('w', heroCls).load, ...build('h', heroCls).load].filter(Boolean); return [...L, ...own.filter(id => !L.includes(id))]; };
+  for (let g = 0; g < 30; g++) { const id = worn().find(id => meta.mods[id] < MODS[id].max && meta.essence >= fuseCost(id, meta.mods[id]) + 30); if (!id) break; meta.essence -= fuseCost(id, meta.mods[id]); meta.mods[id]++; }
   for (const id of own) { const m = MODS[id], st = modSt(id), c = starCost(id, st); if (modCanStar(id) && meta.mods[id] >= m.max && st < MOD_ST_MAX && (meta.modCp[id] | 0) >= c.cp && meta.essence >= c.ess + 30) { meta.modCp[id] -= c.cp; meta.essence -= c.ess; meta.modSt[id] = st + 1; } }
-  for (const kind of (typeof isUnl !== 'function' || isUnl('hmods') ? ['w', 'h'] : ['w'])) { const b = build(kind, heroCls); b.load.fill(null); for (const id of own) { if ((modKind(id) === 'w') !== (kind === 'w')) continue; const bs = bBest(b, id, meta.mods[id]); if (bs.i >= 0 && bUsed(b) + bs.d <= bCap(b)) b.load[bs.i] = id; } }
-  const au = ['ferveur', 'presence', 'cupidite'].find(a => meta.mods[a] != null); if (au) meta.aura[heroCls] = au;
+  SIM.fillW(own);
+  const au = ['terreur', 'presence', 'cupidite'].find(a => MODS[a] && meta.mods[a] != null); if (au) meta.aura[heroCls] = au;
+  if (typeof isUnl !== 'function' || isUnl('hmods')) SIM.fillW(own, 'h');
 };
 
 SIM.mile = function (k) { const C = SIM.C; if (C.miles[k]) return; C.miles[k] = { n: C.n, h: Math.round(C.hours * 100) / 100 }; };

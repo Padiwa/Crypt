@@ -22,8 +22,8 @@ export const tests = [
     await campView(p, 'equip', 'gear:anneau2');
     t.ok(/12 fragments de harnais/i.test(await txt('[data-cact="slotopen"]')) && await p.evaluate(() => !!document.querySelector('[data-cact="slotopen"] .cost__p.is-short')), 'emplacement : fragments de harnais (manquants en rouge) et or');
     // Mods : monter de rang · N essence
-    await p.evaluate(() => { meta.essence = 10; modTab = 'w'; modSel = 'ferocite'; saveMeta(); });
-    await campView(p, 'mods'); await p.evaluate(() => { modSel = 'ferocite'; drawCamp(); });
+    await p.evaluate(() => { meta.essence = 10; modTab = 'w'; modSel = 'venin'; saveMeta(); });
+    await campView(p, 'mods'); await p.evaluate(() => { modSel = 'venin'; drawCamp(); });
     t.ok(/Monter de rang \d+ essence/i.test(await txt('[data-act="fuse"]') || ''), `mod : ${await txt('[data-act="fuse"]')}`);
   } },
   { name: 'fabrication : niveau de la plus haute mission, arme neuve puis double', fn: async (b, t) => {

@@ -156,7 +156,7 @@ export const tests = [
     await p.evaluate(() => { meta.relics = { os: [2, 0] }; meta.relicQ = [{ id: 'os', rad: false }, { id: 'os', rad: false }]; saveMeta(); });
     await startMission(p);
     await p.evaluate(() => { for (let i = 0; i < 30; i++) G.loot.items.push(genItem(20, i % 4)); G.loot.relics.push('os', 'an'); G.loot.parts.push({ w: 'a6', full: 1 }, { w: 'a3', p: 1 }, { hf: 1 });
-      G.bossK = 4; G.objN = 0; objDone(); objDone(); G.opened.push(...G.relQ); G.modsGot = ['ferocite']; G.gold = 900; missionSuccess(); });
+      G.bossK = 4; G.objN = 0; objDone(); objDone(); G.opened.push(...G.relQ); G.modsGot = ['venin']; G.gold = 900; missionSuccess(); });
     const tiles = await p.evaluate(() => Object.fromEntries([...document.querySelectorAll('#over .ovr__tile')].map((x) => [x.dataset.k, x.querySelector('b').textContent])));
     t.eq(tiles, { gold: '+900', boss: '4', obj: '2', relF: '2', relO: '2', frag: '4', mods: '1', eq: '31' }, 'les huit compteurs (fragments : arme, harnais et 2 des reliques ouvertes)');
     const pg = () => p.evaluate(() => [document.querySelectorAll('#ovrEq .ovr__slot').length, document.querySelector('.ovr__pager span').textContent]);
