@@ -50,20 +50,20 @@ const GLYPH={
   dos:'<svg viewBox="0 0 24 24"><path d="M8 3h8l1 3 3 15H4L7 6z"/><path d="M8 3c1 2 7 2 8 0M12 6v15"/></svg>',
   anneau:'<svg viewBox="0 0 24 24"><circle cx="12" cy="14" r="6"/><path d="m9 7 3-4 3 4z"/></svg>'};
 const CLS={
-  archer:{n:'Archer',skill:'Volée',cd:7,ult:'Pluie d\'acier',uicon:'<path d="M6 3v12M12 3v15M18 3v12M3.5 12.5 6 15l2.5-2.5M9.5 15.5 12 18l2.5-2.5M15.5 12.5 18 15l2.5-2.5M5 21h14"/>',base:{dmg:8,aps:1.8,hp:130,crit:5,speed:0,armor:8,cdr:0},
+  archer:{n:'Archer',uicon:'<path d="M6 3v12M12 3v15M18 3v12M3.5 12.5 6 15l2.5-2.5M9.5 15.5 12 18l2.5-2.5M15.5 12.5 18 15l2.5-2.5M5 21h14"/>',base:{dmg:8,aps:1.8,hp:130,crit:5,speed:0,armor:8,cdr:0},
     cloak:'#2d4c50',rim:'#a9cbc0',inner:'#14232a',col:'#e8853b',
     hint:'Glisse pour bouger.<br>Tir automatique, plus rapide à l\'arrêt.',
-    desc:'Tire des carreaux automatiquement, plus vite à l\'arrêt. Rapide et précis. <b>Volée</b> : 24 carreaux perforants dans toutes les directions. <b>Ultime, Pluie d\'acier</b> : 3 s de flèches qui s\'abattent sur les ennemis proches.',
+    desc:'Tire des carreaux automatiquement, plus vite à l\'arrêt. Rapide et précis.',
     icon:'<path d="M12 12 5 5M12 12l7-7M12 12v9M5 5h4M5 5v4M19 5h-4M19 5v4M9 18l3 3 3-3"/>'},
-  guerrier:{n:'Guerrier',skill:'Tourbillon',cd:9,ult:'Colère du Titan',uicon:'<path d="M12 2v5M12 17v5M2 12h5M17 12h5M4.9 4.9l3.5 3.5M15.6 15.6l3.5 3.5M19.1 4.9l-3.5 3.5M8.4 15.6l-3.5 3.5"/><circle cx="12" cy="12" r="2.5"/>',base:{dmg:14,aps:1.5,hp:160,crit:5,speed:-6,armor:15,cdr:0},
+  guerrier:{n:'Guerrier',uicon:'<path d="M12 2v5M12 17v5M2 12h5M17 12h5M4.9 4.9l3.5 3.5M15.6 15.6l3.5 3.5M19.1 4.9l-3.5 3.5M8.4 15.6l-3.5 3.5"/><circle cx="12" cy="12" r="2.5"/>',base:{dmg:14,aps:1.5,hp:160,crit:5,speed:-6,armor:15,cdr:0},
     cloak:'#5b2a26',rim:'#d9a48a',inner:'#2a1210',col:'#d9a48a',
     hint:'Glisse pour bouger.<br>Il frappe tout ce qui l\'approche.',
-    desc:'Frappe au corps à corps tout ce qui l\'approche. Beaucoup de vie et d\'armure. <b>Tourbillon</b> : tournoie en frappant tout autour, dégâts subis réduits de moitié. <b>Ultime, Colère du Titan</b> : onde de choc géante et 3 s d\'invulnérabilité.',
+    desc:'Frappe au corps à corps tout ce qui l\'approche. Beaucoup de vie et d\'armure.',
     icon:'<path d="M12 4a8 8 0 1 1-8 8"/><path d="M12 8a4 4 0 1 1-4 4"/><path d="M4 12 2.5 9M4 12l3-1"/>'},
-  magicien:{n:'Magicien',skill:'Nova de givre',cd:7,ult:'Pluie de météores',uicon:'<circle cx="15" cy="15" r="5"/><path d="M11.5 11.5 3 3M14 9.8 8 3.5M9.8 14 3.5 8"/>',base:{dmg:12,aps:1.25,hp:115,crit:8,speed:-2,armor:8,cdr:10},
+  magicien:{n:'Magicien',uicon:'<circle cx="15" cy="15" r="5"/><path d="M11.5 11.5 3 3M14 9.8 8 3.5M9.8 14 3.5 8"/>',base:{dmg:12,aps:1.25,hp:115,crit:8,speed:-2,armor:8,cdr:10},
     cloak:'#3c2c63',rim:'#b9a6f0',inner:'#17122b',col:'#9fd0ff',
     hint:'Glisse pour bouger.<br>Orbes automatiques, plus rapides à l\'arrêt.',
-    desc:'Lance des orbes qui explosent à l\'impact, plus vite à l\'arrêt. Fragile, redoutable contre les groupes. <b>Nova de givre</b> : blesse, ralentit et dissipe les projectiles. <b>Ultime, Pluie de météores</b> : 3 météores sur les ennemis proches.',
+    desc:'Lance des orbes qui explosent à l\'impact, plus vite à l\'arrêt. Fragile, redoutable contre les groupes.',
     icon:'<path d="M12 2v20M3.3 7l17.4 10M3.3 17 20.7 7M9 4l3 2 3-2M9 20l3-2 3 2"/>'},
 };
 // Couleurs du héros, choisies par classe (Héros › Couleurs) : cape, bordure et capuche.
@@ -246,8 +246,14 @@ if(!meta.v3){for(const id in meta.bp||{}){const w=wdef(id);if(w&&!meta.built[id]
 if(!MODES[meta.mode]||meta.mode==='breche')meta.mode='survie'; // la Brèche se choisit une fois la coopération connectée
 if(!Array.isArray(meta.relicQ))meta.relicQ=[];if(meta.relicSel){if(!meta.relicQ.length)meta.relicQ=[meta.relicSel];meta.relicSel=null}
 // metaVer : compteur de modifications de la sauvegarde (calculs gardés en cache, comme le plan de « Tout fusionner »)
-let metaVer=0;
-const saveMeta=()=>{metaVer++;try{localStorage.setItem('crypte-meta',JSON.stringify(meta))}catch{}};
+let metaVer=0,saveLock=false;
+/* Cache d'un affichage du Camp (v135) : ouvert au début de drawCamp et de invRefresh, fermé à la fin. Hors affichage, rien n'est gardé :
+   un résultat ne peut donc pas survivre à une modification de la sauvegarde. memo(clé, calcul) ; memoOn(étiquette, objet, calcul). */
+let drawCache=null;
+function memo(k,f){if(!drawCache)return f();let v=drawCache.get(k);if(v===undefined){v=f();drawCache.set(k,v)}return v}
+function memoOn(tag,o,f){if(!drawCache)return f();let m=drawCache.get(tag);if(!m){m=new Map();drawCache.set(tag,m)}let v=m.get(o);if(v===undefined){v=f();m.set(o,v)}return v}
+// saveLock : pendant une réinitialisation, plus rien n'écrit la sauvegarde avant le rechargement de la page.
+const saveMeta=()=>{metaVer++;if(saveLock)return;try{localStorage.setItem('crypte-meta',JSON.stringify(meta))}catch{}};
 // Compte : un identifiant unique tiré une fois (gardé dans la sauvegarde) et un nom choisi dans Réglages › Compte.
 // En coopération, chaque joueur apparaît sous ce nom, précédé du niveau de prestige du héros qu'il joue.
 if(!meta.pid||!/^[A-Z2-9]{5}$/.test(meta.pid)){const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',r=new Uint8Array(5);try{crypto.getRandomValues(r)}catch{for(let i=0;i<5;i++)r[i]=Math.random()*256}

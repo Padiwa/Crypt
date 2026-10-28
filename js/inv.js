@@ -12,7 +12,7 @@ function invWeapons(worn){const out=[];for(const c of [heroCls,...Object.keys(CL
 // Sélection d'un objet du coffre : dans le coffre, porté par le héros choisi (slot), porté par un autre héros (oth = « classe|emplacement »), ou arme.
 const selOf=it=>{if(it.wid)return {wpn:it.wid};const c=wornBy(it);if(c){const k=wornSlot(it,c);return c===heroCls?{slot:k}:{oth:c+'|'+k}}return {stash:it.id}};
 const isSel=it=>{if(!campSel)return false;const s=selOf(it);return Object.keys(s).length===Object.keys(campSel).length&&Object.keys(s).every(k=>campSel[k]===s[k])};
-// Coffre de l'Armurerie : tout ce que tu possèdes, objets portés compris (marqués du héros qui les porte). Filtre « Portés » : seulement ceux-là.
+// Coffre de l'Arsenal : tout ce que tu possèdes, objets portés compris (marqués du héros qui les porte). Filtre « Portés » : seulement ceux-là.
 // kind : 'equip' (coffre, objets portés compris), 'recy' (recyclage : rien de porté), 'affix' (Forge › Affixes et fusion : tout, comme 'equip', les objets du héros choisi en tête).
 function invList(kind){const all=kind==='equip'||kind==='affix',F=!all&&stF==='porte'?'all':stF,pool=all?[...meta.stash,...allWorn()]:meta.stash;
   const slotOk=i=>F==='all'||(F==='porte'?!!wornBy(i):i.slot===F);
@@ -29,18 +29,27 @@ function invToolbar(list,kind){const all=kind==='equip'||kind==='affix',W=invWea
     <select class="cx-sort" data-inv="sort" aria-label="Trier le coffre">${Object.keys(SORT_N).map(k=>`<option value="${k}"${stS===k?' selected':''}>${SORT_N[k]}</option>`).join('')}</select></div>
     <div class="cx-chips">${ch('all','Tout')}${all?ch('porte','Portés'):''}${ch('arme','Arme')}${['armure','amulette','bottes','anneau',...(counts.dos?['dos']:[])].map(k=>ch(k,SLOT[k])).join('')}</div>
     <span class="cx-count" id="invCount">${invCountTxt(list)}</span></div>`}
+/* Grilles longues (v135) : 120 cases à la fois ; « Afficher plus » ajoute les suivantes. Retour à 120 quand la vue, le filtre,
+   la recherche ou le tri change. L'objet choisi reste toujours affiché. */
+const GRID_PAGE=120;let gridMore=0,gridKey='';
+function gridCut(list,isOn){const key=[campTab,arsView,forgeSub,stF,invQ,stS,[...recyR].join()].join('|');if(key!==gridKey){gridKey=key;gridMore=0}
+  let n=GRID_PAGE*(1+gridMore);const i=isOn?list.findIndex(isOn):-1;if(i>=n)n=Math.ceil((i+1)/GRID_PAGE)*GRID_PAGE;
+  return {show:list.length>n?list.slice(0,n):list,rest:Math.max(0,list.length-n)}}
+const gridMoreBtn=rest=>rest?`<button class="cx-btn cx-btn--sm cx-btn--block gridmore" data-cact="gridmore">Afficher ${Math.min(GRID_PAGE,rest)} de plus · encore ${rest}</button>`:'';
 function invGrid(list,kind){if(!list.length)return `<p class="cx-hint" style="margin:0">${meta.stash.length?(invQ?'Aucun objet ne correspond à ta recherche.':'Aucun objet de ce type.'):'Ton coffre est vide. Sors vivant d\'une mission pour y ramener les objets trouvés.'}</p>`;
-  if(kind==='affix')return `<div class="cx-cells">${list.map(it=>xfCell(afKey(it),it).replace('</button>',whoTag(wornBy(it))+'</button>')).join('')}</div>`;
-  return `<div class="grid">${list.map(it=>{const w=wornBy(it),tag=whoTag(w);return (it.wid?cellHtml(it,'wsel',isSel(it),!w&&it.cls===heroCls&&better(it)).replace(`data-wsel="${it.id}"`,`data-wsel="${it.wid}"`):cellHtml(it,'stash',isSel(it),!w&&better(it))).replace('</button>',tag+'</button>')}).join('')}</div>`}
-function invRefresh(){const g=$('invGrid');if(!g)return;if(isRecy()){g.innerHTML=recyCells();return}const kind=campTab==='forge'?'affix':'equip',list=invList(kind);g.innerHTML=invGrid(list,kind);const c=$('invCount');if(c)c.textContent=invCountTxt(list)}
+  if(kind==='affix'){const C=gridCut(list,it=>{const k=afKey(it);return !!(xfSt(k)||fzSt(k,it))});return `<div class="cx-cells">${C.show.map(it=>xfCell(afKey(it),it).replace('</button>',whoTag(wornBy(it))+'</button>')).join('')}</div>${gridMoreBtn(C.rest)}`}
+  const C=gridCut(list,isSel);
+  return `<div class="grid">${C.show.map(it=>{const w=wornBy(it),tag=whoTag(w);return (it.wid?cellHtml(it,'wsel',isSel(it),!w&&it.cls===heroCls&&better(it)).replace(`data-wsel="${it.id}"`,`data-wsel="${it.wid}"`):cellHtml(it,'stash',isSel(it),!w&&better(it))).replace('</button>',tag+'</button>')}).join('')}</div>${gridMoreBtn(C.rest)}`}
+function invRefresh(){if(drawCache)return invRefresh0();drawCache=new Map();try{return invRefresh0()}finally{drawCache=null}}
+function invRefresh0(){const g=$('invGrid');if(!g)return;if(isRecy()){g.innerHTML=recyCells();return}const kind=campTab==='forge'?'affix':'equip',list=invList(kind);g.innerHTML=invGrid(list,kind);const c=$('invCount');if(c)c.textContent=invCountTxt(list)}
 $('campBody').addEventListener('input',e=>{if(e.target.dataset.inv==='q'){invQ=e.target.value;invRefresh()}});
 $('campBody').addEventListener('change',e=>{if(e.target.dataset.inv==='sort'){stS=e.target.value;drawCamp()}});
 
 /* ---------- Onglet Héros ---------- */
 function keyStats(St){return `<div class="cx-keystats"><div><span>Puissance</span><b>${Math.round(dps(St))}</b></div><div><span>Vie</span><b>${Math.round(St.hp)}</b></div><div><span>Réduction</span><b>${Math.round(St.armor)} %</b></div></div>`}
-// Vues de l'Armurerie qui montrent le coffre (fiche ancrée) ou le recyclage.
+// Vues de l'Arsenal qui montrent le coffre (fiche ancrée) ou le recyclage.
 const isCoffre=()=>campTab==='arsenal'&&arsView==='coffre',isRecy=()=>campTab==='arsenal'&&arsView==='recy',isHerosV=()=>campTab==='arsenal'&&arsView==='heros';
-// Armurerie › Par héros : ce que porte chaque héros, le héros joué en premier. Toucher un objet ouvre sa fiche (le donner au héros joué, le retirer…).
+// Arsenal › Par héros : ce que porte chaque héros, le héros joué en premier. Toucher un objet ouvre sa fiche (le donner au héros joué, le retirer…).
 function herosView(){const order=[heroCls,...Object.keys(CLS).filter(c=>c!==heroCls)];
   return order.map(c=>{const g=meta.gearBy[c]||{},wid=curWid(c),w=wdef(wid),ks=Object.keys(SLOT).filter(k=>k!=='arme'&&slotOpen(k)),n=ks.filter(k=>g[k]).length,me=c===heroCls;
     const lk=it=>it.lock?`<span class="li" aria-label="verrouillé">${LOCK_SVG}</span>`:'';
@@ -103,7 +112,7 @@ function slotUnlockHtml(){if(!isUnl('slots'))return '';const next=SLOT_U.filter(
   return `<section class="cx-section"><h3 class="cx-section__label">Emplacements · ${hf} fragment${hf>1?'s':''} de harnais</h3><div class="cx-rows">${next.map(u=>{const ok=!u.need||slotOpen(u.need),can=ok&&hf>=u.hf&&meta.gold>=u.gold;
     return `<div class="cx-row"><span class="cx-row__k" style="color:var(--ink)">${u.n}<small>${ok?`${u.hf} fragments de harnais et ${u.gold} or · tu as ${hf} fragment${hf>1?'s':''}`:`Après l'${SLOT_U.find(x=>x.k===u.need).n}`}</small></span><button class="cx-btn cx-btn--sm cost-btn${can?' cx-btn--primary':''}" data-cact="slotopen" data-arg="${u.k}" style="margin:0" ${can?'':'disabled'}><span>Débloquer</span>${ok?costHtml([['hf',u.hf],['or',u.gold]]):''}</button></div>`}).join('')}</div>
     <p class="cx-hint" style="margin:0">Les fragments de harnais tombent seulement sur les Gardiens (3 % en Normal, jusqu'à 11 % en Tourment X).</p></section>`}
-// Armurerie › Coffre : tout ce que tu possèdes, armes et objets portés compris (pastille du héros qui les porte).
+// Arsenal › Coffre : tout ce que tu possèdes, armes et objets portés compris (pastille du héros qui les porte).
 function campCoffre(){const list=invList('equip'),n=stashN();
   return `<section class="cx-section"><h3 class="cx-section__label">Coffre · ${n} objet${n>1?'s':''}</h3>
     ${n?invToolbar(list,'equip'):''}<div id="invGrid">${invGrid(list,'equip')}</div>${n?`<p class="cx-hint" style="margin:0">La pastille A, G ou M montre le héros qui porte l'objet (Archer, Guerrier, Magicien) ; « Par héros », en haut, les range héros par héros.${isUnl('recy')?' Pour recycler : onglet Recycler, en haut de l\'Arsenal.':''}</p>`:''}</section>`}
@@ -222,7 +231,7 @@ function cxUndo(html,undo){let el=$('undoToast');if(!el){el=document.createEleme
   const b=el.querySelector('button');if(b)b.onclick=()=>{el.hidden=true;clearTimeout(undoT);undo();saveMeta();syncEq();if(!$('camp').hidden)drawCamp();if(!$('bag').hidden)drawBag()};
   undoT=setTimeout(()=>{el.hidden=true},5000)}
 
-/* ---------- Armurerie › Recyclage : le seul endroit où l'on recycle ---------- */
+/* ---------- Arsenal › Recyclage : le seul endroit où l'on recycle ---------- */
 let recySel=new Set(),recyR=new Set(),recyAsk=false;
 // Une arme se recycle avec tous ses doubles : essence de chaque exemplaire selon son rang (l'arme au rang de meta.wlv, chaque double au sien).
 // Une arme gardée (verrouillée, portée, ou arme de départ) ne se recycle pas : seule une case « doubles » (dup) la représente, et ses doubles partent seuls.
@@ -250,7 +259,7 @@ function recyPicked(){const all=recyAll();return [...recySel].map(k=>all.find(it
 // Contenu d'une case d'objet : cadenas s'il est verrouillé, glyphe de l'emplacement, rang s'il a été fusionné.
 const cellIn=it=>`${it.lock?`<span class="cx-cell__lock">${LOCK_SVG}</span>`:''}${GLYPH[it.slot]}${it.up?`<span class="cx-cell__up">R${it.up+1}</span>`:''}`;
 function recyCell(it){const k=recyKey(it),on=recySel.has(k);return `<button class="cx-cell${on?' is-src':''}" data-cact="rcsel" data-arg="${k}" ${it.lock?'aria-disabled="true"':''} style="--rar:${RARV[it.r]}" aria-pressed="${on}" aria-label="${it.dup?`Doubles de ${esc(it.name)} (${recyCount(it)}), l'arme reste`:esc(itemName(it))}${it.lock?', verrouillé':''}${on?', choisi':''}">${it.dup?`<span class="cx-cell__lock">${LOCK_SVG}</span>${GLYPH[it.slot]}`:cellIn(it)}${recyCount(it)>1||it.dup?`<span class="cx-cell__n">×${recyCount(it)}</span>`:''}${on?'<span class="cx-pin cx-pin--src">−</span>':''}</button>`}
-function recyCells(){const all=recyAll(),list=recyList();return list.length?`<div class="cx-cells">${list.map(recyCell).join('')}</div>`:`<p class="cx-hint" style="margin:0">${all.length?'Aucun objet pour ce filtre.':'Rien à recycler : ton coffre est vide.'}</p>`}
+function recyCells(){const all=recyAll(),list=recyList(),C=gridCut(list,null);return list.length?`<div class="cx-cells">${C.show.map(recyCell).join('')}</div>${gridMoreBtn(C.rest)}`:`<p class="cx-hint" style="margin:0">${all.length?'Aucun objet pour ce filtre.':'Rien à recycler : ton coffre est vide.'}</p>`}
 function campRecycle(){const all=recyAll(),list=recyList();for(const k of [...recySel])if(!all.some(it=>recyKey(it)===k&&!it.lock))recySel.delete(k);
   const rs=[...new Set(all.map(it=>it.r))].sort((a,b)=>a-b),cnt={};for(const it of all)cnt[it.r]=(cnt[it.r]||0)+1;
   const rch=r=>`<button class="cx-chip cx-chip--sm" data-cact="rcr" data-arg="${r}" aria-pressed="${recyR.has(r)}" style="${recyR.has(r)?'':`color:${RAR[r].c}`}">${RAR[r].n} <span class="n">${cnt[r]}</span></button>`;
@@ -271,3 +280,16 @@ function recyDo(){const P=recyPicked();if(!P.length)return;let e=0,f=0;
     else meta.stash=meta.stash.filter(x=>x!==it)}
   meta.essence+=e;recySel.clear();recyAsk=false;SND.play('pick2');
   toast(`${recyTxt(P)} recyclé${P.length>1?'s':''} · +${e} essence${f?` · ${f} fragment${f>1?'s':''}`:''}`)}
+
+// Actions du Camp de ce fichier (v135, table CAMP_ACT de camp.js)
+Object.assign(CAMP_ACT,{
+  gorecy1:function(a,arg,b,d){{const B={tab:campTab,sel:campSel,scroll:$('campBody').parentElement.scrollTop,label:campTab==='arsenal'?'Coffre':'Héros'};recySel=new Set([arg]);recyAsk=false;campBack=B;campTab='arsenal';arsView='recy';campSel=null}return CAMP_GO},
+  rcsel:function(a,arg,b,d){{if(recySel.has(arg))recySel.delete(arg);else recySel.add(arg);recyAsk=false}return CAMP_GO},
+  rcr:function(a,arg,b,d){{const r=+arg;if(recyR.has(r))recyR.delete(r);else recyR.add(r);recyAsk=false}return CAMP_GO},
+  rcrall:function(a,arg,b,d){{recyR.clear();recyAsk=false}return CAMP_GO},
+  rcall:function(a,arg,b,d){{for(const it of recyList())if(!it.lock)recySel.add(recyKey(it));recyAsk=false}return CAMP_GO},
+  rcnone:function(a,arg,b,d){{recySel.clear();recyAsk=false}return CAMP_GO},
+  rcask:function(a,arg,b,d){{recyAsk=true}return CAMP_GO},
+  rcno:function(a,arg,b,d){{recyAsk=false}return CAMP_GO},
+  rcok:function(a,arg,b,d){{recyDo()}return CAMP_GO},
+});

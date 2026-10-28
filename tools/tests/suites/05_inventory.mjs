@@ -2,6 +2,23 @@
 import { newPage, campView, openCamp } from '../lib.mjs';
 
 export const tests = [
+  { name: 'gros coffre : 120 cases à la fois, « Afficher plus », l\'objet choisi reste affiché, affichage rapide (v135)', fn: async (b, t) => {
+    const p = t.track(await newPage(b));
+    await p.evaluate(() => { meta.stash = []; for (let i = 0; i < 300; i++) meta.stash.push(genItem(40, i % 4)); saveMeta(); });
+    await campView(p, 'arsenal');
+    await p.evaluate(() => { arsView = 'coffre'; drawCamp(); });
+    const cells = () => p.evaluate(() => document.querySelectorAll('#invGrid .grid .cell').length);
+    t.eq(await cells(), 120, '120 cases au départ');
+    t.ok(/encore 18[0-9]/.test(await p.evaluate(() => document.querySelector('[data-cact="gridmore"]').textContent)), 'bouton « Afficher plus » avec le reste');
+    await p.click('[data-cact="gridmore"]'); t.eq(await cells(), 240, '240 après un appui');
+    await p.click('#tabbar [data-nav="heros"]'); await p.click('#tabbar [data-nav="arsenal"]'); await p.evaluate(() => { arsView = 'coffre'; drawCamp(); });
+    t.eq(await cells(), 120, 'retour à 120 en changeant de vue');
+    const id = await p.evaluate(() => { const L = invList('equip'); const it = L[250]; campSel = selOf(it); drawCamp(); return it.id; });
+    t.ok(await p.evaluate((id) => !!document.querySelector(`#invGrid [data-stash="${id}"].sel`), id), 'objet choisi loin dans la liste : affiché');
+    await p.evaluate(() => { meta.stash = []; for (let i = 0; i < 1500; i++) meta.stash.push(genItem(80 + (i % 20), i % 6)); saveMeta(); });
+    const ms = await p.evaluate(() => { const r = {}; for (const [k, f] of [['coffre', () => { arsView = 'coffre'; drawCamp(); }], ['recycler', () => { arsView = 'recy'; drawCamp(); }], ['fusion', () => { campTab = 'forge'; forgeSub = 'fuse'; drawCamp(); }], ['affixes', () => { campTab = 'forge'; forgeSub = 'affix'; drawCamp(); }]]) { f(); const a = performance.now(); for (let i = 0; i < 3; i++) f(); r[k] = Math.round((performance.now() - a) / 3); } return r; });
+    t.ok(Object.values(ms).every((v) => v < 200), `1 500 objets : moins de 200 ms par affichage (${JSON.stringify(ms)})`);
+  } },
   { name: 'Héros › « Ouvrir le coffre » mène à Armurerie › Coffre', fn: async (b, t) => {
     const p = t.track(await newPage(b));
     await openCamp(p); await p.click('[data-cact="gocoffre"]');

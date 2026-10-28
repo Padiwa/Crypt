@@ -4,12 +4,14 @@
 // L'exemplaire gardé conserve ses affixes et son niveau ; chaque rang ajoute 10 % à ses statistiques.
 const mKey=it=>it.wid?'w:'+it.wid:`${it.slot}|${it.r}|${it.rid||it.type||it.name}`;
 // Le coffre et ce que portent tous les héros ; un objet porté (par n'importe quel héros) peut recevoir une fusion, jamais être sacrifié.
-const gearAll=()=>[...meta.stash,...allWorn()];
-const isWorn=it=>allWorn().includes(it);
+const gearAll=()=>drawCache?memo('gearAll',()=>[...meta.stash,...allWorn()]):[...meta.stash,...allWorn()];
+const isWorn=it=>drawCache?memo('wornSet',()=>new Set(allWorn())).has(it):allWorn().includes(it);
 // Peut être consommé par une fusion : ni porté, ni verrouillé, ni scellé.
 const fuseFree=it=>!it.lock&&!isWorn(it)&&!it.seal;
 // Doubles d'un objet du coffre ou porté, de même rang.
-function fuseMates(it){if(!it||it.wid||(it.up|0)>=rankCap(it))return [];const k=mKey(it),u=it.up|0;return gearAll().filter(x=>x!==it&&mKey(x)===k&&(x.up|0)===u)}
+function fuseMates(it){if(!it||it.wid||(it.up|0)>=rankCap(it))return [];const k=mKey(it)+'#'+(it.up|0);
+  if(drawCache){const ix=memo('fzIdx',()=>{const m=new Map();for(const x of gearAll()){if(x.wid)continue;const kk=mKey(x)+'#'+(x.up|0);let a=m.get(kk);if(!a)m.set(kk,a=[]);a.push(x)}return m});return (ix.get(k)||[]).filter(x=>x!==it)}
+  return gearAll().filter(x=>x!==it&&mKey(x)+'#'+(x.up|0)===k)}
 // Le double sacrifié : le plus faible des exemplaires libres.
 function fusePartner(it){return fuseMates(it).filter(fuseFree).sort((a,b)=>(a.lvl-b.lvl)||(Object.keys(a.aff).length-Object.keys(b.aff).length)||(a.id-b.id))[0]||null}
 const gFuseCost=it=>fuseGold(it.r,it.up,it.lvl);
@@ -91,7 +93,7 @@ const fzMateCell=(it,ok,note)=>`<button class="cx-cell${fzc&&fzc.b===it.id?' is-
 function campFusion(){const g=fuseGroups();
   if(fzc&&!fzc.w){const a=fzItem(fzc.a),b=fzItem(fzc.b);if(fzPair(a,b)){if(!fzc.sel)fzc.sel=fzBest(a,b)}else{fzc.sel=null;if(!a&&!b){fzc=null;fzRole='a'}}}
   if(fzc&&fzc.w&&!(ownedW(fzc.w)&&wSpares(fzc.w).length)){fzc=null;fzRole='a'}
-  let h=backChip()+afModes();
+  let h=backChip();
   const a=fzc&&!fzc.w&&fzItem(fzc.a),b=fzc&&!fzc.w&&fzItem(fzc.b),W=fzc&&fzc.w;
   const role=(side,lab,it,v)=>`<button class="cx-role cx-role--${side==='a'?'dst':'src'}" data-cact="fzpick" data-arg="${side}" aria-pressed="${fzRole===side}"><span class="cx-role__k"><i>${side==='a'?'+':'−'}</i>${lab}</span><span class="cx-role__v${v?'':' is-empty'}" ${it?`style="color:${RARV[it.r]}"`:''}>${v||'Choisir un objet'}</span></button>`;
   h+=`<div class="cx-roles">${role('b','Source · sacrifiée',b,b?esc(itemName(b)):W?'Ses doubles':'')}${(()=>{const w=fzSwapWhy();return swapBtn('fzswap',!w,w)})()}${role('a','Cible · gardée',W?{r:wdef(W).r}:a,W?esc(wdef(W).n):a?esc(itemName(a)):'')}</div>`;
@@ -141,3 +143,26 @@ function fuseAllPlan(){const key=fapKey();if(fapC&&fapC.key===key)return fapC;
   return fapC={key,n,gold}}
 // Or insuffisant pour la moins chère des fusions possibles : son prix.
 function fuseAllNext(){const g=fuseGroups();const c=[...g.gear.filter(L=>fuseOk(L[0])).map(L=>gFuseCost(L[0])),...g.wpn.filter(id=>fuseOk({r:wdef(id).r})).map(id=>wFusePlan(id,1e15).n?fuseGold(wdef(id).r,meta.wlv[id]|0,relicItemLvl()):1e15)];return c.length?Math.min(...c):0}
+
+// Actions du Camp de ce fichier (v135, table CAMP_ACT de camp.js)
+Object.assign(CAMP_ACT,{
+  fzpick:function(a,arg,b,d){{fzRole=arg==='b'?'b':'a'}return CAMP_GO},
+  gofuse:function(a,arg,b,d){{campTab='forge';forgeSub='fuse';campSel=null}return CAMP_GO},
+  wfuse:function(a,arg,b,d){{const w=wdef(arg),d=wFuse(arg);if(d){SND.play('leg');toast(`<b style="color:${RAR[w.r].c}">${esc(w.n)}</b> passe au ${rkTxt(meta.wlv[arg])}`)}}return CAMP_GO},
+  // fusion d'équipement (fuse.js, mode Fusion de l'onglet Affixes et fusion)
+  fuse1:function(a,arg,b,d){{const it=xfGet(arg),p=fusePartner(it);if(it&&p){campBack={tab:campTab,sel:campSel,scroll:$('campBody').parentElement.scrollTop,label:campTab==='arsenal'?'Coffre':'Héros'};fzOpen(it,p);campTab='forge';forgeSub='fuse';campSel=null}}return CAMP_GO},
+  // une affixe de la source touchée une 2e fois revient à la valeur de la cible ; une affixe de la cible touchée se retire ou revient ; un pouvoir abyssal reste
+  fzk:function(a,arg,b,d){if(fzc&&fzc.sel){{const [k,sd]=arg.split('|'),A=fzItem(fzc.a),S=fzc.sel,ab=AFF[k]&&AFF[k].aby,ha=!!A&&A.aff[k]!=null;if(S.k[k]===sd){if(sd==='b')S.k[k]=ha?'a':ab?'b':'';else if(!ab)S.k[k]=''}else S.k[k]=sd}return CAMP_GO}return CAMP_GO},
+  fzbase:function(a,arg,b,d){if(fzc){{fzc.sel.base=arg==='b'?'b':'a'}return CAMP_GO}return CAMP_GO},
+  fzall:function(a,arg,b,d){if(fzc){{fzc.sel=fzBest(fzItem(fzc.a),fzItem(fzc.b))}return CAMP_GO}return CAMP_GO},
+  fzkeep:function(a,arg,b,d){if(fzc){{fzc.sel=fzKeepA(fzItem(fzc.a),fzItem(fzc.b))}return CAMP_GO}return CAMP_GO},
+  fzb:function(a,arg,b,d){{const B=fzItem(+arg);if(B&&fuseFree(B))fzSetB(B)}return CAMP_GO},
+  fzno:function(a,arg,b,d){{fzc=null;fzRole='a';if(campBack){const B=campBack;campBack=null;campTab=B.tab;campSel=B.sel;drawCamp();$('campBody').parentElement.scrollTop=B.scroll||0;return}}return CAMP_GO},
+  fzok:function(a,arg,b,d){if(fzc){{const A=fzItem(fzc.a),B=fzItem(fzc.b);if(A&&B&&fuseGear(A,B,fzc.sel)){SND.play('leg');toast(`<b style="color:${RAR[A.r].c}">${esc(A.name)}</b> passe au ${rkTxt(A.up)} · ${esc(B.name)} sacrifié`);fzc=null;fzRole='a';if(campBack){const K=campBack;campBack=null;campTab=K.tab;campSel=K.sel;saveMeta();syncEq();drawCamp();$('campBody').parentElement.scrollTop=K.scroll||0;return}}}return CAMP_GO}return CAMP_GO},
+  fzr:function(a,arg,b,d){{const r=+arg;if(fuseR.has(r))fuseR.delete(r);else fuseR.add(r)}return CAMP_GO},
+  fzrall:function(a,arg,b,d){{fuseR.clear();}return CAMP_GO},
+  fuseall:function(a,arg,b,d){{const n=fuseAll(fuseOk);if(n){SND.play('leg');toast(`${n} fusion${n>1?'s':''} faite${n>1?'s':''}`)}}return CAMP_GO},
+  fzswap:function(a,arg,b,d){{const w=fzSwapWhy();if(w)return;const A=fzItem(fzc.a),B=fzItem(fzc.b);
+      if(A&&B){const sw=x=>x==='a'?'b':x==='b'?'a':x,S=fzc.sel;fzc={a:B.id,b:A.id,sel:S?{base:sw(S.base),k:Object.fromEntries(Object.entries(S.k).map(([k,v])=>[k,sw(v)]))}:null};fzRole='b'}
+      else if(A)fzSetB(A);else fzSetA(B)}return CAMP_GO},
+});

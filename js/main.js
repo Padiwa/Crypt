@@ -10,7 +10,7 @@ function noteErr(where,err){const m=`${where} : ${(err&&err.message)||err}`;if(l
    (20 pendant l'écran de fin, le temps que les éclats retombent). Réglage « Économie de batterie » : 30 images par seconde en mission
    et image en résolution 1×. La simulation garde son pas fixe de 1/60 s. */
 const COVER=['intro','camp','mission','over'].map(id=>$(id));
-let lastDraw=0,drawN=0,sleepT=0;
+let lastDraw=0,sleepT=0;
 function frame(now){
   sleepT=0;
   if(COVER.some(e=>!e.hidden)&&!(started&&G&&!G.over)){last=now;sleepT=setTimeout(()=>{sleepT=0;requestAnimationFrame(frame)},250);return}
@@ -35,7 +35,7 @@ function step(now){
   if(live){acc+=dt;let n=0;while(acc>=STEP&&n<6&&run()){update(STEP);acc-=STEP;n++}if(n>=6)acc=0}
   else{acc=0;if(G.over){for(const p of G.parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt}compact(G.parts,p=>p.life>0)}}
   const gap=live?(SET.eco?1000/30-4:0):G.over?50:200;
-  if(now-lastDraw>=gap){render();hud();lastDraw=now;drawN++}
+  if(now-lastDraw>=gap){render();hud();lastDraw=now}
 }
 function start(){
   let noGl=false;try{noGl=localStorage.getItem('crypte-nogl')==='1'}catch{}

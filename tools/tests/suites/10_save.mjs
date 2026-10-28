@@ -15,6 +15,26 @@ async function importFile(b, t, file) {
 }
 
 export const tests = [
+  { name: 'Réglages › Recommencer à zéro : confirmation, partie neuve, réglages gardés, copie de secours restaurable (v135)', fn: async (b, t) => {
+    const p = t.track(await newPage(b, { keep: true }));
+    await p.evaluate(() => { localStorage.clear(); }); await p.reload();
+    await p.evaluate(() => { meta.gold = 4321; meta.essence = 99; meta.wins = 7; meta.maxL = 12; meta.stash.push(genItem(10, 2)); saveMeta(); SET.sfx = .25; saveSet(); localStorage.setItem('crypte-cls', 'magicien'); });
+    await p.reload();
+    await p.click('#setBtn'); await p.click('[data-cact="rstask"]');
+    t.ok(await p.evaluate(() => /Tout effacer et recommencer/.test($('setBody').textContent) && !!document.querySelector('[data-cact="rstok"]')), 'confirmation demandée');
+    await p.click('[data-cact="rstcancel"]');
+    t.ok(await p.evaluate(() => !document.querySelector('[data-cact="rstok"]') && meta.gold === 4321), 'Annuler : rien ne change');
+    await p.click('[data-cact="rstask"]');
+    await Promise.all([p.waitForEvent('load'), p.click('[data-cact="rstok"]')]); await sleep(p, 400);
+    t.eq(await p.evaluate(() => [meta.gold, meta.wins | 0, meta.maxL | 0, meta.stash.length, heroCls, SET.sfx]), [0, 0, 1, 0, 'archer', .25], 'partie neuve (niveau de mission 1), réglages gardés');
+    t.ok(await p.evaluate(() => tabLocked('forge')), 'Camp de nouveau verrouillé comme pour un joueur neuf');
+    await p.click('#setBtn');
+    t.ok(await p.evaluate(() => !!document.querySelector('[data-cact="rstback"]')), 'copie de secours proposée');
+    await p.click('[data-cact="rstback"]');
+    t.ok(await p.evaluate(() => /progression effacée le/.test($('setBody').textContent)), 'confirmation de la restauration');
+    await Promise.all([p.waitForEvent('load'), p.click('[data-cact="impok"]')]); await sleep(p, 400);
+    t.eq(await p.evaluate(() => [meta.gold, meta.wins, meta.stash.length, heroCls]), [4321, 7, 1, 'magicien'], 'progression restaurée');
+  } },
   { name: 'export puis import par fichier : identique', fn: async (b, t) => {
     const p = t.track(await newPage(b, { downloads: true }));
     await p.evaluate(() => { meta.gold = 4321; meta.essence = 765; meta.maxL = 27; meta.slotU = { anneau2: true }; meta.hfrag = 7; meta.built.a3 = true; meta.wlv.a3 = 2; meta.wcp.a3 = [0, 1];

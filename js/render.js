@@ -250,7 +250,7 @@ function hud(){
   {const n=(G.crits||[]).filter(t=>t>G.t-CS_W).length,on=P.cbT>0;setHid('stC',!(on||n>=3));if(on)setTx('stC',`Frénésie · ${Math.ceil(P.cbT)} s`);else if(n>=3)setTx('stC',`Critiques ${Math.min(n,CS_N)} / ${CS_N}`)}
   setCls('stVig','psn',P.psnT>0&&!(P.brnT>0));setCls('stVig','brn',P.brnT>0);
   setSt('bDash','--cd',r3(P.dashCd/dashCdMax()));
-  setSt('bNova','--cd',r3(P.novaCd/(P.novaMax||CLS[G.cls].cd*(1-S.cdr/100))));
+  setSt('bNova','--cd',r3(P.novaMax?P.novaCd/P.novaMax:0));
   setSt('bPot','--cd',G.potions?'0':'1');
   const live=started&&!G.over;
   {const rd=live&&P.dashCd<=0,rn=live&&P.novaCd<=0,rp=live&&G.potions>0&&P.hp<S.hp,sec=v=>live&&v>.05?String(Math.ceil(v)):'';

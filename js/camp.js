@@ -1,392 +1,13 @@
-// Crypte des Cendres — camp.js
+// Crypte des Cendres — camp.js : cœur du Camp (état, affichage des onglets, pied, table d'actions CAMP_ACT, accueil, feuille de choix).
+// Les onglets sont dans heros.js, arsenal.js, forge.js, collection.js, inv.js (coffre, recyclage), fuse.js (fusion), seal.js, pet.js ; la sauvegarde dans save.js.
 /* ---------- Camp ---------- */
 let campTab='equip',campSel=null;
 function syncEq(){if(G&&(!started||G.over)){G.eq=curEq();S=stats(G.eq);G.P.hp=S.hp}}
 let campMsg='';
 function fragStatus(id){const pc=meta.parts[id]||[0,0,0];return pc.filter(n=>n>0).length}
 let stF='all',stS='rar';
-// Héros : les objets dont tu as des fragments, avec un lien vers l'Armurerie.
-function fragInv(){
-  const ids=craftIds().filter(id=>(meta.parts[id]||[]).some(n=>n>0)).sort((a,b)=>fragStatus(b)-fragStatus(a)||bpdef(b).r-bpdef(a).r);
-  if(!ids.length)return '<p class="cx-hint" style="margin:0">Aucun fragment. Ouvre des reliques en mission : chacune donne un fragment d\'un objet de sa rareté. Trois fragments d\'un même objet se fabriquent dans Arsenal › Recettes.</p>';
-  return `<ul class="partlist">${ids.slice(0,12).map(id=>{const b=bpdef(id),pc=meta.parts[id];
-    return `<li><b style="color:${RAR[b.r].c}">${esc(b.n)}</b> <span style="color:var(--muted)">(${fragStatus(id)} / 3)</span> · ${b.frag.map((n,i)=>`<span style="color:${pc[i]?'var(--heal)':'var(--muted)'}">${n}${pc[i]>1?' ×'+pc[i]:''}</span>`).join(', ')}</li>`}).join('')}${ids.length>12?`<li class="cx-hint" style="margin:0">… et ${ids.length-12} autres</li>`:''}</ul>
-`;
-}
-let fuseTgt={};
-function giveFrag(id){const pc=meta.parts[id]||(meta.parts[id]=[0,0,0]),miss=[0,1,2].filter(i=>!pc[i]),i=miss.length?pick(miss):ri(0,2);pc[i]++;return i}
-// Essence rendue par une arme recyclée : selon sa rareté et son rang (un rang vaut deux exemplaires).
-// Où trouver un objet : sa relique et la difficulté où elle tombe.
-const srcTxt=b=>b.r>=3?`Relique <b style="color:${RTIER[b.r-3].c}">${RTIER[b.r-3].n}</b> · ${REL_SRC[b.r-3]}`:'Butin des monstres et des Gardiens';
-function bpCard(b){
-  const pc=meta.parts[b.id]||[0,0,0],isW=b.kind==='arme',r=RAR[b.r],mine=!isW||b.cls===heroCls;
-  const own=isW&&ownedW(b.id),eq=isW&&curWid(b.cls)===b.id,craftable=b.r>=3,ready=craftable&&pc.every(x=>x>0),cost=b.craft;
-  const lvl=relicItemLvl();
-  const baseTxt=isW?`${b.dmg} dégâts de base`:baseTxtOf(b.slot,Math.round(baseRoll(b.slot,lvl)*RB[b.r]));
-  const lines=isW?Object.keys(b.aff).map(k=>`<li${AFF[k].aby?' class="abyp"':''}>${AFF[k].t(b.aff[k])}</li>`).join(''):rgAff(b).map(k=>`<li>${AFF_NAME[k]||k}</li>`).join('')+(b.pw?`<li class="abyp">${AFF[b.pw].t(AFF[b.pw].r(lvl))}</li>`:'');
-  const sp=isW?wSpares(b.id).length:0;
-  let st=isW?(own?`<span class="owned">${eq?'Équipée':'Possédée'} · ${rkTxt(meta.wlv[b.id])}${sp?` · ${sp} double${sp>1?'s':''}`:''}${mine?'':' · '+CLS[b.cls].n}</span>`:''):'';
-  let foot='';
-  if(craftable)foot=`<div class="parts">${b.frag.map((n,i)=>`<span class="part${pc[i]?' have':''}">${n}${pc[i]>1?' ×'+pc[i]:''}</span>`).join('')}</div>
-    <button class="btn main buy cost-btn" data-cact="craft" data-arg="${b.id}" ${ready&&meta.gold>=cost?'':'disabled'}><span>${isW&&own?'Fabriquer un double':'Fabriquer'}</span>${costHtml([['or',cost],['pf',3,pc.filter(x=>x>0).length]])}</button>`;
-  if(isW&&own&&!eq&&mine)foot+=`<button class="btn" data-cact="wequip" data-arg="${b.id}">Équiper</button>`;
-  return `<div class="wpn${eq&&mine?' on':''}"><div class="nm" style="color:${r.c}">${esc(b.n)}</div><div class="meta">${r.n} · ${isW?'Arme · '+CLS[b.cls].n:SLOT[b.slot]+(b.bio?' · ❄ Abîmes gelés':'')} · ${baseTxt}${!isW?` · niveau ${lvl}`:''}</div>
-    <ul>${lines||'<li>Aucun bonus</li>'}</ul>
-    <div class="meta">${srcTxt(b)}${isW&&!craftable?'':''}</div>${st}<div class="wfoot">${foot}</div></div>`;
-}
-let arsAsk=null;
-function craftPlan(){const ids=craftIds(),parts={},plan=[];let gold=meta.gold;for(const id of ids)parts[id]=[...(meta.parts[id]||[0,0,0])];
-  for(const id of ids){const b=bpdef(id);for(let n=0;n<20;n++){const pc=parts[id];if(!pc.every(x=>x>0)||gold<b.craft)break;parts[id]=pc.map(x=>x-1);gold-=b.craft;plan.push(id)}}
-  return {plan,cost:meta.gold-gold}}
-function craftOne(id){const b=bpdef(id),pc=meta.parts[id];if(!b||b.r<3||!pc||!pc.every(x=>x>0)||meta.gold<b.craft)return null;
-  meta.parts[id]=pc.map(x=>x-1);meta.gold-=b.craft;
-  if(b.kind==='arme'){const g=gainWeapon(id);if(g==='new'&&b.cls===heroCls)meta.wpn[heroCls]=id;return g}
-  const it=rgItem(id,relicItemLvl());meta.stash.push(it);return it}
-function arsBar(){const cp=craftPlan();
-  let h=`<div class="actions" style="margin:0"><button class="btn cost-btn${cp.plan.length?' main':''}" data-cact="craftask" ${cp.plan.length?'':'disabled'}><span>Tout fabriquer${cp.plan.length?` · ${cp.plan.length}`:''}</span>${cp.plan.length?costHtml([['or',cp.cost],['pf',cp.plan.length*3]]):''}</button>${isUnl('fuse')?'<button class="btn" data-cact="gofuse">Fusionner à la Forge</button>':''}</div>`;
-  if(arsAsk==='craft'&&cp.plan.length){const cnt={};for(const id of cp.plan)cnt[id]=(cnt[id]||0)+1;
-    h+=`<div class="card"><p style="margin:0;font-size:14px">Fabriquer ${cp.plan.length} objet${cp.plan.length>1?'s':''} pour <b><span class="coin"></span> ${cp.cost} or</b> : ${Object.keys(cnt).map(id=>`<b style="color:${RAR[bpdef(id).r].c}">${esc(bpdef(id).n)}</b>${cnt[id]>1?' ×'+cnt[id]:''}`).join(', ')}.</p><div class="actions"><button class="btn main cost-btn" data-cact="craftall"><span>Fabriquer</span>${costHtml([['or',cp.cost],['pf',cp.plan.length*3]])}</button><button class="btn" data-cact="arsno">Annuler</button></div></div>`}
-  return h}
-let arsView='coffre',arsR='w';
-// Armurerie › Mes armes : toutes les armes possédées, avec leurs valeurs réelles (rang et affixes ajoutées comprises).
-function myWeapons(){const order=[heroCls,...Object.keys(CLS).filter(c=>c!==heroCls)];
-  const all=order.flatMap(c=>WPN[c].filter(w=>ownedW(w.id)).map(w=>({c,w})));const tot=Object.values(WPN).flat().length;
-  const base=curEq(),dpsOf=id=>dps(stats({...base,arme:weaponItem(heroCls,id)})),cur=dpsOf(curWid());
-  let h=`<p class="cx-hint" style="margin:0">${all.length} arme${all.length>1?'s':''} possédée${all.length>1?'s':''} sur ${tot}. Valeurs avec rang et affixes ajoutées. Pour ton héros, la ligne DPS compare chaque arme à celle équipée, avec ton équipement actuel.</p>`;
-  for(const c of order){const L=all.filter(x=>x.c===c);if(!L.length)continue;
-    h+=`<h3>${CLS[c].n}${c===heroCls?' · ton héros':''} <span class="cx-hint" style="margin:0;font-weight:400">${L.length} / ${WPN[c].length}</span></h3>`;
-    h+=L.sort((a,b)=>b.w.r-a.w.r).map(({w})=>{const it=weaponItem(c,w.id),m=upMul(it.up),r=RAR[w.r],eq=curWid(c)===w.id,mine=c===heroCls;
-      const mods=(meta.wload[w.id]||[]).filter(Boolean).length,mt=(meta.wmast[w.id]||{r:0}).r,sp=wSpares(w.id).length,fp=wFusePlan(w.id);
-      const d=mine?dpsOf(w.id):0,diff=mine&&!eq&&cur?Math.round((d/cur-1)*100):0;
-      return `<div class="wpn${eq&&mine?' on':''}"><div class="nm" style="color:${r.c}">${esc(w.n)} <span style="color:var(--ink)">${rkTxt(it.up)}</span></div>
-        <div class="meta">${r.n} · ${fmtN(w.dmg*m)} dégâts de base · maîtrise ${mt} / 10 · ${mods} mod${mods>1?'s':''}${sp?` · ${sp} double${sp>1?'s':''}`:''}</div>
-        <ul>${Object.keys(it.aff).map(k=>`<li${AFF[k].aby?' class="abyp"':''}>${AFF[k].t(NOSCALE[k]?it.aff[k]:fmtN(it.aff[k]*m))}</li>`).join('')||'<li>Aucun bonus</li>'}</ul>
-        ${mine?`<div class="meta">DPS estimé <b style="color:var(--ink)">${fmtN(Math.round(d))}</b>${eq?'':` · <b style="color:${diff>=0?'var(--heal)':'var(--blood)'}">${diff>=0?'+':''}${diff} %</b> par rapport à l'arme équipée`}</div>`:''}
-        <div class="wfoot">${eq?`<span class="owned">Équipée${mine?'':' · '+CLS[c].n}</span>`:mine?`<button class="btn main" data-cact="wequip" data-arg="${w.id}">Équiper</button>`:`<span class="owned">${CLS[c].n}</span>`}${fp.n?`<button class="btn" data-cact="wfuse" data-arg="${w.id}">Fusionner · ${rkTxt(fp.R)} · <span class="coin"></span>${fp.cost}</button>`:fp.need?`<button class="btn" disabled>Fusionner · <span class="coin"></span>${fp.need}</button>`:''}</div></div>`}).join('')}
-  return h}
-function campArsenal2(){
-  const nOwn=Object.values(WPN).flat().filter(w=>ownedW(w.id)).length;
-  const cur=arsView==='heros'?'coffre':arsView,tv=(k,lab,n)=>`<button class="cx-tab" role="tab" data-cact="arsv" data-arg="${k}" aria-selected="${cur===k}">${lab}${n!=null?` <span class="n">${n}</span>`:''}</button>`;
-  const ak={rec:'craft',mine:'arms',recy:'recy'},lk=k=>ak[k]&&!isUnl(ak[k]);
-  const tv2=(k,lab,n)=>lk(k)?tv(k,`<span class="lockmini" aria-hidden="true">${LOCK_SVG}</span>${lab}`).replace('class="cx-tab"','class="cx-tab is-locked"'):tv(k,lab,n);
-  const tabs=`<div class="cx-tabs" role="tablist" aria-label="Arsenal">${tv('coffre','Coffre')}${tv2('mine','Armes')}${tv2('rec','Recettes')}${tv2('recy','Recycler')}</div>`
-    +(cur==='coffre'?`<div class="cx-chips ars__sub" role="radiogroup" aria-label="Affichage du coffre"><button class="cx-chip cx-chip--sm" role="radio" data-cact="arsv" data-arg="coffre" aria-checked="${arsView==='coffre'}">Tout le coffre <span class="n">${stashN()}</span></button><button class="cx-chip cx-chip--sm" role="radio" data-cact="arsv" data-arg="heros" aria-checked="${arsView==='heros'}">Par héros</button></div>`:'');
-  if(lk(arsView))return `${campMsg}${tabs}${lockedHtml(ak[arsView])}`;
-  const nc=ak[arsView]?newCard(ak[arsView]):'';
-  if(arsView==='mine')return `${campMsg}${tabs}${nc}${myWeapons()}`;
-  if(arsView==='coffre')return `${campMsg}${tabs}${campCoffre()}`;
-  if(arsView==='heros')return `${campMsg}${tabs}${herosView()}`;
-  if(arsView==='recy')return `${campMsg}${tabs}${nc}${campRecycle()}`;
-  const ready=id=>{const pc=meta.parts[id]||[0,0,0];return pc.every(x=>x>0)};
-  const nReady=craftIds().filter(ready).length;
-  const ch=(k,lab,c,n)=>`<button class="cx-chip cx-chip--sm" data-cact="arsr" data-arg="${k}" aria-pressed="${arsR===k}"${c&&arsR!==k?` style="color:${c}"`:''}>${lab}${n!=null?` <span class="n">${n}</span>`:''}</button>`;
-  let h=`${campMsg}${tabs}${arsBar()}<p class="cx-hint" style="margin:0">Les armes communes, magiques et rares tombent des monstres. Tout ce qui est légendaire ou plus rare se fabrique avec 3 fragments, trouvés en ouvrant les reliques de sa rareté. Un objet fabriqué sort au niveau d'objet de ta plus haute mission réussie (niveau ${maxL()} → objet niveau ${relicItemLvl()}).</p>${cxMore('ars_frags','Tes fragments de reliques',fragInv(),'Afficher')}
-    <div class="cx-chips">${ch('w','Armes · '+CLS[heroCls].n)}${[3,4,5,6].map(r=>ch(String(r),RAR[r].n,RAR[r].c)).join('')}${ch('ready','Prêts',null,nReady)}${ch('o','Autres classes')}</div>`;
-  let list=[];
-  if(arsR==='w')list=WPN[heroCls].map(w=>w.id);
-  else if(arsR==='o')list=Object.keys(WPN).filter(c=>c!==heroCls).flatMap(c=>WPN[c].filter(w=>w.r>=3||ownedW(w.id))).map(w=>w.id);
-  else if(arsR==='ready')list=craftIds().filter(ready);
-  else list=Object.keys(RGEAR).filter(id=>RGEAR[id].r===+arsR);
-  if(!list.length)h+='<p class="cx-hint" style="margin:0">Rien à fabriquer pour l\'instant : il faut les 3 fragments.</p>';
-  return h+list.map(id=>bpCard(bpdef(id))).join('');
-}
-let relSel=null,relTier='all';
-// Filtre : 'all', un type (0–3) ou 'f' (forgées)
-const relMatch=(id,f=relTier)=>{const R=RELICS[id];return f==='all'||(f==='f'?!!R.fz:String(R.t)===f&&!R.fz)};
-const relToEquip=f=>Object.keys(RELICS).filter(id=>meta.relics[id]&&relMatch(id,f)).reduce((n,id)=>n+[true,false].reduce((m,rad)=>m+Math.max(0,(meta.relics[id][rad?1:0]|0)-relicQN(id,rad)),0),0);
-const relInQ=f=>meta.relicQ.filter(q=>RELICS[q.id]&&relMatch(q.id,f)).length;
-const FUSE_COST=[20,40,80,150];
-// Reliques non forgées d'un type, celles hors de la file d'ouverture d'abord, les intactes avant les éclatantes.
-function relAvail(t){const out=[];for(const id in RELICS){if(RELICS[id].t!==t||RELICS[id].fz)continue;const a=meta.relics[id];if(!a)continue;
-  for(const rad of [false,true]){const own=Math.max(0,a[rad?1:0]|0),q=Math.min(own,relicQN(id,rad));for(let k=0;k<own;k++)out.push({id,rad,q:k>=own-q})}}
-  return out.sort((x,y)=>(x.q-y.q)||(x.rad-y.rad))}
-// Objets visés par la fusion : ceux du contenu de la relique, les plus proches d'être complets d'abord.
-const fuseTargets=t=>relPool(t).sort((a,b)=>fragStatus(b)-fragStatus(a)||(bpdef(a).kind==='arme'?-1:1));
-function fusionSection(){
-  let h=`<section class="cx-section"><h3 class="cx-section__label">Reliques forgées</h3><p class="cx-hint" style="margin:0">Fusionne 3 reliques d'un même type en une relique forgée de ce type : elle donne à coup sûr un fragment de l'objet de ton choix. Celles hors de la file d'ouverture partent en premier.</p><div class="fuse">`;
-  for(let t=0;t<4;t++){const AV=relAvail(t),av=AV.length,cost=FUSE_COST[t],L=fuseTargets(t);if(!fuseTgt[t]||!L.includes(fuseTgt[t]))fuseTgt[t]=L[0]||null;const ok=av>=3&&meta.essence>=cost&&fuseTgt[t];
-    if(!av)continue;
-    h+=`<div class="frow"><span class="rgem" style="--tc:${RTIER[t].c}">${RELIC_SVG}</span><div class="fl"><b>3 × <span style="color:${RTIER[t].c}">${RTIER[t].n}</span> → relique forgée</b><span>${av} possédée${av>1?'s':''}${av<3?` · il en faut ${3-av} de plus`:''}${av>=3&&meta.essence<cost?` · il manque ${cost-meta.essence} essence`:''}</span></div>
-      <button class="btn buy cost-btn" data-cact="rfuse" data-arg="${t}" ${ok?'':'disabled'}><span>Fusionner</span>${costHtml([['rel',3,av,t],['ess',cost]])}</button></div>`;
-    if(av>=3)h+=`<div class="ftgt"><span class="cx-hint" style="margin:0">Objet visé :</span><div class="cx-chips">${L.map(id=>{const b=bpdef(id);return `<button class="cx-chip cx-chip--sm" data-cact="rftgt" data-arg="${t}|${id}" aria-pressed="${fuseTgt[t]===id}">${esc(b.n)} <span class="n">${fragStatus(id)} / 3</span></button>`}).join('')}</div></div>`}
-  return h+'</div></section>'}
-// File d'ouverture regroupée par type (relique + état), dans l'ordre de la première de chaque groupe.
-function relGroups(){const G2=[],ix={};for(const q of meta.relicQ){const k=q.id+'|'+(q.rad?1:0);if(ix[k]==null){ix[k]=G2.length;G2.push({id:q.id,rad:!!q.rad,n:0})}G2[ix[k]].n++}return G2}
-const RELIC_SVG='<svg viewBox="0 0 24 24"><path d="M6 3h12l3 6-9 12L3 9z"/><path d="M3 9h18M9 3l3 6 3-6M12 9v12"/></svg>';
-function campRelics(){
-  relicQFix();const all=Object.keys(RELICS),own=all.filter(id=>{const a=meta.relics[id];return a&&(a[0]||a[1])}),Q=meta.relicQ;
-  let h=`${campMsg}`;
-  const srcRows=`<div class="cx-rows">${RTIER.map((T,t)=>`<div class="cx-row"><span class="cx-row__k"><b style="color:${T.c}">Relique ${T.n}</b><small>${REL_SRC[t]} · fragments ${RAR[T.r].n.toLowerCase()}s</small></span><span class="cx-hint" style="margin:0">${(meta.relics[Object.keys(RELICS)[t]]||[0,0]).reduce((a,b)=>a+b,0)}</span></div>`).join('')}</div>`;
-  if(!own.length)return h+'<p class="empty">Aucune relique pour l\'instant. Les monstres en lâchent parfois, et chaque manche réussie en rapporte une. Le type dépend de la difficulté :</p>'+srcRows;
-  const tot=own.reduce((n,id)=>n+meta.relics[id][0]+meta.relics[id][1],0);
-  const qh=`<section class="cx-section"><h3 class="cx-section__label">Ordre d'ouverture · ${Q.length} / ${tot}</h3>
-    ${Q.length?`<div class="rq"><ol>${relGroups().map((g,i,A)=>{const R=RELICS[g.id],c=RTIER[R.t].c,own=(meta.relics[g.id]||[0,0])[g.rad?1:0]|0,k=g.id+'|'+(g.rad?1:0);
-      return `<li><span class="rqn">${i+1}.</span><span class="rgem${g.rad?' rad':''}" style="--tc:${c}">${RELIC_SVG}</span><b style="color:${c}">${esc(R.fz?'Forgée · '+bpdef(R.tgt).n:R.n)}${g.rad?' · éclatante':''} <span style="color:var(--ink)">×${g.n}</span></b>
-      <button class="btn" data-cact="rgmv" data-arg="${k}|-1" ${i?'':'disabled'} aria-label="Monter">↑</button><button class="btn" data-cact="rgmv" data-arg="${k}|1" ${i<A.length-1?'':'disabled'} aria-label="Descendre">↓</button><button class="btn" data-cact="rqdel" data-arg="${k}" aria-label="Retirer une">−</button><button class="btn" data-cact="rqadd" data-arg="${k}" ${g.n<own?'':'disabled'} aria-label="Équiper une de plus">+</button></li>`}).join('')}</ol></div>`
-      :'<p class="cx-hint" style="margin:0">Aucune relique équipée : la prochaine mission n\'en ouvrira aucune.</p>'}
-    <div class="actions" style="margin:0"><button class="btn" data-cact="rqall" ${Q.length>=tot?'disabled':''}>Tout équiper</button><button class="btn danger" data-cact="rqnone" ${Q.length?'':'disabled'}>Tout retirer</button></div></section>`;
-  const tiers=[...new Set(own.filter(id=>!RELICS[id].fz).map(id=>RELICS[id].t))].sort();
-  const tchip=(k,lab,c)=>`<button class="cx-chip cx-chip--sm" data-cact="rtier" data-arg="${k}" aria-pressed="${relTier===String(k)}"${c&&relTier!==String(k)?` style="color:${c}"`:''}>${lab}</button>`;
-  const list=own.filter(id=>relMatch(id)).sort((x,y)=>RELICS[x].t-RELICS[y].t||(!!RELICS[x].fz-!!RELICS[y].fz));
-  if(relSel&&!own.includes(relSel))relSel=null;
-  h+=`<section class="cx-section"><h3 class="cx-section__label">Tes reliques · ${tot}</h3><div class="cx-chips">${tchip('all','Toutes')}${tiers.map(t=>tchip(t,RTIER[t].n,RTIER[t].c)).join('')}${own.some(id=>RELICS[id].fz)?tchip('f','Forgées','var(--ink)'):''}</div>
-    ${(()=>{const ne=relToEquip(relTier),nq=relInQ(relTier),sh=relTier==='f'?'Forgées':relTier==='all'?'':RTIER[+relTier].n;return relTier!=='all'&&nq?`<div class="actions" style="margin:0"><button class="btn danger" data-cact="rqtypeoff">Retirer · ${sh} (${nq})</button></div>`:(ne?'':`<p class="cx-hint" style="margin:0">${relTier==='all'?'Toutes tes reliques':sh} : déjà équipées.</p>`)})()}
-    <div class="rtiles">${list.map(id=>{const R=RELICS[id],a=meta.relics[id],c=RTIER[R.t].c,nq=relicQN(id,false)+relicQN(id,true),comp=R.fz?fragStatus(R.tgt)===2:relPool(R.t).some(x=>fragStatus(x)===2);
-      return `<button class="rtile${relSel===id?' sel':''}" data-cact="rsel" data-arg="${id}" style="--tc:${c}" aria-pressed="${relSel===id}" aria-label="${esc(relicName(id))}, ${a[0]} intacte${a[0]>1?'s':''}, ${a[1]} éclatante${a[1]>1?'s':''}${nq?`, ${nq} équipée${nq>1?'s':''}`:''}">
-        <span class="rgem${a[1]?' rad':''}">${RELIC_SVG}</span><b>${esc(R.fz?bpdef(R.tgt).n:R.n)}</b><span class="rt">${R.fz?'Forgée · ':''}${RTIER[R.t].n}</span>
-        <span class="rc">${a[0]?`×${a[0]}`:''}${a[1]?`<i>✦×${a[1]}</i>`:''}</span>${nq?`<span class="req">${nq} équipée${nq>1?'s':''}</span>`:''}${comp?'<span class="rcomp" title="Peut compléter un objet">★</span>':''}</button>`}).join('')}</div></section>`;
-  if(relSel){const id=relSel,R=RELICS[id],a=meta.relics[id],c=RTIER[R.t].c,pool=R.fz?[R.tgt]:relPool(R.t);
-    const ctl=(rad,lab)=>{const n=relicQN(id,rad),ow=a[rad?1:0];return `<div class="rctl"><span>${lab} · <b>${n} / ${ow}</b> équipée${n>1?'s':''}</span><span class="cx-stepper"><button type="button" data-cact="rqdel" data-arg="${id}|${rad?1:0}" ${n?'':'disabled'} aria-label="Retirer une ${lab.toLowerCase()}">−</button><button type="button" data-cact="rqadd" data-arg="${id}|${rad?1:0}" ${n<ow?'':'disabled'} aria-label="Équiper une ${lab.toLowerCase()}">+</button></span></div>`};
-    h+=`<section class="cx-card rdet" style="--tc:${c}"><div class="cx-card__head"><span class="rgem big${a[1]?' rad':''}">${RELIC_SVG}</span><div><h4 class="cx-card__title" style="color:${c}">${esc(R.n)}</h4><div class="cx-card__meta">${R.fz?'Relique forgée':'Relique'} ${RTIER[R.t].n} · ${REL_SRC[R.t]} · intacte ×${a[0]} · éclatante ×${a[1]}</div></div></div>
-      <p class="cx-hint" style="margin:0">${R.fz?'S\'ouvre en mission et donne à coup sûr un fragment de cet objet (deux si éclatante).':`S'ouvre en mission et donne un fragment d'un de ces ${pool.length} objets ${RAR[RTIER[R.t].r].n.toLowerCase()}s (deux si éclatante). Les fragments manquants d'un objet presque complet sortent un peu plus souvent.`}</p>
-      <ul class="rrw">${pool.map(bid=>{const b=bpdef(bid),n=fragStatus(bid),own=b.kind==='arme'&&ownedW(bid);
-        const st=n>=3?'<span class="rs ok">✓ prêt à fabriquer</span>':n===2?'<span class="rs comp">★ un fragment de plus</span>':`<span class="rs miss">${n} / 3</span>`;
-        return `<li><div class="rrh"><span class="dot" style="background:${RAR[b.r].c}"></span><span class="rl">${esc(b.n)} · ${b.kind==='arme'?'arme':SLOT[b.slot].toLowerCase()}${own?' · possédée':''}</span>${st}</div></li>`}).join('')}</ul>
-      <div class="cx-card__foot">${a[0]?ctl(false,'Intactes'):''}${a[1]?ctl(true,'Éclatantes'):''}
-        ${a[0]?`<button class="btn buy cost-btn" data-cact="refine" data-arg="${id}" ${meta.essence<50||relicQN(id,false)>=a[0]?'disabled':''}><span>Raffiner en éclatante</span>${costHtml([['ess',50]])}</button>`:''}</div></section>`}
-  else h+='<p class="cx-hint" style="margin:0">Touche une relique pour voir les objets qu\'elle contient et tes fragments. ★ : un fragment de plus complète un objet.</p>';
-  return h+fusionSection()+qh+cxMore('relsrc','Où tombent les reliques',srcRows,'Afficher');
-}
-let saveMode=null,saveDraft='',saveMsg='',savePending=null;
 const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
-// Fichier de sauvegarde prêt à réimporter (bouton « Depuis un fichier » de l'import).
-const saveName=()=>`crypte-sauvegarde-${new Date().toISOString().slice(0,10)}.json`;
-function saveBlob(){return new Blob([exportCode()],{type:'application/json'})}
-function downloadSave(){try{const url=URL.createObjectURL(saveBlob()),a=document.createElement('a');a.href=url;a.download=saveName();a.rel='noopener';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);saveMsgOk=`Fichier « ${saveName()} » enregistré dans tes téléchargements.`;return true}catch{saveMsgOk='';saveMsg='Le téléchargement a échoué : utilise Partager ou Copier le JSON.';return false}}
-const canShareFile=()=>{try{return !!(navigator.canShare&&navigator.canShare({files:[new File(['{}'],'t.json',{type:'application/json'})]}))}catch{return false}};
-async function shareSave(){try{await navigator.share({files:[new File([saveBlob()],saveName(),{type:'application/json'})],title:'Sauvegarde Crypte des Cendres'});saveMsgOk='Fichier partagé.'}catch(e){if(e&&e.name!=='AbortError'){saveMsg='Le partage a échoué : utilise Télécharger ou Copier le JSON.'}}drawCamp()}
-let saveMsgOk='';
-function exportCode(){const data={v:1,meta,cls:heroCls,best,at:new Date().toISOString().slice(0,10)};return JSON.stringify({jeu:'Crypte des Cendres',...data},null,2)}
-function parseCode(t){t=(t||'').trim();if(t.startsWith('CRYPTE1:'))t=t.slice(8);let d=null;
-  try{d=JSON.parse(decodeURIComponent(escape(atob(t.replace(/\s+/g,'')))))}catch{try{d=JSON.parse(t)}catch{return null}}
-  if(!d||typeof d!=='object'||!d.meta||typeof d.meta.gold!=='number')return null;return d}
-const sumOf=m=>`${m.gold} or, ${m.essence||0} essence, ${Object.keys(m.mods||{}).length} mods, ${Object.values(m.relics||{}).reduce((a,r)=>a+(r[0]||0)+(r[1]||0),0)} reliques`;
-function saveSection(){
-  let h=`<h3 class="cx-section__label">Sauvegarde</h3><p class="empty" style="font-size:13px;margin:0"><b>Exporter</b> enregistre un fichier .json de ta progression, prêt à réimporter. Pour la restaurer, ici ou sur un autre appareil : <b>Importer</b>, puis <b>Depuis un fichier</b> (ou colle le JSON).</p>
-    <div class="actions"><button class="btn${saveMode==='exp'?' main':''}" data-cact="exp">Exporter</button><button class="btn${saveMode==='imp'?' main':''}" data-cact="impopen">Importer</button></div>`;
-  if(saveMode==='exp')h+=`${saveMsgOk?`<p class="empty" style="font-size:13px;color:var(--heal)">${esc(saveMsgOk)}</p>`:''}<div class="actions"><button class="btn main" data-cact="savedl">Télécharger le fichier</button>${canShareFile()?'<button class="btn" data-cact="saveshare">Partager le fichier</button>':''}<button class="btn" data-cact="copy">Copier le JSON</button></div>
-    <details class="savemore"><summary>Voir le JSON</summary><textarea id="saveOut" class="savebox" readonly rows="8">${esc(exportCode())}</textarea></details>`;
-  if(saveMode==='imp'){
-    if(savePending)h+=`<div class="card"><p style="margin:0;font-size:14px">Remplacer ta progression actuelle (${sumOf(meta)}) par celle du JSON (${sumOf(savePending.meta)}${savePending.at?`, exportée le ${esc(savePending.at)}`:''}) ?</p><div class="actions"><button class="btn main" data-cact="impok">Remplacer et recharger</button><button class="btn" data-cact="impcancel">Annuler</button></div></div>`;
-    else h+=`<textarea id="saveIn" class="savebox" rows="5" placeholder="Colle ici le JSON de ta sauvegarde">${esc(saveDraft)}</textarea>
-      <div class="actions"><button class="btn main" data-cact="imp">Restaurer</button><label class="btn" style="text-align:center;cursor:pointer">Depuis un fichier<input type="file" id="saveFile" accept=".txt,.json,text/plain,application/json" hidden></label></div>`;
-  }
-  if(saveMsg)h+=`<p class="empty" style="font-size:13px;color:var(--blood)">${saveMsg}</p>`;
-  return h;
-}
-let forgeSub='up';
-function campForge(){return campForge0()}
-let xf={src:'',k:'',dst:'',rep:''},xfJump=false;
-const wclsOf=id=>Object.keys(WPN).find(c=>WPN[c].some(w=>w.id===id));
-// Clés des objets : s:<id> coffre, g:<emplacement> porté par le héros choisi, o:<id> porté par un autre héros, w:<arme>.
-function xfGet(key){if(!key)return null;const t=key[0],v=key.slice(2);
-  if(t==='s')return meta.stash.find(i=>String(i.id)===v)||null;if(t==='g')return meta.gear[v]||null;if(t==='o')return allWorn().find(i=>String(i.id)===v)||null;
-  if(t==='w'){const c=wclsOf(v);return c&&ownedW(v)?weaponItem(c,v):null}return null}
-const afKey=it=>{if(it.wid)return 'w:'+it.wid;const c=wornBy(it);return !c?'s:'+it.id:c===heroCls?'g:'+wornSlot(it,c):'o:'+it.id};
-const xfCap=it=>Math.max(RAR[it.r].aff,Object.keys(it.aff).length);
-const xfCost=it=>50*(it.r+1);
-const FZ_MAX=3,FZ_K=.5,fzCost=(it,n)=>100*(it.r+1)*(n+1);
-function fzGet(key,k){if(!key)return 0;if(key[0]==='w'){const o=meta.wfz&&meta.wfz[key.slice(2)];return (o&&o[k])||0}const it=xfGet(key);return (it&&it.fz&&it.fz[k])||0}
-function xfState(o=xf){const s=xfGet(o.src),d=xfGet(o.dst);if(!s||!d||!o.k||s.aff[o.k]==null)return null;
-  if(AFF[o.k].aby)return {ok:false,msg:'Les pouvoirs abyssaux sont liés à leur objet : impossible de les transférer ou de les fusionner.'};
-  if(o.rep&&AFF[o.rep]&&AFF[o.rep].aby)return {ok:false,full:true,msg:'Le pouvoir abyssal ne peut pas être remplacé : choisis une autre affixe.'};
-  const k=o.k,ns=!!NOSCALE[k],ve=ns?s.aff[k]:s.aff[k]*upMul(s.up),v=ns?ve:Math.round(ve/upMul(d.up)*10)/10,cur=d.aff[k],ce=cur==null?null:ns?cur:cur*upMul(d.up),cap=xfCap(d),n=Object.keys(d.aff).length,T=x=>xfV(d,k,x),r=o=>Object.assign(o,{nv:v});
-  if(cur!=null){const n0=fzGet(o.dst,k),fuseOk=n0<FZ_MAX,canUp=ve>ce+1e-9,hi=Math.max(ce,ve),lo=Math.min(ce,ve),fe=ns?hi+(lo>=1?1:0):hi+lo*FZ_K,fv=ns?fe:Math.round(fe/upMul(d.up)*10)/10;
-    if(!fuseOk&&!canUp)return r({ok:false,msg:`${esc(itemName(d))} a déjà ${T(cur)} (fusionnée ${FZ_MAX} fois, le maximum), une valeur égale ou plus forte.`});
-    const op=o.op==='up'&&canUp?'up':fuseOk?'fuse':'up';
-    if(op==='fuse')return {ok:true,mode:'fuse',nv:fv,n:n0,fuseOk,canUp,cost:fzCost(s,n0),msg:`Fusionne ${T(v)} dans ${T(cur)} : ${T(fv)} sur ${esc(itemName(d))} (fusion ${n0+1} / ${FZ_MAX}).`};
-    return r({ok:true,mode:'up',fuseOk,canUp,msg:`Remplace ${T(cur)} par ${T(v)} sur ${esc(itemName(d))}.`})}
-  if(n<cap)return r({ok:true,mode:'add',msg:`Ajoute ${T(v)} sur ${esc(itemName(d))} (${n+1} / ${cap} affixes).`});
-  if(o.rep&&d.aff[o.rep]!=null)return r({ok:true,mode:'rep',msg:`Remplace ${xfV(d,o.rep,d.aff[o.rep])} par ${T(v)} sur ${esc(itemName(d))}.`});
-  return r({ok:false,full:true,msg:`${esc(itemName(d))} a déjà ${cap} affixe${cap>1?'s':''} : choisis celle à remplacer.`})}
-const xfV=(it,k,v)=>AFF[k].t(NOSCALE[k]?v:fmtN(v*upMul(it.up)));
-let afCat='all',afOpen='';
-const AFF_CAT={frz:'off',cold:'off',shard:'off',dmgPct:'off',apsPct:'off',crit:'off',critDmg:'off',novaPct:'off',skillRad:'off',burn:'off',multi:'off',pierce:'off',reach:'off',splash:'off',hp:'def',armor:'def',regen:'def',leech:'def',speed:'uti',cdr:'uti',burnPct:'off',chill:'off',shock:'off',execute:'off',bossDmg:'off',lowDmg:'off',ultPct:'off',fury:'off',lowArmor:'def',potHeal:'def',antidote:'def',auraSlow:'def',skillDur:'uti',dashCd:'uti',magnetPct:'uti',goldPct:'uti',xpPct:'uti',lootPct:'uti'};
-const AFF_NAME={frz:'Gel',cold:'Dégâts contre ralentis',shard:'Éclats de glace',dmgPct:'Dégâts',apsPct:'Vitesse d\'attaque',crit:'Chances de critique',critDmg:'Dégâts critiques',hp:'Points de vie',armor:'Réduction des dégâts',speed:'Vitesse de déplacement',regen:'Régénération',cdr:'Temps de recharge',skillRad:'Portée des compétences',novaPct:'Dégâts de compétence',burn:'Embrasement',multi:'Projectiles par tir',leech:'Vol de vie',reach:'Portée de frappe',splash:'Rayon d\'explosion',pierce:'Transpercement',burnPct:'Embrasement (%)',chill:'Ralentissement',shock:'Éclair en chaîne',execute:'Exécution',bossDmg:'Dégâts contre Gardiens',lowDmg:'Dégâts sous 50 % de vie',ultPct:'Dégâts de l\'ultime',fury:'Charge de l\'ultime',lowArmor:'Protection sous 30 % de vie',potHeal:'Soin des potions',antidote:'Antidote',auraSlow:'Aura de lenteur',skillDur:'Durée des compétences',dashCd:'Recharge de l\'esquive',magnetPct:'Portée de ramassage',goldPct:'Or',xpPct:'Expérience',lootPct:'Chances de butin'};
-const AFF_CATN={off:'Offensives',def:'Défensives',uti:'Utilitaires'};
-const affShort=(k,v)=>{const pct=!['hp','regen','burn','multi','pierce'].includes(k),neg=['armor','cdr','lowArmor','dashCd','antidote','fury'].includes(k);return `${neg?'−':'+'}${fmtN(v)}${pct?' %':k==='regen'?' PV/s':k==='burn'?' /s':''}`};
-const affEff=(it,k)=>NOSCALE[k]?it.aff[k]:it.aff[k]*upMul(it.up);
-// Liste de souhaits (affixes recherchées, légendaires) : créée au premier besoin.
-const wishOf=()=>{const W=meta.wish||(meta.wish={leg:true,aff:{}});W.aff=W.aff||{};return W};
-function wishSection(){const W=wishOf();
-  const keys=Object.keys(AFF).filter(k=>!AFF[k].w),n=keys.filter(k=>W.aff[k]).length;
-  const chip=k=>`<button class="cx-chip cx-chip--sm" data-cact="wish" data-arg="${k}" aria-pressed="${!!W.aff[k]}">${AFF_NAME[k]||k}</button>`;
-  const grp=c=>{const ks=keys.filter(k=>(AFF_CAT[k]||'uti')===c);return ks.length?`<span class="cx-hint" style="margin:0">${AFF_CATN[c]}</span><div class="cx-chips">${ks.map(chip).join('')}</div>`:''};
-  return `<section class="cx-section"><h3 class="cx-section__label">Alertes de butin</h3>
-    <p class="cx-hint" style="margin:0">En mission, l'écran s'illumine et l'objet porte un grand faisceau doré quand un objet tombe avec une de ces affixes à une valeur plus haute que celle de ton équipement porté (ou que tu ne portes pas encore)${W.leg?', ou quand une arme que tu n\'as pas encore tombe':''}.</p>
-    <div class="cx-chips"><button class="cx-chip cx-chip--sm" data-cact="wishleg" aria-pressed="${!!W.leg}" style="${W.leg?'':'color:var(--rar-legend)'}">Armes nouvelles</button>${n?`<button class="cx-btn cx-btn--ghost cx-btn--sm" data-cact="wishnone" style="margin:0">Tout retirer (${n})</button>`:''}</div>
-    ${grp('off')}${grp('def')}${grp('uti')}</section>`}
-// Chercher par affixe : chaque objet qui porte l'affixe se choisit comme source (détruite, son affixe est prise) ou comme cible (elle reçoit).
-// Tous les objets (équipés, coffre, armes possédées) : [clé, objet, où]
-function xfAll(){const eqW=curWid(),ws=Object.keys(WPN).flatMap(c=>WPN[c].filter(w=>ownedW(w.id)).map(w=>['w:'+w.id,weaponItem(c,w.id),w.id===eqW&&c===heroCls?'arme portée':'arme']));
-  return [...Object.entries(meta.gear).filter(([k,i])=>i).map(([k,i])=>['g:'+k,i,'équipé']),...allWorn().filter(i=>wornBy(i)!==heroCls).map(i=>['o:'+i.id,i,`porté par le ${CLS[wornBy(i)].n}`]),...meta.stash.map(i=>['s:'+i.id,i,'coffre']),...ws]}
-// Cible d'abord (v127) : les affixes que les autres objets peuvent donner à la cible, chacune avec les objets qui la portent (du plus fort au plus faible).
-// v133 : seulement les objets qui peuvent servir de source ; un objet verrouillé ou une arme de départ n'est jamais détruit, il n'apparaît pas.
-function xfPool(dk){const out={};
-  for(const [key,it,w] of xfAll()){if(key===dk||!xfSrcOk(key))continue;for(const k in it.aff){if(!AFF[k]||AFF[k].aby||it.aff[k]==null)continue;(out[k]||(out[k]=[])).push({key,it,w,v:affEff(it,k)})}}
-  for(const k in out)out[k].sort((a,b)=>b.v-a.v);return out}
-function xfAffSel(d,P){const ks=Object.keys(P),nm=k=>AFF_NAME[k]||k,srt=(a,b)=>nm(a).localeCompare(nm(b)),full=Object.keys(d.aff).length>=xfCap(d);
-  const opt=k=>{const L=P[k],mine=d.aff[k]!=null?affShort(k,affEff(d,k)):'';
-    return `<option value="${k}"${xf.k===k?' selected':''}>${nm(k)} (${L.length}) · max ${affShort(k,L[0].v)}${mine?` · cible ${mine}`:''}${affOff(k)?' · sans effet':''}</option>`};
-  const fu=ks.filter(k=>d.aff[k]!=null).sort(srt),ad=ks.filter(k=>d.aff[k]==null).sort(srt);
-  const L=xf.k&&P[xf.k],n=L?L.length:0,av=ks.length;
-  return `<label class="xfaff"><span class="xfaff__k">Affixe à donner</span><span class="xfaff__box${xf.k?'':' is-empty'}"><span class="xfaff__v">${xf.k?nm(xf.k):av?'Choisir l\'affixe':'Aucune affixe disponible'}</span>${L?`<span class="xfaff__s">${d.aff[xf.k]!=null?'fusion':'ajout'} · max ${affShort(xf.k,L[0].v)} · ${n} objet${n>1?'s':''}</span>`:av?`<span class="xfaff__s">${av} affixe${av>1?'s':''} sur tes autres objets</span>`:''}<i aria-hidden="true">▾</i><select id="xfAff" aria-label="Affixe à donner à la cible"><option value="">${ks.length?'Choisir l\'affixe… (objets à sacrifier)':'Aucune sur tes autres objets'}</option>${fu.length?`<optgroup label="Déjà sur la cible · fusion">${fu.map(opt).join('')}</optgroup>`:''}${ad.length?`<optgroup label="Nouvelle affixe · ${full?'remplace une affixe':'ajout'}">${ad.map(opt).join('')}</optgroup>`:''}</select></span></label>`}
-function xfCands(d,P){const L=P[xf.k];if(!L)return '';const T=v=>affShort(xf.k,NOSCALE[xf.k]?v:v*upMul(d.up));
-  const rows=L.map(o=>{const st=xfState({src:o.key,dst:xf.dst,k:xf.k,rep:'',op:''}),on=xf.src===o.key,can=!!(st&&(st.ok||st.full));
-    const why=!st?'':st.ok?({fuse:`fusion → ${T(st.nv)}`,up:`remplace → ${T(st.nv)}`,add:'ajout'}[st.mode]||''):st.full?'cible pleine : remplace une affixe':'déjà plus fort sur la cible';
-    return `<li><button class="xfc" data-cact="xfsrc" data-arg="${o.key}" aria-pressed="${on}"${can?'':' disabled'}><span class="xfc__nm" style="color:${RARV[o.it.r]}">${esc(itemName(o.it))}</span><span class="xfc__v">${affShort(xf.k,o.v)}</span><span class="xfc__sub">${o.w} · ${RAR[o.it.r].n}${why?` · <b${can?' class="ok"':''}>${why}</b>`:''}</span>${on?'<span class="cx-pin cx-pin--src">Source</span>':''}</button></li>`}).join('');
-  return `<section class="cx-section"><h3 class="cx-section__label">${AFF_NAME[xf.k]||xf.k} · ${L.length} objet${L.length>1?'s':''}</h3><p class="cx-hint" style="margin:0">Touche l'objet à sacrifier : il est détruit et son affixe passe sur la cible.</p><ul class="xfcl">${rows}</ul></section>`}
-function affFinder(){
-  const all=xfAll();
-  const by={};for(const [key,it,w] of all)for(const k in it.aff){if(!AFF[k]||AFF[k].aby)continue;(by[k]||(by[k]=[])).push({key,it,w,v:affEff(it,k)})}
-  for(const k in by)by[k].sort((a,b)=>b.v-a.v);
-  const cnt={all:Object.keys(by).length};for(const k in by){const c=AFF_CAT[k]||'uti';cnt[c]=(cnt[c]||0)+1}
-  const keys=Object.keys(by).filter(k=>afCat==='all'||(AFF_CAT[k]||'uti')===afCat).sort((a,b)=>(AFF_CAT[a]||'z').localeCompare(AFF_CAT[b]||'z')||(AFF_NAME[a]||a).localeCompare(AFF_NAME[b]||b));
-  const d=xfGet(xf.dst);
-  const chip=(k,lab)=>`<button class="cx-chip cx-chip--sm" data-cact="afcat" data-arg="${k}" aria-pressed="${afCat===k}">${lab} <span class="n">${cnt[k]||0}</span></button>`;
-  let h=`<section class="cx-section"><h3 class="cx-section__label">Chercher par affixe</h3><p class="cx-hint" style="margin:0">Ouvre une affixe, puis choisis pour chaque objet : <b>Source</b> (détruite, on prend cette affixe) ou <b>Cible</b> (elle reçoit l'affixe).</p><div class="cx-chips">${chip('all','Toutes')}${chip('off','Offensives')}${chip('def','Défensives')}${chip('uti','Utilitaires')}</div>`;
-  if(!keys.length)return h+`<p class="cx-hint" style="margin:0">${all.length?'Aucune affixe de ce type sur tes objets.':'Aucun objet.'}</p></section>`;
-  h+='<ul class="afind">'+keys.map(k=>{const L=by[k],b=L[0],open=afOpen===k,mine=d&&d.aff[k]!=null?affEff(d,k):null;
-    const row=`<button class="afrow" data-cact="afopen" data-arg="${k}" aria-expanded="${open}"><span class="afn">${AFF_NAME[k]||k}${affOff(k)?` <span class="affoff__tag">${affOnly(k)}</span>`:''}</span><span class="afv">${affShort(k,b.v)}</span><span class="afs">max · <b style="color:${RARV[b.it.r]}">${esc(itemName(b.it))}</b> · ${b.w}${L.length>1?` · ${L.length} objets`:''}${mine!=null?` · ta cible : ${affShort(k,mine)}`:''}</span><span class="afc" aria-hidden="true">${open?'▴':'▾'}</span></button>`;
-    if(!open)return `<li>${row}</li>`;
-    return `<li class="open">${row}<ul>${L.map((o,i)=>{const isS=xf.src===o.key&&xf.k===k,isD=xf.dst===o.key,canS=xfSrcOk(o.key)&&!isD;
-      return `<li><span><b style="color:${RARV[o.it.r]}">${esc(itemName(o.it))}</b>${o.it.lock?` <span class="li" aria-label="verrouillé">${LOCK_SVG}</span>`:''} · ${o.w}<br><span class="afv2">${affShort(k,o.v)}</span>${i===0?' <span class="cx-tag cx-tag--heal">max</span>':''}</span>
-        <span style="display:flex;gap:6px;flex-shrink:0">${isS?'<span class="cx-pin cx-pin--src" style="position:static">Source</span>':!canS&&!isD?'':`<button class="cx-btn cx-btn--sm" data-cact="afuse" data-arg="${k}|${o.key}" ${!canS?'disabled':''} title="${canS?'':'Arme de départ : elle ne peut pas être détruite'}">Source</button>`}${isD?'<span class="cx-pin cx-pin--dst" style="position:static">Cible</span>':`<button class="cx-btn cx-btn--sm" data-cact="afdst" data-arg="${o.key}" ${xf.src===o.key?'disabled':''}>Cible</button>`}</span></li>`}).join('')}</ul></li>`}).join('')+'</ul></section>';
-  return h;
-}
 const RARV=['var(--rar-common)','var(--rar-magic)','var(--rar-rare)','var(--rar-legend)','var(--rar-anc)','var(--rar-sang)','var(--rar-aby)'];
-// Tout objet peut être source, sauf les objets verrouillés et les armes de départ (elles ne se détruisent pas).
-const xfSrcOk=key=>{if(!key||(key[0]==='w'&&(wdef(key.slice(2))||{}).start))return false;const it=xfGet(key);return !!it&&!it.lock};
-function xfOk(key,it){if(!it)return false;if(xf.pick==='src')return xfSrcOk(key)&&Object.keys(it.aff).length>0&&!(xf.dst&&xf.k&&it.aff[xf.k]==null);return key!==xf.src}
-const xfPin=key=>key===xf.src?'<span class="cx-pin cx-pin--src">Source</span>':key===xf.dst?'<span class="cx-pin cx-pin--dst">Cible</span>':'';
-const xfSt=key=>key===xf.src?' is-src':key===xf.dst?' is-dst':'';
-function xfCell(key,it){if(afMode()==='fuse')return `<button class="cx-cell${fzSt(key,it)}" data-cact="xfsel" data-arg="${key}" ${fzOk(key,it)?'':'aria-disabled="true"'} style="--rar:${RARV[it.r]}" aria-label="${esc(itemName(it))}${it.lock?', verrouillé':''}">${cellIn(it)}${fzPin(key,it)}</button>`;
-  const ok=xfOk(key,it);
-  return `<button class="cx-cell${xfSt(key)}" data-cact="xfsel" data-arg="${key}" ${ok?'':'aria-disabled="true"'} style="--rar:${RARV[it.r]}" aria-label="${esc(itemName(it))}${it.lock?', verrouillé':''}${key===xf.src?', source':key===xf.dst?', cible':''}">${cellIn(it)}${xfPin(key)}</button>`}
-function xfDiffCard(kind,it,where,lines,gone,top=''){const src=kind==='src';
-  return `<div class="cx-diff__card cx-diff__card--${kind}${gone&&src?' is-gone':''}"><span class="cx-diff__lab">${src?'− Source · détruite':gone?'+ Cible · aperçu':'+ Cible'}</span>${top}${it?`<span class="cx-diff__nm" style="color:${RARV[it.r]}">${esc(itemName(it))}</span><span class="cx-diff__sub">${RAR[it.r].n} · ${where}</span>
-    <ul><li class="cx-line cx-line--base">${baseTxtOf(it.slot,fmtN(it.base.v*upMul(it.up)))}</li>${lines}</ul>`:`<span class="cx-diff__sub">${src?(top?(xf.k?'Touche l\'objet à sacrifier dans la liste.':'Choisis l\'affixe, puis l\'objet sacrifié.'):'Choisis l\'objet source.'):'Choisis la cible.'}</span>`}</div>`}
-// Onglet Forge › Affixes et fusion (v127) : deux opérations sur les mêmes objets, chacune selon son déblocage (forgeSub 'affix' ou 'fuse').
-const afMode=()=>forgeSub==='fuse'?'fuse':'affix';
-let afLast=null;
-// Bouton ⇄ entre Source et Cible : intervertir les deux rôles si on s'est trompé (désactivé, avec la raison, quand la cible ne peut pas être sacrifiée).
-const SWAP_SVG='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h15M15 4l4 4-4 4M20 16H5M9 12l-4 4 4 4"/></svg>';
-const swapBtn=(act,ok,why)=>`<button type="button" class="cx-swap" data-cact="${act}" aria-label="Intervertir source et cible" title="${ok?'Intervertir source et cible':esc(why||'')}" ${ok?'':'disabled'}>${SWAP_SVG}</button>`;
-function xfSwapWhy(){if(!xf.src&&!xf.dst)return 'Choisis d\'abord un objet.';if(!xf.dst)return '';const d=xfGet(xf.dst);if(!d)return '';
-  if(!xfSrcOk(xf.dst))return d.lock?'La cible est verrouillée : elle ne peut pas devenir la source, qui est détruite.':'Une arme de départ ne peut pas devenir la source, qui est détruite.';
-  if(!Object.keys(d.aff).some(k=>AFF[k]&&!AFF[k].aby))return 'La cible n\'a pas d\'affixe à donner.';return ''}
-// v130 : Affixes et Fusion sont deux sous-onglets de la Forge ; plus de puces de mode.
-function afModes(){return ''}
-// Tous les objets dans une seule grille, avec les onglets du coffre (Tout, Portés, Arme, Armure…) : ceux du héros choisi en tête, ceux des autres héros marqués de leur initiale. Les cases suivent le mode (xfCell).
-function afGrids(){const list=invList('affix'),n=list.filter(i=>wornBy(i)).length;
-  return `<section class="cx-section"><h3 class="cx-section__label">Tes objets · ${n} porté${n>1?'s':''}, armes et coffre</h3>${invToolbar(list,'affix')}<div id="invGrid">${invGrid(list,'affix')}</div></section>`}
-function campAffix(){
-  if(!xf.pick)xf.pick=xf.dst&&!xf.src?'src':'dst';
-  let s=xfGet(xf.src);if(xf.src&&(!s||!xfSrcOk(xf.src))){xf.src='';xf.k='';s=null}
-  if(s&&xf.k&&s.aff[xf.k]==null)xf.k='';
-  const d=xfGet(xf.dst),wlab=k=>{if(k[0]==='w')return 'arme';if(k[0]==='g')return 'équipé';if(k[0]==='o'){const c=wornBy(xfGet(k));return c?`porté par le ${CLS[c].n}`:'porté'}return 'coffre'};if(xf.dst&&!d)xf.dst='';
-  const P=d?xfPool(xf.dst):null;if(d&&xf.k&&!P[xf.k])xf.k='';
-  let h=backChip()+afModes()+xfSteps();
-  h+=`<div class="cx-roles"><button class="cx-role cx-role--src" data-cact="xfpick" data-arg="src" aria-pressed="${xf.pick==='src'}"><span class="cx-role__k"><i>−</i>Source · détruite</span><span class="cx-role__v${s?'':' is-empty'}" ${s?`style="color:${RARV[s.r]}"`:''}>${s?esc(itemName(s)):'Choisir un objet'}</span></button>
-    ${(()=>{const w=xfSwapWhy();return swapBtn('xfswap',!w,w)})()}<button class="cx-role cx-role--dst" data-cact="xfpick" data-arg="dst" aria-pressed="${xf.pick==='dst'}"><span class="cx-role__k"><i>+</i>Cible</span><span class="cx-role__v${d?'':' is-empty'}" ${d?`style="color:${RARV[d.r]}"`:''}>${d?esc(itemName(d)):'Choisir un objet'}</span></button></div>`;
-  const st=xfState();
-  if(s||d){
-    const sLines=s?Object.keys(s.aff).map(k=>`<li><button class="cx-line" data-cact="xfk" data-arg="${k}" aria-pressed="${xf.k===k}">${xfV(s,k,s.aff[k])}</button></li>`).join(''):'';
-    let tLines='';
-    if(d){const v=s&&xf.k?s.aff[xf.k]:null,full=st&&(st.full||st.mode==='rep'),nv=st?st.nv:null;
-      tLines=Object.keys(d.aff).map(k=>{
-        if(v!=null&&st){
-          if(k===xf.k&&st.mode==='up')return `<li class="cx-line cx-line--del">${xfV(d,k,d.aff[k])}</li><li class="cx-line cx-line--add">${xfV(d,k,nv)}</li>`;
-          if(k===xf.k&&st.mode==='fuse')return `<li class="cx-line cx-line--del">${xfV(d,k,d.aff[k])}</li><li class="cx-line cx-line--add">${xfV(d,k,nv)} <span style="font-weight:500;opacity:.8">· fusion ${st.n+1} / ${FZ_MAX}</span></li>`;
-          if(k===xf.k&&!st.ok)return `<li class="cx-line cx-line--no">${xfV(d,k,d.aff[k])} · déjà plus fort</li>`;
-          if(full){const sel=xf.rep===k;return sel?`<li><button class="cx-line cx-line--del" data-cact="xfrep" data-arg="${k}" aria-pressed="true">${xfV(d,k,d.aff[k])}</button></li><li class="cx-line cx-line--add">${xfV(d,xf.k,nv)}</li>`:`<li><button class="cx-line" data-cact="xfrep" data-arg="${k}" aria-pressed="false">${xfV(d,k,d.aff[k])}</button></li>`}
-        }
-        return `<li class="cx-line">${xfV(d,k,d.aff[k])}</li>`}).join('');
-      if(v!=null&&st&&st.mode==='add')tLines+=`<li class="cx-line cx-line--add">${xfV(d,xf.k,nv)}</li>`;
-      if(!Object.keys(d.aff).length&&!(st&&st.mode==='add'))tLines+='<li class="cx-line cx-line--base">Aucune affixe</li>';}
-    h+=`<div class="cx-diff">${xfDiffCard('src',s,s?wlab(xf.src):'',sLines,st&&st.ok,d?xfAffSel(d,P):'')}${xfDiffCard('dst',d,d?wlab(xf.dst):'',tLines,st&&st.ok?true:null)}</div>`;
-    if(d&&xf.k)h+=xfCands(d,P);
-  }
-  h+=afGrids();
-  h+=affFinder();
-  h+=cxMore('wish','Alertes de butin : un flash quand une affixe recherchée tombe.',wishSection(),'Régler');
-  return h;
-}
-function affixFoot(){const st=xfState(),s=xfGet(xf.src);
-  if(!st){const hn=campBack?xfStepHint():'';if(hn)return `<p class="cx-hint">${hn}</p>`;
-    const t=!xf.dst&&!xf.src?'Touche l\'objet qui reçoit l\'affixe : la cible.':xf.dst&&!xf.k?(xf.src?'Choisis l\'affixe : sur la source ou dans la liste déroulante.':'Choisis l\'affixe dans la liste déroulante de la source.'):xf.dst&&!xf.src?'Touche l\'objet à sacrifier dans la liste.':xf.src&&!xf.k?'Touche l\'affixe à prendre sur la source.':'';
-    return t?`<p class="cx-hint">${t}</p>`:''}
-  if(!st.ok)return `<p class="cx-hint">${st.full?'Touche l\'affixe à remplacer sur la cible.':st.msg}</p>`;
-  const cost=st.cost||xfCost(s),poor=meta.essence<cost,both=st.fuseOk&&st.canUp;
-  return `${both?`<div class="cx-chips" role="radiogroup" aria-label="Mode" style="justify-content:center"><button class="cx-chip cx-chip--sm" role="radio" data-cact="xfop" data-arg="fuse" aria-checked="${st.mode==='fuse'}">Fusionner (additionner)</button><button class="cx-chip cx-chip--sm" role="radio" data-cact="xfop" data-arg="up" aria-checked="${st.mode==='up'}">Remplacer</button></div>`:''}<div class="row"><button class="cx-btn cx-btn--ghost" data-cact="xfcancel">Annuler</button><button class="cx-btn cx-btn--primary cost-btn" data-cact="xfok" ${poor?'disabled':''}><span>${st.mode==='fuse'?'Fusionner':'Transférer'}</span>${costHtml([['ess',cost]])}</button></div>
-    <p class="cx-hint">${poor?`Il te manque ${cost-meta.essence} essence.`:`${esc(itemName(s))} sera détruit.`}</p>`;
-}
-// Détruit une arme utilisée comme source : un double prend sa place s'il y en a ; sinon elle disparaît, et le héros reprend son arme de départ s'il la portait.
-function wDestroy(w){const sp=wSpares(w);
-  if(sp.length){const hi=Math.max(...sp);sp.splice(sp.indexOf(hi),1);meta.wlv[w]=hi;if(!sp.length)delete meta.wcp[w];return}
-  const c=wclsOf(w);delete meta.built[w];delete meta.wlv[w];if(meta.waff)delete meta.waff[w];if(meta.wfz)delete meta.wfz[w];if(meta.wlock)delete meta.wlock[w];
-  if(c&&meta.wpn[c]===w)meta.wpn[c]=WPN[c][0].id}
-function xfDo(){const s=xfGet(xf.src),st=xfState();if(!s||!xfSrcOk(xf.src)||!st||!st.ok)return;const cost=st.cost||xfCost(s);if(meta.essence<cost)return;
-  const k=xf.k,v=st.nv;
-  if(xf.dst[0]==='w'){const wid=xf.dst.slice(2),o=meta.waff[wid]||(meta.waff[wid]={});if(st.mode==='rep')o[xf.rep]=null;o[k]=v;
-    if(st.mode==='fuse'){meta.wfz=meta.wfz||{};const f=meta.wfz[wid]||(meta.wfz[wid]={});f[k]=(f[k]||0)+1}}
-  else{const d=xfGet(xf.dst);if(st.mode==='rep')delete d.aff[xf.rep];d.aff[k]=v;if(st.mode==='fuse'){d.fz=d.fz||{};d.fz[k]=(d.fz[k]||0)+1}else if(d.fz)delete d.fz[k]}
-  if(xf.src[0]==='s'){const i=meta.stash.findIndex(x=>String(x.id)===xf.src.slice(2));if(i>=0)meta.stash.splice(i,1)}
-  else if(xf.src[0]==='w')wDestroy(xf.src.slice(2));
-  else for(const c in meta.gearBy){const g=meta.gearBy[c];for(const k in g)if(g[k]===s)g[k]=null}
-  meta.essence-=cost;const dn=itemName(xfGet(xf.dst)||{name:'la cible'});toast(`${st.mode==='fuse'?'Affixe fusionnée':'Affixe transférée'} : <b>${xfV(xfGet(xf.dst)||{},k,v)}</b> sur ${esc(dn)}. ${esc(itemName(s))} est détruit.`);
-  xf={src:'',k:'',dst:xfGet(xf.dst)?xf.dst:'',rep:'',pick:'src'};campSel=null}
-// Héros › Couleurs du héros : cape, bordure et capuche de chaque classe, avec un aperçu. Nuancier + couleur libre.
-let lookCls=null;
-const lookC=()=>CLS[lookCls]?lookCls:heroCls;
-function lookHtml(){const c=lookC(),a=myLook(c),d=lookDef(c),same=a.every((x,i)=>x===d[i]),cn=CLS[c].n.toLowerCase();
-  const chip=k=>`<button class="cx-chip cx-chip--sm" data-cact="lookcls" data-arg="${k}" aria-pressed="${k===c}">${CLS[k].n}</button>`;
-  const row=(p,i)=>{const L=LOOK_SW[p.k],free=!L.includes(a[i]);
-    return `<div class="lookrow"><span class="lookk">${p.n}</span><div class="looksw" role="radiogroup" aria-label="${p.n} du ${cn}">${L.map(col=>`<button class="lsw" role="radio" aria-checked="${col===a[i]}" data-cact="look" data-arg="${i}|${col}" style="--sw:${col}" aria-label="${p.n} ${col}${col===d[i]?', couleur d\'origine':''}"></button>`).join('')}<label class="lsw lsw--free${free?' is-on':''}" style="--sw:${a[i]}"><input type="color" value="${a[i]}" data-look="${i}" aria-label="${p.n} : autre couleur"></label></div></div>`};
-  return `<section class="cx-section" id="lookSec"><h3 class="cx-section__label">Couleurs du héros</h3>
-    <div class="lookhead"><canvas class="lookprev" id="lookPrev" width="240" height="240" role="img" aria-label="Aperçu du ${cn}"></canvas>
-      <div class="lookside"><div class="cx-chips" aria-label="Classe">${Object.keys(CLS).map(chip).join('')}</div>
-      <button class="cx-btn cx-btn--sm cx-btn--ghost" data-cact="lookreset" data-arg="${c}" ${same?'disabled':''}>Couleurs d'origine</button></div></div>
-    <div class="lookrows">${LOOK_PARTS.map(row).join('')}</div>
-    <p class="cx-hint" style="margin:0">Chaque classe garde ses couleurs. En coopération, les autres joueurs les voient.</p></section>`}
-function lookSet(c,i,col){const a=myLook(c).slice();a[i]=col.toLowerCase();meta.look=meta.look||{};const d=lookDef(c);if(a.every((x,j)=>x===d[j]))delete meta.look[c];else meta.look[c]=a}
-function lookPaint(){const el=document.getElementById('lookPrev');if(!el)return;const c=lookC(),g=el.getContext('2d'),W=el.width,k=W/66;
-  g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,W,el.height);g.setTransform(k,0,0,k,W/2-11*k,el.height/2);g.rotate(-.35);
-  g.fillStyle='rgba(0,0,0,.35)';g.beginPath();g.ellipse(2,6,19,15,0,0,7);g.fill();
-  const old=ctx;ctx=g;try{pPlayer(c,false,lookPal(c,myLook(c)))}finally{ctx=old}}
-function prestSection(){
-  const c=heroCls,o=prOf(c),free=prFree(c),op=prOpen(),cost=prCost(o.lv),nmax=UPG.filter(u=>lv(u.k)>=u.max).length;
-  let h=`<h3>Prestige · ${CLS[c].n}${o.lv?` · niveau ${o.lv}`:''}</h3>`;
-  if(!op&&!o.lv)return h+`<p class="empty" style="font-size:13px">Le prestige se débloque quand toutes les améliorations permanentes sont au maximum (${nmax} / ${UPG.length}). Ensuite, chaque niveau de prestige donne 1 point à placer dans une statistique du ${CLS[c].n.toLowerCase()}, sans limite de niveau.</p>`;
-  h+=`<p class="empty" style="font-size:13px">Chaque niveau de prestige donne 1 point à placer dans une statistique. Le prestige est propre à chaque héros et n'a pas de limite. Tu peux redistribuer tes points gratuitement.</p>
-  <div class="up"><b>Niveau de prestige ${o.lv} → ${o.lv+1}</b><button class="btn buy cost-btn" data-cact="prbuy" ${meta.gold<cost.gold||meta.essence<cost.ess?'disabled':''}><span>Monter</span>${costHtml([['or',cost.gold],['ess',cost.ess]])}</button>
-  <p style="grid-column:1/-1">${free?`<b style="color:var(--ember)">${free} point${free>1?'s':''} à placer</b>`:'Aucun point à placer'} · ${o.lv} au total</p></div><div class="ups">`;
-  h+=PREST.map(q=>{const n=prPt(q.k,c),mx=q.max&&n>=q.max,v=n*q.per;
-    return `<div class="up"><b>${q.n}${n?` · ${n}`:''}</b><button class="btn" data-cact="pradd" data-arg="${q.k}" ${!free||mx?'disabled':''} aria-label="Placer un point en ${q.n}">${mx?'Max':'+1'}</button>
-      <p style="grid-column:1/-1">${q.neg?'−':'+'}${prFmt(q.per)} ${q.t} par point${n?` · actuel ${q.neg?'−':'+'}${prFmt(v)} %`:''}${q.max?` · max ${q.max} points`:''}</p></div>`}).join('');
-  h+=`</div>${o.lv-free?'<div class="actions" style="margin:0"><button class="btn" data-cact="prreset">Redistribuer les points</button></div>':''}`;
-  return h;
-}
-function campForge0(){
-  const ups=UPG.map(u=>{const l=lv(u.k),mx=l>=u.max,c=upCost(u);
-    return `<div class="up${mx?' is-max':''}"><b>${u.n}</b><p>${mx?u.d(l):(l?u.d(l)+' → ':'')+u.d(l+1)}</p><div class="pips">${Array.from({length:u.max},(_,i)=>`<i class="${i<l?'on':''}"></i>`).join('')}</div>
-      <button class="btn buy${mx?'':' cost-btn'}" data-cact="up" data-arg="${u.k}" ${mx||meta.gold<c?'disabled':''}>${mx?'Max':`<span>Améliorer</span>${costHtml([['or',c]])}`}</button></div>`}).join('');
-  const nmax=UPG.filter(u=>lv(u.k)>=u.max).length;
-  return `<h3>Améliorations permanentes · ${nmax} / ${UPG.length} au maximum</h3><div class="ups">${ups}</div><p class="cx-hint" style="margin:0">Elles valent pour tous tes héros. Toutes au maximum : le prestige s'ouvre (onglet Héros › Prestige). Les talents de chaque héros sont dans l'onglet Héros.</p>`;
-}
-// Héros › Sorts et talents (v132) : un sort et un ultime au choix parmi 3 (le 2e au rang 3 de maîtrise, le 3e au rang 6), puis les 3 talents (achetés avec l'or du Camp).
-function heroKit(){const c=heroCls,K=kitOf(c),mr=mastOf(c).r;
-  const card=(t,i,sp)=>{const on=(t==='s'?K.s:K.u)===i,lock=i>0&&!kitOk(c,i);
-    return `<button class="kitc${on?' is-on':''}${lock?' is-locked':''}" data-cact="kit" data-arg="${t}|${i}" aria-pressed="${on}" ${lock?'disabled':''}><span class="kitc__i" aria-hidden="true"><svg viewBox="0 0 24 24">${sp.icon}</svg></span><span class="kitc__t"><b>${sp.n}</b>${t==='s'?`<small>recharge ${fmtN(sp.cd)} s</small>`:''}</span><span class="kitc__d">${sp.d}</span>${lock?`<span class="kitc__st">${LOCK_SVG} Maîtrise rang ${KIT_MAST[i]}</span>`:on?'<span class="kitc__st is-on">Choisi</span>':''}</button>`};
-  return `<section class="cx-section"><h3 class="cx-section__label">Sort · touche E</h3><div class="kitl">${SPELLS[c].s.map((sp,i)=>card('s',i,sp)).join('')}</div></section>
-    <section class="cx-section"><h3 class="cx-section__label">Ultime · touche F</h3><div class="kitl">${SPELLS[c].u.map((sp,i)=>card('u',i,sp)).join('')}</div></section>
-    <p class="cx-hint" style="margin:0">Maîtrise du ${CLS[c].n.toLowerCase()} : rang ${mr} / 10. Le 2e sort et le 2e ultime s'ouvrent au rang 3, les 3es au rang 6 ; la maîtrise monte avec les ennemis abattus. Les dégâts suivent les dégâts de compétence, la portée et la durée des compétences, la recharge et les dégâts de l'ultime.</p>`}
-function heroTalents(){const C=CLS[heroCls],d=C.desc,k=d.indexOf('<b>');
-  const tals=TAL[heroCls].map(t=>{const own=hasTal(t.k);
-    return `<div class="tal${own?' own':''}"><b>${t.n}</b><p>${t.d}</p>${own?'<span class="owned">Acquis</span>':`<button class="btn buy cost-btn" data-cact="tal" data-arg="${t.k}" ${meta.gold<t.cost||!isUnl('bonus')?'disabled':''}><span>Acheter</span>${costHtml([['or',t.cost]])}</button>`}</div>`}).join('');
-  const n=TAL[heroCls].filter(t=>hasTal(t.k)).length;
-  return `<p style="margin:0">${k>0?d.slice(0,k).trim():d}</p>${heroKit()}
-    <h3>Talents · ${C.n} · ${n} / ${TAL[heroCls].length}</h3><div class="tals">${tals}</div>${isUnl('bonus')?'':`<p class="cx-hint" style="margin:0">${UNL_BY.bonus.need} pour acheter des talents.</p>`}`}
 let campB={};
 function tabBadges(){
   const craft=isUnl('craft')?craftIds().filter(id=>{const b=bpdef(id),pc=meta.parts[id]||[0,0,0];return pc.every(n=>n>0)&&meta.gold>=b.craft}).length:0,fz=isUnl('fuse')?fuseGroups().n:0;
@@ -429,7 +50,8 @@ const TAB_UNL={relics:'relics',mods:'mods',pets:'pets',forge:'bonus'},FSUB_UNL={
 const tabLocked=t=>t==='forge'?!['bonus','affix','fuse','seals'].some(isUnl):!!TAB_UNL[t]&&!isUnl(TAB_UNL[t]);
 // Cartes « Nouveau » propres à une vue.
 const viewNew=()=>campTab==='equip'?['sets','slots']:campTab==='mods'?['mods','hmods','align']:campTab==='pets'?['pets']:campTab==='relics'?['relics']:campTab==='forge'?[FSUB_UNL[forgeSub]]:[];
-function drawCamp(){
+function drawCamp(){if(drawCache)return drawCamp0();drawCache=new Map();try{return drawCamp0()}finally{drawCache=null}}
+function drawCamp0(){
   unlockCheck(false);
   if(campTab==='affix'){campTab='forge';forgeSub='affix'}
   if(COLL.includes(campTab))collLast=campTab;
@@ -475,150 +97,35 @@ const campScroll={};
 $('campSheet').addEventListener('click',e=>{
   {const b=e.target.closest('#campDock [data-act]');if(b&&!b.disabled){modAct(b.dataset.act,b.dataset);return}}
   const b=e.target.closest('button');if(!b||b.disabled||b.closest('#modsCamp')||!b.closest('#campBody,#campFoot,#campDock'))return;campClick(b)});
-// Actions du Camp (aussi appelées depuis Réglages pour la sauvegarde).
+// Actions du Camp (v135 : table d'actions). CAMP_ACT[nom](a, arg, bouton, dataset) ; chaque fichier du Camp ajoute les siennes
+// (Object.assign(CAMP_ACT,{…})). Une action qui ne renvoie pas CAMP_GO s'arrête là : ni enregistrement ni nouvel affichage.
+// Aussi appelées depuis Réglages pour la sauvegarde.
+const CAMP_GO=1,CAMP_ACT={};
 function campClick(b){
   const d=b.dataset;
   if(d.slot)campSel={slot:d.slot};
   else if(d.stash){const it=findItem(+d.stash);campSel=it?selOf(it):{stash:+d.stash}}
   else if(d.wsel)campSel={wpn:d.wsel};
-  else if(d.cact){
-    const a=d.cact,arg=d.arg;
-    campMsg='';
-    if(a==='exp'){saveMsg='';savePending=null;saveMsgOk='';if(saveMode!=='exp'){saveMode='exp';downloadSave()}else saveMode=null}
-    else if(a==='savedl'){saveMsg='';downloadSave()}
-    else if(a==='saveshare'){saveMsg='';shareSave();return}
-    else if(a==='impopen'){saveMode=saveMode==='imp'?null:'imp';saveMsg='';savePending=null}
-    else if(a==='copy'){const code=exportCode(),ta=$('saveOut'),sel=()=>{if(ta){ta.focus();ta.select()}};
-      try{navigator.clipboard.writeText(code).then(()=>toast('JSON copié'),()=>{sel();toast('Copie refusée : le JSON est sélectionné, copie-le à la main.')})}catch{sel();toast('Le JSON est sélectionné, copie-le à la main.')}return}
-    else if(a==='imp'){const v=($('saveIn')||{}).value||saveDraft;saveDraft=v;const dd=parseCode(v);if(!dd)saveMsg='Ce JSON n\'est pas une sauvegarde valide. Vérifie qu\'il est complet, de la première accolade à la dernière.';else{savePending=dd;saveMsg=''}}
-    else if(a==='impcancel'){savePending=null}
-    else if(a==='impok'){const dd=savePending;try{localStorage.setItem('crypte-meta',JSON.stringify(dd.meta));if(dd.cls)localStorage.setItem('crypte-cls',dd.cls);if(dd.best)localStorage.setItem('crypte-best2',String(dd.best));location.reload();return}catch{saveMsg='Impossible d\'écrire la sauvegarde : le stockage de ce navigateur est bloqué.'}}
-    else if(a==='sfilter'){stF=arg}
-    else if(a==='lock'&&campSel&&(campSel.wpn||campSel.slot==='arme')){const wid=campSel.wpn||curWid();meta.wlock=meta.wlock||{};meta.wlock[wid]=!meta.wlock[wid];const on=meta.wlock[wid];cxUndo(`${esc(wdef(wid).n)} ${on?'verrouillée':'déverrouillée'}`,()=>{meta.wlock[wid]=!on})}
-    else if(a==='lock'){const it=campSel&&campSel.stash?meta.stash.find(i=>i.id===campSel.stash):campSel&&campSel.slot?meta.gear[campSel.slot]:campSel&&campSel.oth?(meta.gearBy[campSel.oth.split('|')[0]]||{})[campSel.oth.split('|')[1]]:null;if(it){it.lock=!it.lock;cxUndo(`${esc(itemName(it))} ${it.lock?'verrouillé':'déverrouillé'}`,()=>{it.lock=!it.lock})}}
-    if(a==='bestall'){const plan=bestPlan(curEq(),meta.stash,true),names=[];for(const sl in plan){const it=plan[sl];
-      if(sl==='arme'){meta.wpn[heroCls]=it.wid;names.push(`<span style="color:${RAR[it.r].c}">${esc(wdef(it.wid).n)}</span>`);continue}meta.stash=meta.stash.filter(i=>i!==it);wearGear(sl,it);names.push(`<span style="color:${RAR[it.r].c}">${esc(itemName(it))}</span>`)}campSel=null;if(names.length)toast('Équipé : '+names.join(', '))}
-    if(a==='equip'){const it=meta.stash.find(i=>i.id===campSel.stash),k=it&&tgtKey(curEq(),it);if(it&&k){meta.stash=meta.stash.filter(i=>i!==it);wearGear(k,it);campSel={slot:k}}}
-    else if(a==='equipoth'&&campSel&&campSel.oth){const [c,k]=campSel.oth.split('|'),it=(meta.gearBy[c]||{})[k],t=it&&tgtKey(curEq(),it);if(it&&t){meta.gearBy[c][k]=null;wearGear(t,it);campSel={slot:t};toast(`<span style="color:${RAR[it.r].c}">${esc(itemName(it))}</span> équipé sur ${esc(CLS[heroCls].n)}, retiré ${parCls(c).replace('par ','à ').replace("à le ","au ")}`)}}
-    else if(a==='setsave'){const i=arg===''||arg==null?-1:+arg;if(i<0&&setsOf().length>=SET_MAX)return;const s=setSave(i<0?setsOf().length:i);toast(`<b>${esc(s.n)}</b> enregistré`)}
-    else if(a==='setwear'){const r=setWear(+arg),s=setsOf()[+arg];if(r){campSel=null;toast(`<b>${esc(s.n)}</b> porté`+(r.from.length?` · pris ${r.from.map(c=>parCls(c).replace('par ','à ').replace("à le ","au ")).join(' et ')}`:'')+(r.miss?` · ${r.miss} objet${r.miss>1?'s':''} introuvable${r.miss>1?'s':''} (recyclé ou fusionné)`:'')+(r.mm?` · ${r.mm} mod${r.mm>1?'s':''} non remis (absent ou capacité dépassée)`:'')+(r.petMiss?' · familier introuvable (fusionné)':''))}}
-    else if(a==='setdel'){const L=setsOf(),i=+arg,s=L[i];if(s){L.splice(i,1);cxUndo(`<b>${esc(s.n)}</b> supprimé`,()=>{setsOf().splice(i,0,s)})}}
-    else if(a==='unequip'){const s=campSel.slot,it=meta.gear[s];if(it){meta.stash.push(it);meta.gear[s]=null;campSel={stash:it.id}}}
-    else if(a==='toarsenal'){campTab='arsenal';campSel=null}
-    else if(a==='wequip'){if(ownedW(arg)&&wclsOf(arg)===heroCls){meta.wpn[heroCls]=arg;if(campTab==='equip'||isCoffre())campSel={slot:'arme'}}}
-    else if(a==='unlok'){meta.unlNew=meta.unlNew.filter(k=>k!==arg)}
-    else if(a==='arsv'){arsView=arg;campSel=null;campBack=null}
-    else if(a==='fsub'){forgeSub=arg;campSel=null;fzc=null;fzRole='a'}
-    else if(a==='coll'){campTab=arg;campSel=null;campBack=null}
-    else if(a==='hsub'){heroSub=arg;campSel=null}
-    else if(a==='hcls'){if(CLS[arg]&&arg!==heroCls){campSel=null;pickCls(arg);return}}
-    else if(a==='afmode'){forgeSub=afLast=arg==='fuse'?'fuse':'affix';campSel=null;fzc=null;fzRole='a'}
-    else if(a==='fzpick'){fzRole=arg==='b'?'b':'a'}
-    else if(a==='slotopen'){const u=SLOT_U.find(x=>x.k===arg);if(u&&slotCan(u)){meta.hfrag-=u.hf;meta.gold-=u.gold;meta.slotU[u.k]=true;meta.gear[u.k]=null;SND.play('leg');toast(`Emplacement <b>${u.n}</b> débloqué`)}}
-    else if(a==='tutoff'){meta.tutOff=true;toast('Parcours masqué : « Réafficher le parcours » en bas de l\'onglet Héros.')}
-    else if(a==='tuton'){meta.tutOff=false}
-    else if(a==='gosets'){const e=$('setsSec');if(e)e.scrollIntoView({behavior:'smooth',block:'start'});return}
-    else if(a==='gocoffre'){campTab='arsenal';arsView='coffre';campSel=null}
-    else if(a==='goheros'){campTab='arsenal';arsView='heros';campSel=null}
-    else if(a==='gorecy1'){const B={tab:campTab,sel:campSel,scroll:$('campBody').parentElement.scrollTop,label:campTab==='arsenal'?'Coffre':'Héros'};recySel=new Set([arg]);recyAsk=false;campBack=B;campTab='arsenal';arsView='recy';campSel=null}
-    else if(a==='rcsel'){if(recySel.has(arg))recySel.delete(arg);else recySel.add(arg);recyAsk=false}
-    else if(a==='rcr'){const r=+arg;if(recyR.has(r))recyR.delete(r);else recyR.add(r);recyAsk=false}
-    else if(a==='rcrall'){recyR.clear();recyAsk=false}
-    else if(a==='rcall'){for(const it of recyList())if(!it.lock)recySel.add(recyKey(it));recyAsk=false}
-    else if(a==='rcnone'){recySel.clear();recyAsk=false}
-    else if(a==='rcask'){recyAsk=true}
-    else if(a==='rcno'){recyAsk=false}
-    else if(a==='rcok'){recyDo()}
-    else if(a==='dclose'){campSel=null}
-    else if(a==='dmore'){dockMore=!dockMore}
-    else if(a==='dall'){dockAll=!dockAll}
-    else if(a==='dnav'){const L=invList('equip'),i=L.findIndex(isSel),n=L[i+(+arg)];if(n)campSel=selOf(n)}
-    else if(a==='xftake'||a==='xfrecv'){const sc=$('campBody').parentElement.scrollTop;campBack={tab:campTab,sel:campSel,scroll:sc,label:{equip:'Héros',arsenal:arsView==='coffre'?'Coffre':'Arsenal'}[campTab]||'Héros',mode:a==='xfrecv'?'recv':'take'};
-      xf=a==='xftake'?{src:arg,k:'',dst:'',rep:'',pick:'dst'}:{src:'',k:'',dst:arg,rep:'',pick:'src'};campTab='forge';forgeSub='affix';campSel=null;drawCamp();$('campBody').parentElement.scrollTop=0;return}
-    else if(a==='goback'){const B=campBack;campBack=null;if(B){campTab=B.tab;campSel=B.sel;drawCamp();$('campBody').parentElement.scrollTop=B.scroll||0;return}}
-    else if(a==='craftask'){arsAsk=arsAsk==='craft'?null:'craft'}
-    else if(a==='arsno'){arsAsk=null}
-    else if(a==='craftall'){const cp=craftPlan();let n=0;for(const id of cp.plan)if(craftOne(id))n++;arsAsk=null;if(n){SND.play('pick3');toast(`${n} objet${n>1?'s':''} fabriqué${n>1?'s':''}`)}}
-    else if(a==='craft'){const b=bpdef(arg),g=craftOne(arg);if(g){SND.play('pick3');
-        if(g==='new')toast(`<b style="color:${RAR[b.r].c}">${esc(b.n)}</b> fabriquée${b.cls===heroCls?' et équipée':''}`);
-        else if(g==='copy')toast(`Double de <b style="color:${RAR[b.r].c}">${esc(b.n)}</b> fabriqué : fusionne-le à la Forge pour monter de rang`);
-        else toast(`<b style="color:${RAR[b.r].c}">${esc(b.n)}</b> niveau ${g.lvl} fabriqué, il t'attend au coffre`)}}
-    else if(a==='rftgt'){const [t,id]=arg.split('|');fuseTgt[+t]=id}
-    else if(a==='rfuse'){const t=+arg,av=relAvail(t),cost=FUSE_COST[t],tg=fuseTgt[t];if(av.length>=3&&meta.essence>=cost&&tg&&RELICS['F_'+tg]){meta.essence-=cost;
-        for(const q of av.slice(0,3))meta.relics[q.id][q.rad?1:0]--;relicQFix();SND.play('relic');
-        const fid='F_'+tg,ra=meta.relics[fid]||(meta.relics[fid]=[0,0]);ra[0]++;relSel=fid;
-        campMsg=`<div class="card" style="border-color:${RTIER[t].c}"><div class="meta">Fusion réussie</div><p style="margin:0;font-size:15px">Tu obtiens la <b style="color:${RTIER[t].c}">${esc(RELICS[fid].n)}</b>. Équipe-la et ouvre-la en mission : elle donne à coup sûr un fragment de cet objet (${fragStatus(tg)} / 3 aujourd'hui).</p></div>`}}
-    else if(a==='arsr'){arsR=arg}
-    else if(a==='gofuse'){campTab='forge';forgeSub='fuse';campSel=null}
-    else if(a==='wfuse'){const w=wdef(arg),d=wFuse(arg);if(d){SND.play('leg');toast(`<b style="color:${RAR[w.r].c}">${esc(w.n)}</b> passe au ${rkTxt(meta.wlv[arg])}`)}}
-    // fusion d'équipement (fuse.js, mode Fusion de l'onglet Affixes et fusion)
-    else if(a==='fuse1'){const it=xfGet(arg),p=fusePartner(it);if(it&&p){campBack={tab:campTab,sel:campSel,scroll:$('campBody').parentElement.scrollTop,label:campTab==='arsenal'?'Coffre':'Héros'};fzOpen(it,p);campTab='forge';forgeSub='fuse';campSel=null}}
-    // une affixe de la source touchée une 2e fois revient à la valeur de la cible ; une affixe de la cible touchée se retire ou revient ; un pouvoir abyssal reste
-    else if(a==='fzk'&&fzc&&fzc.sel){const [k,sd]=arg.split('|'),A=fzItem(fzc.a),S=fzc.sel,ab=AFF[k]&&AFF[k].aby,ha=!!A&&A.aff[k]!=null;if(S.k[k]===sd){if(sd==='b')S.k[k]=ha?'a':ab?'b':'';else if(!ab)S.k[k]=''}else S.k[k]=sd}
-    else if(a==='fzbase'&&fzc){fzc.sel.base=arg==='b'?'b':'a'}
-    else if(a==='fzall'&&fzc){fzc.sel=fzBest(fzItem(fzc.a),fzItem(fzc.b))}
-    else if(a==='fzkeep'&&fzc){fzc.sel=fzKeepA(fzItem(fzc.a),fzItem(fzc.b))}
-    else if(a==='fzb'){const B=fzItem(+arg);if(B&&fuseFree(B))fzSetB(B)}
-    else if(a==='fzno'){fzc=null;fzRole='a';if(campBack){const B=campBack;campBack=null;campTab=B.tab;campSel=B.sel;drawCamp();$('campBody').parentElement.scrollTop=B.scroll||0;return}}
-    else if(a==='fzok'&&fzc){const A=fzItem(fzc.a),B=fzItem(fzc.b);if(A&&B&&fuseGear(A,B,fzc.sel)){SND.play('leg');toast(`<b style="color:${RAR[A.r].c}">${esc(A.name)}</b> passe au ${rkTxt(A.up)} · ${esc(B.name)} sacrifié`);fzc=null;fzRole='a';if(campBack){const K=campBack;campBack=null;campTab=K.tab;campSel=K.sel;saveMeta();syncEq();drawCamp();$('campBody').parentElement.scrollTop=K.scroll||0;return}}}
-    else if(a==='fzr'){const r=+arg;if(fuseR.has(r))fuseR.delete(r);else fuseR.add(r)}
-    else if(a==='fzrall')fuseR.clear();
-    else if(a==='fuseall'){const n=fuseAll(fuseOk);if(n){SND.play('leg');toast(`${n} fusion${n>1?'s':''} faite${n>1?'s':''}`)}}
-    else if(a==='lookcls'){lookCls=arg}
-    else if(a==='look'){const [i,col]=arg.split('|');lookSet(lookC(),+i,col);if(typeof netMe==='function')netMe()}
-    else if(a==='lookreset'){if(meta.look)delete meta.look[arg];if(typeof netMe==='function')netMe()}
-    else if(a==='rsel'){relSel=relSel===arg?null:arg}
-    else if(a==='rtier'){relTier=arg;relSel=null}
-    else if(a==='rqadd'){const [id,rd]=arg.split('|'),rad=rd==='1',ow=(meta.relics[id]||[0,0])[rad?1:0];if(relicQN(id,rad)<ow)meta.relicQ.push({id,rad})}
-    else if(a==='rqdel'){const [id,rd]=arg.split('|'),rad=rd==='1';for(let i=meta.relicQ.length-1;i>=0;i--)if(meta.relicQ[i].id===id&&!!meta.relicQ[i].rad===rad){meta.relicQ.splice(i,1);break}}
-    else if(a==='rgmv'){const [id,rd,d]=arg.split('|'),Gs=relGroups(),i=Gs.findIndex(g=>g.id===id&&(g.rad?'1':'0')===rd),j=i+(+d);if(i>=0&&j>=0&&j<Gs.length){[Gs[i],Gs[j]]=[Gs[j],Gs[i]];meta.relicQ=Gs.flatMap(g=>Array.from({length:g.n},()=>({id:g.id,rad:g.rad})))}}
-    else if(a==='rqnone'){meta.relicQ=[]}
-    else if(a==='rqtype'){const ids=Object.keys(RELICS).filter(id=>meta.relics[id]&&relMatch(id)).sort((x,y)=>RELICS[x].t-RELICS[y].t);for(const id of ids){const r=meta.relics[id];for(const rad of [true,false])while(relicQN(id,rad)<(r[rad?1:0]|0))meta.relicQ.push({id,rad})}}
-    else if(a==='rqtypeoff'){meta.relicQ=meta.relicQ.filter(q=>!RELICS[q.id]||!relMatch(q.id))}
-    else if(a==='rqall'){for(const id in RELICS){const r=meta.relics[id];if(!r)continue;for(const rad of [true,false])while(relicQN(id,rad)<r[rad?1:0])meta.relicQ.push({id,rad})}}
-    else if(a==='xfk'){xf.k=arg;xf.rep='';xf.op=''}
-    else if(a==='xfpick'){xf.pick=arg}
-    else if(a==='xfop'){xf.op=arg}
-    else if(a==='afcat'){afCat=arg;afOpen=''}
-    else if(a==='wish'){const W=wishOf();if(W.aff[arg])delete W.aff[arg];else W.aff[arg]=true}
-    else if(a==='wishleg'){const W=meta.wish||(meta.wish={leg:true,aff:{}});W.leg=!W.leg}
-    else if(a==='wishnone'){if(meta.wish)meta.wish.aff={}}
-    else if(a==='afopen'){afOpen=afOpen===arg?'':arg}
-    else if(a==='afdst'){const it=xfGet(arg);if(!it||arg===xf.src)return;xf.dst=arg;xf.rep='';xf.op='';xf.pick=xf.src?'dst':'src'}
-    else if(a==='afuse'){const [k,key]=arg.split('|'),it=xfGet(key);if(!it||!xfSrcOk(key)||it.aff[k]==null||key===xf.dst)return;xf.src=key;xf.k=k;xf.rep='';xf.pick='dst'}
-    else if(a==='xfsel'&&afMode()==='fuse'){const it=xfGet(arg);if(!fzOk(arg,it))return;
-      if(arg[0]==='w'){fzc=fzc&&fzc.w===arg.slice(2)?null:{w:arg.slice(2)};fzRole='a'}
-      else if(fzRole==='b'){if(fzc&&fzc.b===it.id){fzc.b=null;fzc.sel=null}else{fzSetB(it);xfJump=true}}
-      else{if(fzc&&fzc.a===it.id){fzc=null;fzRole='a'}else{fzSetA(it);xfJump=true}}}
-    else if(a==='xfsel'){const it=xfGet(arg);if(!xfOk(arg,it))return;
-      if(xf.pick==='src'){if(arg===xf.src){xf.src='';if(!xf.dst)xf.k=''}else{xf.src=arg;if(!(xf.k&&it.aff[xf.k]!=null))xf.k='';if(xf.dst===arg)xf.dst='';xfJump=true}xf.rep='';if(xf.src&&!xf.dst)xf.pick='dst'}
-      else{if(arg===xf.dst)xf.dst='';else{xf.dst=arg;xfJump=true}xf.rep='';xf.op='';if(xf.dst&&!xf.src)xf.pick='src'}}
-    else if(a==='xfrep'){xf.rep=arg}
-    else if(a==='xfswap'){if(xfSwapWhy())return;const s0=xf.src,d0=xf.dst;xf.src=d0;xf.dst=s0;const ns=xfGet(xf.src);if(xf.k&&!(ns&&ns.aff[xf.k]!=null))xf.k='';xf.rep='';xf.op='';xf.pick=!xf.src?'src':'dst';if(!xf.dst)xf.pick='dst'}
-    else if(a==='fzswap'){const w=fzSwapWhy();if(w)return;const A=fzItem(fzc.a),B=fzItem(fzc.b);
-      if(A&&B){const sw=x=>x==='a'?'b':x==='b'?'a':x,S=fzc.sel;fzc={a:B.id,b:A.id,sel:S?{base:sw(S.base),k:Object.fromEntries(Object.entries(S.k).map(([k,v])=>[k,sw(v)]))}:null};fzRole='b'}
-      else if(A)fzSetB(A);else fzSetA(B)}
-    else if(a==='xfcancel'){xf={src:'',k:'',dst:'',rep:'',pick:'dst'}}
-    else if(a==='xfsrc'){const it=xfGet(arg);if(!it||!xfSrcOk(arg)||arg===xf.dst||!xf.k||it.aff[xf.k]==null)return;xf.src=xf.src===arg?'':arg;xf.rep='';xf.op=''}
-    else if(a==='xfok'){xfDo()}
-    else if(a==='refine'){const r=meta.relics[arg];if(r&&r[0]>relicQN(arg,false)&&meta.essence>=50){r[0]--;r[1]++;meta.essence-=50}}
-    else if(a==='prbuy'){const o=prOf(),c=prCost(o.lv);if((prOpen()||o.lv)&&meta.gold>=c.gold&&meta.essence>=c.ess){meta.gold-=c.gold;meta.essence-=c.ess;o.lv++;toast(`Prestige du ${CLS[heroCls].n} : niveau ${o.lv}. Place ton point.`);if(typeof netMe==='function')netMe()}}
-    else if(a==='pradd'){const o=prOf(),q=PREST.find(x=>x.k===arg);if(q&&prFree()>0&&!(q.max&&prPt(q.k)>=q.max))o.pts[q.k]=prPt(q.k)+1}
-    else if(a==='prreset'){prOf().pts={}}
-    else if(a==='up'){const u=UPG.find(x=>x.k===arg),c=upCost(u);if(meta.gold>=c&&lv(u.k)<u.max){meta.gold-=c;meta.up[u.k]=lv(u.k)+1}}
-    else if(a==='tal'){const t=TAL[heroCls].find(x=>x.k===arg);if(meta.gold>=t.cost){meta.gold-=t.cost;meta.tal[t.k]=true}}
-    else if(a==='kit'){const [t,i]=arg.split('|'),n=+i;if((t==='s'||t==='u')&&(n===0||kitOk(heroCls,n))){meta.kit=meta.kit||{};const K=meta.kit[heroCls]||(meta.kit[heroCls]={s:0,u:0});K[t]=n;const sp=SPELLS[heroCls][t][n];toast(`${t==='s'?'Sort':'Ultime'} : <b>${sp.n}</b>`)}}
-    saveMeta();syncEq();
-  }
+  else if(d.cact){const a=d.cact,arg=d.arg;campMsg='';const f=CAMP_ACT[a];if(f&&f(a,arg,b,d)!==CAMP_GO)return;saveMeta();syncEq()}
   drawCamp();if(!$('settings').hidden)drawSettings();
   if(xfJump){xfJump=false;const e=$('campBody').querySelector('.cx-roles'),c=$('campBody').parentElement;if(e&&e.getBoundingClientRect().top<c.getBoundingClientRect().top)e.scrollIntoView({block:'start'})}
 }
-$('campBody').addEventListener('input',e=>{const i=e.target.dataset.look;if(i!=null){lookSet(lookC(),+i,e.target.value);const l=e.target.parentElement;l.style.setProperty('--sw',e.target.value);l.classList.add('is-on');lookPaint()}});
-// couleur libre : enregistrée et envoyée aux autres joueurs quand le choix est fait
-$('campBody').addEventListener('change',e=>{if(e.target.dataset.look==null)return;lookSet(lookC(),+e.target.dataset.look,e.target.value);saveMeta();if(typeof netMe==='function')netMe();drawCamp()});
-$('campBody').addEventListener('change',e=>{if(e.target.id==='xfAff'){xf.k=e.target.value;xf.rep='';xf.op='';const s=xfGet(xf.src);if(s&&(!xf.k||s.aff[xf.k]==null))xf.src='';xf.pick='src';drawCamp()}else if(e.target.id==='xfSrc'){xf={src:e.target.value,k:'',dst:xf.dst===e.target.value?'':xf.dst,rep:''};drawCamp()}else if(e.target.id==='xfDst'){xf.dst=e.target.value;xf.rep='';drawCamp()}});
-// Héros › Équipements enregistrés : renommer
-$('campBody').addEventListener('change',e=>{const i=e.target.dataset.setname;if(i==null)return;const s=setsOf()[+i];if(s){s.n=e.target.value.trim().slice(0,24)||s.n;saveMeta()}});
+
+// Navigation du Camp
+Object.assign(CAMP_ACT,{
+  sfilter:function(a,arg,b,d){{stF=arg}return CAMP_GO},
+  gridmore:function(a,arg,b,d){{gridMore++}return CAMP_GO},
+  unlok:function(a,arg,b,d){{meta.unlNew=meta.unlNew.filter(k=>k!==arg)}return CAMP_GO},
+  arsv:function(a,arg,b,d){{arsView=arg;campSel=null;campBack=null}return CAMP_GO},
+  fsub:function(a,arg,b,d){{forgeSub=arg;campSel=null;fzc=null;fzRole='a'}return CAMP_GO},
+  coll:function(a,arg,b,d){{campTab=arg;campSel=null;campBack=null}return CAMP_GO},
+  hsub:function(a,arg,b,d){{heroSub=arg;campSel=null}return CAMP_GO},
+  hcls:function(a,arg,b,d){{if(CLS[arg]&&arg!==heroCls){campSel=null;pickCls(arg);return}}return CAMP_GO},
+  tutoff:function(a,arg,b,d){{meta.tutOff=true;toast('Parcours masqué : « Réafficher le parcours » en bas de l\'onglet Héros.')}return CAMP_GO},
+  tuton:function(a,arg,b,d){{meta.tutOff=false}return CAMP_GO},
+  gosets:function(a,arg,b,d){{const e=$('setsSec');if(e)e.scrollIntoView({behavior:'smooth',block:'start'});return}return CAMP_GO},
+  goback:function(a,arg,b,d){{const B=campBack;campBack=null;if(B){campTab=B.tab;campSel=B.sel;drawCamp();$('campBody').parentElement.scrollTop=B.scroll||0;return}}return CAMP_GO},
+});
 function openCamp(){$('camp').hidden=false;campSel=null;campMsg='';fzc=null;fzRole='a';drawCamp();navSync()}
 function closeCamp(){$('camp').hidden=true;if(!started)newGame();refreshMenus()}
 // Accueil : lignes résumées (Biome, Niveau, Difficulté, Reliques) ; Lancer et le Camp restent en bas.

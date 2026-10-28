@@ -6,15 +6,19 @@ Action-RPG de crypte en hordes, jouable au pouce sur mobile et au clavier. Site 
 | Fichier | Rôle |
 | --- | --- |
 | `index.html` | Interface (HUD, accueil Combat, écran Mission, Camp, barre des 5 onglets, Réglages) et ordre de chargement des scripts |
-| `css/game.css` | Styles et mise en page, design system « Crypte » (tokens + composants `cx-`) |
-| `css/aaa.css` | Habillage de la refonte v130, style « AAA mobile » (cadres dorés, boutons à relief, cases serties), chargé après `game.css` ; coquille : barre des onglets, accueil, écran Mission, scène du héros. Ne touche pas au rendu de la mission |
+| `css/game.css` | Toute la feuille de style : mise en page et design system « Crypte » (tokens + composants `cx-`), puis l'habillage de la refonte v130, style « AAA mobile » (cadres dorés, boutons à relief, cases serties). `aaa.css` y est fusionné depuis la v135 |
 | `js/data.js` | Constantes, classes, armes, reliques, mods, affixes, sauvegarde `meta` |
 | `js/game.js` | État de partie, ennemis, combat, apparitions, butin, mise à jour |
 | `js/render.js` | Rendu Canvas 2D, rendu WebGL (PixiJS 7.4.2) et HUD |
 | `js/ui.js` | Fiches d'objets, Pause, bonus de niveau, Mods, fin de mission |
-| `js/camp.js` | Le Camp : onglets Héros, Arsenal (Coffre, Armes, Recettes, Recycler), Forge (Affixes, Fusion, Bonus, Sceaux), Collection (Mods, Familiers, Reliques) ; transfert d'affixe, sauvegarde JSON |
+| `js/camp.js` | Cœur du Camp : état, affichage des onglets et du pied, table d'actions `CAMP_ACT` (chaque fichier du Camp y ajoute les siennes), accueil, feuille de choix |
+| `js/heros.js` | Onglet Héros : couleurs, prestige, sorts et talents, équipements enregistrés (actions) |
+| `js/arsenal.js` | Onglet Arsenal : plans et fragments, fabrication, armes possédées |
+| `js/forge.js` | Onglet Forge : transfert d'affixe, liste de souhaits, Bonus |
+| `js/collection.js` | Collection › Reliques : file d'ouverture, reliques forgées, raffinage |
+| `js/save.js` | Réglages › Sauvegarde : exporter, importer, recommencer à zéro |
 | `js/shell.js` | Navigation de la refonte : barre des 5 onglets, accueil Combat (héros dessiné, carte de mission), écran Mission, feuille du Parcours |
-| `js/inv.js` | Coffre de l'Armurerie, fiche d'objet ancrée, recyclage |
+| `js/inv.js` | Arsenal › Coffre et Recycler, fiche d'objet ancrée, grilles de 120 cases |
 | `js/fuse.js` | Fusion de rang (armes et équipements) et son écran, Forge › Fusion |
 | `js/seal.js` | Sceaux légendaires de la Brèche (Forge › Sceaux) |
 | `js/pet.js` | Familiers |
@@ -58,7 +62,7 @@ Le rythme chargé est celui de la balise `<script src="js/rythmes/….js">` d'`i
 Une suite unique vérifie le jeu dans un vrai navigateur (Chromium sans affichage) : démarrage, butin, reliques, fabrication et fusion, coffre, affixes, emplacements, missions, contrôles, sauvegarde, parcours, coopération.
 ```
 npm i playwright && npx playwright install chromium
-node tools/tests/run.mjs            # tout (115 tests, ≈ 4 min)
+node tools/tests/run.mjs            # tout (117 tests, ≈ 4 min)
 node tools/tests/run.mjs --quick    # sans la coopération
 node tools/tests/run.mjs fusion     # seulement les suites dont le fichier contient « fusion »
 ```

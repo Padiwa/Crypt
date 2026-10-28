@@ -28,7 +28,7 @@ function navGo(k){
   const t=NAV_TAB[k]||collFirst(),sc=$('campBody').parentElement,open=!$('camp').hidden;
   if(open)campScroll[campTab]=sc.scrollTop;
   const same=open&&navOf(campTab)===k;
-  campTab=t;campSel=null;campBack=null;campMsg='';fzc=null;fzRole='a';if(k==='heros')heroSub='main';
+  campTab=t;campSel=null;campBack=null;campMsg='';fzc=null;fzRole='a';gridMore=0;if(k==='heros')heroSub='main';
   if(!open)openCamp();else drawCamp();
   sc.scrollTop=same?0:campScroll[campTab]||0;navSync()}
 $('tabbar').addEventListener('click',e=>{const b=e.target.closest('[data-nav]');if(b)navGo(b.dataset.nav)});

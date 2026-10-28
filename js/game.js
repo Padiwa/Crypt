@@ -275,7 +275,6 @@ const hitFx=(e,d,crit)=>{SND.play(crit?'crit':'hit');e.flash=1;if(SET.dmgNum&&(c
 // Faille (abyssal) : un critique peut lancer des éclairs en chaîne (70 % des dégâts) ; pas de chaîne depuis une chaîne.
 const riftTry=(e,d)=>{if(S.abRift&&!G._rift&&Math.random()*100<S.abRift){G._rift=1;chain(e,d*.7);G._rift=0}};
 // Coup qui peut être critique : les dégâts critiques s'appliquent (Pluie d'acier, météores).
-const critHit=(e,d)=>{const c=Math.random()*100<S.crit;dmgEnemy(e,c?d*S.critDmg/100:d,c)};
 // Récompense de capture (chaque joueur reçoit la sienne).
 function capReward(){objDone();const r=relicDrop(true);G.loot.relics.push(r);G.fresh++;G.gold+=60*G.level;
   toast(`<b style="color:var(--r2)">Cible capturée.</b> ${relicName(r)} et ${60*G.level} or. Rejoins l'extraction, ou traque la cible suivante.`)}

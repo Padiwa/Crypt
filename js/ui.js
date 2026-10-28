@@ -1,22 +1,26 @@
 // Crypte des Cendres — ui.js
 /* ---------- Fiches partagées ---------- */
 function statRows(St){
-  const rows=[['Dégâts',Math.round(St.dmg)],['Attaques / s',St.aps.toFixed(2)],['Critique',Math.round(St.crit)+' %'],['Dégâts critiques',Math.round(St.critDmg)+' %'],['Puissance (DPS)',Math.round(dps(St))],['Vie',Math.round(St.hp)],['Réduction',Math.round(St.armor)+' %'],['Vitesse',Math.round(St.speed/2.2)+' %'],['Portée des compétences',Math.round(100+St.skillRad)+' %'],...(heroCls==='magicien'?[['Rayon d\'explosion',Math.round(100+St.splash)+' %']]:[]),heroCls==='guerrier'?['Ondes par coup',St.waves]:['Projectiles par tir',(1+St.multi).toFixed(St.multi%1?2:0)],['Double attaque',St.echo+' %'],[CLS[heroCls].skill,Math.round(St.nova)]];
+  const rows=[['Dégâts',Math.round(St.dmg)],['Attaques / s',St.aps.toFixed(2)],['Critique',Math.round(St.crit)+' %'],['Dégâts critiques',Math.round(St.critDmg)+' %'],['Puissance (DPS)',Math.round(dps(St))],['Vie',Math.round(St.hp)],['Réduction',Math.round(St.armor)+' %'],['Vitesse',Math.round(St.speed/2.2)+' %'],['Portée des compétences',Math.round(100+St.skillRad)+' %'],...(heroCls==='magicien'?[['Rayon d\'explosion',Math.round(100+St.splash)+' %']]:[]),heroCls==='guerrier'?['Ondes par coup',St.waves]:['Projectiles par tir',(1+St.multi).toFixed(St.multi%1?2:0)],['Double attaque',St.echo+' %'],['Dégâts de compétence',Math.round(St.nova)]];
   return rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join('');
 }
 function slotsHtml(eq,click,selSlot){
   return Object.keys(SLOT).map(k=>{if(!slotOpen(k))return `<div class="slot locked" aria-disabled="true"><span>${SLOT[k]}</span><strong style="color:var(--muted)">Verrouillé</strong></div>`;const it=eq[k],tag=click?'button':'div';
     return `<${tag} class="slot${selSlot===k?' sel':''}"${click?` data-slot="${k}"`:''}><span>${SLOT[k]}</span><strong style="color:${it?RAR[it.r].c:'var(--muted)'}">${it?itemName(it):'Vide'}${it&&it.lock?`<span class="li" aria-label="verrouillé">${LOCK_SVG}</span>`:''}</strong></${tag}>`}).join('');
 }
-function better(it){const e=curEq(),k=tgtKey(e,it);if(!k)return false;return itemScore({...e,[k]:it})>itemScore(e)*1.0001}
+function better(it){return memoOn('better',it,()=>{const e=curEq(),k=tgtKey(e,it);if(!k)return false;return itemScore({...e,[k]:it})>itemScore(e)*1.0001})}
 const LOCK_SVG='<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 const cellHtml=(it,attr,sel,up)=>`<button class="cell${sel?' sel':''}${up?' up':''}${it.lock?' locked':''}" data-${attr}="${it.id}" style="border-color:${RAR[it.r].c};color:${RAR[it.r].c}" aria-label="${itemName(it)}${it.lock?', verrouillé':''}">${it.lock?`<span class="lk">${LOCK_SVG}</span>`:''}${it.up?`<span class="cup">R${it.up+1}</span>`:''}${GLYPH[it.slot]}</button>`;
-const itemScore=e=>{const x=stats(e);let d=dps(x)*(1+x.abSoul*.06)*(1+x.abExec*.015)*(1+x.crit/100*x.abRift/100*2.1)*(1+x.abHunt*.0025)+x.dmg*x.abPulse/100*.8;d*=1+x.execute*.003+x.bossDmg*.0015+x.lowDmg*.001+x.shock*.01+x.chill*.003+x.ultPct*.001+x.fury*.002;// Attaque et survie pèsent ensemble (moyenne géométrique) : gagner 10 % de vie vaut à peu près gagner 12 % de dégâts, quel que soit le niveau.
+// Clé d'une composition d'équipement (héros, arme, objets) pour le cache d'affichage.
+const eqKey=e=>heroCls+'|'+Object.keys(e).map(k=>{const it=e[k];return it?(it.wid?'w'+it.wid+'.'+(meta.wlv[it.wid]|0):it.id+'.'+(it.up|0)):'-'}).join(',');
+const itemScore=e=>drawCache?memo('sc|'+eqKey(e),()=>itemScore0(e)):itemScore0(e);
+const itemScore0=e=>{const x=stats(e);let d=dps(x)*(1+x.abSoul*.06)*(1+x.abExec*.015)*(1+x.crit/100*x.abRift/100*2.1)*(1+x.abHunt*.0025)+x.dmg*x.abPulse/100*.8;d*=1+x.execute*.003+x.bossDmg*.0015+x.lowDmg*.001+x.shock*.01+x.chill*.003+x.ultPct*.001+x.fury*.002;// Attaque et survie pèsent ensemble (moyenne géométrique) : gagner 10 % de vie vaut à peu près gagner 12 % de dégâts, quel que soit le niveau.
   const v=(x.hp+x.abWard*8)/(1-Math.min(60,x.armor)/200)*(1+x.lowArmor*.003+x.potHeal*.001+x.antidote*.001+x.auraSlow*.003)+x.regen*15;
   return Math.pow(Math.max(1,d),.55)*Math.pow(Math.max(1,v),.45)};
 // Meilleur équipement : pour chaque emplacement, l'objet qui donne le meilleur score (puissance et vie).
 // wpn (au Camp) : compare aussi les armes possédées du héros, chacune avec ses propres mods et sa maîtrise.
-function bestPlan(e,pool,wpn){const cur={...e},pick={};
+function bestPlan(e,pool,wpn){if(drawCache&&pool===meta.stash)return memo('bp|'+eqKey(e)+'|'+!!wpn,()=>bestPlan0(e,pool,wpn));return bestPlan0(e,pool,wpn)}
+function bestPlan0(e,pool,wpn){const cur={...e},pick={};
   for(let pass=0;pass<2;pass++)for(const sl of Object.keys(e).filter(k=>k!=='arme')){let best=cur[sl],bs=itemScore(cur);
     for(const it of pool){if(it.slot!==keySlot(sl)||Object.values(cur).includes(it)&&cur[sl]!==it||Object.values(pick).includes(it)&&pick[sl]!==it)continue;const sc=itemScore({...cur,[sl]:it});if(sc>bs+1e-6){bs=sc;best=it}}
     if(best!==cur[sl]){cur[sl]=best;pick[sl]=best}}
@@ -271,7 +275,7 @@ function costHtml(parts){return `<span class="cost">${parts.filter(p=>p&&p[1]>0)
 function modsChanged(){if(started&&G&&!G.over){refreshStats();if(G.pet||petEq())G.petS=petStats()}if(!$('bag').hidden)drawBag();if(!$('camp').hidden)drawCamp()}
 
 /* ---------- Fin de niveau, extraction, mort ---------- */
-function lootSummary(end){
+function lootSummary(){
   const L=G.loot,its=L.items.length;
   const byR={};for(const i of L.items)byR[i.r]=(byR[i.r]||0)+1;const byT={};for(const id of L.relics){const t=RELICS[id].t;byT[t]=(byT[t]||0)+1}
   const lc=(c,n,lab)=>`<span class="lc" style="--c:${c}" title="${lab}">${n} ${lab}</span>`;
@@ -280,7 +284,7 @@ function lootSummary(end){
     <div><span>Reliques</span><b>${L.relics.length?`${L.relics.length} · `+Object.keys(byT).sort((a,b)=>b-a).map(t=>lc(RTIER[t].c,byT[t],RTIER[t].n)).join(''):'0'}</b></div>
     ${(()=>{const W=L.parts.filter(p=>!p.hf),H=L.parts.length-W.length,b={};for(const p of W){const r=wdef(p.w).r;b[r]=(b[r]||0)+1}
       return (W.length?`<div><span>Armes</span><b>${W.length} · `+Object.keys(b).sort((x,y)=>y-x).map(r=>lc(RAR[r].c,b[r],RAR[r].n.toLowerCase()+(b[r]>1?'s':''))).join('')+`</b></div>`:'')+(H?`<div><span>Fragments de harnais</span><b style="color:var(--rar-aby)">${H}</b></div>`:'')})()}
-    ${G.relQ.length&&!end?`<div><span>Reliques ouvertes</span><b>${G.opened.length} / ${G.relQ.length}${G.relic?` · ${G.react} / ${reactNeed()} réactifs`:''}</b></div>`:''}${(G.shared||[]).length&&!end?`<div><span>Partagées par les partenaires</span><b>${G.shared.length}</b></div>`:''}<div><span>Ennemis abattus</span><b>${G.kills}</b></div><div><span>${end?'Durée de la mission':'Temps de survie'}</span><b>${fmt(G.t)}</b></div>`;
+    ${G.relQ.length?`<div><span>Reliques ouvertes</span><b>${G.opened.length} / ${G.relQ.length}${G.relic?` · ${G.react} / ${reactNeed()} réactifs`:''}</b></div>`:''}${(G.shared||[]).length?`<div><span>Partagées par les partenaires</span><b>${G.shared.length}</b></div>`:''}<div><span>Ennemis abattus</span><b>${G.kills}</b></div><div><span>Temps de survie</span><b>${fmt(G.t)}</b></div>`;
 }
 function roundDone(){
   objDone();
