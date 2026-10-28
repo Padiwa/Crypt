@@ -44,7 +44,7 @@ SIM.camp = function () {
   { const base = curEq(); let best = curWid(), bs = -1; for (const w of SIMW()) { const s = SIMscore({ ...base, arme: weaponItem(heroCls, w.id) }); if (s > bs) { bs = s; best = w.id; } } meta.wpn[heroCls] = best; }
   // Équiper le meilleur
   { const plan = bestPlan(curEq(), meta.stash); for (const sl in plan) { const it = plan[sl]; meta.stash = meta.stash.filter(i => i !== it); const old = meta.gear[sl]; if (old) meta.stash.push(old); meta.gear[sl] = it; } }
-  fuseAll();
+  if (U('fuse')) fuseAll();
   // Recyclage : les objets de monstres (Commun à Rare) moins bons que l'équipement porté et sans double à fusionner ; on garde les objets des reliques
   if (U('recy')) {
     const eq = curEq(), cur = SIMscore(eq), keys = {};

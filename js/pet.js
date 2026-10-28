@@ -46,6 +46,10 @@ if((meta.modV|0)<3){let n=0,ess=0;
     meta.mods[id]=0;delete meta.modSt[id];delete meta.modCp[id];n++}
   if(n){meta.essence=(meta.essence|0)+ess;const o=meta.modNote||{conv:0,ref:0,ess:0};meta.modNote={...o,ess:(o.ess|0)+ess,p:(o.p|0)+n}}
   meta.modV=3;saveMeta()}
+/* v144 : copies gardées d'un mod qui ne se surcharge pas (Pointe de diamant depuis la v141, Imprégnation, Rémanence, Fléau…) : inutilisables, rendues
+   comme une copie trouvée de trop, 8 × (rareté + 1) essence chacune. */
+if((meta.modV|0)<4){let e=0;for(const id in meta.modCp)if(MODS[id]&&!modCanStar(id)&&(meta.modCp[id]|0)>0){e+=(meta.modCp[id]|0)*8*(MODS[id].r+1);delete meta.modCp[id]}
+  if(e)meta.essence=(meta.essence|0)+e;meta.modV=4;saveMeta()}
 /* v139 : chaque familier a son build (cases, mods, alignements), rangé sous son numéro : meta.pload[uid], meta.ppol[uid], meta.palign[uid].
    Sans familier équipé, un build vide qui n'est pas enregistré. */
 function petBuild(p=petEq()){const rk=p?p.rk:1,lv=p?p.lv:1,key=p?String(p.uid):null;

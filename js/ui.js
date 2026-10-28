@@ -79,7 +79,7 @@ function powerOf(x,cls=heroCls,kit=kitOf(cls)){
   if(K.buff)buff=1+K.buff*Math.min(1,6*(1+x.skillDur/100)/cd);
   else{cast=x.nova*K.c*(K.dur?1+x.skillDur/100:1)*(K.area?sr:1)*(K.reach?1+x.reach/100:1)*(K.splash?1+x.splash/100:1)*(K.rng?1+K.rng*x.skillRad/100:1)*(K.cr?cm:1)*(1+spDot)*(1+pSt*(x.intSt||0)/100)*hitM;skill=cast/cd}
   // ultime (v138) : 1 point de charge par seconde, plus les ennemis abattus (PW.kills par seconde, ULT_KILL chacun, au plus ULT_KMAX par seconde)
-  const U=SPELLS[cls].u[kit.u]||SPELLS[cls].u[0],Q=PW.ul[U.k],um=1+(x.ultPct||0)/100,uNeed=Math.max(ULT_MIN,Math.round(ULT_N*(1-Math.min(50,x.fury||0)/100))),T=uNeed*(1-(x.rema||0)/100)/(1+Math.min(ULT_KMAX,ULT_KILL*PW.kills*(x.seals&&x.seals.cri?1.2:1))),bd=1+(x.buffDur||0)/100;
+  const U=SPELLS[cls].u[kit.u]||SPELLS[cls].u[0],Q=PW.ul[U.k],um=1+(x.ultPct||0)/100,uNeed=Math.max(ULT_MIN,Math.round(ULT_N*(1-(Math.min(50,x.fury||0)+(x.seals&&x.seals.cri?20:0))/100))),T=uNeed*(1-(x.rema||0)/100)/(1+Math.min(ULT_KMAX,ULT_KILL*PW.kills)),bd=1+(x.buffDur||0)/100;
   let ult=0;
   if(Q.c)ult=x.nova*Q.c*(U.k==='blizzard'?bd:1)*(Q.area?sr:1)*(Q.rng?1+Q.rng*x.skillRad/100:1)*(Q.cr?cm:1)*(1+ulDot)*um*hitM*(1+PW.boss*(ULT_GX-1))/T;
   else if(Q.hawk)ult=atk*Q.t*bd*(2*(x.critDmg/100)/cm*um-1)/T;

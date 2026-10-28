@@ -31,7 +31,7 @@ export const tests = [
     t.eq([r.mods, r.st, r.cp], [[0, 0, 0, 3], [undefined, 1], [undefined, 4]], 'rangs à 0, étoiles et copies retirées ; Crocs intact');
     // Écho : rang 1 (30) + 2 étoiles (150 + 300) ; Purification : 2 copies (2 × 24) ; Poches profondes : rang 1 (30)
     t.eq(r.ess, 30 + 450 + 48 + 30, 'essence rendue');
-    t.eq([r.note.p, r.v, r.star, r.max], [3, 3, [false, false, false, true], [0, 0, 0]], 'message, sauvegarde en v143, sans étoile, rang unique');
+    t.eq([r.note.p, r.v, r.star, r.max], [3, 4, [false, false, false, true], [0, 0, 0]], 'message, sauvegarde ensuite en v144, sans étoile, rang unique');
     t.ok(/Mods revus/.test(r.txt) && /3 mods de familier à rang unique/.test(r.txt), r.txt);
   } },
   { name: 'Instinct : à l\'esquive, le familier agit tout de suite, une fois par délai (v143)', fn: async (b, t) => {

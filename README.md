@@ -29,7 +29,7 @@ Action-RPG de crypte en hordes, jouable au pouce sur mobile et au clavier. Site 
 | `js/relais.js` | Remplace l'adresse du relais (vide : relais du jeu, `RELAY_CF` dans `js/net.js` ; `off` : QR codes seulement) |
 | `relais/` | Le relais (Cloudflare Worker + Durable Objects, offre gratuite) et son déploiement |
 | `js/update.js` | Détection des nouvelles versions |
-| `js/nav.js` | Navigation clavier et manette dans les menus |
+| `js/nav.js` | Retour arrière (bouton Retour d'Android, Échap) et raccourcis clavier du Camp |
 | `aide/` | Guide du joueur |
 | `tools/tests/` | Suite de tests automatiques |
 | `js/settings.js` | Réglages de l'appareil, bannière d'événements, vibrations |
@@ -62,8 +62,8 @@ Le rythme chargé est celui de la balise `<script src="js/rythmes/….js">` d'`i
 Une suite unique vérifie le jeu dans un vrai navigateur (Chromium sans affichage) : démarrage, butin, reliques, fabrication et fusion, coffre, affixes, emplacements, missions, contrôles, sauvegarde, parcours, coopération.
 ```
 npm i playwright && npx playwright install chromium
-node tools/tests/run.mjs            # tout (156 tests, ≈ 5 min)
-node tools/tests/run.mjs --quick    # sans la coopération
+node tools/tests/run.mjs            # tout (162 tests, ≈ 5 min)
+node tools/tests/run.mjs --quick    # sans la coopération (151 tests)
 node tools/tests/run.mjs fusion     # seulement les suites dont le fichier contient « fusion »
 ```
 Chaque fichier de `tools/tests/suites/` exporte une liste `tests`. Toute erreur JavaScript dans la page fait échouer le test. **À lancer avant chaque nouvelle version** : la commande sort en erreur si un test échoue.
@@ -75,7 +75,7 @@ Android (Chrome) : menu ⋮ → « Installer l'application ». iPhone (Safari) :
 Progression dans le stockage du navigateur (`crypte-meta`), réglages dans `crypte-set`. Réglages (l'engrenage) → Exporter ou Importer pour la sauvegarde en JSON.
 
 ## Simulateur de progression
-`tools/progression/` joue des carrières complètes dans un vrai navigateur sans affichage. Un bot joue des missions de Survie avec les règles du jeu ; entre deux missions, il passe au Camp comme le conseille le Parcours (fusion, fabrication, meilleur équipement, recyclage, Bonus, talents, prestige, emplacements, mods, familier, reliques). Il monte d'un niveau après chaque sortie d'au moins deux manches, change de palier au plafond prévu et redescend de trois niveaux après une mission perdue.
+`tools/progression/` joue des carrières complètes dans un vrai navigateur sans affichage. Un bot joue des missions de Survie avec les règles du jeu ; entre deux missions, il passe au Camp comme le conseille le Parcours (fusion, fabrication, meilleur équipement, recyclage, Bonus, talents, prestige, emplacements, mods, familier, reliques). Il monte d'un niveau après chaque sortie d'au moins deux manches, change de palier au plafond prévu et redescend de trois niveaux après une mission perdue ; après deux pertes de suite, il descend d'un palier en gardant son niveau.
 ```
 node tools/progression/run.mjs --cls archer --missions 150 --seed 1 --out resultats/archer_1.jsonl
 node tools/progression/report.mjs resultats/*.jsonl --notes analyse.html --out rapport.html
@@ -87,7 +87,7 @@ node tools/progression/builds.mjs resultats 4 tank feu   # exemples de builds, �
 
 ## Coopération
 
-`js/net.js` relie deux appareils en pair à pair (WebRTC, canal de données) sans serveur : les codes d'offre et de réponse (SDP compressé) s'échangent par QR code ou copier-coller. L'hôte simule les monstres et envoie un instantané 20 fois par seconde ; chaque joueur simule son héros, ses tirs (coups envoyés à l'hôte) et son propre butin. Le QR code utilise `qrcode-generator` (jsDelivr), chargé seulement à l'ouverture de l'écran Coopération. Fonctionne sur GitHub Pages (https) ; même réseau conseillé (un serveur STUN public est aussi indiqué).
+`js/net.js` relie jusqu'à 4 appareils en pair à pair (WebRTC, canal de données), sans serveur de jeu. La mise en relation passe par le relais (code à 4 chiffres, le mode par défaut, voir plus bas) ou, sans relais, par les codes d'offre et de réponse (SDP compressé), échangés par QR code ou copier-coller. L'hôte simule les monstres et envoie un instantané 20 fois par seconde ; chaque joueur simule son héros, ses tirs (coups envoyés à l'hôte) et son propre butin. Le QR code utilise `qrcode-generator` (jsDelivr), chargé seulement à l'ouverture de l'écran Coopération. Fonctionne sur GitHub Pages (https) ; même réseau conseillé (un serveur STUN public est aussi indiqué).
 
 Chaque joueur se présente (message `hello`, protocole `NET_V`) avec son héros, son nom et le niveau de prestige de ce héros ; l'hôte renvoie la liste à tous (`roster`) à chaque changement. Le nom vient de `meta.pname` (Réglages › Compte, nettoyé par `cleanName`, 16 signes) ou, par défaut, de l'identifiant `meta.pid` tiré une fois (`Joueur-XXXXX`). Les deux font partie de la sauvegarde.
 

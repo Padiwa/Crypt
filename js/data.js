@@ -224,12 +224,13 @@ const ABY={
 for(const k in SANG)RGEAR['S'+k.slice(1)]={...SANG[k],r:5,sang:k};
 for(const k in ABY)RGEAR['B'+k.slice(1)]={...ABY[k],r:6,aby:k};
 /* v141 : les affixes de capacité et de statut ne sortent plus sur les objets neufs. Sur les objets définis (reliques, armes), chacune devient
-   la première affixe brute de sa liste qui manque à l'objet ; pour une arme, la valeur suit (× AFF_REMAP_K). Les objets déjà possédés gardent les leurs. */
+   la première affixe brute de sa liste qui manque à l'objet ; pour une arme, la valeur suit (× AFF_REMAP_K). Les objets déjà possédés gardent les leurs ;
+   une arme est rebâtie depuis son modèle : elle prend l'affixe nouvelle, sauf si le joueur avait changé l'ancienne (meta.waff, w.remap), qui reste alors seule. */
 const AFF_REMAP={skillRad:['novaPct','ultPct','cdr','crit','critDmg','dmgPct'],dashCd:['speed','lowArmor','hp','armor'],potHeal:['regen','hp','thorns','armor'],auraSlow:['thorns','armor','regen'],burnPct:['dotPct'],chill:['cold'],skillDur:['novaPct','cdr'],fury:['ultPct','cdr'],shock:['critDmg','dmgPct']};
 const AFF_REMAP_K={burnPct:2,chill:2};
 const affRemap=(k,has)=>AFF_REMAP[k]?AFF_REMAP[k].find(x=>!has.includes(x))||AFF_REMAP[k][0]:k;
 for(const id in RGEAR){const T=RGEAR[id],out=[];for(const k of T.aff)out.push(affRemap(k,[...T.aff,...out]));T.aff=out}
-for(const c in WPN)for(const w of WPN[c]){const o={};for(const k in w.aff){const n=affRemap(k,[...Object.keys(w.aff),...Object.keys(o)]);o[n]=n===k?w.aff[k]:Math.round(w.aff[k]*(AFF_REMAP_K[k]||1))}w.aff=o}
+for(const c in WPN)for(const w of WPN[c]){const o={},R={};for(const k in w.aff){const n=affRemap(k,[...Object.keys(w.aff),...Object.keys(o)]);if(n!==k)R[k]=n;o[n]=n===k?w.aff[k]:Math.round(w.aff[k]*(AFF_REMAP_K[k]||1))}w.aff=o;w.remap=R}
 for(const id of craftIds()){const b=bpdef(id);RELICS['F_'+id]={t:b.r-3,fz:1,tgt:id,n:`Relique forgée · ${b.n}`}}
 const baseRoll=(slot,l)=>slot==='dos'?2+Math.floor(l/25):slot==='armure'?Math.round(20+l*7):slot==='bottes'?6+Math.floor(l/4):slot==='anneau'?7+Math.floor(l*.8):3;
 // Affixe propre à certaines classes (cls) : sans effet pour les autres classes, ignorée dans les statistiques et signalée sur la fiche.
@@ -292,7 +293,7 @@ const tormT=()=>{const s=dsel();return s.d===3?Math.max(1,Math.min(10,s.t||1)):0
 const dif=()=>{const i=Math.max(0,Math.min(3,dsel().d)),D=DIFF[i];if(i<3)return Object.assign({hp:1,dm:1,aq:0,anc:0,tier:0},D);
   const t=tormT();return {n:`Tourment ${ROM[t-1]}`,iv:Math.round(BAL.tormIv[0]+(BAL.tormIv[1]-BAL.tormIv[0])*(t-1)/9),cnt:t>=6?BAL.tormCnt[1]:BAL.tormCnt[0],loot:2+.5*(t-1),c:D.c,hp:1+.5*t,dm:1+.22*t,aq:.05*t,anc:0,tier:t}};
 // Charge de l'ultime (v138) : la jauge part à moitié en début de mission, puis 1 point par seconde ; chaque ennemi abattu ajoute ULT_KILL point (au plus ULT_KMAX par seconde,
-// gardés en réserve jusqu'à ULT_POOL) ; un Gardien abattu en donne ULT_BOSS d'un coup. Il faut ULT_N points, moins Fureur (plafond 50 %),
+// gardés en réserve jusqu'à ULT_POOL) ; un Gardien abattu en donne ULT_BOSS d'un coup. Il faut ULT_N points, moins Fureur (plafond 50 %) et 20 % avec le Cri de ralliement (v144),
 // jamais moins de ULT_MIN. Les ennemis tués par l'ultime ne la rechargent pas. Avant la v138 : 60 ennemis abattus, 10 par Gardien.
 const ULT_N=40,ULT_MIN=20,ULT_KILL=.5,ULT_KMAX=1.5,ULT_POOL=6,ULT_BOSS=6;
 // Dégâts des ultimes en multiples de la puissance de compétence (v138) : par onde (Titan), par flèche (Pluie), par météore,
@@ -674,7 +675,7 @@ const fmtN=x=>(Math.round(x*10)/10).toLocaleString('fr-FR');
 const fmtBig=x=>{x=Math.floor(+x||0);return x>=1e6?(Math.floor(x/1e5)/10).toLocaleString('fr-FR')+' M':x>=1e5?Math.floor(x/1e3).toLocaleString('fr-FR')+' k':x.toLocaleString('fr-FR')};
 const rkTxt=n=>`rang ${(n||0)+1}`;
 const itemName=it=>it.name+(it.up?` · R${it.up+1}`:'');
-function weaponItem(c,id){const w=(id&&wdef(id)&&ownedW(id))?wdef(id):wdef(WPN[c][0].id),af={...w.aff,...(meta.waff[w.id]||{})};for(const k in af)if(af[k]==null)delete af[k];
+function weaponItem(c,id){const w=(id&&wdef(id)&&ownedW(id))?wdef(id):wdef(WPN[c][0].id),ov=meta.waff[w.id]||{},af={...w.aff};for(const k in ov){const n=w.remap&&w.remap[k];if(n)delete af[n];af[k]=ov[k]}for(const k in af)if(af[k]==null)delete af[k];
   return {id:'w_'+w.id,wid:w.id,cls:wclsOfD(w.id),slot:'arme',r:w.r,lvl:1,base:{k:'dmg',v:w.dmg},aff:af,name:w.n,type:'Arme',up:meta.wlv[w.id]||0,lock:!!(meta.wlock&&meta.wlock[w.id])}}
 const wclsOfD=id=>Object.keys(WPN).find(c=>WPN[c].some(w=>w.id===id));
 const curEq=()=>{const e={arme:weaponItem(heroCls,meta.wpn[heroCls])};for(const k of GEAR_KEYS())e[k]=meta.gear[k]||null;return e};

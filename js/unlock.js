@@ -20,7 +20,7 @@ const UNL=[
   {k:'craft',n:'Arsenal · Recettes',when:()=>fragTotal()>0||ownedRar(3),need:'Ouvre une relique en mission.',
     learn:'Trois fragments d\'un même objet le fabriquent, au niveau d\'objet de ta plus haute mission réussie : pousse ta mission la plus haute avant de fabriquer.',go:['arsenal','rec'],help:'camp-arsenal'},
   {k:'hmods',n:'Mods du héros',when:()=>maxL()>=8,need:'Réussis une mission de niveau 8.',
-    learn:'Ton héros a ses propres cases de mods (vie, armure, compétence…), en plus de celles de l\'arme, et une case d\'aura qui rapporte de la capacité au lieu d\'en coûter.',go:['mods','h'],help:'camp-mods'},
+    learn:'Ton héros a ses propres cases de mods, qui règlent ses capacités (sort, esquive, potion, ultime), en plus de celles de l\'arme, et une case d\'aura qui rapporte de la capacité au lieu d\'en coûter.',go:['mods','h'],help:'camp-mods'},
   {k:'arms',n:'Tes armes',when:()=>Object.values(WPN).flat().some(w=>!w.start&&ownedW(w.id))||maxL()>=8,need:'Trouve une deuxième arme.',
     learn:'Tes armes sont dans Héros › Équipement › Arme, avec leur rang, leur maîtrise, leurs mods et leur Puissance comparée à celle que tu portes. Une arme trouvée en double se fusionne pour monter de rang.',go:['equip','gear'],help:'camp-equip'},
   {k:'capture',n:'Mission Capture',when:()=>maxL()>=10,need:'Réussis une mission de niveau 10.',

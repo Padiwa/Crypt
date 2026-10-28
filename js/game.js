@@ -24,7 +24,7 @@ function newGame(){
   const C=CLS[heroCls],L=clamp(meta.start|0||1,1,LV_MAX);
   G={eid:0,bid:0,zid:0,hold:false,mates:[],oshots:null,cls:heroCls,level:L,t:0,tl:0,potions:2+lv('alc'),kills:0,gold:0,loot:{items:[],parts:[],relics:[],seals:[],lsh:0},breche:false,twinQ:[],fresh:0,run:{},hl:1,xp:0,pend:0,nxp:0,
     en:[],shots:[],eb:[],zaps:[],zones:[],lobs:[],parts:[],texts:[],drops:[],rings:[],spawns:[],shake:0,spawnT:1.2,bossT:BOSS_T,bossN:0,vw:600,vh:900};
-  G.eq=curEq();G.wid=curWid();G.kit=kitOf(heroCls);S=stats(G.eq);if(sealOn('gourde'))G.potions+=2;
+  G.eq=curEq();G.wid=curWid();G.kit=kitOf(heroCls);S=stats(G.eq);if(sealOn('gourde'))G.potions+=2;G.potions=Math.min(potMax(),G.potions); // v144 : jamais plus que le maximum (Alchimie 3 + Gourde = 7 → 6)
   G.P={x:MAP/2,y:MAP/2,r:17,hp:S.hp,face:-Math.PI/2,fire:0,inv:1,flash:0,dashT:0,dashCd:0,novaCd:0,dx:0,dy:-1,spin:0,spinTick:0,swing:null,
     shield:0,noHit:0,psn:0,psnT:0,psnD:0,brnT:0,brnD:0,swings:0,critShots:0,dashHit:new Set()};
   if(heroCls==='magicien'&&hasTal('m_shield'))G.P.shield=S.hp*.25;
@@ -119,7 +119,7 @@ function chooseType(tt,L){const x=Math.random();
   if(tt>25&&x<.5)return ['archer',ri(1,2)];
   return G.biome===1&&x>.35?['givrin',ri(2,3)]:G.biome===2&&x>.35?['mummy',ri(1,2)]:['ghoul',ri(2,4)];}
 const ELITE={rapide:{n:'Rapide',c:'#8fd3e0'},bouclier:{n:'Bouclier',c:'#c8d6e6'},vampire:{n:'Vampire',c:'#ff5a6a'},explosif:{n:'Explosif',c:'#ff8a3a'}};
-function makeElite(e){const k=pick(Object.keys(ELITE));e.elite=k;e.hp*=4;e.max*=4;e.r*=1.25;e.dmg*=1.3;if(k==='rapide')e.spd*=1.55;e.corr=false;
+function makeElite(e){const k=pick(Object.keys(ELITE));e.elite=k;e.hp*=4;e.max*=4;e.r*=1.25;e.dmg*=1.3;if(k==='rapide')e.spd*=1.55;if(e.corr){e.hp/=1.3;e.max/=1.3}e.corr=false;
   SND.play('elite');banner(`Élite ${ELITE[k].n} en approche`,ELITE[k].c,1)}
 function spawnPack(type,n){const p=ringPos();let k=0,first=null;for(let i=0;i<n;i++){const q={x:clamp(p.x+rand(-40,40),EDGE+30,MAP-EDGE-30),y:clamp(p.y+rand(-40,40),EDGE+30,MAP-EDGE-30)};if(!blocked(q.x,q.y,14)){spawnEnemy({type,...q});if(!first)first=G.en[G.en.length-1];k++}}
   const pE=Math.min(.15,.025+.012*dsel().d+.01*dif().tier);if(first&&type!=='bat'&&type!=='scarab'&&type!=='mummy'&&Math.random()<pE)makeElite(first);return k}
@@ -249,7 +249,7 @@ function kill(e){
   if(e.twin&&!NET.guest)twinDied(e);
   const boss=e.type==='boss'&&!e.noLoot,L=G.level,DL=dif().loot,dl=1+DL*.5,lm=lootMul(L)*(1+(S.lootPct||0)/100)*(1+DL*.15)*biome().loot*(teamHas('fort')?1.1:1)*(1+petLootPct()/100),st=1+stayBonus();
   // v138 : un ennemi tué par l'ultime ne la recharge pas ; les autres remplissent une réserve versée peu à peu (ultCharge)
-  if(!(G.inUlt>0)){const cm=teamHas('cri')?1.2:1;if(boss)G.ult=Math.min(ultNeed(),(G.ult||0)+ULT_BOSS*cm);else G.ultQ=Math.min(ULT_POOL,(G.ultQ||0)+ULT_KILL*cm)}
+  if(!(G.inUlt>0)){if(boss)G.ult=Math.min(ultNeed(),(G.ult||0)+ULT_BOSS);else G.ultQ=Math.min(ULT_POOL,(G.ultQ||0)+ULT_KILL)}
   burst(e.x,e.y,boss?60:10,e.col,boss?320:150,4);burst(e.x,e.y,boss?20:4,'#e8853b',120);
   const push=(o,s=20)=>{const d=Object.assign({x:e.x+rand(-s,s),y:e.y+rand(-s,s),t:rand(0,6),age:0,mt:0},o);G.drops.push(d);if(o.kind==='item'){const w=wishMatch(o.item);if(w){d.wish=1;lootFlash(w,o.item)}}else if(o.kind==='part'&&o.part.full&&meta.wish&&meta.wish.leg&&!ownedW(o.part.w)){d.wish=1;lootFlash({leg:1},null)}};
   sealLoot(e,push);
@@ -324,7 +324,7 @@ function chillE(e){const was=e.slow>0;slowE(e,2*stDurM());if(S.cryo&&was&&!(e.cr
 function onHit(e,d,crit,o){const f=o&&o.f,ul=G.inUlt>0,m=((o&&o.m)||1)*(ul&&S.flea>0?S.flea:1)*(!ul&&G.inSp>0&&S.impr>0?S.impr:1),ch=(c,cap=60)=>c>0&&(f||Math.random()*100<Math.min(Math.max(c,cap),c*m));
   if(S.shock&&Math.random()*100<Math.min(Math.max(S.shock,ST_CAP.shock),S.shock*m))chain(e,d*.6);
   if(e.dead||e.downed)return;
-  if(S.curse&&Math.random()*100<S.curse*m)e.curse=Math.max(e.curse||0,slowT(5));if(S.frz&&e.type!=='boss'&&Math.random()*100<S.frz*m){e.frz=1;slowE(e,1.5)}
+  if(S.curse&&Math.random()*100<Math.min(Math.max(S.curse,60),S.curse*m))e.curse=Math.max(e.curse||0,slowT(5));if(S.frz&&e.type!=='boss'&&Math.random()*100<Math.min(Math.max(S.frz,40),S.frz*m)){e.frz=1;slowE(e,1.5)}
   const ap=[];
   if(S.burn>0){burnE(e,S.burn);ap.push(0)}
   if(ch(S.chill)){chillE(e);ap.push(1)}
@@ -384,7 +384,8 @@ function chain(src,d){
 function explode(s,primary,frost){
   const R=(frost?85*(1+S.skillRad/100):55)*(1+S.splash/100);
   G.rings.push({x:s.x,y:s.y,t:.22,max:R,col:'140,190,255'});burst(s.x,s.y,8,'#9fc8ff',140,3);
-  for(const e of G.en){if(e===primary||e.dead)continue;if(Math.abs(e.x-s.x)<R+e.r&&Math.hypot(e.x-s.x,e.y-s.y)<R+e.r){if(frost)slowE(e,2.5);const dd=s.d*(frost?1:.6);dmgEnemy(e,dd,false);const xm=Math.max(S.defl||0,EXPL_ST);if(xm>0)onHit(e,dd,false,{m:xm/100});else burnE(e,S.burn)}}
+  const sp=G.inSp>0&&!(G.inUlt>0);
+  for(const e of G.en){if(e===primary||e.dead)continue;if(Math.abs(e.x-s.x)<R+e.r&&Math.hypot(e.x-s.x,e.y-s.y)<R+e.r){const ist=sp&&S.intSt>0&&stN(e)>0;if(frost)slowE(e,2.5);let dd=s.d*(frost?1:.6);if(ist)dd*=1+S.intSt/100;dmgEnemy(e,dd,false);const xm=Math.max(S.defl||0,EXPL_ST);if(xm>0)onHit(e,dd,false,{m:xm/100});else burnE(e,S.burn);if(sp&&S.comm>0&&!e.dead&&!e.downed)stunE(e,S.comm)}}
 }
 function fireE(e,a,sp,d,r=7){G.eb.push({id:++G.bid,x:e.x+Math.cos(a)*e.r,y:e.y+Math.sin(a)*e.r,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,d,r,life:4,src:e})}
 function ring(e,n,sp){e.rot+=.27;for(let i=0;i<n;i++)fireE(e,e.rot+i/n*Math.PI*2,sp,e.dmg*.55,8)}
@@ -505,7 +506,8 @@ function doNova0(){
     for(let st=12;st<=240;st+=12){const nx=x0+ux*st,ny=y0+uy*st;if(blocked(nx,ny,P.r*.6))break;tx=nx;ty=ny}
     explode({x:x0,y:y0,d:S.nova*.6},null,true);P.x=tx;P.y=ty;resolve(P);G.cam.x=P.x;G.cam.y=P.y;P.inv=Math.max(P.inv,.3);explode({x:P.x,y:P.y,d:S.nova*.6},null,true);burst(P.x,P.y,16,'#bfe4ff',180,3);SND.play('dash');return}
 }
-const ultNeed=()=>Math.max(ULT_MIN,Math.round(ULT_N*(1-((S&&S.fury)||0)/100)));
+// Cri de ralliement (sceau d'équipe, v144) : l'ultime se recharge 20 % plus vite, comme Fureur (avant : +20 % sur les ennemis abattus seulement).
+const ultNeed=()=>Math.max(ULT_MIN,Math.round(ULT_N*(1-(((S&&S.fury)||0)+(typeof teamHas==='function'&&teamHas('cri')?20:0))/100)));
 // Charge de l'ultime (v138) : 1 point par seconde, plus la réserve des ennemis abattus (au plus ULT_KMAX par seconde).
 function ultCharge(dt){const P=G.P,need=ultNeed();if(G.ultHalf){G.ultHalf=0;G.ult=Math.max(G.ult||0,need/2)}if(P.down||G.over||(G.ult||0)>=need)return;const k=Math.min(G.ultQ||0,ULT_KMAX*dt);G.ultQ=(G.ultQ||0)-k;G.ult=Math.min(need,(G.ult||0)+dt+k)}
 // Tout ce que fait l'ultime (lancer, effets qui durent, carreaux de la Tempête) compte comme dégâts de l'ultime : G.inUlt.
@@ -764,7 +766,7 @@ function update(dt){
       else if(d.kind==='relic'){SND.play('pick3');G.loot.relics.push(d.id);G.fresh++}
       else if(d.kind==='react'){if(G.relic){G.react++;if(G.react>=reactNeed()){const r=G.relic;G.opened.push(r);relShare(r);G.relI++;G.react=0;G.relic=G.relQ[G.relI]||null;G.shake=6;
           SND.play('relic');}}}
-      else if(d.kind==='potion'){SND.play('pick');if(G.potions<potMax()){G.potions++}else d.gone=false}
+      else if(d.kind==='potion'){if(G.potions<potMax()){SND.play('pick');G.potions++}} // au maximum : la potion disparaît sans compter (v144 ; avant, elle restait au sol, collée au héros)
       else if(d.kind==='item'){SND.play(d.item.r>=3?'pick3':d.item.r>=2?'pick2':'pick');G.loot.items.push(d.item);G.fresh++;if(d.item.r===3)G.shake=6}
       else if(d.kind==='part'){SND.play('pick3');G.loot.parts.push(d.part);G.fresh++}
     }

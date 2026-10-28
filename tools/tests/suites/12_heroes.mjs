@@ -102,6 +102,7 @@ export const tests = [
       under: !!(st.compareDocumentPosition(sec) & Node.DOCUMENT_POSITION_FOLLOWING), minis: sec.querySelectorAll('.scard')[0].querySelectorAll('.smini').length, on: sec.querySelector('.scard.is-on').textContent }; });
     t.eq(h.cards, ['Boss', 'Hordes'], 'les deux équipements sous le héros');
     t.ok(h.under && h.minis >= 3 && /Hordes/.test(h.on), `aperçu de l'arme et des objets, « Hordes » porté (${h.minis} objets)`);
+    t.ok(await p.evaluate(() => !!document.querySelector('.hsets .scard--add')), 'carte « + » aussi avec deux équipements (v144 : tant qu\'il y en a moins de 6)');
     // toucher « Boss » sur l'onglet Héros le porte
     await p.click('.hsets [data-cact="setwear"][data-arg="0"]');
     t.eq(await p.evaluate(() => [meta.gear.armure && meta.gear.armure.rid, setsOf()[0].act, !setsOf()[1].act]), ['L1', 1, true], 'Boss porté, en cours');

@@ -188,7 +188,7 @@ const setAddCard=()=>`<button class="scard scard--add" data-cact="setsave" data-
 // Onglet Héros : aperçu sous le héros, toucher pour porter
 function setsHero(){if(!isUnl('sets'))return '';const L=setsOf(),eq=curEq();
   return `<section class="cx-section hsets" aria-label="Équipements enregistrés"><h3 class="cx-section__label">Équipements enregistrés</h3>
-    <div class="scards">${L.map((s,i)=>setCard(s,i,eq)).join('')}${L.length<SET_MAX&&(L.length===0||L.length%2===1)?setAddCard():''}</div>
+    <div class="scards">${L.map((s,i)=>setCard(s,i,eq)).join('')}${L.length<SET_MAX?setAddCard():''}</div>
     ${L.length?'<div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm cx-btn--ghost" data-cact="hsub" data-arg="gear">Modifier dans Équipement</button></div>':''}</section>`}
 // Héros › Équipement, en haut : les équipements, Mettre à jour l'équipement en cours, en enregistrer un nouveau ; renommer, remplacer, supprimer repliés
 function setsHtml(){if(!isUnl('sets'))return '';const L=setsOf(),eq=curEq(),ai=L.findIndex(s=>s.act),a=L[ai],mod=a&&!setOn(a,eq);
@@ -306,7 +306,7 @@ function campDockHtml(){
 
 /* ---------- Parcours affixe : départ depuis la fiche, puce de retour ---------- */
 let campBack=null; // {tab, sel, scroll, f, q, label}
-function backChip(){return campBack?`<button class="cx-back" data-cact="goback">Retour à ${campBack.label}</button>`:''}
+function backChip(){return campBack?`<button class="cx-back" data-cact="goback">Retour ${({'Héros':'au Héros','Coffre':'au Coffre','Arsenal':'à l\'Arsenal'})[campBack.label]||'à '+campBack.label}</button>`:''}
 function xfSteps(){if(!campBack)return '';const rev=campBack.mode==='recv',s=!!xf.src,k=!!xf.k,d=!!xf.dst;
   const L=rev?[['Cible',d],['Affixe',k],['Source',s]]:[['Source',s],['Affixe',k],['Cible',d]];let now=L.findIndex(x=>!x[1]);
   return `<ol class="cx-steps">${L.map(([l,ok],i)=>`<li class="${ok?'is-done':i===now?'is-now':''}"><span>${i+1} ${l}${ok?' ✓':''}</span></li>`).join('')}</ol>`}

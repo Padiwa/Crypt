@@ -9,7 +9,7 @@ export const tests = [
     t.ok(await p.evaluate(() => getComputedStyle($('tabbar')).display !== 'none' && document.querySelectorAll('#tabbar [data-nav]').length === 5), 'barre des 5 onglets');
     t.eq(await p.evaluate(() => document.querySelector('#tabbar [aria-current="page"]').dataset.nav), 'combat', 'onglet Combat actif');
   } },
-  { name: 'rendu WebGL : une mission tourne', fn: async (b, t) => {
+  { name: 'une mission tourne (#test ; PixiJS coupé, donc rendu Canvas : le WebGL est testé dans 19_render)', fn: async (b, t) => {
     const p = t.track(await newPage(b, { hash: '#test' }));
     await startMission(p); await sleep(p, 800);
     t.ok(await p.evaluate(() => G.t > 0 && !G.over), 'la partie avance');
