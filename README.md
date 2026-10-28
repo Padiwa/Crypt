@@ -62,7 +62,7 @@ Le rythme chargé est celui de la balise `<script src="js/rythmes/….js">` d'`i
 Une suite unique vérifie le jeu dans un vrai navigateur (Chromium sans affichage) : démarrage, butin, reliques, fabrication et fusion, coffre, affixes, emplacements, missions, contrôles, sauvegarde, parcours, coopération.
 ```
 npm i playwright && npx playwright install chromium
-node tools/tests/run.mjs            # tout (130 tests, ≈ 4 min 30)
+node tools/tests/run.mjs            # tout (131 tests, ≈ 4 min 30)
 node tools/tests/run.mjs --quick    # sans la coopération
 node tools/tests/run.mjs fusion     # seulement les suites dont le fichier contient « fusion »
 ```

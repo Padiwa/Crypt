@@ -29,8 +29,8 @@ const PW={kills:5,low:.1,exec:.25,boss:.15,hunt:.2,shock:1.8,pierce:.5,reachT:1.
   sk:{volee:{c:24*.35*.4,rng:.5},chasseur:{c:3*1.6*1.5,cr:1,rng:.3},recul:{c:9*.5*.5,cr:1,rng:.3},tourbillon:{c:.22*8*3,cr:1,area:1,reach:1,dur:1},
     bond:{c:1.4*3.5,cr:1,area:1,reach:1},cri:{buff:.2},nova:{c:4,cr:1,area:1},eclair:{c:1.2*5.217,cr:1,rng:.2},transfert:{c:2*.6*2,area:1,splash:1}},
   // ultimes : c (dégâts d'un lancer), ou renfort de t secondes (berserk : × 1,6 ; faucon : cadence × 2 et tout critique ; surcharge : sort toutes les 0,5 s et cadence × 2)
-  ul:{titan:{c:3*8,area:1},rempart:{c:0},berserk:{t:8,x:1.6},pluie:{c:100*.7,cr:1},faucon:{t:6,hawk:1},tempete:{c:152*.3*.4,cr:1,rng:.5},
-    meteores:{c:3*3*5,cr:1,area:1},blizzard:{c:17*.5*6,cr:1,area:1},surcharge:{t:6,sur:1}}};
+  ul:{titan:{c:ULT_C.titan*8,area:1},rempart:{c:0},berserk:{t:8,x:1.6},pluie:{c:100*ULT_C.pluie,cr:1},faucon:{t:6,hawk:1},tempete:{c:152*ULT_C.tempete*.4,cr:1,rng:.5},
+    meteores:{c:3*ULT_C.meteores*5,cr:1,area:1},blizzard:{c:17*ULT_C.blizzard*6,cr:1,area:1},surcharge:{t:6,sur:1}}};
 function powerOf(x,cls=heroCls,kit=kitOf(cls)){
   const cr=Math.min(75,x.crit)/100,cm=1+cr*(x.critDmg/100-1),hits=Math.max(1,x.aps*(1+x.multi*.8));
   // part du temps où une cible porte un effet de durée t, posé à chaque coup avec la chance c
@@ -47,10 +47,10 @@ function powerOf(x,cls=heroCls,kit=kitOf(cls)){
   let skill=0,buff=1,cast=0;
   if(K.buff)buff=1+K.buff*Math.min(1,6*(1+x.skillDur/100)/cd);
   else{cast=x.nova*K.c*(K.dur?1+x.skillDur/100:1)*(K.area?sr:1)*(K.reach?1+x.reach/100:1)*(K.splash?1+x.splash/100:1)*(K.rng?1+K.rng*x.skillRad/100:1)*(K.cr?cm:1)*hitM;skill=cast/cd}
-  // ultime : chargé en ennemis abattus (PW.kills par seconde)
-  const U=SPELLS[cls].u[kit.u]||SPELLS[cls].u[0],Q=PW.ul[U.k],um=1+(x.ultPct||0)/100,T=Math.max(10,Math.round(ULT_N*(1-Math.min(60,x.fury||0)/100)))/PW.kills/(x.seals&&x.seals.cri?1.2:1);
+  // ultime (v138) : 1 point de charge par seconde, plus les ennemis abattus (PW.kills par seconde, ULT_KILL chacun, au plus ULT_KMAX par seconde)
+  const U=SPELLS[cls].u[kit.u]||SPELLS[cls].u[0],Q=PW.ul[U.k],um=1+(x.ultPct||0)/100,uNeed=Math.max(ULT_MIN,Math.round(ULT_N*(1-Math.min(50,x.fury||0)/100))),T=uNeed/(1+Math.min(ULT_KMAX,ULT_KILL*PW.kills*(x.seals&&x.seals.cri?1.2:1)));
   let ult=0;
-  if(Q.c)ult=x.nova*Q.c*(Q.area?sr:1)*(Q.rng?1+Q.rng*x.skillRad/100:1)*(Q.cr?cm:1)*um*hitM/T;
+  if(Q.c)ult=x.nova*Q.c*(Q.area?sr:1)*(Q.rng?1+Q.rng*x.skillRad/100:1)*(Q.cr?cm:1)*um*hitM*(1+PW.boss*(ULT_GX-1))/T;
   else if(Q.hawk)ult=atk*Q.t*(2*(x.critDmg/100)/cm*um-1)/T;
   else if(Q.x)ult=atk*Q.t*(Q.x*um-1)/T;
   else if(Q.sur)ult=(atk*(2*um-1)+(cast?cast*um/.5-skill:0))*Q.t/T;

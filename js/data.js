@@ -281,7 +281,16 @@ const dsel=()=>{const n=typeof G!=='undefined'&&G&&G.nd&&typeof started!=='undef
 const tormT=()=>{const s=dsel();return s.d===3?Math.max(1,Math.min(10,s.t||1)):0};
 const dif=()=>{const i=Math.max(0,Math.min(3,dsel().d)),D=DIFF[i];if(i<3)return Object.assign({hp:1,dm:1,aq:0,anc:0,tier:0},D);
   const t=tormT();return {n:`Tourment ${ROM[t-1]}`,iv:Math.round(BAL.tormIv[0]+(BAL.tormIv[1]-BAL.tormIv[0])*(t-1)/9),cnt:t>=6?BAL.tormCnt[1]:BAL.tormCnt[0],loot:2+.5*(t-1),c:D.c,hp:1+.5*t,dm:1+.22*t,aq:.05*t,anc:0,tier:t}};
-const ULT_N=60;
+// Charge de l'ultime (v138) : la jauge part à moitié en début de mission, puis 1 point par seconde ; chaque ennemi abattu ajoute ULT_KILL point (au plus ULT_KMAX par seconde,
+// gardés en réserve jusqu'à ULT_POOL) ; un Gardien abattu en donne ULT_BOSS d'un coup. Il faut ULT_N points, moins Fureur (plafond 50 %),
+// jamais moins de ULT_MIN. Les ennemis tués par l'ultime ne la rechargent pas. Avant la v138 : 60 ennemis abattus, 10 par Gardien.
+const ULT_N=40,ULT_MIN=20,ULT_KILL=.5,ULT_KMAX=1.5,ULT_POOL=6,ULT_BOSS=6;
+// Dégâts des ultimes en multiples de la puissance de compétence (v138) : par onde (Titan), par flèche (Pluie), par météore,
+// par vague de froid (Blizzard, toutes les 0,3 s), par carreau (Tempête). Avant la v138 : 3 ; 0,7 ; 3 ; 0,5 ; 0,3.
+const ULT_C={titan:3.5,pluie:.8,meteores:1.1,blizzard:.12,tempete:.35};
+// Les dégâts de l'ultime comptent triple contre les Gardiens (v138) : un lancer leur retire une vraie part de vie.
+const ULT_GX=3;
+const upc=k=>Math.round(ULT_C[k]*100)+' %';
 const lv=k=>meta.up[k]||0, hasTal=k=>!!meta.tal[k];
 const ownedW=id=>{const w=wdef(id);return !!w&&(!!w.start||!!meta.built[id])};
 const UPG=[
@@ -331,7 +340,7 @@ const RUP=[
   {k:'reach',n:'Grande allonge',d:'+15 % de portée de frappe',max:3,c:C_ATK,cls:['guerrier']},
   {k:'splash',n:'Onde arcanique',d:'+25 % de rayon d\'explosion',max:5,c:C_ATK,cls:['magicien']},
   {k:'nova',n:'Puissance',d:'+25 % de dégâts de compétence',max:3,c:C_ATK},
-  {k:'fury',n:'Fureur',d:'−15 % d\'ennemis à abattre pour charger l\'ultime',max:3,c:C_UTI},
+  {k:'fury',n:'Fureur',d:'L\'ultime se recharge 15 % plus vite',max:3,c:C_UTI},
   {k:'ultp',n:'Apothéose',d:'+30 % de dégâts de l\'ultime',max:3,c:C_ATK},
   {k:'hp',n:'Robustesse',d:'+15 % de vie maximale, soigne 15 %',max:5,c:C_DEF},
   {k:'regen',n:'Régénération',d:'+1,5 % de ta vie max par seconde',max:3,c:C_DEF},
@@ -366,20 +375,20 @@ const SPELLS={
   archer:{s:[{k:'volee',n:'Volée',cd:7,d:'24 carreaux perforants dans toutes les directions (35 % des dégâts de compétence chacun).'},
       {k:'chasseur',n:'Tir du chasseur',cd:6,icon:'<path d="M3 7h13M3 12h16M3 17h13"/><path d="M13 4l3 3-3 3M16 9l3 3-3 3M13 14l3 3-3 3"/>',d:'3 carreaux lourds vers l\'ennemi le plus proche, qui transpercent tout (160 % des dégâts de compétence chacun, critiques possibles).'},
       {k:'recul',n:'Bond arrière',cd:6,icon:'<path d="M13 5 6 12l7 7"/><path d="M6 12h14"/><path d="M3 5v14"/>',d:'Saut de 220 px en arrière, intouchable pendant le saut, puis 9 carreaux en éventail vers l\'avant (50 % des dégâts de compétence chacun).'}],
-    u:[{k:'pluie',n:'Pluie d\'acier',d:'3 s de flèches sur les ennemis proches (70 % des dégâts de compétence par flèche, critiques possibles).'},
+    u:[{k:'pluie',n:'Pluie d\'acier',d:`3 s de flèches sur les ennemis proches, dont une sur quatre sur un Gardien proche (${upc('pluie')} des dégâts de compétence par flèche, critiques possibles).`},
       {k:'faucon',n:'Œil du faucon',icon:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',d:'6 s : cadence doublée et tous tes tirs critiques.'},
-      {k:'tempete',n:'Tempête de carreaux',icon:'<path d="M12 12a2 2 0 1 1 2 2 4 4 0 1 1-4-4 6 6 0 1 1 6 6 8 8 0 1 1-8-8"/>',d:'3 s de carreaux perforants en spirale tout autour (30 % des dégâts de compétence chacun, critiques possibles).'}]},
+      {k:'tempete',n:'Tempête de carreaux',icon:'<path d="M12 12a2 2 0 1 1 2 2 4 4 0 1 1-4-4 6 6 0 1 1 6 6 8 8 0 1 1-8-8"/>',d:`3 s de carreaux perforants en spirale tout autour (${upc('tempete')} des dégâts de compétence chacun, critiques possibles).`}]},
   guerrier:{s:[{k:'tourbillon',n:'Tourbillon',cd:9,d:'Tournoie 1,6 s en frappant tout autour (22 % des dégâts de compétence toutes les 0,2 s) ; dégâts subis réduits de moitié.'},
       {k:'bond',n:'Bond écrasant',cd:8,icon:'<path d="M4 19C6 10 12 5 19 5"/><path d="M15 3l4 2-2 4"/><path d="M2 21h10"/>',d:'Bondit vers le groupe d\'ennemis le plus proche (300 px au plus) ; l\'atterrissage blesse tout autour (140 % des dégâts de compétence), ralentit et repousse.'},
       {k:'cri',n:'Cri de guerre',cd:12,icon:'<path d="M4 9v6h4l6 4V5L8 9z"/><path d="M17 8a5 5 0 0 1 0 8M20 5a9 9 0 0 1 0 14"/>',d:'6 s : dégâts +30 % et dégâts subis −30 % ; repousse et ralentit les ennemis proches.'}],
-    u:[{k:'titan',n:'Colère du Titan',d:'Onde de choc géante (300 % des dégâts de compétence) et 3 s d\'invulnérabilité.'},
+    u:[{k:'titan',n:'Colère du Titan',d:`Onde de choc géante (${upc('titan')} des dégâts de compétence) et 3 s d'invulnérabilité.`},
       {k:'rempart',n:'Rempart',icon:'<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="M12 8v8M8 12h8"/>',d:'6 s : bouclier de 60 % de ta vie, et la moitié de chaque coup reçu renvoyée à l\'ennemi le plus proche.'},
       {k:'berserk',n:'Fureur du berserker',icon:'<path d="M12 2c2 4 6 5 6 10a6 6 0 0 1-12 0c0-3 2-4 3-6 1 2 2 3 3 3 0-3-1-5 0-7z"/>',d:'8 s : vitesse d\'attaque +60 %, portée de frappe +40 %, vol de vie +6 %, insensible aux ralentissements.'}]},
   magicien:{s:[{k:'nova',n:'Nova de givre',cd:7,d:'Onde glacée autour de toi (100 % des dégâts de compétence) : ralentit, repousse et dissipe les projectiles ennemis.'},
       {k:'eclair',n:'Éclair en chaîne',cd:6,icon:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',d:'Foudroie l\'ennemi le plus proche puis 6 autres à la suite (120 % des dégâts de compétence, 10 % de moins à chaque saut, critiques possibles).'},
       {k:'transfert',n:'Transfert',cd:7,icon:'<circle cx="5" cy="12" r="2"/><circle cx="18" cy="12" r="3.5"/><path d="M8.5 12h1.5M12 12h1.5"/>',d:'Téléportation de 240 px dans ta direction ; explosion glacée au départ et à l\'arrivée (60 % des dégâts de compétence, ralentit).'}],
-    u:[{k:'meteores',n:'Pluie de météores',d:'3 météores sur les ennemis proches (300 % des dégâts de compétence chacun, critiques possibles).'},
-      {k:'blizzard',n:'Blizzard',icon:'<path d="M7 15a4 4 0 1 1 1-7.9A5 5 0 0 1 18 8a3.5 3.5 0 0 1 0 7z"/><path d="M8 19v.01M12 19v.01M16 19v.01M10 22v.01M14 22v.01"/>',d:'5 s de froid autour de toi : toutes les 0,3 s, 50 % des dégâts de compétence et ralentissement (critiques possibles).'},
+    u:[{k:'meteores',n:'Pluie de météores',d:`3 météores sur les ennemis proches, en priorité les Gardiens (${upc('meteores')} des dégâts de compétence chacun, critiques possibles).`},
+      {k:'blizzard',n:'Blizzard',icon:'<path d="M7 15a4 4 0 1 1 1-7.9A5 5 0 0 1 18 8a3.5 3.5 0 0 1 0 7z"/><path d="M8 19v.01M12 19v.01M16 19v.01M10 22v.01M14 22v.01"/>',d:`5 s de froid autour de toi : toutes les 0,3 s, ${upc('blizzard')} des dégâts de compétence et ralentissement (critiques possibles).`},
       {k:'surcharge',n:'Surcharge arcanique',icon:'<path d="M12 2v6M12 16v6M2 12h6M16 12h6M5 5l4 4M15 15l4 4M19 5l-4 4M9 15l-4 4"/>',d:'6 s : sort rechargé en 0,5 s, cadence doublée, explosions +50 %.'}]},
 };
 // Icônes d'origine (celles de la classe) pour le 1er sort et le 1er ultime.
@@ -512,7 +521,7 @@ const AFF={
   bossDmg:{t:v=>`+${v} % de dégâts contre les Gardiens`,r:l=>ri(8,16)+Math.floor(l*.15)},
   lowDmg:{t:v=>`+${v} % de dégâts quand ta vie est sous 50 %`,r:l=>ri(10,22)+Math.floor(l*.15)},
   ultPct:{t:v=>`+${v} % de dégâts de l'ultime`,r:l=>ri(10,22)},
-  fury:{t:v=>`−${v} % d'ennemis à abattre pour charger l'ultime`,r:l=>ri(4,9)},
+  fury:{t:v=>`L'ultime se recharge ${v} % plus vite`,r:l=>ri(4,9)},
   lowArmor:{t:v=>`−${v} % de dégâts subis quand ta vie est sous 30 %`,r:l=>ri(8,15)},
   potHeal:{t:v=>`+${v} % de soin des potions`,r:l=>ri(10,25)},
   antidote:{t:v=>`−${v} % de durée du poison, de la brûlure et de la gelure`,r:l=>ri(8,16)},
@@ -599,7 +608,7 @@ function stats(eq){
   if(bf.surT>0){apsX*=2;s.splash+=50;dmgX*=ub}
   const dmg=s.dmg*(1+s.dmgPct/100)*dmgX;
   return {shotSpd:cb&&heroCls==='archer'?1.5:1,dmg,aps:s.aps*(1+s.apsPct/100)*apsX,hp:s.hp,crit:Math.min(s.crit,75),critDmg:s.critDmg,multi:s.multi,pierce:s.pierce,burn:s.burn+dmg*s.burnPct/100,chill:s.chill,shock:s.shock,
-    armor:Math.min(s.armor,60),speed:220*(1+s.speed/100),regen:s.regen,cdr:Math.min(s.cdr,50),nova:dmg*4*(1+s.novaPct/100),leech:s.leech,reach:s.reach,splash:Math.min(s.splash,300),magnet:s.magnet,skillRad:Math.min(s.skillRad,300),skillDur:s.skillDur,dashCd:Math.min(s.dashCd,60),potHeal:s.potHeal,lowArmor:Math.min(s.lowArmor,60),lowDmg:s.lowDmg,auraSlow:Math.min(s.auraSlow,50),goldPct:s.goldPct,antidote:s.antidote,execute:s.execute||0,fury:Math.min(s.fury||0,60),ultPct:s.ultPct||0,bossDmg:s.bossDmg||0,xpPct:s.xpPct||0,lootPct:s.lootPct||0,echo:s.echo||0,waves:s.waves||0,frz:Math.min(s.frz,40),cold:s.cold,shard:Math.min(s.shard,60),curse:Math.min(s.curse,60),hex:s.hex,doom:Math.min(s.doom,60),abSoul:Math.min(s.abSoul,6),abWard:s.abWard,abPulse:s.abPulse,abExec:Math.min(s.abExec,20),abRift:Math.min(s.abRift,60),abHunt:s.abHunt,seals:s.seals};
+    armor:Math.min(s.armor,60),speed:220*(1+s.speed/100),regen:s.regen,cdr:Math.min(s.cdr,50),nova:dmg*4*(1+s.novaPct/100),leech:s.leech,reach:s.reach,splash:Math.min(s.splash,300),magnet:s.magnet,skillRad:Math.min(s.skillRad,300),skillDur:s.skillDur,dashCd:Math.min(s.dashCd,60),potHeal:s.potHeal,lowArmor:Math.min(s.lowArmor,60),lowDmg:s.lowDmg,auraSlow:Math.min(s.auraSlow,50),goldPct:s.goldPct,antidote:s.antidote,execute:s.execute||0,fury:Math.min(s.fury||0,50),ultPct:s.ultPct||0,bossDmg:s.bossDmg||0,xpPct:s.xpPct||0,lootPct:s.lootPct||0,echo:s.echo||0,waves:s.waves||0,frz:Math.min(s.frz,40),cold:s.cold,shard:Math.min(s.shard,60),curse:Math.min(s.curse,60),hex:s.hex,doom:Math.min(s.doom,60),abSoul:Math.min(s.abSoul,6),abWard:s.abWard,abPulse:s.abPulse,abExec:Math.min(s.abExec,20),abRift:Math.min(s.abRift,60),abHunt:s.abHunt,seals:s.seals};
 }
 const dps=S=>S.dmg*S.aps*(1+S.crit/100*(S.critDmg/100-1))*(1+S.multi*.8)*(1+S.echo/100)*(1+S.waves*.5)*(heroCls==='archer'?1:1.2)+S.burn;
 /* ---------- Migration v91 : rangs, reliques par rareté, fin des objets Prime ---------- */

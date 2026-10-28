@@ -303,7 +303,7 @@ function hud(){
    setCls('bDash','ready',rd);setCls('bNova','ready',rn);setCls('bPot','ready',rp);skTxt('bDash',sec(P.dashCd));skTxt('bNova',sec(P.novaCd));skFire('bDash',rd);skFire('bNova',rn);{const pb=el('bPot');if(pb!==NOEL){if(pb._n!=null&&G.potions<pb._n)pressFx(pb);pb._n=G.potions}}}
   {let bh=0,bm=0,bn=0;for(const e of G.en)if(e.type==='boss'&&!e.dead){bh+=Math.max(0,e.hp);bm+=e.max;bn++}
    if(bn){setSt('bossFill','transform',`scaleX(${r3(bh/bm)})`);setTx('bossName',bn>1?`${bn} Gardiens des Cendres`:'Le Gardien des Cendres')}}
-  {const un=ultNeed(),ur=Math.min(1,(G.ult||0)/un);setSt('bUlt','--cd',r3(1-ur));setCls('bUlt','ready',live&&ur>=1);skFire('bUlt',live&&ur>=1);setTx('ultN',ur>=1?'':String(un-(G.ult|0)))}
+  {const un=ultNeed(),ur=Math.min(1,(G.ult||0)/un);setSt('bUlt','--cd',r3(1-ur));setCls('bUlt','ready',live&&ur>=1);skFire('bUlt',live&&ur>=1);setTx('ultN',ur>=1?'':String(Math.ceil(un-(G.ult||0))))}
   setHid('badge',!G.fresh);setTx('badge',String(G.fresh));
 }
 

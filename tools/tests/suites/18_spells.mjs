@@ -65,14 +65,14 @@ export const tests = [
       S.crit = 100; S.critDmg = 250; __hits = []; P.novaCd = 0; doNova(); __run(30); out.chCrit = __hits[0] && [__hits[0][0] / S.nova, __hits[0][1]];
       // Recharge : × (1 − réduction de recharge)
       S.cdr = 40; P.novaCd = 0; doNova(); out.cd = P.novaMax;
-      // Tempête de carreaux : 30 % × (1 + dégâts de l'ultime)
-      S.crit = 0; S.ultPct = 50; G.shots = []; __hits = []; G.ult = 1e9; doUlt(); __run(40); out.storm = __hits[0] && __hits[0][0] / S.nova;
+      // Tempête de carreaux : ULT_C.tempete (35 % en v138) × (1 + dégâts de l'ultime)
+      S.crit = 0; S.ultPct = 50; G.shots = []; __hits = []; G.ult = 1e9; doUlt(); __run(40); out.storm = __hits[0] && __hits[0][0] / S.nova; out.stormK = ULT_C.tempete;
       return out;
     });
     t.ok(Math.abs(r.ch - 1.6) < 1e-6, `Tir du chasseur : 160 % (${r.ch})`);
     t.ok(r.chCrit && r.chCrit[1] && Math.abs(r.chCrit[0] - 4) < 1e-6, `critique : 160 % × 250 % (${r.chCrit})`);
     t.ok(Math.abs(r.cd - 6 * .6) < 1e-6, `recharge 6 s × 0,6 (${r.cd})`);
-    t.ok(Math.abs(r.storm - .45) < 1e-6, `Tempête : 30 % × 1,5 (${r.storm})`);
+    t.ok(Math.abs(r.storm - r.stormK * 1.5) < 1e-6, `Tempête : ${r.stormK * 100} % × 1,5 (${r.storm})`);
     const q = t.track(await newPage(b));
     await arena(q, 'guerrier', 2, 1);
     const g = await q.evaluate(() => {
@@ -100,5 +100,35 @@ export const tests = [
     });
     t.eq([mg.far, mg.near], [0, 1], 'Blizzard : la portée des compétences agrandit le rayon');
     t.ok(Math.abs(mg.eclair - 2) < 1e-6, `Éclair en chaîne : dégâts de compétence ×2 (${mg.eclair})`);
+  } },
+  { name: 'charge de l\'ultime (v138) : le temps, les ennemis abattus (plafonnés), pas ceux de l\'ultime ; Gardien ; Fureur ; dégâts ×3 contre les Gardiens', fn: async (b, t) => {
+    const p = t.track(await newPage(b));
+    await arena(p, 'guerrier', 0, 0);
+    const r = await p.evaluate(() => {
+      const out = {}, P = G.P, ghoul = () => { spawnEnemy({ type: 'ghoul', x: P.x + 300, y: P.y }); return G.en[G.en.length - 1]; };
+      S.fury = 0; G.ultHalf = 0; G.ult = 0; G.ultQ = 0; ultCharge(10); out.time = G.ult;
+      // 20 ennemis abattus hors ultime : réserve plafonnée, versée au plus ULT_KMAX par seconde en plus du temps
+      G.ult = 0; G.ultQ = 0; for (let i = 0; i < 20; i++) dmgEnemy(ghoul(), 1e9, false);
+      out.pool = G.ultQ; ultCharge(1); out.oneSec = G.ult;
+      // ennemis tués pendant l'ultime : rien
+      G.ultQ = 0; G.inUlt = 1; for (let i = 0; i < 10; i++) dmgEnemy(ghoul(), 1e9, false); G.inUlt = 0; out.byUlt = G.ultQ;
+      // Gardien abattu : ULT_BOSS d'un coup
+      G.ult = 0; const g = ghoul(); g.type = 'boss'; dmgEnemy(g, 1e12, false); out.boss = G.ult;
+      // Fureur : plafond 50 % dans les statistiques, jamais moins de ULT_MIN
+      S.fury = 50; out.need50 = ultNeed(); S.fury = 0; out.need0 = ultNeed(); out.cap = stats({ ...curEq() }).fury <= 50;
+      // dégâts de l'ultime ×ULT_GX contre un Gardien
+      const h = ghoul(); h.type = 'boss'; h.hp = h.max = 1e12; S.bossDmg = 0; S.abHunt = 0; h.curse = 0;
+      dmgEnemy(h, 100, false); const a = 1e12 - h.hp; G.inUlt = 1; dmgEnemy(h, 100, false); G.inUlt = 0; out.gx = (1e12 - h.hp - a) / a;
+      out.K = { N: ULT_N, MIN: ULT_MIN, KILL: ULT_KILL, KMAX: ULT_KMAX, POOL: ULT_POOL, BOSS: ULT_BOSS, GX: ULT_GX };
+      return out;
+    });
+    const K = r.K, near = (a, b) => Math.abs(a - b) < 1e-6;
+    t.ok(near(r.time, 10), `10 s sans ennemi abattu : 10 points (${r.time})`);
+    t.ok(near(r.pool, Math.min(K.POOL, 20 * K.KILL)), `20 ennemis abattus : réserve ${r.pool}`);
+    t.ok(near(r.oneSec, 1 + Math.min(K.KMAX, r.pool)), `1 s de plus : temps + au plus ${K.KMAX} de la réserve (${r.oneSec})`);
+    t.eq(r.byUlt, 0, 'ennemis tués par l\'ultime : pas de charge');
+    t.ok(near(r.boss, K.BOSS), `Gardien abattu : +${K.BOSS} (${r.boss})`);
+    t.eq([r.need0, r.need50, r.cap], [K.N, Math.max(K.MIN, Math.round(K.N * .5)), true], 'charge nécessaire, Fureur plafonnée à 50 %');
+    t.ok(near(r.gx, K.GX), `ultime contre un Gardien : ×${K.GX} (${r.gx})`);
   } },
 ];

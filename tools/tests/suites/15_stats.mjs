@@ -24,7 +24,7 @@ export const tests = [
       S.crit = 0; __hits = []; P.rainT = 0; ultTick(.01); out.rainNo = __hits[0]; P.rain = 0;
       // Météores : un météore sur l'ennemi
       S.crit = 100; __hits = []; P.meteors = 1; P.meteorT = 0; ultTick(.01); out.metCrit = __hits[0];
-      out.rainBase = S.nova * .7 * m; out.metBase = S.nova * 3 * m;
+      out.rainBase = S.nova * ULT_C.pluie * m; out.metBase = S.nova * ULT_C.meteores * m;
       return out;
     });
     t.ok(r.rainCrit && r.rainCrit[1] && Math.abs(r.rainCrit[0] - r.rainBase * 3) < 1e-6, `flèche critique ×3 (${r.rainCrit && r.rainCrit[0]} pour ${r.rainBase * 3})`);
