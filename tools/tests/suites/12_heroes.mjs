@@ -51,6 +51,7 @@ export const tests = [
     t.ok(await p.evaluate(() => !!document.querySelector('#setsSec [data-cact="setsave"]')), 'section dans Héros › Équipement');
     await p.click('[data-cact="setsave"]');
     t.eq(await p.evaluate(() => setsOf('archer').length), 1, 'enregistré');
+    await p.click('[data-more="sets_edit"] summary');
     await p.fill('[data-setname="0"]', 'Boss'); await p.press('[data-setname="0"]', 'Tab');
     // on change d'équipement : l'armure part au coffre, l'anneau chez le Guerrier
     await p.evaluate(() => { const a = meta.gear.armure, n = meta.gear.anneau; meta.stash.push(a); meta.gear.armure = null; meta.gear.anneau = null; meta.gearBy.guerrier.anneau = n; drawCamp(); });
@@ -77,11 +78,11 @@ export const tests = [
     t.ok(await p.evaluate(() => /5 mods/.test(document.getElementById('setsSec').textContent) && /Feu follet/.test(document.getElementById('setsSec').textContent)), 'la ligne montre les mods et le familier');
     // tout change : autres mods, autre aura, autre familier
     await p.evaluate((x) => { build('w').load.fill(null); build('w').load[2] = x.W[2]; build('h').load.fill(null); build('h').load[1] = x.H[1]; meta.aura.archer = x.A[1] || null; meta.petEq = 2; petBuild().load.fill(null); petBuild().load[1] = x.P[1]; saveMeta(); drawCamp(); }, ids);
-    t.ok(await p.evaluate(() => !!document.querySelector('#setsSec [data-cact="setwear"][data-arg="0"]:not([disabled])')), 'plus marqué « porté » quand les mods changent');
+    t.ok(await p.evaluate(() => document.querySelector('#setsSec [data-cact="setwear"][data-arg="0"]').getAttribute('aria-pressed') === 'false' && /modifié/.test(document.getElementById('setsSec').textContent)), 'plus marqué « porté » quand les mods changent, mais « modifié »');
     await p.click('#setsSec [data-cact="setwear"][data-arg="0"]');
     const r = await p.evaluate(() => [build('w').load.slice(0, 4), build('h').load.slice(0, 2), meta.aura.archer || null, meta.petEq, petBuild().load.slice(0, 2)]);
     t.eq(r, [[ids.W[0], ids.W[1], null, null], [ids.H[0], null], ids.A[0] || null, 1, [ids.P[0], null]], 'mods de l\'arme et du héros, aura, familier et ses mods remis');
-    t.ok(await p.evaluate(() => /porté/.test(document.querySelector('#setsSec .cx-set').textContent)), 'de nouveau « porté »');
+    t.ok(await p.evaluate(() => /porté/.test(document.querySelector('#setsSec .scard').textContent)), 'de nouveau « porté »');
     // un mod disparu et un familier fusionné : signalés, le reste est remis
     await p.evaluate((x) => { delete meta.mods[x.W[1]]; meta.pets = meta.pets.filter((q) => q.uid !== 1); meta.petEq = 2; build('w').load.fill(null); saveMeta(); drawCamp(); }, ids);
     await p.click('#setsSec [data-cact="setwear"][data-arg="0"]');
@@ -91,6 +92,29 @@ export const tests = [
     await p.evaluate(() => { const s = setsOf('archer')[0]; for (const k of ['wm', 'hm', 'au', 'pet', 'pm']) delete s[k]; build('h').load.fill(null); saveMeta(); drawCamp(); });
     await p.evaluate(() => { setWear(0); drawCamp(); });
     t.eq(await p.evaluate(() => [build('h').load.filter(Boolean).length, meta.petEq]), [0, 2], 'ancien enregistrement : mods et familier inchangés');
+  } },
+  { name: 'équipements enregistrés : aperçu sous le héros, toucher pour porter, en haut de Équipement, mettre à jour (v143)', fn: async (b, t) => {
+    const p = t.track(await newPage(b));
+    await p.evaluate(() => { unlockAll(); heroCls = 'archer'; meta.gear.armure = rgItem('L1', 50); meta.gear.anneau = rgItem('L7', 50); meta.stash = [rgItem('L3', 50)]; setSave(0); setsOf()[0].n = 'Boss';
+      meta.stash.push(meta.gear.armure); meta.gear.armure = null; setSave(1); setsOf()[1].n = 'Hordes'; saveMeta(); });
+    await campView(p, 'equip');
+    const h = await p.evaluate(() => { const sec = document.querySelector('.hsets'), st = document.querySelector('.hstage'); return { cards: [...sec.querySelectorAll('.scard[data-cact="setwear"]')].map((c) => c.querySelector('b').textContent),
+      under: !!(st.compareDocumentPosition(sec) & Node.DOCUMENT_POSITION_FOLLOWING), minis: sec.querySelectorAll('.scard')[0].querySelectorAll('.smini').length, on: sec.querySelector('.scard.is-on').textContent }; });
+    t.eq(h.cards, ['Boss', 'Hordes'], 'les deux équipements sous le héros');
+    t.ok(h.under && h.minis >= 3 && /Hordes/.test(h.on), `aperçu de l'arme et des objets, « Hordes » porté (${h.minis} objets)`);
+    // toucher « Boss » sur l'onglet Héros le porte
+    await p.click('.hsets [data-cact="setwear"][data-arg="0"]');
+    t.eq(await p.evaluate(() => [meta.gear.armure && meta.gear.armure.rid, setsOf()[0].act, !setsOf()[1].act]), ['L1', 1, true], 'Boss porté, en cours');
+    // Héros › Équipement : les équipements en haut, avant les emplacements ; un objet changé → « modifié » et « Mettre à jour »
+    await campView(p, 'equip', 'gear');
+    t.ok(await p.evaluate(() => { const s = document.getElementById('setsSec'), g = document.querySelector('#campBody .gslots'); return !!(s.compareDocumentPosition(g) & Node.DOCUMENT_POSITION_FOLLOWING); }), 'en haut de Équipement');
+    await p.evaluate(() => { const it = meta.stash.find((i) => i.rid === 'L3'); meta.stash = meta.stash.filter((i) => i !== it); wearGear('bottes', it); drawCamp(); });
+    t.ok(await p.evaluate(() => /modifié/.test(document.querySelector('#setsSec .scard').textContent) && /Mettre à jour « Boss »/.test(document.getElementById('setsSec').textContent)), 'Boss modifié, bouton Mettre à jour');
+    await p.click('#setsSec .sacts [data-arg="0"]');
+    t.eq(await p.evaluate(() => [setsOf()[0].g.bottes != null, setsOf().length, /porté/.test(document.querySelector('#setsSec .scard').textContent), !!document.querySelector('#setsSec .sacts .cx-btn--primary')]), [true, 2, true, false], 'mis à jour : bottes enregistrées, de nouveau porté');
+    // toucher l'équipement porté ne change rien
+    await p.click('#setsSec [data-cact="setwear"][data-arg="0"]');
+    t.ok(await p.evaluate(() => /déjà porté/.test(document.getElementById('toast').textContent)), 'déjà porté');
   } },
   { name: 'Armurerie › Par héros : ce que porte chaque héros, objet repris sur le héros joué', fn: async (b, t) => {
     const p = t.track(await newPage(b));

@@ -889,6 +889,27 @@ li.affoff{color:var(--muted)}
 .cx-setname:hover{border-color:var(--line)}
 .cx-setname:focus{outline:none;border-color:var(--ember-hi);background:var(--panel-2)}
 .cx-set.is-on .cx-setname{color:var(--heal)}
+/* v143 : équipements enregistrés en cartes (aperçu des objets), sous le héros et en haut de Héros › Équipement */
+.scards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.scard{box-sizing:border-box;display:flex;flex-direction:column;align-items:stretch;gap:6px;min-width:0;min-height:74px;margin:0;padding:9px 10px 8px;text-align:left;font:inherit;color:var(--ink);cursor:pointer;background:var(--panel-2);border:2px solid var(--line-strong);border-radius:12px;-webkit-tap-highlight-color:transparent}
+.scard:focus-visible{outline:2px solid var(--gold2);outline-offset:2px}
+.scard.is-on{border-color:var(--heal);background:linear-gradient(180deg,var(--heal-soft),var(--panel-2))}
+.scard.is-mod{border-color:var(--gold2);border-style:dashed}
+.scard__h{display:flex;align-items:baseline;justify-content:space-between;gap:6px;min-width:0}
+.scard__h b{font:700 14px/1.2 var(--font-body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.scard__s{flex:0 0 auto;font:800 10px/1 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--heal)}
+.scard.is-mod .scard__s{color:var(--gold2)}
+.scard__ic{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;max-width:150px}
+.smini{--c:var(--line-strong);box-sizing:border-box;display:grid;place-items:center;width:100%;max-width:19px;aspect-ratio:1;border:1.5px solid var(--c);border-radius:5px;color:var(--c);background:rgba(0,0,0,.25)}
+.smini svg{width:72%;height:72%;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.smini.is-empty{opacity:.4}
+.smini.miss{--c:var(--blood-ink);border-style:dashed}
+.scard small{font:500 11px/1.2 var(--font-body);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scard--add{align-items:center;justify-content:center;gap:2px;border-style:dashed;color:var(--muted);text-align:center}
+.scard__plus{font:700 22px/1 var(--font-body);color:var(--gold2)}
+.scard--add small{white-space:normal}
+.sacts{flex-direction:column}
+.sacts>.cx-btn{flex:0 0 auto;width:100%;min-width:0;white-space:normal;line-height:1.2;padding-top:8px;padding-bottom:8px;text-align:center}
 .sdots{display:inline-flex;gap:4px;vertical-align:middle}
 .sdot{width:9px;height:9px;border-radius:50%;background:var(--c);display:inline-block}
 .sdot.miss{background:transparent;box-shadow:inset 0 0 0 1.5px var(--blood-ink)}

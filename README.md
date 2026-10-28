@@ -62,7 +62,7 @@ Le rythme chargé est celui de la balise `<script src="js/rythmes/….js">` d'`i
 Une suite unique vérifie le jeu dans un vrai navigateur (Chromium sans affichage) : démarrage, butin, reliques, fabrication et fusion, coffre, affixes, emplacements, missions, contrôles, sauvegarde, parcours, coopération.
 ```
 npm i playwright && npx playwright install chromium
-node tools/tests/run.mjs            # tout (150 tests, ≈ 4 min 30)
+node tools/tests/run.mjs            # tout (156 tests, ≈ 5 min)
 node tools/tests/run.mjs --quick    # sans la coopération
 node tools/tests/run.mjs fusion     # seulement les suites dont le fichier contient « fusion »
 ```
@@ -81,8 +81,9 @@ node tools/progression/run.mjs --cls archer --missions 150 --seed 1 --out result
 node tools/progression/report.mjs resultats/*.jsonl --notes analyse.html --out rapport.html
 node tools/progression/report.mjs resultats/*.jsonl --base ancien/ --base-label v105 --out rapport.html   # comparé à un banc précédent
 node tools/progression/ablate.mjs resultats/archer_1_etat.json
+node tools/progression/builds.mjs resultats 4 tank feu   # exemples de builds, à partir des états <classe>_1_etat.json
 ```
-`run.mjs` écrit une ligne par mission (palier, niveau, mort, butin, puissance, économie), les jalons et l'état de la sauvegarde. `--caps 5,1,1,...` change le niveau à atteindre sur chaque palier avant de passer au suivant (13 paliers, de Normal à Tourment X). `report.mjs` trace les courbes et les tableaux ; `ablate.mjs` montre d'où vient la puissance du héros en retirant une source à la fois. Même graine, même carrière. Compter 5 à 15 s par mission.
+`run.mjs` écrit une ligne par mission (palier, niveau, mort, butin, puissance, économie), les jalons et l'état de la sauvegarde. `--caps 5,1,1,...` change le niveau à atteindre sur chaque palier avant de passer au suivant (13 paliers, de Normal à Tourment X). `report.mjs` trace les courbes et les tableaux ; `ablate.mjs` montre d'où vient la puissance du héros en retirant une source à la fois. `builds.mjs` joue les six exemples de builds du document de conception des mods (Poison, Feu, Contrôle, Tank, Critique, Esquive) et le build du bot, à partir d'un état de fin de carrière, tous les mods au rang maximum : morts, manches, ennemis tués par minute, Gardiens. Même graine, même carrière. Compter 5 à 15 s par mission.
 
 ## Coopération
 

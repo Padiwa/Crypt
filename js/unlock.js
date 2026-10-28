@@ -30,7 +30,7 @@ const UNL=[
   {k:'diff1',n:'Difficulté Difficile',when:()=>maxL()>=12,need:'Réussis une mission de niveau 12.',
     learn:'Deux Gardiens à la fois, plus souvent, 25 % d\'or et 7,5 % de chances d\'objet en plus. Les fragments de harnais tombent plus souvent sur les Gardiens.',home:1,help:'difficulte'},
   {k:'sets',n:'Équipements enregistrés',when:()=>meta.wins>=6,need:'Réussis 6 missions.',
-    learn:'Dans Héros › Équipement, enregistre l\'arme et les objets portés pour les remettre en un geste, par exemple un équipement pour les Gardiens et un pour les hordes. Chaque héros a les siens.',go:['equip'],help:'equipements'},
+    learn:'Enregistre l\'arme, les objets portés et les mods (carte + sous le héros, ou en haut de Héros › Équipement), par exemple un équipement pour les Gardiens et un pour les hordes. Touche ensuite sa carte pour tout remettre d\'un geste. Chaque héros a les siens.',go:['equip'],help:'equipements'},
   {k:'diff2',n:'Difficulté Cauchemar',when:()=>(meta.bestDiff|0)>=1,need:'Réussis une mission en Difficile.',
     learn:'Trois Gardiens à la fois, 50 % d\'or et 15 % de chances d\'objet en plus. C\'est là qu\'on rassemble les fragments de harnais du 2e anneau.',home:1,help:'difficulte'},
   {k:'slots',n:'Emplacements',when:()=>(meta.hfrag|0)>0||(meta.bestDiff|0)>=1||slotAny('anneau2'),need:'Trouve un fragment de harnais sur un Gardien.',

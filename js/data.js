@@ -430,6 +430,9 @@ const TAL={
 /* Statuts (v141) : poison (couches), saignement (3 à la fois), étourdir et immobiliser (immunité après), plafonds de chance par coup. */
 // BAL.psnPct, BAL.bldPct : réglages d'essai du banc de progression (--bal).
 const PSN_PCT=BAL.psnPct||15,PSN_T=4,PSN_MAX=10,BLD_PCT=BAL.bldPct||60,BLD_T=3,BLD_MAX=3,STUN_T=.6,STUN_IMM=1.5,ROOT_T=1.5,ROOT_IMM=2;
+// Réglage d'essai du banc (BAL.explSt, 0 dans le jeu) : chance des statuts posés par les explosions sans Déflagration, en % de leur chance.
+// Essayé en v143 à 25 % pour le Magicien : pas de gain mesuré, gardé à 0.
+const EXPL_ST=BAL.explSt!=null?BAL.explSt:0;
 const ST_CAP={psnCh:60,bldCh:60,chill:60,shock:40,stunCh:25,rootCh:30,contag:60};
 const surtJ=v=>Math.max(1,Math.round(v*10)-1);
 const MOD_RAR=[{n:'Bronze',c:'#c98a5a'},{n:'Argent',c:'#cfd8e3'},{n:'Or',c:'#f0cf4a'}];
@@ -486,7 +489,7 @@ const MODS={
 /* Surcharge des mods : au rang max, des copies du même mod + de l'essence ajoutent des étoiles (5 max), +12 % de la valeur chacune. */
 const MOD_ST_MAX=5,MOD_ST_K=.12;
 const modSt=id=>(meta.modSt&&meta.modSt[id])|0;
-const modCanStar=id=>!['pierce','diam','impr','rema','flea'].includes(MODS[id].k);
+const modCanStar=id=>!['pierce','diam','impr','rema','flea','pCleanse','pPocket','pEcho'].includes(MODS[id].k);
 const starCost=(id,st)=>({cp:Math.ceil((st+1)*BAL.starCopies),ess:50*(MODS[id].r+1)*(st+1)});
 const modVal=(id,rk,st=modSt(id))=>{const m=MODS[id],x=((m.b||0)+m.v*(rk+1))*(1+MOD_ST_K*st);return x>=10?Math.round(x):x>=1?+x.toFixed(1):+x.toFixed(2)};
 const modDrain=(id,rk,st=modSt(id))=>MODS[id].drain+rk+Math.floor(st/2);
@@ -754,12 +757,14 @@ const findItem=id=>meta.stash.find(i=>i.id===id)||allWorn().find(i=>i.id===id)||
 function unwear(it){const c=wornBy(it);if(!c||it.wid)return null;const k=wornSlot(it,c);meta.gearBy[c][k]=null;return c}
 /* Équipements enregistrés : meta.sets[classe] = [{n, g:{emplacement: id d'objet ou null}, w: arme, wm: mods de l'arme, hm: mods du héros,
    au: aura, pet: familier (uid ou null), pm: mods du familier}], 6 par héros au plus. Mods, aura et familier : depuis la v134
-   (un équipement enregistré avant n'a pas ces champs, « Porter » laisse alors les mods et le familier tels quels). */
+   (un équipement enregistré avant n'a pas ces champs, « Porter » laisse alors les mods et le familier tels quels). act : l'équipement en cours (v143). */
 const SET_MAX=6;
 const setsOf=(c=heroCls)=>meta.sets[c]||(meta.sets[c]=[]);
 function setSave(i,c=heroCls){const L=setsOf(c),g={};for(const k of GEAR_KEYS(c))g[k]=meta.gearBy[c][k]?meta.gearBy[c][k].id:null;
   const s={n:L[i]?L[i].n:`Équipement ${L.length+1}`,g,w:curWid(c),wm:build('w',c).load.slice(),hm:build('h',c).load.slice(),au:meta.aura[c]||null,
     pet:meta.petEq==null?null:meta.petEq,pm:petBuild().load.slice()};
+  // v143 : l'équipement enregistré ou porté en dernier est l'équipement en cours (act) ; ses changements se rangent par « Mettre à jour »
+  for(const x of L)delete x.act;s.act=1;
   if(L[i])L[i]=s;else if(L.length<SET_MAX)L.push(s);return s}
 // Remet des mods enregistrés dans une configuration (arme, héros ou familier) : seulement les mods possédés, permis au héros et du bon type,
 // dans les cases ouvertes, tant que la capacité suit. Renvoie le nombre de mods laissés de côté.
@@ -772,7 +777,8 @@ function setModsSame(s,c=heroCls){if(!('hm' in s))return true;const eq=(a,b)=>a.
   return eq(build('w',c).load,s.wm||[])&&eq(build('h',c).load,s.hm||[])&&(meta.aura[c]||null)===(s.au||null)&&(meta.petEq==null?null:meta.petEq)===s.pet&&eq(petBuild().load,s.pm||[])}
 // Porte un équipement enregistré : chaque objet est pris dans le coffre ou sur un autre héros. Renvoie {done, miss, from}.
 function setWear(i,c=heroCls){const s=setsOf(c)[i];if(!s)return null;const g=meta.gearBy[c];let done=0,miss=0;const from=new Set();
-  for(const k of GEAR_KEYS(c)){if(!(k in s.g))continue;const id=s.g[k],cur=g[k]||null;if(cur&&cur.id===id)continue;
+  for(const x of setsOf(c))delete x.act;s.act=1;
+  const sg=s.g||{};for(const k of GEAR_KEYS(c)){if(!(k in sg))continue;const id=sg[k],cur=g[k]||null;if(cur&&cur.id===id)continue;
     if(id==null){if(cur){meta.stash.push(cur);g[k]=null;done++}continue}
     const it=findItem(id);if(!it||keySlot(k)!==it.slot){miss++;continue}
     const o=unwear(it);if(o)from.add(o);meta.stash=meta.stash.filter(x=>x!==it);if(cur)meta.stash.push(cur);g[k]=it;done++}

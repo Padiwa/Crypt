@@ -71,11 +71,13 @@ SIM.camp = function () {
 
 // Mods : monte les rangs des mods portés (puis des autres), puis refait les builds.
 // v141 : build d'arme rempli au mieux de la Puissance (le mod qui la fait le plus monter, case après case, dans la capacité) ;
-// v142 : build de héros rempli de même, au mieux de Puissance × racine de la survie (les mods de défense passent par les capacités).
+// v142 : build de héros rempli de même, au mieux de Puissance × racine de la survie (les mods de défense passent par les capacités) ; v143 : familier aussi.
 SIM.MODPREF = ['venin', 'entaille', 'braise', 'givre', 'orage', 'oeil', 'boucherie', 'rafale', 'virulence', 'contagion', 'coup', 'entrave', 'peste', 'embrasement', 'hemorragie', 'cryogenie', 'surtension', 'catalyse', 'diamant', 'deflagration', 'soif',
-  'etendue', 'intensite', 'flux', 'persist', 'impregnation', 'commotion', 'garde', 'fantome', 'elan', 'peau', 'paselem', 'riposte', 'alchimiste', 'econome', 'elixfer', 'elixrage', 'ame', 'prolong', 'remanence', 'fleau'];
+  'etendue', 'intensite', 'flux', 'persist', 'impregnation', 'commotion', 'garde', 'fantome', 'elan', 'peau', 'paselem', 'riposte', 'alchimiste', 'econome', 'elixfer', 'elixrage', 'ame', 'prolong', 'remanence', 'fleau',
+  'pcrocs', 'pviv', 'pcara', 'plien', 'pbec', 'pnuee', 'plum', 'ppur', 'pprov', 'pepine', 'pflair', 'ppoche', 'ppartage', 'pecho', 'pinst', 'pmarque', 'pseisme', 'pflamme'];
 SIM.fillW = function (own, kind = 'w') {
   const b = build(kind, heroCls); b.load.fill(null);
+  if (kind === 'p' && !petEq()) return;
   const pw = kind === 'w' ? () => power(stats(curEq())) : () => { const x = stats(curEq()); return power(x) * Math.sqrt(survOf(x)); };
   for (let g = 0; g < b.slots; g++) {
     const base = pw(); let best = null, bv = base * (1 + 1e-4);
@@ -86,12 +88,18 @@ SIM.fillW = function (own, kind = 'w') {
 };
 SIM.mods = function () {
   const own = SIM.MODPREF.filter(id => MODS[id] && meta.mods[id] != null && modOk(id, heroCls));
-  const worn = () => { const L = [...build('w', heroCls).load, ...build('h', heroCls).load].filter(Boolean); return [...L, ...own.filter(id => !L.includes(id))]; };
+  // v143 : l'essence va d'abord aux mods de l'arme et du héros, comme en v142 (portés puis les autres) ; les mods du familier équipé
+  // ne montent de rang qu'une fois ceux de l'arme et du héros au maximum, et n'ont des étoiles qu'au-delà de 2 000 essence (sinon ils prenaient l'essence des mods d'arme)
+  const pet = () => petEq() ? build('p').load.filter(Boolean) : [];
+  const worn = () => { const L = [...build('w', heroCls).load, ...build('h', heroCls).load].filter(Boolean); return [...L, ...own.filter(id => !L.includes(id) && modKind(id) !== 'p'), ...(L.every(id => meta.mods[id] >= MODS[id].max) ? pet() : [])]; };
   for (let g = 0; g < 30; g++) { const id = worn().find(id => meta.mods[id] < MODS[id].max && meta.essence >= fuseCost(id, meta.mods[id]) + 30); if (!id) break; meta.essence -= fuseCost(id, meta.mods[id]); meta.mods[id]++; }
-  for (const id of own) { const m = MODS[id], st = modSt(id), c = starCost(id, st); if (modCanStar(id) && meta.mods[id] >= m.max && st < MOD_ST_MAX && (meta.modCp[id] | 0) >= c.cp && meta.essence >= c.ess + 30) { meta.modCp[id] -= c.cp; meta.essence -= c.ess; meta.modSt[id] = st + 1; } }
+  for (const id of own) { const m = MODS[id], st = modSt(id), c = starCost(id, st); if (modKind(id) === 'p' && (!pet().includes(id) || meta.essence < 2000)) continue;
+    if (modCanStar(id) && meta.mods[id] >= m.max && st < MOD_ST_MAX && (meta.modCp[id] | 0) >= c.cp && meta.essence >= c.ess + 30) { meta.modCp[id] -= c.cp; meta.essence -= c.ess; meta.modSt[id] = st + 1; } }
   SIM.fillW(own);
   const au = ['terreur', 'presence', 'cupidite'].find(a => MODS[a] && meta.mods[a] != null); if (au) meta.aura[heroCls] = au;
   if (typeof isUnl !== 'function' || isUnl('hmods')) SIM.fillW(own, 'h');
+  // v143 : build du familier équipé, au mieux de Puissance × racine de la survie (soin du follet, attirance du golem comptés)
+  if (typeof isUnl !== 'function' || isUnl('pets')) SIM.fillW(own, 'p');
 };
 
 SIM.mile = function (k) { const C = SIM.C; if (C.miles[k]) return; C.miles[k] = { n: C.n, h: Math.round(C.hours * 100) / 100 }; };

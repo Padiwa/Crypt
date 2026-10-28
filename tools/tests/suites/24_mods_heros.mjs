@@ -31,7 +31,7 @@ export const tests = [
     t.eq([r.mods.vitalite, r.mods.egide, r.mods.souffle, r.mods.intensite, r.mods.etendue, r.mods.persist, r.mods.terreur, r.mods.presence, r.mods.ferveur], [undefined, undefined, undefined, 2, 4, 1, 2, 2, undefined], 'mods remboursés, rangs ramenés au maximum, Ferveur → Terreur');
     t.eq([r.h, r.au.archer, r.au.guerrier], [[null, 'intensite', 'etendue', null], 'terreur', 'presence'], 'build du héros et auras');
     t.eq([r.set.hm.slice(0, 2), r.set.au], [[null, 'persist'], 'terreur'], 'équipement enregistré converti');
-    t.eq([r.note.conv, r.note.ref, r.note.h, r.v], [5, 3, 1, 2], 'message : 5 gardés ou renommés, 3 remboursés');
+    t.eq([r.note.conv, r.note.ref, r.note.h, r.v], [5, 3, 1, 3], 'message : 5 gardés ou renommés, 3 remboursés (sauvegarde ensuite passée en v143)');
     // Vitalité rang 4, 2 étoiles, 1 copie : 10 × (1+2+4+8) + 50 × (1+2) + 8 ; Égide 10 ; Second souffle 10 + 20 ; Intensité rang 3 → 2 : 40 ; Étendue 5 → 4 : 20 × 16 ; Ferveur 3 → 2 : 30 × 4 ; Présence 3 → 2 : 30 × 4
     t.eq(r.ess, 150 + 150 + 8 + 10 + 30 + 40 + 320 + 120 + 120, 'essence rendue');
     await campView(p, 'mods');

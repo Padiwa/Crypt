@@ -98,6 +98,7 @@ function campEquip(){
       <div class="hstage__mid"><canvas id="heroStage" width="360" height="360" aria-hidden="true"></canvas><span class="hstage__name">${CLS[heroCls].n}</span><small>${o.lv?`Prestige ${o.lv} · `:''}maîtrise ${mt.r} / 10</small></div>
       <div class="hstage__col">${R.map(k=>heroSlot(k,eq)).join('')}</div>
     </section>
+    ${setsHero()}
     ${keyStats(St)}
     <div class="htiles">${tile('gear','Équipement',`${worn} / ${open.length} portés`,gb)}
       ${tile('tal','Sorts et talents',`talents ${tn} / ${TAL[heroCls].length}`,tb)}
@@ -157,33 +158,46 @@ function gearView(){
   const nc=['arms','sets','slots'].map(newCard).join('');
   const more=cxMore('equip_gear','Touche un emplacement, puis un objet pour sa fiche.','<p>La liste montre tous tes objets pour cet emplacement : ceux du coffre et ceux que portent tes autres héros (pastille A, G ou M). Le pourcentage à droite est l\'écart de Puissance si tu l\'équipes à la place de l\'objet porté ; l\'écart de survie (vie, réduction, régénération) s\'affiche quand il compte. Le triangle vert marque un objet meilleur que le tien : plus de Puissance, ou autant de Puissance et plus de survie.</p><p>Touche une ligne : sa fiche le compare affixe par affixe et propose Équiper, Verrouiller, Fusionner, Prendre ou Recevoir une affixe, Recycler. Pour l\'arme, la liste montre les armes de ce héros, chacune avec son rang, sa maîtrise et ses propres mods. Le 2e anneau se remplit depuis son propre emplacement.</p>');
   const strip=`<div class="gslots" role="tablist" aria-label="Emplacements">${GEAR_ALL.map(s=>gslotBtn(s,e,plan)).join('')}</div>`;
-  if(!open)return nc+more+strip+`<p class="cx-hint" style="margin:0">${SLOT[k]} : emplacement verrouillé ${pourCls(heroCls)} ; chaque héros débloque les siens.</p>`+(slotUnlockHtml()||lockedHtml('slots'));
+  if(!open)return nc+setsHtml()+more+strip+`<p class="cx-hint" style="margin:0">${SLOT[k]} : emplacement verrouillé ${pourCls(heroCls)} ; chaque héros débloque les siens.</p>`+(slotUnlockHtml()||lockedHtml('slots'));
   const {L,b}=gearRows(k),show=L.slice(0,GEAR_PAGE*(1+gearMore)),rest=L.length-show.length;
   const sc=(v,l)=>`<button class="cx-chip cx-chip--sm" role="radio" aria-checked="${gearSort===v}" data-cact="gsort" data-arg="${v}">${l}</button>`;
   const nb=L.filter(r=>r.gt).length,isW=k==='arme';
   const empty=isW?`Aucune autre arme ${deCls(heroCls)}. Les armes communes à rares tombent des monstres ; les légendaires et plus se fabriquent (Arsenal › Recettes).`:`Aucun autre objet pour cet emplacement. Sors vivant d'une mission pour en ramener ; les plus rares se fabriquent (Arsenal › Recettes).`;
-  return `${nc}${more}${strip}
+  return `${nc}${setsHtml()}${more}${strip}
     <section class="cx-section"><h3 class="cx-section__label">${SLOT[k]} · porté</h3>${gearCur(k,e,b)}</section>
     <section class="cx-section"><h3 class="cx-section__label">${isW?`Tes armes ${deCls(heroCls)}`:'Tes objets'} · ${L.length}${nb?` · ${nb} meilleur${nb>1?'s':''}`:''}</h3>
       ${L.length>1?`<div class="cx-chips" role="radiogroup" aria-label="Trier">${sc('pow','Puissance')}${sc('rar','Rareté')}${isW?'':sc('lvl','Niveau')+sc('new','Récents')}</div>`:''}
       ${L.length?`<div class="gearl">${show.map(gearRow).join('')}</div>${rest?`<button class="cx-btn cx-btn--sm cx-btn--block gridmore" data-cact="gmore">Afficher ${Math.min(GEAR_PAGE,rest)} de plus · encore ${rest}</button>`:''}`:`<p class="cx-hint" style="margin:0">${empty}</p>`}
     </section>
-    <div class="cx-actions hacts" style="margin:0"><button class="cx-btn cx-btn--sm" data-cact="gocoffre" data-arg="${keySlot(k)}" aria-label="Ouvrir le coffre, filtré sur ${SLOT[keySlot(k)].toLowerCase()}">Ouvrir le coffre · ${SLOT[keySlot(k)]}</button><button class="cx-btn cx-btn--sm" data-cact="goheros">Par héros</button></div>
-    ${setsHtml()}`;
+    <div class="cx-actions hacts" style="margin:0"><button class="cx-btn cx-btn--sm" data-cact="gocoffre" data-arg="${keySlot(k)}" aria-label="Ouvrir le coffre, filtré sur ${SLOT[keySlot(k)].toLowerCase()}">Ouvrir le coffre · ${SLOT[keySlot(k)]}</button><button class="cx-btn cx-btn--sm" data-cact="goheros">Par héros</button></div>`;
 }
-// Héros › Équipements enregistrés : jusqu'à SET_MAX par héros ; « Porter » reprend chaque objet dans le coffre ou sur un autre héros.
-function setsHtml(){if(!isUnl('sets'))return '';const L=setsOf(),eq=curEq();
-  const same=s=>GEAR_KEYS().every(k=>!(k in s.g)||(s.g[k]==null?!eq[k]:eq[k]&&eq[k].id===s.g[k]))&&s.w===curWid()&&setModsSame(s);
-  // v134 : nombre de mods et familier de l'enregistrement
-  const extra=s=>{if(!('hm' in s))return '';const n=[...(s.wm||[]),...(s.hm||[]),...(s.pm||[]),s.au].filter(Boolean).length,pe=s.pet!=null&&meta.pets.find(p=>p.uid===s.pet);
-    return ` · ${n} mod${n>1?'s':''}${pe?' · '+esc(PETS[pe.t].n):s.pet!=null?' · familier introuvable':''}`};
-  const dots=s=>[s.w?`<i class="sdot" style="--c:${ownedW(s.w)?RAR[wdef(s.w).r].c:'var(--muted)'}" title="${esc(wdef(s.w).n)}"></i>`:'',...GEAR_KEYS().filter(k=>k in s.g).map(k=>{const it=s.g[k]==null?null:findItem(s.g[k]);return `<i class="sdot${s.g[k]!=null&&!it?' miss':''}" style="--c:${it?RAR[it.r].c:'var(--line)'}" title="${SLOT[k]}${it?' : '+esc(itemName(it)):s.g[k]!=null?' : introuvable':' : vide'}"></i>`})].join('');
-  const rows=L.map((s,i)=>{const on=same(s),wb=[...new Set(GEAR_KEYS().map(k=>s.g[k]!=null?findItem(s.g[k]):null).filter(Boolean).map(wornBy).filter(c=>c&&c!==heroCls))];
-    return `<div class="cx-row cx-set${on?' is-on':''}"><span class="cx-row__k"><input class="cx-setname" data-setname="${i}" value="${esc(s.n)}" maxlength="24" aria-label="Nom de l'équipement ${i+1}"><small><span class="sdots">${dots(s)}</span>${extra(s)}${on?' · porté':wb.length?` · objets portés ${wb.map(parCls).join(' et ')}`:''}</small></span>
-      <span class="cx-set__act"><button class="cx-btn cx-btn--sm${on?'':' cx-btn--primary'}" data-cact="setwear" data-arg="${i}" ${on?'disabled':''}>Porter</button><button class="cx-btn cx-btn--sm cx-btn--ghost" data-cact="setsave" data-arg="${i}" aria-label="Remplacer ${esc(s.n)} par l'équipement actuel">Remplacer</button><button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-cact="setdel" data-arg="${i}" aria-label="Supprimer ${esc(s.n)}">${XSVG.x}</button></span></div>`}).join('');
-  return `<section class="cx-section" id="setsSec"><h3 class="cx-section__label">Équipements enregistrés · ${L.length} / ${SET_MAX}</h3>${rows?`<div class="cx-rows">${rows}</div>`:''}
-    <div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-cact="setsave" data-arg="" ${L.length>=SET_MAX?'disabled':''}>Enregistrer l'équipement porté</button></div>
-    <p class="cx-hint" style="margin:0">${L.length?'Chaque héros a ses équipements. « Porter » prend les objets dans le coffre ou sur un autre héros, et remet les mods et le familier ; touche le nom pour le changer.':'Enregistre l\'arme, les objets portés, les mods du héros et de l\'arme, le familier et ses mods, pour tout remettre plus tard en un geste. Chaque héros a ses équipements.'}</p></section>`}
+// Héros › Équipements enregistrés : jusqu'à SET_MAX par héros ; toucher un équipement le porte (chaque objet repris dans le coffre ou sur un autre héros).
+// v143 : aperçu sous le héros (onglet Héros) et en haut de Héros › Équipement ; l'équipement porté en dernier est « en cours » (act) :
+// changé ensuite, il se montre « modifié » et « Mettre à jour » range les changements dedans.
+const setOn=(s,eq=curEq())=>{const g=s.g||{};return GEAR_KEYS().every(k=>!(k in g)||(g[k]==null?!eq[k]:eq[k]&&eq[k].id===g[k]))&&s.w===curWid()&&setModsSame(s)};
+const setExtra=s=>{if(!('hm' in s))return '';const n=[...(s.wm||[]),...(s.hm||[]),...(s.pm||[]),s.au].filter(Boolean).length,pe=s.pet!=null&&meta.pets.find(p=>p.uid===s.pet);
+  return `${n} mod${n>1?'s':''}${pe?' · '+esc(PETS[pe.t].n):s.pet!=null?' · familier introuvable':''}`};
+// Aperçu : l'arme puis chaque emplacement enregistré, à la couleur de la rareté (vide estompé, introuvable en pointillés rouges)
+function setMinis(s){const w=s.w?`<i class="smini${ownedW(s.w)?'':' miss'}" style="--c:${ownedW(s.w)?RAR[wdef(s.w).r].c:'var(--muted)'}" title="${esc(wdef(s.w).n)}">${GLYPH.arme}</i>`:'';
+  const g=s.g||{};return w+GEAR_KEYS().filter(k=>k in g).map(k=>{const id=g[k],it=id==null?null:findItem(id);
+    return `<i class="smini${id==null?' is-empty':!it?' miss':''}" style="--c:${it?RAR[it.r].c:'var(--line-strong)'}" title="${SLOT[k]}${it?' : '+esc(itemName(it)):id!=null?' : introuvable':' : vide'}">${GLYPH[keySlot(k)]}</i>`}).join('')}
+function setCard(s,i,eq){const on=setOn(s,eq),mod=!on&&s.act,st=on?'porté':mod?'modifié':'';
+  return `<button class="scard${on?' is-on':mod?' is-mod':''}" data-cact="setwear" data-arg="${i}" aria-pressed="${on}" aria-label="${esc(s.n)}${on?', porté':mod?', en cours, modifié depuis':', toucher pour le porter'}">
+    <span class="scard__h"><b>${esc(s.n)}</b>${st?`<span class="scard__s">${st}</span>`:''}</span><span class="scard__ic" aria-hidden="true">${setMinis(s)}</span>${'hm' in s?`<small>${setExtra(s)}</small>`:''}</button>`}
+const setAddCard=()=>`<button class="scard scard--add" data-cact="setsave" data-arg=""><span class="scard__plus" aria-hidden="true">+</span><small>Enregistrer l'équipement porté</small></button>`;
+// Onglet Héros : aperçu sous le héros, toucher pour porter
+function setsHero(){if(!isUnl('sets'))return '';const L=setsOf(),eq=curEq();
+  return `<section class="cx-section hsets" aria-label="Équipements enregistrés"><h3 class="cx-section__label">Équipements enregistrés</h3>
+    <div class="scards">${L.map((s,i)=>setCard(s,i,eq)).join('')}${L.length<SET_MAX&&(L.length===0||L.length%2===1)?setAddCard():''}</div>
+    ${L.length?'<div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm cx-btn--ghost" data-cact="hsub" data-arg="gear">Modifier dans Équipement</button></div>':''}</section>`}
+// Héros › Équipement, en haut : les équipements, Mettre à jour l'équipement en cours, en enregistrer un nouveau ; renommer, remplacer, supprimer repliés
+function setsHtml(){if(!isUnl('sets'))return '';const L=setsOf(),eq=curEq(),ai=L.findIndex(s=>s.act),a=L[ai],mod=a&&!setOn(a,eq);
+  const rows=L.map((s,i)=>`<div class="cx-row cx-set${setOn(s,eq)?' is-on':''}"><span class="cx-row__k"><input class="cx-setname" data-setname="${i}" value="${esc(s.n)}" maxlength="24" aria-label="Nom de l'équipement ${i+1}"></span>
+      <span class="cx-set__act"><button class="cx-btn cx-btn--sm cx-btn--ghost" data-cact="setsave" data-arg="${i}" aria-label="Remplacer ${esc(s.n)} par l'équipement porté">Remplacer</button><button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-cact="setdel" data-arg="${i}" aria-label="Supprimer ${esc(s.n)}">${XSVG.x}</button></span></div>`).join('');
+  return `<section class="cx-section" id="setsSec"><h3 class="cx-section__label">Équipements enregistrés · ${L.length} / ${SET_MAX}</h3>
+    ${L.length?`<div class="scards">${L.map((s,i)=>setCard(s,i,eq)).join('')}</div>`:''}
+    <div class="cx-actions sacts" style="margin:0">${mod?`<button class="cx-btn cx-btn--sm cx-btn--primary" data-cact="setsave" data-arg="${ai}" aria-label="Mettre à jour ${esc(a.n)} avec l'équipement porté">Mettre à jour « ${esc(a.n)} »</button>`:''}<button class="cx-btn cx-btn--sm" data-cact="setsave" data-arg="" ${L.length>=SET_MAX?'disabled':''}>${L.length?'Enregistrer comme nouveau':'Enregistrer l\'équipement porté'}</button></div>
+    ${L.length?cxMore('sets_edit','Touche un équipement pour le porter, puis change ce que tu veux en dessous.',`<p>Porter un équipement reprend chaque objet dans le coffre ou sur un autre héros, et remet l'arme, les mods, l'aura, le familier et ses mods. Il devient l'équipement en cours : si tu changes ensuite un objet ou un mod, sa carte passe à « modifié » et « Mettre à jour » enregistre les changements dedans. Chaque héros a ses équipements, ${SET_MAX} au plus.</p><div class="cx-rows">${rows}</div>`,'Renommer, remplacer'):`<p class="cx-hint" style="margin:0">Enregistre l'arme, les objets portés, les mods du héros et de l'arme, le familier et ses mods, pour tout remettre plus tard d'un geste. Chaque héros a ses équipements.</p>`}</section>`}
 // Héros › Emplacements à débloquer (fragments de harnais, lâchés par les Gardiens).
 const slotCan=u=>!slotOpen(u.k)&&(!u.need||slotOpen(u.need))&&(meta.hfrag|0)>=u.hf&&meta.gold>=u.gold;
 function slotUnlockHtml(){if(!isUnl('slots'))return '';const next=SLOT_U.filter(u=>!slotOpen(u.k));if(!next.length)return '';const hf=meta.hfrag|0;

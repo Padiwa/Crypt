@@ -141,7 +141,7 @@ export const tests = [
     const r = await p.evaluate(() => ({ mods: meta.mods, ld: meta.wload.a0, note: meta.modNote, ess: meta.essence, v: meta.modV }));
     t.eq([r.mods.ferocite, r.mods.cadence, r.mods.dedoublement, r.mods.rafale, r.mods.soif, r.mods.deflagration, r.mods.givre], [undefined, undefined, undefined, 2, 1, 2, 1], 'Écho → Rafale, Sangsue → Soif du fer, Déflagration ramenée au rang 3');
     t.eq(r.ld, [null, 'rafale', 'givre', null], 'build : la case de Férocité devient libre');
-    t.eq([r.note.conv, r.note.ref, r.v, r.note.ven, r.mods.venin], [4, 2, 2, 1, 0], 'message : convertis et remboursés ; Venin offert (sauvegarde ensuite passée en v142)');
+    t.eq([r.note.conv, r.note.ref, r.v, r.note.ven, r.mods.venin], [4, 2, 3, 1, 0], 'message : convertis et remboursés ; Venin offert (sauvegarde ensuite passée en v143)');
     t.ok(r.ess > 900, `essence rendue : ${r.ess}`);
     await campView(p, 'mods');
     t.ok(await p.evaluate(() => /Mods d'arme revus/.test($('campBody').textContent)), 'carte du message dans Héros › Mods');

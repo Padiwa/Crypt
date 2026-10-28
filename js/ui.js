@@ -33,7 +33,8 @@ const eqKey=e=>heroCls+'|'+Object.keys(e).map(k=>{const it=e[k];return it?(it.wi
    v141 : statuts. Poison et saignement en part des dégâts des coups (couches au plus, PW.dot : part touchée avant la mort de l'ennemi),
    part du temps sous contrôle (étourdi, immobilisé, gelé) pour Brise-garde, part des coups sur un ennemi qui porte 1 ou 2 statuts
    pour Œil du chasseur, Boucherie et Catalyse. Le Magicien ne pose les statuts que sur la cible touchée, sauf avec Déflagration. */
-const PW={kills:5,dot:.7,cont:.6,embr:.4,spK:3,low:.1,exec:.25,boss:.15,hunt:.2,shock:1.8,pierce:.5,reachT:1.2,splashT:.3,pulseT:5,shard:.5,doom:.5,
+// mark : part de tes dégâts sur une cible marquée par le corbeau (par cible piquée) ; dashT : une esquive toutes les 6 s environ (Instinct)
+const PW={kills:5,dot:.7,cont:.6,embr:.4,spK:3,low:.1,exec:.25,boss:.15,hunt:.2,shock:1.8,pierce:.5,reachT:1.2,splashT:.3,pulseT:5,shard:.5,doom:.5,mark:.3,dashT:6,
   // c : dégâts d'un lancer en multiples de la puissance de compétence (cibles comprises) ; cr : critique possible ;
   // area : × (1 + portée des compétences) ; rng : × (1 + rng × portée des compétences), carreaux et éclairs qui vont plus loin ;
   // reach : × (1 + portée de frappe) ; splash : × (1 + rayon d'explosion) ; dur : × (1 + durée)
@@ -64,7 +65,7 @@ function powerOf(x,cls=heroCls,kit=kitOf(cls)){
   // poison et saignement en part des dégâts des coups ; Contagion, Peste
   const dotM=(1+(x.dotPct||0)/100)*PW.dot*(1+PW.cont*(x.contag||0)/100);
   const rP=nP*PSN_PCT/100/hits*(1+(x.peste?(rawP>=PSN_MAX?.12:.05)*x.peste:0)),rB=nB*BLD_PCT/100/BLD_T/hits*(1+(x.hemo&&cB>0?cr/cB*x.hemo/100:0));
-  const dotR=(rP+rB)*dotM,stTg=cls==='magicien'?(1+(tg-1)*Math.min(1,(x.defl||0)/100))/tg:1;
+  const dotR=(rP+rB)*dotM,stTg=cls==='magicien'?(1+(tg-1)*Math.min(1,Math.max(x.defl||0,EXPL_ST)/100))/tg:1;
   // poison et saignement d'un coup de sort ou d'ultime ; Imprégnation et Fléau (v142) multiplient la chance, plafonds gardés
   const spDotM=k=>(Math.min(.6,cP*k)*PSN_PCT/100*PSN_T*dm+Math.min(.6,cB*k)*BLD_PCT/100*dm)*dotM,spDot=spDotM(x.impr||1),ulDot=spDotM(x.flea||1);
   // chaque coup : bonus conditionnels (part des coups concernés), éléments, pouvoirs abyssaux, Catalyse, Brise-garde
@@ -86,16 +87,25 @@ function powerOf(x,cls=heroCls,kit=kitOf(cls)){
   else if(Q.sur)ult=(atk*(2*um-1)+(cast?cast*um/.5-skill:0))*Q.t*bd/T;
   const pulse=x.abPulse?x.dmg*x.abPulse/100*PW.pulseT*(1+x.skillRad/200)/5:0;
   // familier : corbeau (piqué toutes les 1,2 s), golem (épines pendant l'attirance, 4 s sur 11, 3 ennemis) ; il frappe avec tes dégâts et tes dégâts critiques
-  const ps=(typeof started!=='undefined'&&started&&G&&G.petS)?G.petS:(typeof petStats==='function'?memo('petS',petStats):null);let pet=0;
-  if(ps){const pm=ps.mul*(1+ps.pDmg/100),pr=1+ps.pAps/100,pc=1+Math.min(75,5+ps.pCrit)/100*(x.critDmg/100-1);
-    if(ps.t==='corbeau')pet=x.dmg*.6*pm*pc*(1+Math.round(ps.pMulti))*pr/1.2*hitM;
-    else if(ps.t==='golem')pet=x.dmg*.3*pm*pc*(1+ps.pThorns/100)*3/.5*(4*(1+ps.pHp/100))/(4*(1+ps.pHp/100)+7/pr)*hitM}
-  const p=(atk+skill+ult+pulse+pet)*buff;
-  return {p,atk:atk*buff,skill:skill*buff,ult:ult*buff,pulse:pulse*buff,pet:pet*buff}}
+  // v143 : Écho élémentaire (statuts de l'arme à 50 % de leur chance), Instinct (une action de plus à chaque esquive, au plus toutes les 4 à 6 s),
+  // Marque du corbeau (tes dégâts × (1 + marque) sur la part de tes coups qui touche une cible marquée)
+  const ps=petNow();let pet=0,mk=1;
+  if(ps){const pm=ps.mul*(1+ps.pDmg/100),pr=1+ps.pAps/100,pc=1+Math.min(75,5+ps.pCrit)/100*(x.critDmg/100-1),ic=ps.pInst>0?Math.max(petInstCd(ps.pInst),PW.dashT):0,ec=1+(ps.pEcho?spDotM(.5):0);
+    if(ps.t==='corbeau'){const n=1+Math.round(ps.pMulti);pet=x.dmg*.6*pm*pc*n*(pr/1.2+(ic?1/ic:0))*hitM*ec;if(ps.pMark>0)mk=1+Math.min(.6,PW.mark*n)*ps.pMark/100}
+    else if(ps.t==='golem'){const on=4*(1+ps.pHp/100),off=ic?Math.min(7/pr,ic):7/pr;pet=x.dmg*.3*pm*pc*(1+ps.pThorns/100)*3/.5*on/(on+off)*hitM*ec}}
+  const p=(atk+skill+ult+pulse+pet)*buff*mk,b=buff*mk;
+  return {p,atk:atk*b,skill:skill*b,ult:ult*b,pulse:pulse*b,pet:pet*b}}
+// Familier équipé : celui de la mission en cours, sinon celui du Camp (gardé le temps d'un affichage).
+const petNow=()=>(typeof started!=='undefined'&&started&&G&&G.petS)?G.petS:(typeof petStats==='function'?memo('petS',petStats):null);
+// Survie apportée par le familier : soin du follet (en PV par seconde, comme la régénération), Flamme protectrice, attirance du golem et Séisme.
+function petSurv(x){const ps=petNow();if(!ps)return {hp:0,m:1,hps:0};const ic=ps.pInst>0?Math.max(petInstCd(ps.pInst),PW.dashT):0;
+  if(ps.t==='follet')return {hp:x.hp*(ps.pFlame||0)/100*.5,m:1+(ps.pCleanse?.02:0),hps:x.hp*.01*ps.mul*(1+ps.pHeal/100)*1.5+(ic?x.hp*.04*ps.mul*(1+ps.pHeal/100)/ic:0)};
+  if(ps.t==='golem'){const on=4*(1+ps.pHp/100),pr=1+ps.pAps/100,off=ic?Math.min(7/pr,ic):7/pr,up=on/(on+off);return {hp:0,m:1+.15*up*(1+ps.pTaunt/100)+.8*(ps.pSeis||0)/(on+off),hps:0}}
+  return {hp:0,m:1,hps:0}}
 const power=x=>powerOf(x).p;
 // Survie (départage) : vie effective, réduction, protections, soins.
-const survOf=x=>(x.hp+x.abWard*8)/(1-Math.min(60,x.armor)/200)*(1+x.lowArmor*.003+x.potHeal*.001+x.antidote*.001+x.auraSlow*.003+(x.thorns||0)*.002+(x.soif||0)*.01
-  +(x.gardA||0)*.012+(x.exFer||0)*.002+(x.peau||0)*.0025+(x.terr||0)*.008+(x.econ||0)*.003+(x.elan||0)*.001)+x.regen*15;
+const survOf=x=>{const q=petSurv(x);return (x.hp+x.abWard*8+q.hp)/(1-Math.min(60,x.armor)/200)*(1+x.lowArmor*.003+x.potHeal*.001+x.antidote*.001+x.auraSlow*.003+(x.thorns||0)*.002+(x.soif||0)*.01
+  +(x.gardA||0)*.012+(x.exFer||0)*.002+(x.peau||0)*.0025+(x.terr||0)*.008+(x.econ||0)*.003+(x.elan||0)*.001)*q.m+(x.regen+q.hps)*15};
 // Valeur d'un équipement (gardée le temps d'un affichage) et comparaison : la Puissance d'abord (0,01 % près), puis la survie.
 const eqVal=e=>drawCache?memo('ev|'+eqKey(e),()=>eqVal0(e)):eqVal0(e);
 function eqVal0(e){const x=stats(e);return {p:power(x),v:survOf(x)}}
@@ -312,7 +322,7 @@ function renderMods(rootId){
   // v139 : sans familier équipé, pas de build à remplir (chaque familier a le sien)
   if(petTab&&!petEq()){root.innerHTML=petPanel();root.querySelectorAll('[data-pet]').forEach(x=>x.onclick=()=>petAct(x.dataset.pet,x.dataset.arg));return}
   const over=u>cap;
-  const note=inCamp&&meta.modNote&&!petTab?`<div class="cx-card" style="border-color:var(--gold)"><p style="margin:0;font-size:14px">${modNoteTxt().replace(' Voir Héros › Mods.','')} ${meta.modNote.h?'Les mods de héros règlent maintenant tes capacités (sort, esquive, potion, ultime) ; la vie, la réduction et la vitesse brutes viennent des affixes. ':''}Les mods de dégâts et de cadence bruts sont devenus des affixes d'objets ; les mods d'arme posent des statuts (poison, saignement, étourdissement…).</p><div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-act="modnote" style="margin:0">Compris</button></div></div>`:'';
+  const note=inCamp&&meta.modNote&&!petTab?`<div class="cx-card" style="border-color:var(--gold)"><p style="margin:0;font-size:14px">${modNoteTxt().replace(' Voir Héros › Mods.','')} ${meta.modNote.h?'Les mods de héros règlent maintenant tes capacités (sort, esquive, potion, ultime) ; la vie, la réduction et la vitesse brutes viennent des affixes. ':''}${meta.modNote.conv||meta.modNote.ref?'Les mods de dégâts et de cadence bruts sont devenus des affixes d\'objets ; les mods d\'arme posent des statuts (poison, saignement, étourdissement…). ':''}${meta.modNote.p?'Écho élémentaire, Purification et Poches profondes n\'ont qu\'un rang : l\'essence des rangs et des étoiles en plus est rendue.':''}</p><div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-act="modnote" style="margin:0">Compris</button></div></div>`:'';
   root.innerHTML=`${note}${petTab?petPanel():`<div class="cx-tabs" role="tablist"><button class="cx-tab${isUnl('hmods')?'':' is-locked'}" role="tab" data-act="mtab" data-t="h" aria-selected="${modTab==='h'}">${isUnl('hmods')?'':`<span class="lockmini" aria-hidden="true">${LOCK_SVG}</span>`}Héros · ${CLS[heroCls].n}</button><button class="cx-tab" role="tab" data-act="mtab" data-t="w" aria-selected="${modTab==='w'}">Arme · ${wdef(curWid()).n}</button>${inCamp?'':`<button class="cx-tab" role="tab" data-act="mtab" data-t="p" aria-selected="${modTab==='p'}">Familier</button>`}</div>`}
     <div class="cx-meter${over?' is-over':''}"><div class="cx-meter__top"><span>Capacité</span><b>${u} / ${cap}</b></div><div class="cx-meter__bar"><i style="--v:${Math.min(100,cap?u/cap*100:0)}%"></i></div></div>
     <p class="cx-hint" style="margin:0">${over?'<span style="color:var(--blood-ink)">Capacité dépassée : les mods en trop sont inactifs (grisés). Retire un mod ou regagne de la maîtrise.</span>':b.kind==='p'?`Build propre à ce familier · bonus de niveau +${mt.r} · capacité qui monte avec son rang et son niveau`:`Maîtrise ${b.kind==='w'?'arme':'héros'} ${mt.r} / 10${mt.r<10?` · ${mt.xp} / ${mastNeed(mt.r)}`:''} · gagne de la capacité en mission`}</p>

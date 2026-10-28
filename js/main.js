@@ -59,7 +59,7 @@ function start(){
 }
 start();
 // v141 : résumé de la conversion des mods d'arme, montré une fois (aussi dans Héros › Mods tant qu'il n'est pas fermé)
-const modNoteTxt=()=>{const n=meta.modNote;if(!n)return '';const pl=(k,w)=>`${k} ${w}${k>1?'s':''}`,L=[n.conv?pl(n.conv,'converti'):'',n.ref?pl(n.ref,'remboursé'):''].filter(Boolean).join(', ');
-  return `<b>${n.h?'Mods revus':'Mods d\'arme revus'}</b> : ${L}${n.ess?` · +${n.ess} essence`:''}${n.ven?' · Venin offert':''}. Voir Héros › Mods.`};
+const modNoteTxt=()=>{const n=meta.modNote;if(!n)return '';const pl=(k,w)=>`${k} ${w}${k>1?'s':''}`,L=[n.conv?pl(n.conv,'converti'):'',n.ref?pl(n.ref,'remboursé'):'',n.p?`${pl(n.p,'mod')} de familier à rang unique`:''].filter(Boolean).join(', ');
+  return `<b>${n.h||n.p?'Mods revus':'Mods d\'arme revus'}</b> : ${L}${n.ess?` · +${n.ess} essence`:''}${n.ven?' · Venin offert':''}. Voir Héros › Mods.`};
 if(meta.modNote)setTimeout(()=>{try{toast(modNoteTxt())}catch{}},1500);
 if(FAST){window.__G=()=>G;window.__dmg=(e,d)=>dmgEnemy(e,d,false);window.__wish=it=>wishMatch(it);window.__refresh=()=>refreshStats()}

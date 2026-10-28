@@ -199,6 +199,7 @@ function dmgEnemy(e,d,crit,dot){
   if(e.curse>0)d*=1+(15+(S.hex||0))/100;
   if(S.cata>0&&stN(e)>=2)d*=1+S.cata/100;
   if(S.ccDmg>0&&(e.stun>0||e.root>0||e.frz>0))d*=1+S.ccDmg/100;
+  if(e.mark>0)d*=1+e.markV/100; // Marque du corbeau (v143)
   if(S.abHunt&&(e.type==='boss'||e.elite))d*=1+S.abHunt/100;
   if(S.abSoul&&G.P.soulN)d*=1+G.P.soulN*S.abSoul/100;
   if(NET.guest){if(dot)return;if(S.abExec&&e.type!=='boss'&&e.hp-d<e.max*S.abExec/100)d=Math.max(d,e.hp);if(e.hp-d<=0)fluxKill();
@@ -362,7 +363,7 @@ function dotTick(e,dt){
     e.bldAcc=(e.bldAcc||0)+v*dt;if(e.bldAcc>=1){const d=Math.floor(e.bldAcc);e.bldAcc-=d;dmgEnemy(e,d,false,'#ff6a6a')}if(e.bldT<=0){e.bld.length=0;e.bldAcc=0}}}
 // Minuteries des contrôles et visuels des nouveaux statuts (hôte et invité) : gouttes vertes qui montent (poison), gouttes rouges qui tombent (saignement).
 function stTick(e,dt){
-  if(e.stun>0)e.stun-=dt;if(e.stunI>0)e.stunI-=dt;if(e.root>0)e.root-=dt;if(e.rootI>0)e.rootI-=dt;if(e.cryI>0)e.cryI-=dt;if(e.pstT>0)e.pstT-=dt;
+  if(e.mark>0)e.mark-=dt;if(e.stun>0)e.stun-=dt;if(e.stunI>0)e.stunI-=dt;if(e.root>0)e.root-=dt;if(e.rootI>0)e.rootI-=dt;if(e.cryI>0)e.cryI-=dt;if(e.pstT>0)e.pstT-=dt;
   if(e.psnT>0&&Math.random()<dt*10)G.parts.push({x:e.x+rand(-e.r,e.r)*.7,y:e.y-e.r*.2+rand(-e.r,e.r)*.3,vx:rand(-6,6),vy:-36,life:.8,max:.8,col:'#b6f24a',size:3,g:1});
   if(e.bldT>0&&Math.random()<dt*10)G.parts.push({x:e.x+rand(-e.r,e.r)*.6,y:e.y,vx:rand(-6,6),vy:66,life:.5,max:.5,col:'#ff3b48',size:2.8,g:1})}
 function gainMod(id){
@@ -371,7 +372,7 @@ function gainMod(id){
     meta.mods[id]=0;let msg=`Nouveau mod : <span style="color:${c}">${m.n}</span>`;
     const kd=modKind(id);
     if(kd==='a'){if(!meta.aura[heroCls]){meta.aura[heroCls]=id;refreshStats();msg+=' · aura équipée'}}
-    else if(modOk(id,heroCls)){const b=build(kd),bs=bBest(b,id,0);if(bs.i>=0&&bUsed(b)+bs.d<=bCap(b)){b.load[bs.i]=id;refreshStats();msg+=kd==='w'?' · équipé sur l\'arme':' · équipé sur le héros'}}
+    else if(modOk(id,heroCls)&&(kd!=='p'||petEq()&&(!m.pt||m.pt===petEq().t))){const b=build(kd),bs=bBest(b,id,0);if(bs.i>=0&&bUsed(b)+bs.d<=bCap(b)){b.load[bs.i]=id;refreshStats();if(kd==='p'&&G.pet)G.petS=petStats();msg+=kd==='w'?' · équipé sur l\'arme':kd==='p'?' · équipé sur le familier':' · équipé sur le héros'}}
   }else if(modCanStar(id)&&modSt(id)<MOD_ST_MAX){meta.modCp[id]=(meta.modCp[id]|0)+1}
   else{const e=8*(m.r+1);meta.essence+=e}
   saveMeta();
@@ -383,7 +384,7 @@ function chain(src,d){
 function explode(s,primary,frost){
   const R=(frost?85*(1+S.skillRad/100):55)*(1+S.splash/100);
   G.rings.push({x:s.x,y:s.y,t:.22,max:R,col:'140,190,255'});burst(s.x,s.y,8,'#9fc8ff',140,3);
-  for(const e of G.en){if(e===primary||e.dead)continue;if(Math.abs(e.x-s.x)<R+e.r&&Math.hypot(e.x-s.x,e.y-s.y)<R+e.r){if(frost)slowE(e,2.5);const dd=s.d*(frost?1:.6);dmgEnemy(e,dd,false);if(S.defl>0)onHit(e,dd,false,{m:S.defl/100});else burnE(e,S.burn)}}
+  for(const e of G.en){if(e===primary||e.dead)continue;if(Math.abs(e.x-s.x)<R+e.r&&Math.hypot(e.x-s.x,e.y-s.y)<R+e.r){if(frost)slowE(e,2.5);const dd=s.d*(frost?1:.6);dmgEnemy(e,dd,false);const xm=Math.max(S.defl||0,EXPL_ST);if(xm>0)onHit(e,dd,false,{m:xm/100});else burnE(e,S.burn)}}
 }
 function fireE(e,a,sp,d,r=7){G.eb.push({id:++G.bid,x:e.x+Math.cos(a)*e.r,y:e.y+Math.sin(a)*e.r,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,d,r,life:4,src:e})}
 function ring(e,n,sp){e.rot+=.27;for(let i=0;i<n;i++)fireE(e,e.rot+i/n*Math.PI*2,sp,e.dmg*.55,8)}
@@ -454,7 +455,7 @@ function inputVec(){
 const dashCdMax=()=>3*(1-S.cdr/100)*(1-S.dashCd/100);
 function doDash(){const P=G.P;if(P.down)return;if(P.dashCd>0){if(!(sealOn('esq')&&P.dash2))return;P.dash2=0}else if(sealOn('esq'))P.dash2=1;if(sealOn('ombre'))P.critNext=1;SND.play('dash');P.dashT=.2;P.dashCd=dashCdMax();burst(P.x,P.y,10,'#9fc2b8',120);
   P.dashHit=new Set();P.dashSt=new Set();
-  if(S.elan>0)P.elanT=2;if(S.peau>0)P.peauT=1.5;if(S.ripo>0)P.ripoN=1;
+  if(S.elan>0)P.elanT=2;if(S.peau>0)P.peauT=1.5;if(S.ripo>0)P.ripoN=1;petInst();
   if(G.cls==='archer'&&hasTal('a_shadow'))P.critShots=3;
   if(G.cls==='magicien'&&hasTal('m_blink'))explode({x:P.x,y:P.y,d:S.dmg*1.6},null,true)}
 /* ---------- Sorts et ultimes (v132) : 3 de chaque par héros, choisis dans Héros › Sorts et talents (SPELLS, G.kit). ----------

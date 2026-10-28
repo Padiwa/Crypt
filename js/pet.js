@@ -22,15 +22,30 @@ Object.assign(MODS,{
   pbec:{type:'p',pt:'corbeau',n:'Bec acéré',r:1,max:3,drain:3,k:'pCrit',v:8,t:v=>`Corbeau : +${v} % de chances de critique`},
   pnuee:{type:'p',pt:'corbeau',n:'Nuée',r:2,max:1,drain:5,k:'pMulti',v:1,t:v=>`Corbeau : frappe ${v} cible${v>1?'s':''} de plus`},
   plum:{type:'p',pt:'follet',n:'Lumière apaisante',r:1,max:5,drain:3,k:'pHeal',v:20,t:v=>`Follet : +${v} % de soin`},
-  ppur:{type:'p',pt:'follet',n:'Purification',r:2,max:1,drain:4,k:'pCleanse',v:1,t:()=>'Follet : retire le poison, la brûlure et la gelure toutes les 6 s'},
+  ppur:{type:'p',pt:'follet',n:'Purification',r:2,max:0,drain:4,k:'pCleanse',v:1,t:()=>'Follet : retire le poison, la brûlure et la gelure toutes les 6 s'},
   pprov:{type:'p',pt:'golem',n:'Provocation',r:1,max:3,drain:3,k:'pTaunt',v:20,t:v=>`Golem : +${v} % de rayon d'attirance`},
   pepine:{type:'p',pt:'golem',n:'Épines',r:1,max:3,drain:3,k:'pThorns',v:25,t:v=>`Golem : +${v} % de dégâts renvoyés`},
   pflair:{type:'p',pt:'furet',n:'Flair du furet',r:1,max:3,drain:3,k:'pLoot',v:3,t:v=>`Furet : +${v} % de chances d'objet`},
-  ppoche:{type:'p',pt:'furet',n:'Poches profondes',r:2,max:1,drain:4,k:'pPocket',v:1,t:()=>'Furet : va chercher les objets, mods et reliques au sol'},
+  ppoche:{type:'p',pt:'furet',n:'Poches profondes',r:2,max:0,drain:4,k:'pPocket',v:1,t:()=>'Furet : va chercher les objets, mods et reliques au sol'},
   ppartage:{type:'p',n:'Partage de vie',r:2,max:3,drain:4,k:'pLeech',v:2,t:v=>`Les coups du familier te rendent ${v} % de leurs dégâts en vie`},
-  pecho:{type:'p',n:'Écho élémentaire',r:2,max:1,drain:4,k:'pEcho',v:1,t:()=>'Les coups du familier appliquent la brûlure et le ralentissement de ton arme'},
+  pecho:{type:'p',n:'Écho élémentaire',r:2,max:0,drain:4,k:'pEcho',v:1,t:()=>'Les coups du familier posent les statuts de ton arme à 50 % de leur chance'},
+  /* v143 : Instinct (lien avec l'esquive), et un mod Or ou Argent de plus pour le corbeau, le golem et le follet. */
+  pinst:{type:'p',n:'Instinct',r:1,max:2,drain:3,k:'pInst',v:1,t:v=>`Quand tu esquives, le familier agit tout de suite (attaque, soin, attirance ou butin), une fois toutes les ${fmtN(petInstCd(v))} s`},
+  pmarque:{type:'p',pt:'corbeau',n:'Marque du corbeau',r:2,max:2,drain:5,k:'pMark',b:5,v:5,t:v=>`Corbeau : la cible piquée subit +${v} % de tes dégâts pendant ${PET_MARK_T} s`},
+  pseisme:{type:'p',pt:'golem',n:'Séisme',r:2,max:2,drain:5,k:'pSeis',b:.3,v:.3,t:v=>`Golem : à la fin de l'attirance, étourdit ${fmtN(v)} s les ennemis proches (Gardiens : 3 fois moins)`},
+  pflamme:{type:'p',pt:'follet',n:'Flamme protectrice',r:1,max:2,drain:4,k:'pFlame',b:5,v:5,t:v=>`Follet : sous 30 % de vie, un bouclier de ${v} % de ta vie (une fois toutes les ${PET_FLAME_CD} s)`},
 });
-Object.assign(MOD_POL,{pcrocs:'b',pviv:'b',pcara:'r',plien:'s',pbec:'b',pnuee:'b',plum:'r',ppur:'r',pprov:'r',pepine:'b',pflair:'s',ppoche:'s',ppartage:'r',pecho:'s'});
+Object.assign(MOD_POL,{pcrocs:'b',pviv:'b',pcara:'r',plien:'s',pbec:'b',pnuee:'b',plum:'r',ppur:'r',pprov:'r',pepine:'b',pflair:'s',ppoche:'s',ppartage:'r',pecho:'s',pinst:'b',pmarque:'b',pseisme:'r',pflamme:'r'});
+// Instinct : délai entre deux actions de 6, 5 puis 4 s (2,5 s au moins avec les étoiles) ; Marque 3 s ; Flamme protectrice toutes les 20 s ; Séisme jusqu'à 120 px.
+const petInstCd=v=>Math.max(2.5,7-v),PET_MARK_T=3,PET_FLAME_CD=20,PET_SEIS_R=120;
+/* v143 : Écho élémentaire, Purification et Poches profondes n'ont qu'une valeur : rang unique, sans étoile. Un rang ou des étoiles déjà achetés
+   sont remboursés (essence des rangs et des étoiles), ajoutés au message de conversion (meta.modNote.p). */
+if((meta.modV|0)<3){let n=0,ess=0;
+  for(const id of ['pecho','ppur','ppoche'])if(meta.mods[id]!=null){const rk=meta.mods[id]|0,st=meta.modSt[id]|0,cp=meta.modCp[id]|0;if(!rk&&!st&&!cp)continue;
+    for(let i=0;i<rk;i++)ess+=10*Math.pow(2,i)*(MODS[id].r+1);for(let i=0;i<st;i++)ess+=50*(MODS[id].r+1)*(i+1);ess+=cp*8*(MODS[id].r+1);
+    meta.mods[id]=0;delete meta.modSt[id];delete meta.modCp[id];n++}
+  if(n){meta.essence=(meta.essence|0)+ess;const o=meta.modNote||{conv:0,ref:0,ess:0};meta.modNote={...o,ess:(o.ess|0)+ess,p:(o.p|0)+n}}
+  meta.modV=3;saveMeta()}
 /* v139 : chaque familier a son build (cases, mods, alignements), rangé sous son numéro : meta.pload[uid], meta.ppol[uid], meta.palign[uid].
    Sans familier équipé, un build vide qui n'est pas enregistré. */
 function petBuild(p=petEq()){const rk=p?p.rk:1,lv=p?p.lv:1,key=p?String(p.uid):null;
@@ -42,29 +57,43 @@ const petBuildCopy=(from,to)=>{const a=String(from),b=String(to);meta.pload[b]=(
 if(meta.pload.pet||meta.ppol.pet||meta.palign.pet!=null){for(const q of meta.pets){const k=String(q.uid);meta.pload[k]=(meta.pload.pet||[]).slice();meta.ppol[k]=(meta.ppol.pet||[]).slice();if(meta.palign.pet)meta.palign[k]=meta.palign.pet}
   delete meta.pload.pet;delete meta.ppol.pet;delete meta.palign.pet;saveMeta()}
 // Statistiques du familier équipé : rang, niveau et mods actifs.
-function petStats(){const p=petEq();if(!p)return null;const o={t:p.t,rk:p.rk,lv:p.lv,mul:petRkMul(p.rk)*petLvMul(p.lv),pDmg:0,pAps:0,pHp:0,pLink:0,pCrit:0,pMulti:0,pHeal:0,pCleanse:0,pTaunt:0,pThorns:0,pLoot:0,pPocket:0,pLeech:0,pEcho:0};
+function petStats(){const p=petEq();if(!p)return null;const o={t:p.t,rk:p.rk,lv:p.lv,mul:petRkMul(p.rk)*petLvMul(p.lv),pDmg:0,pAps:0,pHp:0,pLink:0,pCrit:0,pMulti:0,pHeal:0,pCleanse:0,pTaunt:0,pThorns:0,pLoot:0,pPocket:0,pLeech:0,pEcho:0,pInst:0,pMark:0,pSeis:0,pFlame:0};
   for(const id of bActive(petBuild()))if(!MODS[id].pt||MODS[id].pt===p.t)o[MODS[id].k]+=modVal(id,meta.mods[id]);return o}
 
 /* ---------- En mission ---------- */
-function petInit(){const ps=petStats();G.pet=ps?{t:ps.t,x:G.P.x-30,y:G.P.y+20,r:10,cd:1,face:0,taunt:0,tcd:3,clean:6,flap:0,hit:0}:null;G.petS=ps}
+function petInit(){const ps=petStats();G.pet=ps?{t:ps.t,x:G.P.x-30,y:G.P.y+20,r:10,cd:1,face:0,taunt:0,tcd:3,clean:6,flap:0,hit:0,inst:0,fp:0}:null;G.petS=ps}
 function petTick(dt){const Q=G.pet,ps=G.petS,P=G.P;if(!Q||!ps||G.over)return;
   // suit le héros, un peu en retrait
   const sp=S.speed*1.15*(1+ps.pLink/100),fx=P.dx||0,fy=P.dy==null?-1:P.dy,ox=P.x-fx*34-fy*34,oy=P.y-fy*34+fx*34+(Q.t==='corbeau'?-10:0);
   let tx=ox,ty=oy;
   if(Q.t==='furet'&&ps.pPocket){let best=null,bd=420*420;for(const d of G.drops){if(d.kind==='xp'||d.kind==='gold')continue;const k=(d.x-P.x)**2+(d.y-P.y)**2;if(k<bd&&k>3600){bd=k;best=d}}if(best){tx=best.x;ty=best.y;if(Math.hypot(best.x-Q.x,best.y-Q.y)<20)best.mt=Math.max(best.mt,.01)}}
   const dx=tx-Q.x,dy=ty-Q.y,dd=Math.hypot(dx,dy);if(dd>900){Q.x=P.x;Q.y=P.y}else if(dd>4){const v=Math.min(dd,sp*dt*(dd>120?1.6:1));Q.x+=dx/dd*v;Q.y+=dy/dd*v;Q.face=Math.atan2(dy,dx)}
-  Q.flap+=dt*10;Q.hit=Math.max(0,Q.hit-dt*4);
+  Q.flap+=dt*10;Q.hit=Math.max(0,Q.hit-dt*4);if(Q.inst>0)Q.inst-=dt;if(Q.fp>0)Q.fp-=dt;
   const pow=ps.mul*(1+ps.pDmg/100),rate=1+ps.pAps/100;
-  const hitE=(e,d)=>{const crit=Math.random()*100<5+ps.pCrit;const dmg=d*(crit?S.critDmg/100:1);dmgEnemy(e,dmg,crit);if(ps.pLeech)heal(dmg*ps.pLeech/100);if(ps.pEcho){if(S.burn){e.burnT=2.5;e.burnDps=S.burn*.5}if(S.chill)slowE(e,1.2)}};
+  // v143 : Écho élémentaire pose les statuts de l'arme (onHit, chances × 0,5) ; Marque du corbeau sur chaque cible piquée
+  const hitE=(e,d,mk)=>{const crit=Math.random()*100<5+ps.pCrit;const dmg=d*(crit?S.critDmg/100:1);dmgEnemy(e,dmg,crit);if(ps.pLeech)heal(dmg*ps.pLeech/100);
+    if(e.dead||e.downed)return;if(ps.pEcho)onHit(e,dmg,crit,{m:.5});if(mk&&ps.pMark>0){e.mark=PET_MARK_T;e.markV=ps.pMark}};
   if(Q.t==='corbeau'){Q.cd-=dt*rate;if(Q.cd<=0){const R=260*(1+ps.pLink/100),L=[];for(const e of G.en){if(e.dead||e.type==='cible')continue;const k=(e.x-Q.x)**2+(e.y-Q.y)**2;if(k<R*R)L.push([k,e])}
-      L.sort((a,b)=>a[0]-b[0]);const n=1+Math.round(ps.pMulti);if(L.length){Q.cd=1.2;Q.hit=1;for(const [,e] of L.slice(0,n)){hitE(e,S.dmg*.6*pow);G.zaps.push({x1:Q.x,y1:Q.y,x2:e.x,y2:e.y,t:.1})}const e0=L[0][1];Q.face=Math.atan2(e0.y-Q.y,e0.x-Q.x)}else Q.cd=.3}}
+      L.sort((a,b)=>a[0]-b[0]);const n=1+Math.round(ps.pMulti);if(L.length){Q.cd=1.2;Q.hit=1;for(const [,e] of L.slice(0,n)){hitE(e,S.dmg*.6*pow,1);G.zaps.push({x1:Q.x,y1:Q.y,x2:e.x,y2:e.y,t:.1})}const e0=L[0][1];Q.face=Math.atan2(e0.y-Q.y,e0.x-Q.x)}else Q.cd=.3}}
   else if(Q.t==='follet'){if(!P.down){const still=!(inputVec().m>.15);heal(S.hp*.01*ps.mul*(1+ps.pHeal/100)*(still?2:1)*dt)}
+    if(ps.pFlame>0&&!P.down&&P.hp<S.hp*.3&&!(Q.fp>0)){Q.fp=PET_FLAME_CD;addShield(S.hp*ps.pFlame/100);G.rings.push({x:P.x,y:P.y,t:0,max:70,col:'127,224,138'});burst(P.x,P.y,16,'#7fe08a',150,2);ftext(P.x,P.y-P.r-10,'bouclier','#7fe08a',13)}
     if(ps.pCleanse){Q.clean-=dt;if(Q.clean<=0){Q.clean=6;if(P.psnT>0||P.brnT>0||P.frzT>0){P.psn=0;P.psnT=0;P.psnD=0;P.brnT=0;P.frzT=0;burst(P.x,P.y,14,'#7fe08a',140,2);ftext(P.x,P.y-P.r-10,'purifié','#7fe08a',13)}}}}
-  else if(Q.t==='golem'){if(Q.taunt>0){Q.taunt-=dt;Q.th=(Q.th||0)-dt;if(Q.th<=0){Q.th=.5;const R=46;for(const e of G.en){if(e.dead||e.type==='cible')continue;if((e.x-Q.x)**2+(e.y-Q.y)**2<(R+e.r)**2)hitE(e,S.dmg*.3*pow*(1+ps.pThorns/100))}}}
+  else if(Q.t==='golem'){if(Q.taunt>0){Q.taunt-=dt;Q.th=(Q.th||0)-dt;if(Q.th<=0){Q.th=.5;const R=46;for(const e of G.en){if(e.dead||e.type==='cible')continue;if((e.x-Q.x)**2+(e.y-Q.y)**2<(R+e.r)**2)hitE(e,S.dmg*.3*pow*(1+ps.pThorns/100))}}
+      if(Q.taunt<=0&&ps.pSeis>0)petQuake(Q,ps.pSeis)}
     else{Q.tcd-=dt*rate;if(Q.tcd<=0){Q.tcd=7;Q.taunt=4*(1+ps.pHp/100);G.rings.push({x:Q.x,y:Q.y,t:0,max:petTauntR(ps),col:'169,188,207'})}}}
   else if(Q.t==='furet'){}
 }
 const petTauntR=ps=>160*(1+(ps.pTaunt||0)/100);
+// Séisme (v143) : fin de l'attirance, les ennemis proches du golem sont étourdis (immunité et Gardiens comme un étourdissement d'arme).
+function petQuake(Q,t){G.rings.push({x:Q.x,y:Q.y,t:0,max:PET_SEIS_R,col:'169,188,207'});burst(Q.x,Q.y,18,'#a9bccf',170,3);G.hshake=Math.max(G.hshake||0,3);
+  for(const e of G.en){if(e.dead||e.downed||e.type==='cible')continue;if(Math.abs(e.x-Q.x)<PET_SEIS_R+e.r&&Math.hypot(e.x-Q.x,e.y-Q.y)<PET_SEIS_R+e.r)stunE(e,t)}}
+// Instinct (v143) : à l'esquive, le familier agit aussitôt (corbeau : pique ; follet : 4 s de soin ; golem : attire ; furet : rapporte le butin proche).
+function petInst(){const Q=G.pet,ps=G.petS;if(!Q||!ps||!(ps.pInst>0)||Q.inst>0||G.over)return;Q.inst=petInstCd(ps.pInst);
+  if(Q.t==='corbeau')Q.cd=0;
+  else if(Q.t==='follet'){if(!G.P.down)heal(S.hp*.04*ps.mul*(1+ps.pHeal/100))}
+  else if(Q.t==='golem'){if(!(Q.taunt>0))Q.tcd=0}
+  else if(Q.t==='furet'){for(const d of G.drops)if(Math.abs(d.x-G.P.x)<360&&Math.hypot(d.x-G.P.x,d.y-G.P.y)<360)d.mt=Math.max(d.mt,.01)}
+  const c=PETS[Q.t].c;G.rings.push({x:Q.x,y:Q.y,t:0,max:34,col:[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)).join(',')})}
 // Pour l'hôte : un golem qui attire est la cible des monstres proches (le sien ou celui d'un partenaire).
 function petLure(e){if(e.type==='cible'||e.tgtPod)return null;const cand=[];if(G.pet&&G.pet.t==='golem'&&G.pet.taunt>0&&G.petS)cand.push([G.pet,petTauntR(G.petS)]);
   for(const q of G.mates||[])if(q.pet&&q.pet.t==='golem'&&q.pet.taunt)cand.push([q.pet,160]);
