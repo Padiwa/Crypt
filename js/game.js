@@ -25,6 +25,7 @@ function newGame(){
   const C=CLS[heroCls],L=clamp(meta.start|0||1,1,LV_MAX);
   G={eid:0,bid:0,zid:0,hold:false,mates:[],oshots:null,cls:heroCls,level:L,t:0,tl:0,potions:2+lv('alc'),kills:0,gold:0,loot:{items:[],parts:[],relics:[],seals:[],lsh:0},breche:false,twinQ:[],fresh:0,run:{},hl:1,xp:0,pend:0,nxp:0,
     en:[],shots:[],eb:[],zaps:[],zones:[],lobs:[],parts:[],texts:[],drops:[],rings:[],spawns:[],shake:0,spawnT:1.2,bossT:BOSS_T,bossN:0,vw:600,vh:900};
+  G.lv0=G.level; // v146 : niveau de départ, base de l'horloge de mission
   G.eq=curEq();G.wid=curWid();G.kit=kitOf(heroCls);S=stats(G.eq);if(sealOn('gourde'))G.potions+=2;G.potions=Math.min(potMax(),G.potions); // v144 : jamais plus que le maximum (Alchimie 3 + Gourde = 7 → 6)
   G.P={x:MAP/2,y:MAP/2,r:17,hp:S.hp,face:-Math.PI/2,fire:0,inv:1,flash:0,dashT:0,dashCd:0,novaCd:0,dx:0,dy:-1,spin:0,spinTick:0,swing:null,
     shield:0,noHit:0,psn:0,psnT:0,psnD:0,brnT:0,brnD:0,swings:0,critShots:0,dashHit:new Set()};
@@ -34,7 +35,7 @@ function newGame(){
   genMap();G.storm=0;G.stormIn=FAST?8:rand(40,55);
   G.mode=meta.mode==='breche'?'survie':meta.mode;G.relic=null;G.react=0;G.cracked=false;G.ult=0;G.ultQ=0;G.inUlt=0;G.ultHalf=1;G.bossT=bossIv();G.pod=null;G.target=null;G.exitPt=null;G.capT=0;G.extT=0;G.capN=0;G.nextTgt=0;
   relicQFix();G.relQ=meta.relicQ.map(q=>({id:q.id,rad:!!q.rad}));G.relI=0;G.opened=[];G.shared=[];G.relic=G.relQ[0]||null;
-  if(G.mode==='defense'){const m=1200*(1+.5*(L-1));G.pod={x:MAP/2,y:MAP/2,r:28,hp:m,max:m,flash:0};G.pillars.push(G.pod);G.P.y+=110;G.cam.y=G.P.y;G.wave=0;G.waveState='break';G.waveT=3;G.toSpawn=0}
+  if(G.mode==='defense'){const m=1200*(1+.5*(L-1))*dif().dm;G.pod={x:MAP/2,y:MAP/2,r:28,hp:m,max:m,flash:0};G.pillars.push(G.pod);G.P.y+=110;G.cam.y=G.P.y;G.wave=0;G.waveState='break';G.waveT=3;G.toSpawn=0}
   if(G.mode==='capture'){spawnTarget()}
   $('objBar').hidden=G.mode!=='defense';
   if(PX&&glLost())dropPixi('contexte WebGL perdu au lancement');
@@ -89,9 +90,25 @@ function relicDrop(free){return ['os','an','sa','ab'][relicTierNow(free)]}
 const LV_MAX=50;
 const lootMul=L=>1+.06*(L-1);
 const goldMul=L=>1+.15*(L-1);
-function diff(){const L=G.level,f=G.mode==='defense'?Math.max(0,((G.wave||1)-1)%5)/5:Math.min(1.5,G.tl/LEVEL_T);const D=dif();return {hs:1.2*biome().hp*D.hp*(1+.75*(L-1))*Math.pow(1.025,L-1)*(1+.35*f),ds:1.15*biome().dm*D.dm*(1+.35*(L-1))*Math.pow(1.012,L-1)*(1+.15*f)}}
+/* Horloge de mission (v146) : la difficulté ne dépend que de l'avancée de la mission, comptée en manches (2 min en Survie et en Capture,
+   3 vagues en Défense), en continu : plus de remise à zéro entre deux manches ni de saut au « Continuer ». À partir du niveau de départ,
+   la vie des monstres prend CLOCK_HP par manche et leurs dégâts CLOCK_DM ; le nombre de monstres, leur cadence et les élites suivent
+   le niveau effectif (départ + CLOCK_LV par manche) ; les types de monstres suivent toujours le niveau de manche, comme avant.
+   G.level monte toujours au « Continuer » : or, butin, déblocage du niveau de départ.
+   Mesuré au banc (copie d'essai, 29 octobre 2026) : vie moyenne d'une mission à 6 % près de celle de la v145, aux niveaux 10, 30 et 50. */
+const CLOCK_HP=.15,CLOCK_DM=.10,CLOCK_LV=2;
+const L0=()=>G.lv0||G.level;
+function missionM(){if(G.mode==='defense')return Math.max(0,(G.wave||1)-1)/DEF_N;if(G.mode==='capture')return G.tl/LEVEL_T;return G.level-L0()+Math.min(1,G.tl/LEVEL_T)}
+const missionLv=()=>L0()+CLOCK_LV*missionM();
+function diff(){const L=L0(),m=missionM(),D=dif();return {hs:1.2*biome().hp*D.hp*(1+.75*(L-1))*Math.pow(1.025,L-1)*Math.pow(1+CLOCK_HP,m),ds:1.15*biome().dm*D.dm*(1+.35*(L-1))*Math.pow(1.012,L-1)*Math.pow(1+CLOCK_DM,m)}}
+/* Gardiens (v146) : la vie moyenne de la v145 sur une mission type (6 min de Survie, 12 vagues de Défense), avec +10 % par Gardien
+   déjà venu (BOSS_RISE) au lieu de +25 % : les premiers sont plus solides, les derniers moins démesurés. */
+const BOSS_RISE=.10;
+// Brèche : les Gardiens viennent par paires (spawnBosses), M les compte ainsi.
+const bossMean=()=>{const c0=dif().cnt,c=G.breche?Math.max(2,c0+(c0%2)):c0;if(G.mode==='defense')return c*1.5+(c-1)/2;const N=(Math.floor((360-BOSS_T)/bossIv())+1)*c;return (N-1)/2};
+const bossHpMul=()=>{const m=bossMean();return (1+.25*m)/(1+BOSS_RISE*m)*(1+BOSS_RISE*(G.bossN||0))*(dif().tier?BAL.tormBossHp:1)};
 function spawnEnemy(s){
-  const d=ETYPE[s.type],{hs,ds}=diff(),bm=s.type==='boss'?(1+.25*G.bossN)*(dif().tier?BAL.tormBossHp:1):1;
+  const d=ETYPE[s.type],{hs,ds}=diff(),bm=s.type==='boss'?bossHpMul():1;
   const gn=s.type==='slime'?(s.gen||0):0,gr=[1,.66,.45][gn],gh=[1,.45,.2][gn],gs=[1,1.2,1.45][gn];
   const e={type:s.type,gen:gn,x:s.x,y:s.y,r:d.r*gr,hp:d.hp*hs*bm*gh,max:d.hp*hs*bm*gh,spd:d.spd*gs*rand(.92,1.08),dmg:d.dmg*ds,col:d.col,flash:0,hitCd:0,kx:0,ky:0,burnT:0,burnDps:0,burnAcc:0,
     state:'walk',slow:0,timer:rand(1,2.5),side:Math.random()<.5?-1:1,cycle:0,rot:0,sum:4,ang:0,shown:0,wob:rand(0,6)};
@@ -122,8 +139,10 @@ function chooseType(tt,L){const x=Math.random();
 const ELITE={rapide:{n:'Rapide',c:'#8fd3e0'},bouclier:{n:'Bouclier',c:'#c8d6e6'},vampire:{n:'Vampire',c:'#ff5a6a'},explosif:{n:'Explosif',c:'#ff8a3a'}};
 function makeElite(e){const k=pick(Object.keys(ELITE));e.elite=k;e.hp*=4;e.max*=4;e.r*=1.25;e.dmg*=1.3;if(k==='rapide')e.spd*=1.55;if(e.corr){e.hp/=1.3;e.max/=1.3}e.corr=false;
   SND.play('elite');banner(`Élite ${ELITE[k].n} en approche`,ELITE[k].c,1)}
+// Élites (v146) : chance de départ selon la difficulté, puis +1 point par niveau effectif gagné dans la mission (2 par manche), plafond 35 %.
+const ELITE_LV=.01,ELITE_CAP=.35;
 function spawnPack(type,n){const p=ringPos();let k=0,first=null;for(let i=0;i<n;i++){const q={x:clamp(p.x+rand(-40,40),EDGE+30,MAP-EDGE-30),y:clamp(p.y+rand(-40,40),EDGE+30,MAP-EDGE-30)};if(!blocked(q.x,q.y,14)){spawnEnemy({type,...q});if(!first)first=G.en[G.en.length-1];k++}}
-  const pE=Math.min(.15,.025+.012*dsel().d+.01*dif().tier);if(first&&type!=='bat'&&type!=='scarab'&&type!=='mummy'&&Math.random()<pE)makeElite(first);return k}
+  const pE=Math.min(ELITE_CAP,.025+.012*dsel().d+.01*dif().tier+ELITE_LV*(missionLv()-L0()));if(first&&type!=='bat'&&type!=='scarab'&&type!=='mummy'&&Math.random()<pE)makeElite(first);return k}
 function defenseTick(dt){
   if(G.waveState==='break'){G.waveT-=dt;if(G.waveT<=0){G.wave++;G.waveState='fight';G.toSpawn=Math.min(160,Math.round((10+G.wave*4+(G.level-1)*10)*1.15));G.spawnT=.5;
       const bn=dif().cnt;SND.play('wave');if(G.wave%DEF_N===0)banner(`Vague ${G.wave} · ${bn>1?bn+' Gardiens arrivent':'un Gardien arrive'}`,'#b06ae0',2,true);
@@ -145,14 +164,14 @@ function twinTick(dt){if(!G.twinQ.length)return;for(const q of G.twinQ){const o=
   G.twinQ=G.twinQ.filter(q=>!q.done)}
 function spawner(dt){
   if(G.mode==='defense'){defenseTick(dt);return}
-  const L=G.level,f=Math.min(1,G.tl/LEVEL_T);
+  const L=missionLv(); // v146 : niveau effectif de l'horloge (remplace le niveau et le bonus de manche)
   G.bossT-=dt;
   if(G.bossT<=0){G.bossT=bossIv();spawnBosses()}
   G.spawnT-=dt;if(G.spawnT>0)return;
-  G.spawnT=Math.max(.14,(.85-.12*(L-1)-.4*f)*.87);
-  const target=Math.min(NET.host&&NET.on?coopCap():250,Math.round((22+14*(L-1)+Math.floor(34*f))*1.15*(NET.host&&NET.on?coopCnt():1)));
+  G.spawnT=Math.max(.14,(.85-.12*(L-1))*.87);
+  const target=Math.min(NET.host&&NET.on?coopCap():250,Math.round((22+14*(L-1))*1.15*(NET.host&&NET.on?coopCnt():1)));
   if(G.en.length>=target)return;
-  const [type,n]=chooseType(G.t,L);spawnPack(type,n);
+  const [type,n]=chooseType(G.t,G.level);spawnPack(type,n); // les types de monstres suivent toujours le niveau de manche (arrivée progressive en début de partie)
 }
 
 /* ---------- Sol (motif) ---------- */

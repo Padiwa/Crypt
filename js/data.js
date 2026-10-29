@@ -235,8 +235,13 @@ for(const c in WPN)for(const w of WPN[c]){const o={},R={};for(const k in w.aff){
 for(const id of craftIds()){const b=bpdef(id);RELICS['F_'+id]={t:b.r-3,fz:1,tgt:id,n:`Relique forgée · ${b.n}`}}
 const baseRoll=(slot,l)=>slot==='dos'?2+Math.floor(l/25):slot==='armure'?Math.round(20+l*7):slot==='bottes'?6+Math.floor(l/4):slot==='anneau'?7+Math.floor(l*.8):3;
 // Affixe propre à certaines classes (cls) : sans effet pour les autres classes, ignorée dans les statistiques et signalée sur la fiche.
-const affOff=(k,c=heroCls)=>!!(AFF[k]&&AFF[k].cls&&!AFF[k].cls.includes(c));
-const affOnly=k=>AFF[k].cls.map(c=>CLS[c].n).join(' et ')+' seulement';
+// v146 : Projectiles et Transpercement (AFF_WONLY) ne comptent que sur une arme. Le butin hors arme ne les tire plus et le transfert
+// ne les pose que sur une arme ; un objet déjà possédé garde l'affixe, sans effet, et peut encore la transférer sur une arme.
+const AFF_WONLY={multi:1,pierce:1};
+const affIdle=(k,it)=>!!(AFF_WONLY[k]&&it&&it.slot&&it.slot!=='arme');
+const affCls=(k,c=heroCls)=>!!(AFF[k]&&AFF[k].cls&&!AFF[k].cls.includes(c));
+const affOff=(k,c=heroCls,it)=>affCls(k,c)||affIdle(k,it);
+const affOnly=(k,it,c=heroCls)=>!affCls(k,c)&&affIdle(k,it)?'sur une arme seulement':AFF[k].cls.map(x=>CLS[x].n).join(' et ')+' seulement';
 // Objets des reliques : une affixe sans effet pour le héros qui fabrique (vol de vie hors Guerrier) est remplacée par la première de AFF_SUB absente de l'objet.
 const AFF_SUB=['regen','lowArmor','thorns','antidote','hp','armor'];
 const rgAff=(T,c=heroCls)=>{const out=[];for(const k of T.aff)out.push(affOff(k,c)?AFF_SUB.find(x=>!T.aff.includes(x)&&!out.includes(x))||k:k);return out};

@@ -7,20 +7,26 @@ function critTick(){const P=G.P;if(!P||G.over)return;G.crits=(G.crits||[]).filte
   if(G.crits.length>=CS_N&&G.t>=(P.cbCd||0)){P.cbT=5*(1+(S.skillDur||0)/100);G.crits=[];P.cbCd=G.t+P.cbT+3;refreshStats();
     G.rings.push({x:P.x,y:P.y,t:0,max:120,col:'255,211,77'});burst(P.x,P.y,24,'#ffd34d',200,3);G.hshake=Math.max(G.hshake||0,3);
     SND.play('frenzy');banner(`Frénésie critique · <span style="font-weight:500">${CB_TXT[G.cls]}</span>`,'#ffd34d',1)}}
+// Bonus sous condition (v146) : Dégâts sous 50 % de vie, Exécution, contre Gardiens, contre ralentis, contre maudits, Catalyse,
+// Brise-garde, Marque du corbeau, Chasseur et Âmes s'additionnent ; leur total est plafonné à +300 %. La Puissance suit la même règle (power.js).
+const COND_CAP=300;
 function dmgEnemy(e,d,crit,dot){
   if(e.downed)return; // Capture : la cible à terre n'est plus touchée
-  if(!dot&&S.lowDmg&&G.P.hp<S.hp*.5)d*=1+S.lowDmg/100;
-  if(!dot&&S.execute&&e.hp<e.max*.3)d*=1+S.execute/100;
-  if(S.bossDmg&&e.type==='boss')d*=1+S.bossDmg/100;
+  // v146 : les bonus sous condition s'additionnent (au lieu de se multiplier) et leur total est plafonné à COND_CAP %.
+  let cb=0;
+  if(!dot&&S.lowDmg&&G.P.hp<S.hp*.5)cb+=S.lowDmg;
+  if(!dot&&S.execute&&e.hp<e.max*.3)cb+=S.execute;
+  if(S.bossDmg&&e.type==='boss')cb+=S.bossDmg;
   if(G.inUlt>0&&e.type==='boss')d*=ULT_GX;
   if(e.elite==='bouclier'&&e.hp>e.max*.5)d*=.5;
-  if(S.cold&&(e.slow>0||e.frz>0))d*=1+S.cold/100;
-  if(e.curse>0)d*=1+(15+(S.hex||0))/100;
-  if(S.cata>0&&stN(e)>=2)d*=1+S.cata/100;
-  if(S.ccDmg>0&&(e.stun>0||e.root>0||e.frz>0))d*=1+S.ccDmg/100;
-  if(e.mark>0)d*=1+e.markV/100; // Marque du corbeau (v143)
-  if(S.abHunt&&(e.type==='boss'||e.elite))d*=1+S.abHunt/100;
-  if(S.abSoul&&G.P.soulN)d*=1+G.P.soulN*S.abSoul/100;
+  if(S.cold&&(e.slow>0||e.frz>0))cb+=S.cold;
+  if(e.curse>0)cb+=15+(S.hex||0);
+  if(S.cata>0&&stN(e)>=2)cb+=S.cata;
+  if(S.ccDmg>0&&(e.stun>0||e.root>0||e.frz>0))cb+=S.ccDmg;
+  if(e.mark>0)cb+=e.markV; // Marque du corbeau (v143)
+  if(S.abHunt&&(e.type==='boss'||e.elite))cb+=S.abHunt;
+  if(S.abSoul&&G.P.soulN)cb+=G.P.soulN*S.abSoul;
+  if(cb>0)d*=1+Math.min(COND_CAP,cb)/100;
   if(NET.guest){if(dot)return;if(S.abExec&&e.type!=='boss'&&e.hp-d<e.max*S.abExec/100)d=Math.max(d,e.hp);if(e.hp-d<=0)fluxKill();
     netHit(e,d,crit);e.hp=Math.max(1,e.hp-d);e.shown=2;if(crit)critTick();hitFx(e,d,crit);
     if(crit)riftTry(e,d);return}
@@ -33,6 +39,9 @@ function dmgEnemy(e,d,crit,dot){
   if(e.type==='cible'){if(e.hp<=0){e.hp=0;if(!e.downed){e.downed=true;burst(e.x,e.y,20,'#f0cf4a',160);toast('<b style="color:var(--r2)">La cible est à terre.</b> Reste près d\'elle pour la capturer.')}}}
   else if(e.hp<=0&&!e.dead)kill(e);
 }
+// Défense (v146) : les flaques (tirs en cloche des cracheurs et des pyromanes) font moitié moins de dégâts au cryopode (POD_ZONE),
+// et sa vie suit les dégâts du Tourment (× dif().dm, dans newGame).
+const POD_ZONE=.5;
 function podHurt(d){const p=G.pod;if(!p||G.over||GOD||NET.guest)return;d*=.6;p.hp-=d;p.flash=1;if(p.hp<=0){p.hp=0;gameOver('pod')}}
 const itemLvl=()=>1+(G.level-1)*4+Math.floor(G.tl/45);
 function wishBest(k){let b=null;const eq=(G&&G.eq)||curEq();for(const x of Object.values(eq))if(x&&x.aff&&x.aff[k]!=null){const v=NOSCALE[k]?x.aff[k]:x.aff[k]*upMul(x.up);if(b==null||v>b)b=v}return b}

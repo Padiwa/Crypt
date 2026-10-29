@@ -37,7 +37,7 @@ function update(dt){
     if(!P.down&&Math.hypot(P.x-z.x,P.y-z.y)<z.r+P.r*.4){
       if(z.kind==='poison'){z.tick=(z.tick||0)-dt;if(z.tick<=0){z.tick=.6;P.psn=Math.min(5,P.psn+1);P.psnT=8*antiM;P.psnD=Math.max(P.psnD,z.dps*.5)}}
       else{P.brnT=5*antiM;P.brnD=Math.max(P.brnD||0,z.dps*2)}}
-    if(G.pod&&Math.hypot(G.pod.x-z.x,G.pod.y-z.y)<z.r+G.pod.r)podHurt(z.dps*(z.kind==='pyro'?2:1.2)*dt)}
+    if(G.pod&&Math.hypot(G.pod.x-z.x,G.pod.y-z.y)<z.r+G.pod.r)podHurt(z.dps*(z.kind==='pyro'?2:1.2)*dt*POD_ZONE)}
   compact(G.zones,z=>z.life>0);
   if(P.psnT>0){P.psnT-=dt;dotHurt(P.psn*P.psnD*dt);if(P.psnT<=0){P.psn=0;P.psnD=0}}
   if(P.frzT>0)P.frzT-=dt;

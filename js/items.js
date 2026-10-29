@@ -69,7 +69,7 @@ function genItem(l,minR=0){
   const bv=slot==='armure'?Math.round(20+l*7+rand(-4,6)):slot==='bottes'?ri(4,8)+Math.floor(l/4):slot==='anneau'?ri(5,10)+Math.floor(l*.8):ri(2,5);
   const it={id:uid++,slot,r,lvl:l,base:{k:bk,v:Math.max(1,Math.round(bv*RB[r]))},aff:{}};
   const bio=(typeof G!=='undefined'&&G&&G.biome)||0;
-  let pool=Object.keys(AFF).filter(k=>!AFF[k].w&&!AFF[k].old&&(!AFF[k].bio||bio===AFF[k].bio)&&(!AFF[k].cls||AFF[k].cls.includes(heroCls)));const chosen=[];
+  let pool=Object.keys(AFF).filter(k=>!AFF[k].w&&!AFF[k].old&&(!AFF[k].bio||bio===AFF[k].bio)&&(!AFF[k].cls||AFF[k].cls.includes(heroCls))&&!AFF_WONLY[k]);const chosen=[];
   if(bio){const fr=pool.filter(k=>AFF[k].bio);if(Math.random()<.45){const k=pick(fr);chosen.push(k);pool=pool.filter(x=>x!==k)}}
   while(chosen.length<RAR[r].aff&&pool.length){const k=affPick(pool,slot);pool=pool.filter(x=>x!==k);chosen.push(k)}
   for(const k of chosen){const v=Math.round(AFF[k].r(l)*RK[r]*(1+(DQ.aq||0)));it.aff[k]=Math.max(1,v)}
@@ -107,7 +107,7 @@ function stats(eq){
   const b=CLS[heroCls].base,s={regenPct:0,dmg:b.dmg,aps:b.aps,hp:b.hp,crit:b.crit,critDmg:150,multi:0,pierce:0,burn:0,armor:b.armor,speed:b.speed,regen:0,cdr:b.cdr,novaPct:0,dmgPct:0,apsPct:0,leech:0,reach:0,splash:0,burnPct:0,chill:0,shock:0,skillRad:0,skillDur:0,dashCd:0,potHeal:0,magnetPct:0,lowArmor:0,lowDmg:0,auraSlow:0,goldPct:0,antidote:0,execute:0,bossDmg:0,xpPct:0,lootPct:0,fury:0,ultPct:0,frz:0,cold:0,shard:0,curse:0,hex:0,doom:0,abSoul:0,abWard:0,abPulse:0,abExec:0,abRift:0,abHunt:0,
     psnCh:0,bldCh:0,stunCh:0,rootCh:0,stDur:0,contag:0,echo:0,critSt:0,cdSt:0,embr:0,peste:0,hemo:0,cryo:0,surt:0,cata:0,diam:0,defl:0,soif:0,dotPct:0,thorns:0,ccDmg:0,
     flux:0,intSt:0,impr:0,comm:0,gardA:0,elan:0,peau:0,pasEl:0,ripo:0,econ:0,exFer:0,exRage:0,buffDur:0,rema:0,flea:0,terr:0};
-  for(const it of Object.values(eq))if(it){const m=upMul(it.up);s[it.base.k]+=it.base.v*m;for(const k in it.aff)if(!affOff(k))s[k]+=NOSCALE[k]?it.aff[k]:it.aff[k]*m}
+  for(const it of Object.values(eq))if(it){const m=upMul(it.up);s[it.base.k]+=it.base.v*m;for(const k in it.aff)if(!affOff(k,heroCls,it))s[k]+=NOSCALE[k]?it.aff[k]:it.aff[k]*m}
   s.seals={};for(const it of Object.values(eq))if(it&&it.seal)s.seals[it.seal]=1;
   for(const id of allMods(heroCls))s[MODS[id].k]+=modVal(id,meta.mods[id]);
   const R=(G&&G.run)||{},rr=k=>R[k]||0;

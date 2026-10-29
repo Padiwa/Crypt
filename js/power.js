@@ -46,9 +46,9 @@ function powerOf(x,cls=heroCls,kit=kitOf(cls)){
   // poison et saignement d'un coup de sort ou d'ultime ; Imprégnation et Fléau (v142) multiplient la chance, plafonds gardés
   const spDotM=k=>(Math.min(.6,cP*k)*PSN_PCT/100*PSN_T*dm+Math.min(.6,cB*k)*BLD_PCT/100*dm)*dotM,spDot=spDotM(x.impr||1),ulDot=spDotM(x.flea||1);
   // chaque coup : bonus conditionnels (part des coups concernés), éléments, pouvoirs abyssaux, Catalyse, Brise-garde
-  const hitM=(1+PW.low*x.lowDmg/100)*(1+PW.exec*x.execute/100)*(1+PW.boss*x.bossDmg/100)*(1+PW.hunt*x.abHunt/100)*(1+.06*x.abSoul)*(1+.015*x.abExec)
-    *(1+sl*x.cold/100)*(1+cu*(.15+(x.hex||0)/100))*(1+PW.shock*x.shock/100*(x.surt?(3+surtJ(x.surt))/3:1))*(1+cr*x.abRift/100*2.1)*(1+PW.shard*x.shard/100)*(1+cu*PW.doom*(x.doom||0)/100)
-    *(1+p2*(x.cata||0)/100)*(1+ctl*(x.ccDmg||0)/100);
+  // v146 : bonus sous condition additionnés et plafonnés à COND_CAP, comme dans dmgEnemy
+  const cond=PW.low*x.lowDmg/100+PW.exec*x.execute/100+PW.boss*x.bossDmg/100+PW.hunt*x.abHunt/100+.06*x.abSoul+sl*x.cold/100+cu*(.15+(x.hex||0)/100)+p2*(x.cata||0)/100+ctl*(x.ccDmg||0)/100;
+  const hitM=(1+Math.min(COND_CAP/100,cond))*(1+.015*x.abExec)*(1+PW.shock*x.shock/100*(x.surt?(3+surtJ(x.surt))/3:1))*(1+cr*x.abRift/100*2.1)*(1+PW.shard*x.shard/100)*(1+cu*PW.doom*(x.doom||0)/100);
   const atk=(x.dmg*x.aps*cm*(1+x.multi*.8)*(1+x.echo/100)*(1+x.waves*.5)*(1+dotR*stTg)+x.burn*(1+PW.embr*(x.embr||0)/150))*tg*hitM;
   // sort
   const sp=SPELLS[cls].s[kit.s]||SPELLS[cls].s[0],K=PW.sk[sp.k],sr=1+x.skillRad/100,cd=Math.max(.5,sp.cd*(1-x.cdr/100)*(x.seals&&x.seals.sablier?.8:1)*(x.seals&&x.seals.vif?.85:1)-Math.min(2,PW.spK*(x.flux||0)));

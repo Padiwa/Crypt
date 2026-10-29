@@ -112,7 +112,7 @@ function campFusion(){const g=fuseGroups();
 // Cartes Source (à gauche : ses affixes à prendre) et Cible (le résultat)
 function fzCards(a,b){const sel=fzc.sel,cap=fzCap(a,b),n=fzCount(sel),R=(a.up|0)+1,aby=k=>AFF[k]&&AFF[k].aby;
   const bl=it=>`niv. ${it.lvl} · ${baseTxtOf(it.slot,fmtN(it.base.v*upMul(it.up)))}`;
-  const sLines=`<li><button class="cx-line cx-line--base" data-cact="fzbase" data-arg="${sel.base==='b'?'a':'b'}" aria-pressed="${sel.base==='b'}">${bl(b)}</button></li>`+Object.keys(b.aff).map(k=>`<li><button class="cx-line${aby(k)?' is-aby':''}" data-cact="fzk" data-arg="${k}|b" aria-pressed="${sel.k[k]==='b'}">${xfV(b,k,b.aff[k])}${affOff(k)?` <span class="affoff__tag">${affOnly(k)}</span>`:''}</button></li>`).join('');
+  const sLines=`<li><button class="cx-line cx-line--base" data-cact="fzbase" data-arg="${sel.base==='b'?'a':'b'}" aria-pressed="${sel.base==='b'}">${bl(b)}</button></li>`+Object.keys(b.aff).map(k=>`<li><button class="cx-line${aby(k)?' is-aby':''}" data-cact="fzk" data-arg="${k}|b" aria-pressed="${sel.k[k]==='b'}">${xfV(b,k,b.aff[k])}${affOff(k,heroCls,b)?` <span class="affoff__tag">${affOnly(k,b)}</span>`:''}</button></li>`).join('');
   let tLines=sel.base==='b'?`<li class="cx-line cx-line--del">${bl(a)}</li><li class="cx-line cx-line--add">${bl(b)}</li>`:`<li class="cx-line cx-line--base">${bl(a)}</li>`;
   for(const k of fzKeys(a,b)){const s=sel.k[k],ha=a.aff[k]!=null;
     if(s==='a')tLines+=`<li><button class="cx-line" data-cact="fzk" data-arg="${k}|a" aria-pressed="true">${xfV(a,k,a.aff[k])}</button></li>`;
