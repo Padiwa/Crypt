@@ -64,10 +64,11 @@ const baseTxtOf=(slot,v)=>slot==='dos'?`−${v} % de dégâts subis`:slot==='arm
 let uid=1+Math.max(0,...meta.stash.map(i=>i.id),...Object.values(meta.gear||{}).filter(Boolean).map(i=>i.id),...Object.values(meta.gearBy||{}).flatMap(g=>Object.values(g||{})).filter(Boolean).map(i=>i.id));
 // Butin des monstres : Commun, Magique ou Rare. Le Tourment rend le Rare plus fréquent.
 function rollRarity(l){const tb=(typeof G!=='undefined'&&G)?dif().tier*1.5:0,x=Math.random()*100,rare=Math.min(30,8+l*.15)+tb;return x<rare?2:x<rare+32?1:0}
+// Statistique de base d'un objet hors arme (niveau l, rareté r).
+const baseGen=(slot,l,r)=>{const bv=slot==='armure'?Math.round(20+l*7+rand(-4,6)):slot==='bottes'?ri(4,8)+Math.floor(l/4):slot==='anneau'?ri(5,10)+Math.floor(l*.8):ri(2,5);return Math.max(1,Math.round(bv*RB[r]))};
 function genItem(l,minR=0){
   let r=Math.min(2,Math.max(rollRarity(l+lv('luc')*3),minR));const DQ=G?dif():{aq:0};const slot=pick(['armure','amulette','bottes','anneau']), bk=BASE_STAT[slot];
-  const bv=slot==='armure'?Math.round(20+l*7+rand(-4,6)):slot==='bottes'?ri(4,8)+Math.floor(l/4):slot==='anneau'?ri(5,10)+Math.floor(l*.8):ri(2,5);
-  const it={id:uid++,slot,r,lvl:l,base:{k:bk,v:Math.max(1,Math.round(bv*RB[r]))},aff:{}};
+  const it={id:uid++,slot,r,lvl:l,base:{k:bk,v:baseGen(slot,l,r)},aff:{}};
   const bio=(typeof G!=='undefined'&&G&&G.biome)||0;
   let pool=Object.keys(AFF).filter(k=>!AFF[k].w&&!AFF[k].old&&(!AFF[k].bio||bio===AFF[k].bio)&&(!AFF[k].cls||AFF[k].cls.includes(heroCls))&&!AFF_WONLY[k]);const chosen=[];
   if(bio){const fr=pool.filter(k=>AFF[k].bio);if(Math.random()<.45){const k=pick(fr);chosen.push(k);pool=pool.filter(x=>x!==k)}}
@@ -78,6 +79,15 @@ function genItem(l,minR=0){
   it.type=base;
   return it;
 }
+/* Objets uniques des Boss (v147, boss.js) : légendaires, affixes fixées tirées au niveau de l'objet, et un pouvoir propre (it.uq).
+   v : valeur du pouvoir, provisoire (à régler au banc). Condamné : bonus sous condition, additionné aux autres (plafond COND_CAP). */
+const UQ={
+  condamne:{n:'Chaîne du Condamné',slot:'amulette',aff:['dotPct','crit','critDmg'],v:40,
+    d:v=>`Un ennemi qui porte ${BLD_MAX} saignements est condamné : +${v} % de dégâts contre lui`},
+};
+const uqTxt=k=>`<b style="color:#ff6a50">Pouvoir unique</b> : ${UQ[k].d(UQ[k].v)}`;
+function uqItem(k,l){const U=UQ[k],DQ=G?dif():{aq:0},it={id:uid++,slot:U.slot,r:3,lvl:l,base:{k:BASE_STAT[U.slot],v:baseGen(U.slot,l,3)},aff:{},name:U.n,type:U.n,uq:k};
+  for(const a of U.aff)it.aff[a]=Math.max(1,Math.round(AFF[a].r(l)*RK[3]*(1+(DQ.aq||0))));return it}
 /* Rang (1 à 10) : deux exemplaires identiques de même rang fusionnent en un seul du rang au-dessus, +10 % de statistiques par rang.
    Stocké dans it.up (et meta.wlv pour les armes) : 0 = rang 1, 9 = rang 10. */
 const UP_MAX=9;
@@ -108,7 +118,7 @@ function stats(eq){
     psnCh:0,bldCh:0,stunCh:0,rootCh:0,stDur:0,contag:0,echo:0,critSt:0,cdSt:0,embr:0,peste:0,hemo:0,cryo:0,surt:0,cata:0,diam:0,defl:0,soif:0,dotPct:0,thorns:0,ccDmg:0,
     flux:0,intSt:0,impr:0,comm:0,gardA:0,elan:0,peau:0,pasEl:0,ripo:0,econ:0,exFer:0,exRage:0,buffDur:0,rema:0,flea:0,terr:0};
   for(const it of Object.values(eq))if(it){const m=upMul(it.up);s[it.base.k]+=it.base.v*m;for(const k in it.aff)if(!affOff(k,heroCls,it))s[k]+=NOSCALE[k]?it.aff[k]:it.aff[k]*m}
-  s.seals={};for(const it of Object.values(eq))if(it&&it.seal)s.seals[it.seal]=1;
+  s.seals={};s.uniq={};for(const it of Object.values(eq))if(it){if(it.seal)s.seals[it.seal]=1;if(it.uq)s.uniq[it.uq]=1}
   for(const id of allMods(heroCls))s[MODS[id].k]+=modVal(id,meta.mods[id]);
   const R=(G&&G.run)||{},rr=k=>R[k]||0;
   s.dmgPct+=rr('dmg')*12;s.apsPct+=rr('aps')*10;s.crit+=rr('crit')*5;s.critDmg+=rr('cdmg')*30;s.speed+=rr('spd')*8;
@@ -128,7 +138,7 @@ function stats(eq){
   if(bf.surT>0){apsX*=2;s.splash+=50;dmgX*=ub}
   const dmg=s.dmg*(1+s.dmgPct/100)*dmgX;
   return {shotSpd:cb&&heroCls==='archer'?1.5:1,dmg,aps:s.aps*(1+s.apsPct/100)*apsX,hp:s.hp,crit:Math.min(s.crit,75),critDmg:s.critDmg,multi:s.multi,pierce:s.pierce,burn:(s.burn+dmg*s.burnPct/100)*(1+s.dotPct/100),chill:Math.min(s.chill,ST_CAP.chill),shock:Math.min(s.shock,ST_CAP.shock),
-    armor:Math.min(s.armor,60),speed:220*(1+s.speed/100),regen:s.regen,cdr:Math.min(s.cdr,50),nova:dmg*4*(1+s.novaPct/100),leech:s.leech,reach:s.reach,splash:Math.min(s.splash,300),magnet:s.magnet,skillRad:Math.min(s.skillRad,300),skillDur:s.skillDur,dashCd:Math.min(s.dashCd,60),potHeal:s.potHeal,lowArmor:Math.min(s.lowArmor,60),lowDmg:s.lowDmg,auraSlow:Math.min(s.auraSlow,50),goldPct:s.goldPct,antidote:s.antidote,execute:s.execute||0,fury:Math.min(s.fury||0,50),ultPct:s.ultPct||0,bossDmg:s.bossDmg||0,xpPct:s.xpPct||0,lootPct:s.lootPct||0,echo:s.echo||0,waves:s.waves||0,frz:Math.min(s.frz,40),cold:s.cold,shard:Math.min(s.shard,60),curse:Math.min(s.curse,60),hex:s.hex,doom:Math.min(s.doom,60),abSoul:Math.min(s.abSoul,6),abWard:s.abWard,abPulse:s.abPulse,abExec:Math.min(s.abExec,20),abRift:Math.min(s.abRift,60),abHunt:s.abHunt,seals:s.seals,
+    armor:Math.min(s.armor,60),speed:220*(1+s.speed/100),regen:s.regen,cdr:Math.min(s.cdr,50),nova:dmg*4*(1+s.novaPct/100),leech:s.leech,reach:s.reach,splash:Math.min(s.splash,300),magnet:s.magnet,skillRad:Math.min(s.skillRad,300),skillDur:s.skillDur,dashCd:Math.min(s.dashCd,60),potHeal:s.potHeal,lowArmor:Math.min(s.lowArmor,60),lowDmg:s.lowDmg,auraSlow:Math.min(s.auraSlow,50),goldPct:s.goldPct,antidote:s.antidote,execute:s.execute||0,fury:Math.min(s.fury||0,50),ultPct:s.ultPct||0,bossDmg:s.bossDmg||0,xpPct:s.xpPct||0,lootPct:s.lootPct||0,echo:s.echo||0,waves:s.waves||0,frz:Math.min(s.frz,40),cold:s.cold,shard:Math.min(s.shard,60),curse:Math.min(s.curse,60),hex:s.hex,doom:Math.min(s.doom,60),abSoul:Math.min(s.abSoul,6),abWard:s.abWard,abPulse:s.abPulse,abExec:Math.min(s.abExec,20),abRift:Math.min(s.abRift,60),abHunt:s.abHunt,seals:s.seals,uniq:s.uniq,uqCond:s.uniq.condamne?UQ.condamne.v:0,
     psnCh:Math.min(s.psnCh,ST_CAP.psnCh),bldCh:Math.min(s.bldCh,ST_CAP.bldCh),stunCh:Math.min(s.stunCh,ST_CAP.stunCh),rootCh:Math.min(s.rootCh,ST_CAP.rootCh),stDur:s.stDur,contag:Math.min(s.contag,ST_CAP.contag),
     critSt:s.critSt,cdSt:s.cdSt,embr:s.embr,peste:Math.floor(s.peste),hemo:s.hemo,cryo:s.cryo,surt:s.surt,cata:s.cata,diam:s.diam,defl:s.defl,soif:s.soif,dotPct:s.dotPct,thorns:s.thorns,ccDmg:s.ccDmg,
     flux:s.flux,intSt:s.intSt,impr:s.impr,comm:s.comm,gardA:s.gardA,elan:s.elan,peau:s.peau,pasEl:s.pasEl,ripo:s.ripo,econ:Math.min(s.econ,60),exFer:Math.min(s.exFer,70),exRage:s.exRage,buffDur:s.buffDur,rema:Math.min(s.rema,35),flea:s.flea,terr:Math.min(s.terr,50)};

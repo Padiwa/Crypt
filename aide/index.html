@@ -139,7 +139,7 @@ details.more .tbl{margin:0 14px 14px}
   <div class="bar"><a class="brand" href="#debut">Guide de la Crypte</a><a class="back" href="../index.html"><svg viewBox="0 0 24 24"><path d="M15 18 9 12l6-6"/></svg>Retour au jeu</a></div>
   <nav class="toc" aria-label="Sommaire">
     <a href="#debuter">Bien débuter</a><a href="#demarrer">Premiers pas</a><a href="#heros">Héros</a><a href="#partie">En mission</a><a href="#missions">Missions</a>
-    <a href="#ennemis">Ennemis</a><a href="#difficulte">Difficulté</a><a href="#butin">Butin</a><a href="#camp-equip">Onglet Héros</a>
+    <a href="#ennemis">Ennemis</a><a href="#boss">Boss</a><a href="#difficulte">Difficulté</a><a href="#butin">Butin</a><a href="#camp-equip">Onglet Héros</a>
     <a href="#camp-arsenal">Arsenal</a><a href="#camp-relics">Reliques</a><a href="#camp-mods">Mods</a><a href="#familiers">Familiers</a><a href="#camp-affix">Affixes</a>
     <a href="#camp-forge">Forge</a><a href="#coop">Coop</a><a href="#reglages">Réglages</a><a href="#conseils">Conseils</a>
   </nav>
@@ -412,6 +412,40 @@ details.more .tbl{margin:0 14px 14px}
   </div>
   <div class="shots one">
     <figure><button class="shot" type="button"><img src="img/boss.jpg" alt="Un Gardien et sa barre de vie en haut de l'écran" width="780" height="1688" loading="lazy"></button><figcaption>Le Gardien des Cendres et sa barre de vie.</figcaption></figure>
+  </div>
+</div></section>
+
+<section id="boss"><div class="sec">
+  <div class="txt">
+    <h2><small>En solo</small>Boss et clé d'antre</h2>
+    <p>Un <b>Boss</b> est une rencontre unique, plus dure qu'un Gardien, en plusieurs phases, avec son propre butin. On l'appelle avec une <b>clé d'antre</b>. Pour l'instant, un Boss existe : le <b>Bourreau des Cendres</b>, dans la Crypte des Cendres.</p>
+    <h3>La clé d'antre</h3>
+    <ul>
+      <li>En solo, un Gardien peut lâcher un <b>fragment de clé</b> (une clé orange au sol), dans un lieu qui a son Boss. Un fragment au plus par mission.</li>
+      <li>Les fragments sont gardés si tu sors avec le butin, comme le reste. <b>3 fragments</b> du même lieu font une clé.</li>
+      <li>Dans l'écran Mission, la ligne <b>Clé d'antre</b> apparaît au premier fragment. Touche-la pour appeler le Boss. Elle est cachée en coopération.</li>
+      <li>Le Boss arrive <b>après le premier objectif</b> : à la 2e manche en Survie, après la 3e vague en Défense, après la première capture. La clé est consommée quand il apparaît. Si tu sors avant, tu la gardes.</li>
+    </ul>
+    <h3>Le combat</h3>
+    <p>Un <b>cercle de runes</b> se referme autour de toi : tu ne peux plus en sortir tant que le Boss vit. Pendant le combat, les Gardiens n'arrivent plus, la manche attend (les monstres ne se renforcent pas) et l'extraction de la Capture est fermée. La barre du Boss, rouge, est crantée à la moitié : c'est là que commence sa deuxième phase.</p>
+    <h3>Le Bourreau des Cendres</h3>
+    <ul>
+      <li><b>Sentence</b> : un cercle rouge se resserre autour de toi pendant 2 s, puis vient un coup énorme (60 % de ta vie, avant ta réduction des dégâts). Quand le cercle devient <b>doré</b>, esquive : c'est l'<b>esquive parfaite</b>. Elle annule le coup et étourdit le Bourreau 1 s, et tes dégâts contre lui sont doublés pendant ce temps. Une esquive trop tôt ne protège pas.</li>
+      <li><b>Chaîne</b> : il t'attache à un pieu. Tu ne peux pas t'en éloigner tant qu'il tient debout. Ton attaque vise ce qui est le plus proche : brise-le.</li>
+      <li><b>L'ombre</b> (sous la moitié de sa vie) : il éteint les braseros, la lumière se resserre autour de toi et il se fond dans le noir. Seule la ligne rouge de sa charge le trahit.</li>
+    </ul>
+    <h3>Le butin</h3>
+    <ul>
+      <li>Son <b>objet unique</b>, qui va tout de suite dans ton coffre, même si tu tombes ensuite. Si tu l'as déjà, tu reçois 150 essence à la place.</li>
+      <li>Une relique de la difficulté, une potion, de l'or et 100 essence.</li>
+      <li>À la première victoire, une nouvelle couleur de héros pour la cape, la bordure et la capuche (Héros › Couleurs).</li>
+    </ul>
+    <div class="tbl"><table>
+      <thead><tr><th>Objet unique</th><th>Pouvoir</th></tr></thead>
+      <tbody>
+        <tr><td><b>Chaîne du Condamné</b><br>Amulette légendaire, Bourreau</td><td>Un ennemi qui porte 3 saignements est condamné : +40 % de dégâts contre lui. Ce bonus s'additionne aux autres bonus sous condition (plafond +300 %). Affixes : dégâts du feu, du poison et du saignement, chances de critique, dégâts critiques. Pensée pour un build saignement (Entaille, Hémorragie).</td></tr>
+      </tbody>
+    </table></div>
   </div>
 </div></section>
 

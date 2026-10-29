@@ -42,7 +42,7 @@ function inputVec(){
   return {x,y,m:Math.min(m,1)};
 }
 const dashCdMax=()=>3*(1-S.cdr/100)*(1-S.dashCd/100);
-function doDash(){const P=G.P;if(P.down)return;if(P.dashCd>0){if(!(sealOn('esq')&&P.dash2))return;P.dash2=0}else if(sealOn('esq'))P.dash2=1;if(sealOn('ombre'))P.critNext=1;SND.play('dash');P.dashT=.2;P.dashCd=dashCdMax();burst(P.x,P.y,10,'#9fc2b8',120);
+function doDash(){const P=G.P;if(P.down)return;if(P.dashCd>0){if(!(sealOn('esq')&&P.dash2))return;P.dash2=0}else if(sealOn('esq'))P.dash2=1;if(sealOn('ombre'))P.critNext=1;SND.play('dash');P.dashT=.2;P.dashAt=G.t;P.dashCd=dashCdMax();burst(P.x,P.y,10,'#9fc2b8',120);
   P.dashHit=new Set();P.dashSt=new Set();
   if(S.elan>0)P.elanT=2;if(S.peau>0)P.peauT=1.5;if(S.ripo>0)P.ripoN=1;petInst();
   if(G.cls==='archer'&&hasTal('a_shadow'))P.critShots=3;

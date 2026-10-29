@@ -64,7 +64,10 @@ SIM.bot = function () {
   // actions
   if (P.novaCd <= 0 && (near >= 5 || (boss && nd < 260) || (cls === 'guerrier' && near2 >= 3) || (cls === 'magicien' && near2 >= 2))) doNova();
   if ((G.ult || 0) >= ultNeed() && (near >= 8 || boss)) doUlt();
-  if (P.dashCd <= 0 && ((P.hp < S.hp * .5 && near2 >= 3) || G.eb.some(b => Math.hypot(b.x - P.x, b.y - P.y) < 55) || G.en.some(e => e.state === 'charge' && Math.hypot(e.x - P.x, e.y - P.y) < 130))) doDash();
+  // Boss (v147) : l'esquive est gardée pour la Sentence et lancée dans la fenêtre de l'esquive parfaite
+  const sent = typeof SENT_PERF !== 'undefined' && G.sent, keepDash = sent || (G.lord && !G.lord.dead && G.lord.sentT < 3);
+  if (sent && P.dashCd <= 0 && G.sent.t <= SENT_PERF * .6) doDash();
+  if (!keepDash && P.dashCd <= 0 && ((P.hp < S.hp * .5 && near2 >= 3) || G.eb.some(b => Math.hypot(b.x - P.x, b.y - P.y) < 55) || G.en.some(e => e.state === 'charge' && Math.hypot(e.x - P.x, e.y - P.y) < 130))) doDash();
   if (G.potions > 0 && P.hp < S.hp * .4) doPotion();
 };
 
