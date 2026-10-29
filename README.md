@@ -46,6 +46,8 @@ Action-RPG de crypte en hordes, jouable au pouce sur mobile et au clavier. Site 
 | `js/nav.js` | Retour arrière (bouton Retour d'Android, Échap) et raccourcis clavier du Camp |
 | `aide/` | Guide du joueur |
 | `tools/tests/` | Suite de tests automatiques |
+| `tools/banc/` | Banc de mission : missions jouées par le bot pour mesurer l'équilibrage (voir son README) |
+| `CLAUDE.md` | Consignes de travail et état du projet pour Claude Code |
 | `js/settings.js` | Réglages de l'appareil, bannière d'événements, vibrations |
 | `js/audio.js` | Sons synthétisés (Web Audio) et musique d'ambiance |
 | `js/main.js` | Boucle à pas fixe et démarrage |
@@ -76,8 +78,8 @@ Le rythme chargé est celui de la balise `<script src="js/rythmes/….js">` d'`i
 Une suite unique vérifie le jeu dans un vrai navigateur (Chromium sans affichage) : démarrage, butin, reliques, fabrication et fusion, coffre, affixes, emplacements, missions, contrôles, sauvegarde, parcours, coopération.
 ```
 npm i playwright && npx playwright install chromium
-node tools/tests/run.mjs            # tout (162 tests, ≈ 5 min)
-node tools/tests/run.mjs --quick    # sans la coopération (151 tests)
+node tools/tests/run.mjs            # tout (170 tests, ≈ 6 min)
+node tools/tests/run.mjs --quick    # sans la coopération (159 tests)
 node tools/tests/run.mjs fusion     # seulement les suites dont le fichier contient « fusion »
 ```
 Chaque fichier de `tools/tests/suites/` exporte une liste `tests`. Toute erreur JavaScript dans la page fait échouer le test. **À lancer avant chaque nouvelle version** : la commande sort en erreur si un test échoue.
