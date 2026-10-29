@@ -147,7 +147,7 @@ function defenseTick(dt){
   if(G.waveState==='break'){G.waveT-=dt;if(G.waveT<=0){G.wave++;G.waveState='fight';G.toSpawn=Math.min(160,Math.round((10+G.wave*4+(G.level-1)*10)*1.15));G.spawnT=.5;
       const bn=dif().cnt;SND.play('wave');if(G.wave%DEF_N===0)banner(`Vague ${G.wave} · ${bn>1?bn+' Gardiens arrivent':'un Gardien arrive'}`,'#b06ae0',2,true);
       if(G.wave%DEF_N===0)spawnBosses(true)}return}
-  if(G.toSpawn>0){G.spawnT-=dt;if(G.spawnT<=0){G.spawnT=Math.max(.3,.9-G.wave*.03);const [type,n]=chooseType(G.wave*18,G.level);const k=spawnPack(type,Math.min(n,G.toSpawn));G.toSpawn-=Math.max(1,k)}}
+  if(G.toSpawn>0){G.spawnT-=dt;if(G.spawnT<=0){G.spawnT=Math.max(.3,.9-G.wave*.03)/hordeK();const [type,n]=chooseType(G.wave*18,G.level);const k=spawnPack(type,Math.min(n,G.toSpawn));G.toSpawn-=Math.max(1,k)}}
   else if(!G.en.length&&!G.spawns.length){
     if(G.wave%DEF_N===0)roundDone();
     else{G.waveState='break';G.waveT=4;G.pod.hp=Math.min(G.pod.max,G.pod.hp+G.pod.max*.08);toast(`Vague ${G.wave} repoussée`)}
@@ -168,8 +168,8 @@ function spawner(dt){
   if(!lordOn())G.bossT-=dt; // v147 : en pause pendant le combat contre un Boss
   if(G.bossT<=0){G.bossT=bossIv();spawnBosses()}
   G.spawnT-=dt;if(G.spawnT>0)return;
-  G.spawnT=Math.max(.14,(.85-.12*(L-1))*.87);
-  const target=Math.min(NET.host&&NET.on?coopCap():250,Math.round((22+14*(L-1))*1.15*(NET.host&&NET.on?coopCnt():1)));
+  G.spawnT=Math.max(.14,(.85-.12*(L-1))*.87)/hordeK(); // v147 : hordes × hordeK() pendant le combat contre un Boss
+  const target=Math.min(NET.host&&NET.on?coopCap():250,Math.round((22+14*(L-1))*1.15*(NET.host&&NET.on?coopCnt():1)*hordeK()));
   if(G.en.length>=target)return;
   const [type,n]=chooseType(G.t,G.level);spawnPack(type,n); // les types de monstres suivent toujours le niveau de manche (arrivée progressive en début de partie)
 }

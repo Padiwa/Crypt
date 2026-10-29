@@ -7,19 +7,23 @@
    Combat : un cercle de runes se referme (on ne peut plus en sortir), le minuteur des Gardiens et l'horloge de la manche sont en pause,
    l'extraction de la Capture est fermée. Le Boss compte comme un Gardien pour les statuts et les bonus (type 'boss', e.lord).
    Butin : l'objet unique (dans le coffre tout de suite ; déjà possédé, de l'essence), une relique garantie, de l'essence, une couleur de héros
-   à la première victoire. Valeurs provisoires, à régler au banc (BAL.lordHp, BAL.sentHp… pour les essais). */
+   à la première victoire. Valeurs mesurées au banc et choisies par l'auteur le 29 octobre 2026 (BAL.lordHp, BAL.sentHp… pour les essais). */
 const LORDS={
   bourreau:{n:'Le Bourreau des Cendres',bio:0,col:'#4a1c18',uq:'condamne',sw:{cloak:'#3b0e0c',rim:'#b8322a',inner:'#120707'}},
 };
 const lordOfBio=b=>Object.keys(LORDS).find(k=>LORDS[k].bio===b)||null;
 const LORD_C='#ff6a50',KEY_N=3,LORD_IN=4,ARENA_R=560,LORD_ESS=100,UQ_DUP_ESS=150;
-const LORD_HP=BAL.lordHp||8;            // vie : × celle d'un Gardien au même moment de la mission
+const LORD_HP=BAL.lordHp||4;            // vie : × celle d'un Gardien au même moment (choix de l'auteur au banc : combats d'une minute environ)
 // Sentence : un cercle se resserre 2 s autour du héros, puis un coup énorme. Une esquive lancée dans les SENT_PERF dernières secondes
 // (« esquive parfaite ») l'annule et étourdit le Bourreau PERF_STUN s, pendant lesquelles il subit des dégâts doublés.
 // Sans esquive : SENT_HP de la vie maximale du héros, avant sa réduction des dégâts (dangereux sans tuer d'un coup un héros en pleine vie).
 const SENT_IV=BAL.sentIv||9,SENT_T=2,SENT_PERF=.3,SENT_HP=BAL.sentHp||.6,PERF_STUN=1,PERF_X=2;
 // Chaîne : un pieu tombe près du héros, qui ne peut plus s'en éloigner de CHAIN_R px tant qu'il tient debout.
 const CHAIN_IV=BAL.chainIv||13,CHAIN_R=190,STAKE_HP=BAL.stakeHp||210;
+// Hordes pendant le combat : de son apparition à sa mort, moitié moins de monstres, qui arrivent deux fois moins vite (LORD_HORDE).
+// Choisi par l'auteur après le banc du 29 octobre 2026 : le combat se lit mieux, un peu moins de morts au niveau 30.
+const LORD_HORDE=BAL.lordHorde??.5;
+const hordeK=()=>lordOn()?LORD_HORDE:1;
 meta.keyF=meta.keyF||{};meta.keys=meta.keys||{};meta.lordW=meta.lordW||{};
 const lordOn=()=>!!(G&&G.lord&&!G.lord.dead);
 const lordArenaR=()=>{const A=G.arena;return A?A.r*(1+1.5*(1-A.k)):0};

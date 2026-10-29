@@ -66,7 +66,9 @@ SIM.bot = function () {
   if ((G.ult || 0) >= ultNeed() && (near >= 8 || boss)) doUlt();
   // Boss (v147) : l'esquive est gardée pour la Sentence et lancée dans la fenêtre de l'esquive parfaite
   const sent = typeof SENT_PERF !== 'undefined' && G.sent, keepDash = sent || (G.lord && !G.lord.dead && G.lord.sentT < 3);
-  if (sent && P.dashCd <= 0 && G.sent.t <= SENT_PERF * .6) doDash();
+  // PERF_MISS (banc) : part des Sentences où le bot esquive trop tôt, comme un joueur qui rate la fenêtre
+  if (sent && SIM.sentO !== G.sent) { SIM.sentO = G.sent; SIM.sentMiss = Math.random() < (window.PERF_MISS || 0); }
+  if (sent && P.dashCd <= 0 && G.sent.t <= (SIM.sentMiss ? SENT_PERF + .25 : SENT_PERF * .6) && (!SIM.sentMiss || G.sent.t > SENT_PERF + .05)) doDash();
   if (!keepDash && P.dashCd <= 0 && ((P.hp < S.hp * .5 && near2 >= 3) || G.eb.some(b => Math.hypot(b.x - P.x, b.y - P.y) < 55) || G.en.some(e => e.state === 'charge' && Math.hypot(e.x - P.x, e.y - P.y) < 130))) doDash();
   if (G.potions > 0 && P.hp < S.hp * .4) doPotion();
 };

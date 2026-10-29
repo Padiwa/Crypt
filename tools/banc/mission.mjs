@@ -18,7 +18,7 @@ const cls = etat.C.cls, here = path.resolve(SITE, 'tools/progression');
 const tiers = TIERS.split(',').map((s) => s.split(':').map(Number));
 for (const [d, t] of tiers) for (let i = 0; i < +K; i++) {
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 } });
-  await ctx.addInitScript(`window.BAL_OVERRIDE = ${BALJ}; window.POD_R = ${+(process.env.POD_R || 260)}; window.POD_SRC = ${process.env.POD_SRC ? '{}' : 'null'}; window.POD_IMM = ${process.env.POD_IMM ? 1 : 0}; window.FORCE_N = ${+(process.env.FORCE_N || 0)}; window.MAXT = ${+(process.env.MAXT || 0)}; window.LORD = ${process.env.LORD ? 1 : 0};`);
+  await ctx.addInitScript(`window.BAL_OVERRIDE = ${BALJ}; window.POD_R = ${+(process.env.POD_R || 260)}; window.POD_SRC = ${process.env.POD_SRC ? '{}' : 'null'}; window.POD_IMM = ${process.env.POD_IMM ? 1 : 0}; window.FORCE_N = ${+(process.env.FORCE_N || 0)}; window.MAXT = ${+(process.env.MAXT || 0)}; window.LORD = ${process.env.LORD ? 1 : 0}; window.PERF_MISS = ${+(process.env.PERF_MISS || 0)};`);
   await ctx.addInitScript(fs.readFileSync(path.join(here, 'bot.js'), 'utf8') + `;SIM.seed(${4242 + i * 17});`);
   const p = await ctx.newPage(); const errs = []; p.on('pageerror', (e) => errs.push(e.message));
   await p.route(/pixi\.min\.js|fonts\.googleapis|fonts\.gstatic|cdn\.jsdelivr|cdnjs/, (r) => r.abort());

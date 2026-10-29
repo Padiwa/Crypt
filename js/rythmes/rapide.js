@@ -29,6 +29,6 @@ const RYTHME={
   starCopies:2,        // copies de mod demandées par étoile (×)
   eggMul:.4,           // chance d'œuf par relique ouverte (×)
   hfMul:1,             // chance de fragment de harnais sur un Gardien (×)
-  keyFrag:.1,          // chance de fragment de clé d'antre sur un Gardien, en solo, dans un lieu qui a son Boss (v147, provisoire)
-  keyFragMax:1,        // … au plus par mission (3 fragments font une clé)
+  keyFrag:.1,          // chance de fragment de clé d'antre sur un Gardien, en solo, dans un lieu qui a son Boss (v147)
+  keyFragMax:1,        // … au plus par mission (3 fragments font une clé). Simulateur : 1re clé en 0,4 à 1,4 h, puis une toutes les 20 à 30 min
 };

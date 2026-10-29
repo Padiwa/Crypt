@@ -14,19 +14,25 @@ Choix faits en construisant, à confirmer par l'auteur :
 - La **Sentence** retire 60 % de la vie maximale (avant la réduction des dégâts) au lieu de dépendre des dégâts du Bourreau : à 3,5 fois ses dégâts, elle tuait d'un coup un héros débutant.
 - Les fragments ne tombent **qu'en solo**.
 
-Valeurs provisoires, à régler au banc puis à choisir par l'auteur :
+Valeurs du jeu, mesurées au banc et validées par l'auteur le 29 octobre 2026 :
 
 | Réglage | Valeur | Où |
 | --- | --- | --- |
-| Chance de fragment par Gardien | 10 %, un au plus par mission | `keyFrag`, `keyFragMax` (rythmes) |
-| Vie du Bourreau | 8 Gardiens au même moment | `LORD_HP` (`BAL.lordHp`) |
+| Chance de fragment par Gardien | 10 %, un au plus par mission (1re clé en 0,4 à 1,4 h, puis une toutes les 20 à 30 min au simulateur) | `keyFrag`, `keyFragMax` (rythmes) |
+| Vie du Bourreau | 4 Gardiens au même moment | `LORD_HP` (`BAL.lordHp`) |
 | Sentence | toutes les 9 s (×0,8 dans l'ombre), 60 % de la vie, fenêtre parfaite 0,3 s | `SENT_IV`, `SENT_HP`, `SENT_PERF` |
 | Esquive parfaite | Bourreau étourdi 1 s, dégâts ×2 | `PERF_STUN`, `PERF_X` |
 | Chaîne | toutes les 13 s, 190 px, pieu à 210 × la vie de base | `CHAIN_IV`, `CHAIN_R`, `STAKE_HP` |
+| Hordes pendant le combat | moitié moins, deux fois moins vite | `LORD_HORDE` (`BAL.lordHorde`) |
 | Butin | 100 essence, double : 150 essence | `LORD_ESS`, `UQ_DUP_ESS` |
 | Chaîne du Condamné | +40 % (bonus sous condition) | `UQ.condamne.v` |
 
-Premier banc (bot niveau 30 de `tools/banc/etats`, Normal et Tourment I, 2 parties par héros) : 12 Bourreaux vaincus sur 12, sans mort, en 4 à 54 s. Le bot réussit toutes ses esquives parfaites, ce qu'un joueur ne fera pas : le banc mesure surtout la vie du Bourreau.
+Banc du 29 octobre 2026 (3 héros, bot niveau 30 et très bon équipement niveau 50, Normal à Tourment X, avec toutes les esquives parfaites ou une sur deux ratée avec `PERF_MISS=0.5`) :
+
+- Niveau 50 : Bourreau vaincu en moins de 6 s partout, quelle que soit sa vie.
+- Niveau 30, avec 8 Gardiens de vie : combats jusqu'à 2 min 30 (Guerrier, Tourment X), jusqu'à 9 min sans hordes ; le Magicien meurt en Tourment X. Ce sont surtout les coups du Bourreau répétés pendant un long combat qui tuent, pas la Sentence.
+- Choix de l'auteur : **moitié moins de hordes** pendant le combat et **4 Gardiens de vie**. Niveau 30, une esquive sur deux ratée : Guerrier 17 s (T I), 52 s (T VI), 78 s (T X) ; Magicien 24 s, 44 s, 102 s (2 morts sur 3 en T X). L'Archer du bot meurt en Tourment VI et X avec ou sans Boss.
+- Banc complet avec ces valeurs (144 parties) : niveau 50, Bourreau vaincu en 0 à 5 s partout, vie jamais sous 100 %. Niveau 30, toutes esquives réussies : Guerrier 6 s (Normal) à 83 s (T X) ; Magicien 6 s à 51 s (T VI), mort en T X ; Archer vaincu jusqu'au T I. Suite de tests : 178 réussis.
 
 Les **Gardiens restent** tels qu'ils sont : ils arrivent régulièrement pendant la mission. Les **Boss s'ajoutent** : des rencontres uniques et nommées, en plusieurs phases, au plus une par mission, avec un objet unique pensé pour un build.
 
@@ -170,5 +176,3 @@ Chaque Boss est réglé au banc avant d'être livré : vie, temps des phases, ch
 
 - Les pouvoirs des six objets proposés ci-dessus : les garder, les changer ?
 - Les choix faits en construisant le Bourreau (voir « État (v147) ») : clé consommée à l'apparition, objet gardé tout de suite, manche en pause, Sentence en part de la vie.
-- La chance de tomber des fragments, et le nombre de missions visé pour une clé (aujourd'hui : au moins 3 missions, une sur dix environ par Gardien).
-- Les valeurs du Bourreau après un banc plus large (niveaux 10, 30 et 50, Tourment X).

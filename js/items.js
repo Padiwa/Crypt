@@ -80,7 +80,7 @@ function genItem(l,minR=0){
   return it;
 }
 /* Objets uniques des Boss (v147, boss.js) : légendaires, affixes fixées tirées au niveau de l'objet, et un pouvoir propre (it.uq).
-   v : valeur du pouvoir, provisoire (à régler au banc). Condamné : bonus sous condition, additionné aux autres (plafond COND_CAP). */
+   v : valeur du pouvoir. Condamné : bonus sous condition, additionné aux autres (plafond COND_CAP). */
 const UQ={
   condamne:{n:'Chaîne du Condamné',slot:'amulette',aff:['dotPct','crit','critDmg'],v:40,
     d:v=>`Un ennemi qui porte ${BLD_MAX} saignements est condamné : +${v} % de dégâts contre lui`},

@@ -49,7 +49,7 @@ Boss, d'après `boss.md` (choix de l'auteur : clé d'antre, objets uniques pour 
 - **Socle** (`js/boss.js`) : fragments de clé sur les Gardiens (solo, lieu qui a son Boss, un au plus par mission), 3 font une clé (`meta.keyF`, `meta.keys`), ligne « Clé d'antre » de l'écran Mission (`meta.keyOn`), arrivée après le premier objectif, arène fermée, Gardiens, manche et extraction en pause, barre crantée, butin (objet unique gardé tout de suite, relique, essence, couleurs `meta.lordW`).
 - **Bourreau des Cendres** (Crypte) : Sentence et esquive parfaite (`P.dashAt`), Chaîne (pieu), phase d'ombre (`darkK()`). Objet : **Chaîne du Condamné** (`UQ` dans `js/items.js`, compté dans la Puissance).
 - Le Boss est un ennemi de type `'boss'` avec `e.lord` (règles des Gardiens pour les statuts et les bonus) ; son pieu a `e.stake`. Les deux passent par `lordStep` et `lordKill` au lieu du comportement et du butin habituels.
-- Valeurs **provisoires**, listées dans `boss.md` : à régler au banc (`LORD=1` dans `tools/banc/mission.mjs`) et à faire choisir par l'auteur avant publication.
+- Valeurs mesurées au banc (`LORD=1`, `PERF_MISS` dans `tools/banc/mission.mjs`) et validées par l'auteur : tableau dans `boss.md`. Vie 4 Gardiens, hordes ×0,5 pendant le combat, fragments 10 % (un par mission).
 - Tests : `tools/tests/suites/28_boss.mjs`. Guide : section « Boss ».
 
 ## v146

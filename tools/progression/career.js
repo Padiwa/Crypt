@@ -140,7 +140,7 @@ SIM.step = function () {
   const row = { n: C.n, h: Math.round(C.hours * 1000) / 1000, tier: C.tier, tn: T.n, L: R.level, endL: R.endLevel, died: R.died ? 1 : 0, rounds: R.rounds, t: R.t, kills: R.kills, boss: R.boss, elite: R.elite,
     gold: R.gold, ess: R.ess, hf: R.hf, relics: R.relics, opened: R.opened, items: R.items, wpn: R.wpn,
     dps0: R.dps, hp0: R.hp, score: Math.round(SIMscore(eq)), dps: Math.round(dps(St)), hp: Math.round(St.hp),
-    bank: { gold: meta.gold | 0, ess: meta.essence | 0, hfrag: meta.hfrag | 0, maxL: maxL(), relStock: Object.fromEntries(Object.entries(meta.relics).map(([k, a]) => [k, (a[0] | 0) + (a[1] | 0)])), frags: fragTotal(), stash: meta.stash.length },
+    bank: { gold: meta.gold | 0, ess: meta.essence | 0, hfrag: meta.hfrag | 0, maxL: maxL(), relStock: Object.fromEntries(Object.entries(meta.relics).map(([k, a]) => [k, (a[0] | 0) + (a[1] | 0)])), frags: fragTotal(), stash: meta.stash.length, keyF: (meta.keyF && meta.keyF.crypte) | 0, keys: (meta.keys && meta.keys.crypte) | 0 },
     gear: Object.fromEntries(Object.entries(eq).map(([k, it]) => [k, it ? [it.r, it.up | 0, it.lvl | 0] : null])),
     up: Object.values(meta.up).reduce((a, b) => a + (b | 0), 0), prest: prOf().lv, pet: petEq() ? [petEq().t, petEq().rk, petEq().lv] : null,
     mods: allMods(heroCls).length, crafted: lg.filter(x => x.startsWith('craft')).length, ms: R.ms };

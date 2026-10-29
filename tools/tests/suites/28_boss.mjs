@@ -39,7 +39,7 @@ export const tests = [
       G.P.x = G.arena.x + 2000; G.P.y = G.arena.y; update(1 / 60); const d = Math.hypot(G.P.x - G.arena.x, G.P.y - G.arena.y);
       hud(); return { hp: +(e.max / g.max).toFixed(3), bossT: G.bossT === bt, tl: G.tl === tl, inArena: d <= G.arena.r - G.P.r + 1, bar: document.getElementById('bossBar').className, name: $('bossName').textContent };
     });
-    t.eq(r.hp, LORD_HP_EXPECT, 'vie : 8 fois celle d\'un Gardien au même moment');
+    t.eq(r.hp, LORD_HP_EXPECT, 'vie : 4 fois celle d\'un Gardien au même moment');
     t.ok(r.bossT && r.tl, 'minuteur des Gardiens et manche en pause pendant le combat');
     t.ok(r.inArena, 'le héros ne sort pas du cercle de runes');
     t.ok(/lord/.test(r.bar) && r.name === 'Le Bourreau des Cendres', `barre du Boss : ${r.bar} · ${r.name}`);
@@ -136,4 +136,4 @@ export const tests = [
     t.eq(r, { gl: true, ph: 2, canvas: true }, 'dessiné en WebGL puis en Canvas');
   } },
 ];
-const LORD_HP_EXPECT = 8;
+const LORD_HP_EXPECT = 4;
