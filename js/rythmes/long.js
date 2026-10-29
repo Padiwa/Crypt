@@ -29,4 +29,6 @@ const RYTHME={
   starCopies:3,        // copies de mod demandées par étoile (×)
   eggMul:.25,          // chance d'œuf par relique ouverte (×)
   hfMul:.6,            // chance de fragment de harnais sur un Gardien (×)
+  keyFrag:.1,          // chance de fragment de clé d'antre sur un Gardien, en solo, dans un lieu qui a son Boss (v147, provisoire)
+  keyFragMax:1,        // … au plus par mission (3 fragments font une clé)
 };

@@ -33,6 +33,7 @@ Variables d'environnement :
 - `FORCE_N=4` : nombre de manches jouées sans sortir (4 manches = 12 vagues en Défense).
 - `POD_SRC=1` : origine des dégâts au cryopode (coups, tirs, flaques).
 - `MAXT=600` : secondes de jeu au plus (utile en Capture : le bot ne capture pas, il tient face aux monstres).
+- `LORD=1` : le Boss du lieu est appelé (clé d'antre, v147). Il arrive après la 1re manche ; avec `FORCE_N=2`, le bot continue pour le combattre. Le champ `lord` donne les Sentences, les esquives parfaites, les coups reçus, les chaînes, le temps du combat (`t`), l'état (`st` : 3 = vaincu) et la vie qui lui reste (`left`).
 
 Exemples (ceux des essais du 29 octobre 2026) :
 

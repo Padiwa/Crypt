@@ -88,6 +88,13 @@ header .btn{margin-left:auto}
 .purse{font-weight:700;color:var(--r2);font-size:17px;font-variant-numeric:tabular-nums}
 .purse .e{color:var(--ess);display:flex;align-items:center;gap:5px;margin-left:8px}
 .purse .g{display:flex;align-items:center;gap:6px}
+.boss__notch{display:none}
+/* v147 : barre d'un Boss (rouge braise), crantée à la moitié : la phase d'ombre du Bourreau */
+.boss.lord b{color:#ffb3a3}
+.boss.lord .hp-bar{background:#240f0c;border-color:#6a2a20}
+.boss.lord .hp-fill{background:linear-gradient(#ff6a50,#8f2a1c)}
+.boss.lord .boss__notch{display:block;position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;background:#f4e6d8;opacity:.7}
+.msn__key.is-on .cx-row__v{color:#ff6a50}
 .boss.obj b{color:#9fe3f0}
 .boss.obj .hp-bar{background:#10202a;border-color:#2d5560}
 .boss.obj .hp-fill{background:linear-gradient(#8fd3e0,#3d8a99)}

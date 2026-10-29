@@ -42,7 +42,7 @@ function newGame(){
   if(PX)try{buildStatic()}catch(err){dropPixi(err)}
   const KS=SPELLS[G.cls].s[G.kit.s],KU=SPELLS[G.cls].u[G.kit.u];const ub=$('bUlt');ub.querySelector('svg').innerHTML=KU.icon;ub.setAttribute('aria-label',KU.n+', ultime');const nb=$('bNova');nb.querySelector('svg').innerHTML=KS.icon;nb.setAttribute('aria-label',KS.n);nb.style.color=C.col;
   $('hintTxt').innerHTML=C.hint;$('bossBar').hidden=true;
-  petInit();
+  petInit();lordInit();
 }
 function placeWell(w){const P=G.P;for(let k=0;k<200;k++){const x=rand(160,MAP-160),y=rand(160,MAP-160);if(Math.hypot(x-P.x,y-P.y)>(G.t?450:250)&&!blocked(x,y,50)&&(!G.wells||G.wells.every(o=>o===w||Math.hypot(o.x-x,o.y-y)>500))){w.x=x;w.y=y;w.on=true;return}}w.x=rand(200,MAP-200);w.y=rand(200,MAP-200);w.on=true}
 function genMap(){
@@ -165,7 +165,7 @@ function twinTick(dt){if(!G.twinQ.length)return;for(const q of G.twinQ){const o=
 function spawner(dt){
   if(G.mode==='defense'){defenseTick(dt);return}
   const L=missionLv(); // v146 : niveau effectif de l'horloge (remplace le niveau et le bonus de manche)
-  G.bossT-=dt;
+  if(!lordOn())G.bossT-=dt; // v147 : en pause pendant le combat contre un Boss
   if(G.bossT<=0){G.bossT=bossIv();spawnBosses()}
   G.spawnT-=dt;if(G.spawnT>0)return;
   G.spawnT=Math.max(.14,(.85-.12*(L-1))*.87);

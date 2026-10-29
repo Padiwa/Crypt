@@ -160,7 +160,7 @@ function lootSummary(){
     <div><span>Équipements</span><b>${its?`${its} · `+Object.keys(byR).sort((a,b)=>b-a).map(r=>lc(RAR[r].c,byR[r],RAR[r].n.toLowerCase()+(byR[r]>1?'s':''))).join(''):'0'}</b></div>
     <div><span>Reliques</span><b>${L.relics.length?`${L.relics.length} · `+Object.keys(byT).sort((a,b)=>b-a).map(t=>lc(RTIER[t].c,byT[t],RTIER[t].n)).join(''):'0'}</b></div>
     ${(()=>{const W=L.parts.filter(p=>!p.hf),H=L.parts.length-W.length,b={};for(const p of W){const r=wdef(p.w).r;b[r]=(b[r]||0)+1}
-      return (W.length?`<div><span>Armes</span><b>${W.length} · `+Object.keys(b).sort((x,y)=>y-x).map(r=>lc(RAR[r].c,b[r],RAR[r].n.toLowerCase()+(b[r]>1?'s':''))).join('')+`</b></div>`:'')+(H?`<div><span>Fragments de harnais</span><b style="color:var(--rar-aby)">${H}</b></div>`:'')})()}
+      return (W.length?`<div><span>Armes</span><b>${W.length} · `+Object.keys(b).sort((x,y)=>y-x).map(r=>lc(RAR[r].c,b[r],RAR[r].n.toLowerCase()+(b[r]>1?'s':''))).join('')+`</b></div>`:'')+(H?`<div><span>Fragments de harnais</span><b style="color:var(--rar-aby)">${H}</b></div>`:'')+(L.keys?`<div><span>Fragments de clé d'antre</span><b style="color:${LORD_C}">${L.keys}</b></div>`:'')})()}
     ${G.relQ.length?`<div><span>Reliques ouvertes</span><b>${G.opened.length} / ${G.relQ.length}${G.relic?` · ${G.react} / ${reactNeed()} réactifs`:''}</b></div>`:''}${(G.shared||[]).length?`<div><span>Partagées par les partenaires</span><b>${G.shared.length}</b></div>`:''}<div><span>Ennemis abattus</span><b>${G.kills}</b></div><div><span>Temps de survie</span><b>${fmt(G.t)}</b></div>`;
 }
 function roundDone(){
@@ -189,6 +189,7 @@ function bank(full){
     for(const p of G.loot.parts){if(p.hf)meta.hfrag=(meta.hfrag|0)+1;else if(p.full)gainWeapon(p.w);else if(meta.built[p.w])meta.essence+=6;else{const a=meta.parts[p.w]||(meta.parts[p.w]=[0,0,0]);a[p.p]++}}
     meta.maxL=Math.max(meta.maxL|0,G.level);
     for(const id of G.loot.relics){const a=meta.relics[id]||(meta.relics[id]=[0,0]);a[0]++}
+    keyBank();
   }
   sealBank(full);saveMeta();return g;
 }
@@ -232,12 +233,12 @@ function ovrHtml(o){const k=G.bossK|0,mods=(G.modsGot||[]).length,cap=G.mode==='
       ${tile('mods',ovrNum(mods),`mod${mods>1?'s':''}${W?'':` gardé${mods>1?'s':''}`}`,'#f0cf4a')}
       ${tile('eq',ovrNum(E.length),W?`équipement${E.length>1?'s':''}`:`équipement${E.length>1?'s':''} perdu${E.length>1?'s':''}`,'var(--ink)',W?'':'is-lost')}
     </div>
-    <section class="ovr__sec"><h3 class="ovr__lab">${W?'Équipements rapportés':'Équipements perdus'} · ${E.length}</h3><div id="ovrEq">${ovrEqHtml()}</div></section>`}
+    ${lordOvr()}<section class="ovr__sec"><h3 class="ovr__lab">${W?'Équipements rapportés':'Équipements perdus'} · ${E.length}</h3><div id="ovrEq">${ovrEqHtml()}</div></section>`}
 function overShow(o){const el=$('over'),b=$('overBody');OVR.eq=ovrEqList();OVR.pg=0;OVR.sel=-1;OVR.lost=!o.win;
   el.classList.toggle('is-dead',!o.win);b.innerHTML=ovrHtml(o);b.scrollTop=0;$('againLab').textContent=o.win?'Rejouer':'Réessayer';
   unlockCheck(false);refreshMenus();el.hidden=false;if(!o.win)try{heroPaint($('overHero'),G.cls,-Math.PI/2+1.75,1.1)}catch(err){noteErr('fin de mission',err)}}
 // Fragments de la mission : fragments d'armes et de harnais ramassés, et ceux donnés par les reliques ouvertes
-const ovrFrag=()=>G.loot.parts.filter(p=>p.hf||!p.full).length;
+const ovrFrag=()=>G.loot.parts.filter(p=>p.hf||!p.full).length+(G.loot.keys|0);
 // Ouvre une relique : un fragment d'un objet de sa rareté (deux si éclatante ; la relique forgée vise son objet).
 // Ouvre une relique : fragments de sa rareté pour le héros joué. free : relique partagée par un autre joueur, rien n'est dépensé.
 function grantRelic(id,rad,free){

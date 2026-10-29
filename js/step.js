@@ -9,7 +9,7 @@ function compact(arr,alive){let j=0;for(let i=0;i<arr.length;i++){const o=arr[i]
 /* ---------- Mise à jour ---------- */
 function update(dt){
   if(NET.guest)netApplySnap();
-  G.t+=dt;G.tl+=dt;
+  G.t+=dt;if(!lordOn())G.tl+=dt; // v147 : la manche (et l'horloge de mission) attend la fin du combat contre un Boss
   // Tourment : toutes les 2 minutes de séjour, le bonus des reliques grandit (annoncé tant qu'il augmente)
   {const s=sejN();if(s>(G.sejSeen|0)){G.sejSeen=s;const b=tormBoost();if(b.t&&G.relQ.length&&(s*(BAL.sejReact||0)<=(BAL.sejReactMax||0)+1e-9||s*(BAL.sejRelic||0)<=(BAL.sejRelicMax||0)+1e-9))toast(`<b style="color:#ff6a3a">Séjour prolongé.</b> ${reactNeed()} réactifs par relique, reliques +${Math.round(b.relic*100)} %.`,true)}}
   // Séjour après l'objectif : chaque minute, le butin des monstres grandit (annoncé jusqu'au plafond)
@@ -20,7 +20,7 @@ function update(dt){
   if(!NET.guest){for(const s of G.spawns)s.t-=dt;
   for(const s of G.spawns.filter(s=>s.t<=0))spawnEnemy({...s,fx:!s.split});
   G.spawns=G.spawns.filter(s=>s.t>0);
-  spawner(dt);twinTick(dt)}
+  spawner(dt);twinTick(dt);lordTick(dt)}
   if(NET.on&&G.mates&&G.mates.length)matesSmooth(dt);
   petTick(dt);
   if(G.oshots){for(const s of G.oshots){s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt}G.oshots=G.oshots.filter(s=>s.life>0)}
@@ -59,7 +59,7 @@ function update(dt){
   if(P.dashT>0){P.dashT-=dt;sp=S.speed*3.4;P.x+=P.dx*sp*dt;P.y+=P.dy*sp*dt;if(Math.random()<.6)G.parts.push({x:P.x,y:P.y,vx:0,vy:0,life:.25,max:.25,col:'#9fc2b8',size:P.r*.8})}
   else if(P.leapT>0){P.leapT-=dt;P.x+=P.leapVx*dt;P.y+=P.leapVy*dt;if(Math.random()<.7)G.parts.push({x:P.x,y:P.y,vx:0,vy:0,life:.25,max:.25,col:'#9fc2b8',size:P.r*.8});if(P.leapT<=0){P.leapT=0;P.leapLand=1}}
   else{P.x+=iv.x/(iv.m||1)*sp*dt;P.y+=iv.y/(iv.m||1)*sp*dt}
-  resolve(P);
+  resolve(P);lordHold(P);
   if(P.leapLand){P.leapLand=0;leapLand()}
   G.cam.x+=(P.x-G.cam.x)*Math.min(1,dt*8);G.cam.y+=(P.y-G.cam.y)*Math.min(1,dt*8);
   // Capture : décidée par l'hôte (en coopération, n'importe quel héros debout compte pour capturer et pour l'extraction).
@@ -69,7 +69,7 @@ function update(dt){
         if(!G.exitPt)G.exitPt=farPoint(1000);G.nextTgt=CAP_NEXT;capReward();if(NET.host)netSend({t:'cap'})}}
       else G.capT=Math.max(0,G.capT-dt)}
     if(!G.target&&G.nextTgt>0){G.nextTgt-=dt;if(G.nextTgt<=0){G.nextTgt=0;spawnTarget()}}
-    if(G.exitPt){const inZ=near(G.exitPt.x,G.exitPt.y,55);
+    if(G.exitPt&&!lordOn()){const inZ=near(G.exitPt.x,G.exitPt.y,55);
       if(inZ){if(G.extT===0)toast('Reste <b>3 s</b> dans la zone pour t\'extraire.');G.extT+=dt;if(G.extT>=EXT_T){missionSuccess();return}}
       else G.extT=Math.max(0,G.extT-dt*1.5)}
   }
@@ -138,6 +138,7 @@ function update(dt){
     dotTick(e,dt);
     if(e.dead)continue;
     stTick(e,dt);const stn=e.stun>0;
+    if(e.lord||e.stake){lordStep(e,dt,stn);continue} // Boss et son pieu (v147, boss.js)
     const PT=(!NET.guest&&e.type!=='boss'&&petLure(e))||netNear(e,P),T=(e.tgtPod&&G.pod)?G.pod:PT,dx=T.x-e.x,dy=T.y-e.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d;let mx=0,my=0;
     const dP=T===PT?d:Math.hypot(PT.x-e.x,PT.y-e.y);
     if(dP>farR&&e.type!=='boss'&&e.type!=='cible'&&!e.tgtPod){const p=ringPos();e.x=p.x;e.y=p.y;continue}
@@ -194,7 +195,7 @@ function update(dt){
   // séparation
   gridBuild();const L=G.en;
   if(!NET.guest)for(let i=0;i<L.length;i++){const a=L[i];gridEach(a.x,a.y,a.r+50,(b,j)=>{if(j<=i)return;const m=a.r+b.r,dx=b.x-a.x;if(dx>m||dx<-m)return;const dy=b.y-a.y;if(dy>m||dy<-m)return;
-    const d=Math.hypot(dx,dy)||1;if(d<m){const p=(m-d)/2,wa=a.type==='boss'?0:1,wb=b.type==='boss'?0:1;a.x-=dx/d*p*wa;a.y-=dy/d*p*wa;b.x+=dx/d*p*wb;b.y+=dy/d*p*wb}})}
+    const d=Math.hypot(dx,dy)||1;if(d<m){const p=(m-d)/2,wa=a.type==='boss'||a.stake?0:1,wb=b.type==='boss'||b.stake?0:1;a.x-=dx/d*p*wa;a.y-=dy/d*p*wa;b.x+=dx/d*p*wb;b.y+=dy/d*p*wb}})}
   compact(G.en,e=>!e.dead);
   // projectiles ennemis
   for(const b of G.eb){b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;if(G.pod&&Math.hypot(b.x-G.pod.x,b.y-G.pod.y)<b.r+G.pod.r){podHurt(b.d);b.life=0}else if(blocked(b.x,b.y,b.r*.5))b.life=0;else if(!P.down&&Math.hypot(b.x-P.x,b.y-P.y)<b.r+P.r-3){const tk=hurt(b.d*(S.terr>0&&b.src&&!b.src.dead&&Math.hypot(b.src.x-P.x,b.src.y-P.y)<180?1-S.terr/100:1));if(b.src)thornE(b.src,tk);b.life=0;if(NET.guest)NET.ebUsed.add(b.id)}}
@@ -216,6 +217,7 @@ function update(dt){
       else if(d.kind==='potion'){if(G.potions<potMax()){SND.play('pick');G.potions++}} // au maximum : la potion disparaît sans compter (v144 ; avant, elle restait au sol, collée au héros)
       else if(d.kind==='item'){SND.play(d.item.r>=3?'pick3':d.item.r>=2?'pick2':'pick');G.loot.items.push(d.item);G.fresh++;if(d.item.r===3)G.shake=6}
       else if(d.kind==='part'){SND.play('pick3');G.loot.parts.push(d.part);G.fresh++}
+      else if(d.kind==='key'){SND.play('pick3');G.loot.keys=(G.loot.keys|0)+1;G.fresh++}
     }
   }
   compact(G.drops,d=>!d.gone);
