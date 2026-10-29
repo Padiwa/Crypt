@@ -1,0 +1,1035 @@
+{
+ "cls": "magicien",
+ "L": 30,
+ "IL": 117,
+ "MAXR": 4,
+ "src": {
+  "dmgPct": {
+   "best": 241.49,
+   "from": "relique",
+   "fused": 603.725
+  },
+  "apsPct": {
+   "best": 41.8,
+   "from": "arme",
+   "fused": 104.5
+  },
+  "crit": {
+   "best": 20.615,
+   "from": "relique",
+   "fused": 51.537499999999994
+  },
+  "critDmg": {
+   "best": 103.07499999999999,
+   "from": "relique",
+   "fused": 257.6875
+  },
+  "hp": {
+   "best": 933.565,
+   "from": "relique",
+   "fused": 2333.9125000000004
+  },
+  "armor": {
+   "best": 20.615,
+   "from": "relique",
+   "fused": 51.537499999999994
+  },
+  "speed": {
+   "best": 26.505000000000003,
+   "from": "relique",
+   "fused": 66.2625
+  },
+  "regen": {
+   "best": 91.295,
+   "from": "relique",
+   "fused": 228.2375
+  },
+  "cdr": {
+   "best": 35.34,
+   "from": "relique",
+   "fused": 88.35000000000001
+  },
+  "frz": {
+   "best": 30.239999999999995,
+   "from": "monstres",
+   "fused": 75.6
+  },
+  "cold": {
+   "best": 143.64,
+   "from": "monstres",
+   "fused": 359.09999999999997
+  },
+  "shard": {
+   "best": 42.839999999999996,
+   "from": "monstres",
+   "fused": 107.1
+  },
+  "curse": {
+   "best": 37.8,
+   "from": "monstres",
+   "fused": 94.5
+  },
+  "hex": {
+   "best": 143.64,
+   "from": "monstres",
+   "fused": 359.09999999999997
+  },
+  "doom": {
+   "best": 42.839999999999996,
+   "from": "monstres",
+   "fused": 107.1
+  },
+  "novaPct": {
+   "best": 132.525,
+   "from": "relique",
+   "fused": 331.3125
+  },
+  "multi": {
+   "best": 1,
+   "from": "arme",
+   "fused": 4
+  },
+  "splash": {
+   "best": 93.23999999999998,
+   "from": "monstres",
+   "fused": 233.09999999999997
+  },
+  "execute": {
+   "best": 141.36,
+   "from": "relique",
+   "fused": 353.40000000000003
+  },
+  "bossDmg": {
+   "best": 97.18499999999999,
+   "from": "relique",
+   "fused": 242.96249999999998
+  },
+  "lowDmg": {
+   "best": 98.27999999999997,
+   "from": "monstres",
+   "fused": 245.69999999999993
+  },
+  "ultPct": {
+   "best": 64.79,
+   "from": "relique",
+   "fused": 161.97500000000002
+  },
+  "lowArmor": {
+   "best": 44.175,
+   "from": "relique",
+   "fused": 110.4375
+  },
+  "antidote": {
+   "best": 40.31999999999999,
+   "from": "monstres",
+   "fused": 100.79999999999998
+  },
+  "magnetPct": {
+   "best": 62.99999999999999,
+   "from": "monstres",
+   "fused": 157.49999999999997
+  },
+  "goldPct": {
+   "best": 73.07999999999998,
+   "from": "monstres",
+   "fused": 182.69999999999996
+  },
+  "xpPct": {
+   "best": 30.239999999999995,
+   "from": "monstres",
+   "fused": 75.6
+  },
+  "lootPct": {
+   "best": 17.64,
+   "from": "monstres",
+   "fused": 44.1
+  },
+  "dotPct": {
+   "best": 138.6,
+   "from": "monstres",
+   "fused": 346.5
+  },
+  "thorns": {
+   "best": 108.36,
+   "from": "monstres",
+   "fused": 270.9
+  },
+  "ccDmg": {
+   "best": 143.64,
+   "from": "monstres",
+   "fused": 359.09999999999997
+  }
+ },
+ "bot": {
+  "P": {
+   "p": 686984.4797674137,
+   "atk": 13983.510082847995,
+   "skill": 462806.41931193764,
+   "ult": 195121.80967132197,
+   "pulse": 0,
+   "pet": 15072.740701306164
+  },
+  "S": {
+   "dmg": 348.21,
+   "aps": 1.9737500000000003,
+   "crit": 34.8,
+   "critDmg": 251.2,
+   "multi": 1,
+   "pierce": 0,
+   "reach": 0,
+   "splash": 33,
+   "nova": 4785.79824,
+   "cdr": 50,
+   "skillRad": 111,
+   "ultPct": 58.5,
+   "burn": 0,
+   "hp": 2389,
+   "armor": 19.700000000000003,
+   "execute": 74.10000000000001,
+   "bossDmg": 0,
+   "lowDmg": 0,
+   "dotPct": 154.7,
+   "ccDmg": 0,
+   "cold": 0,
+   "frz": 0,
+   "curse": 0,
+   "hex": 0,
+   "shard": 0,
+   "doom": 0,
+   "abSoul": 0,
+   "abPulse": 0,
+   "abRift": 0,
+   "abHunt": 0,
+   "abExec": 0,
+   "abWard": 0,
+   "fury": 0,
+   "echo": 0,
+   "psnCh": 60,
+   "bldCh": 0,
+   "shock": 27,
+   "stunCh": 0,
+   "rootCh": 0,
+   "contag": 0
+  },
+  "surv": 3597.5288408208544,
+  "mods": {
+   "w": [
+    "venin",
+    "orage",
+    "surtension",
+    "oeil"
+   ],
+   "h": [
+    "etendue",
+    "flux",
+    "intensite",
+    null,
+    null,
+    null
+   ],
+   "au": "terreur",
+   "pet": {
+    "uid": 3,
+    "t": "corbeau",
+    "rk": 3,
+    "lv": 20,
+    "xp": 0
+   },
+   "p": [
+    "pmarque",
+    "pnuee",
+    "pcrocs",
+    null
+   ],
+   "kit": {
+    "s": 0,
+    "u": 0
+   }
+  },
+  "gear": {
+   "arme": {
+    "n": "Grimoire de l'Éclipse",
+    "r": 4,
+    "lvl": 1,
+    "up": 1,
+    "base": {
+     "k": "dmg",
+     "v": 30
+    },
+    "aff": {
+     "multi": 1,
+     "splash": 30,
+     "critDmg": 45,
+     "novaPct": 30,
+     "apsPct": 15
+    }
+   },
+   "armure": {
+    "n": "Manteau des Cendres",
+    "r": 3,
+    "lvl": 85,
+    "up": 3,
+    "base": {
+     "k": "hp",
+     "v": 738
+    },
+    "aff": {
+     "hp": 305,
+     "armor": 9,
+     "cdr": 16,
+     "novaPct": 55
+    }
+   },
+   "amulette": {
+    "n": "Médaillon du Corbeau",
+    "r": 3,
+    "lvl": 81,
+    "up": 3,
+    "base": {
+     "k": "crit",
+     "v": 4
+    },
+    "aff": {
+     "novaPct": 61,
+     "ultPct": 26,
+     "cdr": 15,
+     "crit": 9
+    }
+   },
+   "bottes": {
+    "n": "Bottes de cuir de Fer-Sang",
+    "r": 2,
+    "lvl": 106,
+    "up": 3,
+    "base": {
+     "k": "speed",
+     "v": 33
+    },
+    "aff": {
+     "dotPct": 60,
+     "ultPct": 19,
+     "novaPct": 46
+    }
+   },
+   "anneau": {
+    "n": "Anneau des Anciens",
+    "r": 4,
+    "lvl": 125,
+    "up": 1,
+    "base": {
+     "k": "dmgPct",
+     "v": 139
+    },
+    "aff": {
+     "dmgPct": 130,
+     "critDmg": 47,
+     "crit": 9,
+     "regen": 51,
+     "apsPct": 14
+    }
+   },
+   "anneau2": {
+    "n": "Bague de la Veuve",
+    "r": 2,
+    "lvl": 125,
+    "up": 3,
+    "base": {
+     "k": "dmgPct",
+     "v": 118
+    },
+    "aff": {
+     "dotPct": 59,
+     "dmgPct": 105,
+     "execute": 57
+    }
+   }
+  }
+ },
+ "raw": {
+  "P": {
+   "p": 33002169.013564534,
+   "atk": 150789.0685153685,
+   "skill": 1762660.8252558233,
+   "ult": 30804375.588867217,
+   "pulse": 0,
+   "pet": 284343.5309261295
+  },
+  "S": {
+   "dmg": 970.0709999999999,
+   "aps": 2.9762500000000003,
+   "crit": 57.4,
+   "critDmg": 440.70000000000005,
+   "multi": 1,
+   "pierce": 0,
+   "reach": 0,
+   "splash": 57,
+   "nova": 16413.60132,
+   "cdr": 50,
+   "skillRad": 120,
+   "ultPct": 129.2,
+   "burn": 0,
+   "hp": 6583,
+   "armor": 49.8,
+   "execute": 140.6,
+   "bossDmg": 96.89999999999999,
+   "lowDmg": 0,
+   "dotPct": 0,
+   "ccDmg": 0,
+   "cold": 0,
+   "frz": 0,
+   "curse": 0,
+   "hex": 0,
+   "shard": 0,
+   "doom": 0,
+   "abSoul": 0,
+   "abPulse": 0,
+   "abRift": 0,
+   "abHunt": 0,
+   "abExec": 0,
+   "abWard": 0,
+   "fury": 24,
+   "echo": 0,
+   "psnCh": 60,
+   "bldCh": 0,
+   "shock": 29,
+   "stunCh": 0,
+   "rootCh": 0,
+   "contag": 0
+  },
+  "surv": 12500.929427430094,
+  "gear": {
+   "arme": {
+    "n": "Grimoire de l'Éclipse",
+    "r": 4,
+    "up": 9,
+    "base": {
+     "k": "dmg",
+     "v": 30
+    },
+    "seal": null,
+    "aff": {
+     "multi": 1,
+     "splash": 57,
+     "critDmg": 85.5,
+     "novaPct": 57,
+     "apsPct": 28.5
+    }
+   },
+   "armure": {
+    "n": "Robe du Premier Mage",
+    "r": 4,
+    "up": 9,
+    "base": {
+     "k": "hp",
+     "v": 1091
+    },
+    "seal": null,
+    "aff": {
+     "hp": 932.9,
+     "novaPct": 133,
+     "ultPct": 64.6,
+     "cdr": 36.1,
+     "armor": 20.9
+    }
+   },
+   "amulette": {
+    "n": "Talisman de l'Éclipse",
+    "r": 4,
+    "up": 9,
+    "base": {
+     "k": "crit",
+     "v": 4
+    },
+    "seal": null,
+    "aff": {
+     "novaPct": 133,
+     "critDmg": 102.6,
+     "cdr": 36.1,
+     "ultPct": 64.6,
+     "crit": 20.9
+    }
+   },
+   "bottes": {
+    "n": "Sabatons du Roi-Soleil",
+    "r": 4,
+    "up": 9,
+    "base": {
+     "k": "speed",
+     "v": 46
+    },
+    "seal": null,
+    "aff": {
+     "speed": 26.6,
+     "armor": 20.9,
+     "hp": 932.9,
+     "regen": 91.2,
+     "dmgPct": 241.3
+    }
+   },
+   "anneau": {
+    "n": "Bague de l'Ancêtre",
+    "r": 4,
+    "up": 9,
+    "base": {
+     "k": "dmgPct",
+     "v": 130
+    },
+    "seal": null,
+    "aff": {
+     "apsPct": 41.8,
+     "dmgPct": 241.3,
+     "execute": 140.6,
+     "cdr": 36.1,
+     "bossDmg": 96.9
+    }
+   },
+   "anneau2": {
+    "n": "Anneau des Anciens",
+    "r": 4,
+    "up": 9,
+    "base": {
+     "k": "dmgPct",
+     "v": 130
+    },
+    "seal": null,
+    "aff": {
+     "dmgPct": 241.3,
+     "critDmg": 102.6,
+     "crit": 20.9,
+     "regen": 91.2,
+     "apsPct": 41.8
+    }
+   }
+  },
+  "mods": {
+   "w": [
+    "venin",
+    "orage",
+    "oeil",
+    "surtension"
+   ],
+   "h": [
+    "prolong",
+    "etendue",
+    "intensite",
+    "persist",
+    "remanence",
+    "ame"
+   ],
+   "au": "presence",
+   "pet": "corbeau",
+   "p": [
+    "pcrocs",
+    "pbec",
+    "pnuee",
+    "pmarque"
+   ],
+   "kit": {
+    "s": 0,
+    "u": 2,
+    "sn": "Nova de givre",
+    "un": "Surcharge arcanique"
+   }
+  }
+ },
+ "forge": {
+  "P": {
+   "p": 3447931060000.2817,
+   "atk": 718363300.6796644,
+   "skill": 30108002569.34921,
+   "ult": 3415946184652.087,
+   "pulse": 0,
+   "pet": 1158509478.1662333
+  },
+  "S": {
+   "dmg": 1720.2907500000001,
+   "aps": 1.575,
+   "crit": 67.13749999999999,
+   "critDmg": 923.0625,
+   "multi": 4,
+   "pierce": 0,
+   "reach": 0,
+   "splash": 0,
+   "nova": 75275.622493125,
+   "cdr": 10,
+   "skillRad": 120,
+   "ultPct": 485.92500000000007,
+   "burn": 0,
+   "hp": 3553,
+   "armor": 8,
+   "execute": 1060.2,
+   "bossDmg": 242.96249999999998,
+   "lowDmg": 0,
+   "dotPct": 1039.5,
+   "ccDmg": 1077.3,
+   "cold": 1436.3999999999999,
+   "frz": 40,
+   "curse": 0,
+   "hex": 0,
+   "shard": 60,
+   "doom": 0,
+   "abSoul": 0,
+   "abPulse": 0,
+   "abRift": 0,
+   "abHunt": 0,
+   "abExec": 0,
+   "abWard": 0,
+   "fury": 24,
+   "echo": 0,
+   "psnCh": 60,
+   "bldCh": 0,
+   "shock": 29,
+   "stunCh": 0,
+   "rootCh": 0,
+   "contag": 0
+  },
+  "surv": 4122.960416666668,
+  "gear": {
+   "arme": {
+    "n": "Grimoire de l'Éclipse",
+    "r": 4,
+    "up": 9,
+    "base": {
+     "k": "dmg",
+     "v": 30
+    },
+    "seal": null,
+    "aff": {
+     "novaPct": 331.3,
+     "dotPct": 346.5,
+     "critDmg": 257.7,
+     "frz": 75.6,
+     "ccDmg": 359.1
+    }
+   },
+   "armure": {
+    "n": "Égide des Anciens",
+    "r": 4,
+    "up": 9,
+    "base": {
+     "k": "hp",
+     "v": 1091
+    },
+    "seal": "cri",
+    "aff": {
+     "ultPct": 162,
+     "crit": 51.5,
+     "novaPct": 331.3,
+     "dotPct": 346.5,
+     "dmgPct": 603.7
+    }
+   },
+   "amulette": {
+    "n": "Cœur des Anciens Rois",
+    "r": 4,
+    "up": 9,
+    "base": {
+     "k": "crit",
+     "v": 4
+    },
+    "seal": null,
+    "aff": {
+     "critDmg": 257.7,
+     "ultPct": 162,
+     "dotPct": 346.5,
+     "cold": 359.1,
+     "execute": 353.4
+    }
+   },
+   "bottes": {
+    "n": "Pas des Ancêtres",
+    "r": 4,
+    "up": 9,
+    "base": {
+     "k": "speed",
+     "v": 46
+    },
+    "seal": null,
+    "aff": {
+     "dmgPct": 603.7,
+     "critDmg": 257.7,
+     "ultPct": 162,
+     "ccDmg": 359.1,
+     "cold": 359.1
+    }
+   },
+   "anneau": {
+    "n": "Anneau des Anciens",
+    "r": 4,
+    "up": 9,
+    "base": {
+     "k": "dmgPct",
+     "v": 130
+    },
+    "seal": null,
+    "aff": {
+     "execute": 353.4,
+     "dmgPct": 603.7,
+     "bossDmg": 243,
+     "multi": 4,
+     "cold": 359.1
+    }
+   },
+   "anneau2": {
+    "n": "Anneau des Anciens",
+    "r": 4,
+    "up": 9,
+    "base": {
+     "k": "dmgPct",
+     "v": 130
+    },
+    "seal": null,
+    "aff": {
+     "novaPct": 331.3,
+     "execute": 353.4,
+     "ccDmg": 359.1,
+     "cold": 359.1,
+     "shard": 107.1
+    }
+   }
+  },
+  "mods": {
+   "w": [
+    "venin",
+    "orage",
+    "virulence",
+    "hemorragie"
+   ],
+   "h": [
+    "prolong",
+    "etendue",
+    "intensite",
+    "persist",
+    "remanence",
+    "ame"
+   ],
+   "au": "presence",
+   "pet": "corbeau",
+   "p": [
+    "pbec",
+    "pnuee",
+    "pecho",
+    "pmarque"
+   ],
+   "kit": {
+    "s": 0,
+    "u": 2,
+    "sn": "Nova de givre",
+    "un": "Surcharge arcanique"
+   }
+  }
+ },
+ "states": {
+  "raw": {
+   "w": [
+    "venin",
+    "orage",
+    "oeil",
+    "surtension"
+   ],
+   "h": [
+    "prolong",
+    "etendue",
+    "intensite",
+    "persist",
+    "remanence",
+    "ame"
+   ],
+   "au": "presence",
+   "pet": 901,
+   "p": [
+    "pcrocs",
+    "pbec",
+    "pnuee",
+    "pmarque"
+   ],
+   "kit": {
+    "s": 0,
+    "u": 2
+   }
+  },
+  "forge": {
+   "w": [
+    "venin",
+    "orage",
+    "virulence",
+    "hemorragie"
+   ],
+   "h": [
+    "prolong",
+    "etendue",
+    "intensite",
+    "persist",
+    "remanence",
+    "ame"
+   ],
+   "au": "presence",
+   "pet": 901,
+   "p": [
+    "pbec",
+    "pnuee",
+    "pecho",
+    "pmarque"
+   ],
+   "kit": {
+    "s": 0,
+    "u": 2
+   }
+  }
+ },
+ "items": {
+  "raw": {
+   "arme": {
+    "id": "w_m10",
+    "wid": "m10",
+    "cls": "magicien",
+    "slot": "arme",
+    "r": 4,
+    "lvl": 1,
+    "base": {
+     "k": "dmg",
+     "v": 30
+    },
+    "aff": {
+     "multi": 1,
+     "splash": 30,
+     "critDmg": 45,
+     "novaPct": 30,
+     "apsPct": 15
+    },
+    "name": "Grimoire de l'Éclipse",
+    "type": "Arme",
+    "up": 9
+   },
+   "armure": {
+    "id": "rarmureN2",
+    "slot": "armure",
+    "r": 4,
+    "lvl": 117,
+    "up": 9,
+    "base": {
+     "k": "hp",
+     "v": 1091
+    },
+    "aff": {
+     "hp": 491,
+     "novaPct": 70,
+     "ultPct": 34,
+     "cdr": 19,
+     "armor": 11
+    },
+    "name": "Robe du Premier Mage",
+    "rid": "N2"
+   },
+   "amulette": {
+    "id": "ramuletteN4",
+    "slot": "amulette",
+    "r": 4,
+    "lvl": 117,
+    "up": 9,
+    "base": {
+     "k": "crit",
+     "v": 4
+    },
+    "aff": {
+     "novaPct": 70,
+     "critDmg": 54,
+     "cdr": 19,
+     "ultPct": 34,
+     "crit": 11
+    },
+    "name": "Talisman de l'Éclipse",
+    "rid": "N4"
+   },
+   "bottes": {
+    "id": "rbottesN6",
+    "slot": "bottes",
+    "r": 4,
+    "lvl": 117,
+    "up": 9,
+    "base": {
+     "k": "speed",
+     "v": 46
+    },
+    "aff": {
+     "speed": 14,
+     "armor": 11,
+     "hp": 491,
+     "regen": 48,
+     "dmgPct": 127
+    },
+    "name": "Sabatons du Roi-Soleil",
+    "rid": "N6"
+   },
+   "anneau": {
+    "id": "ranneauN8",
+    "slot": "anneau",
+    "r": 4,
+    "lvl": 117,
+    "up": 9,
+    "base": {
+     "k": "dmgPct",
+     "v": 130
+    },
+    "aff": {
+     "apsPct": 22,
+     "dmgPct": 127,
+     "execute": 74,
+     "cdr": 19,
+     "bossDmg": 51
+    },
+    "name": "Bague de l'Ancêtre",
+    "rid": "N8"
+   },
+   "anneau2": {
+    "id": "ranneauN7",
+    "slot": "anneau",
+    "r": 4,
+    "lvl": 117,
+    "up": 9,
+    "base": {
+     "k": "dmgPct",
+     "v": 130
+    },
+    "aff": {
+     "dmgPct": 127,
+     "critDmg": 54,
+     "crit": 11,
+     "regen": 48,
+     "apsPct": 22
+    },
+    "name": "Anneau des Anciens",
+    "rid": "N7"
+   },
+   "dos": null
+  },
+  "forge": {
+   "arme": {
+    "id": "w_m10",
+    "wid": "m10",
+    "cls": "magicien",
+    "slot": "arme",
+    "r": 4,
+    "lvl": 1,
+    "base": {
+     "k": "dmg",
+     "v": 30
+    },
+    "aff": {
+     "novaPct": 174.375,
+     "dotPct": 182.3684210526316,
+     "critDmg": 135.625,
+     "frz": 39.78947368421053,
+     "ccDmg": 189
+    },
+    "name": "Grimoire de l'Éclipse",
+    "type": "Arme",
+    "up": 9
+   },
+   "armure": {
+    "id": "oarmureN1",
+    "slot": "armure",
+    "r": 4,
+    "lvl": 117,
+    "up": 9,
+    "base": {
+     "k": "hp",
+     "v": 1091
+    },
+    "aff": {
+     "ultPct": 85.25000000000001,
+     "crit": 27.125,
+     "novaPct": 174.375,
+     "dotPct": 182.3684210526316,
+     "dmgPct": 317.75
+    },
+    "name": "Égide des Anciens",
+    "rid": "N1",
+    "seal": "cri"
+   },
+   "amulette": {
+    "id": "oamuletteN3",
+    "slot": "amulette",
+    "r": 4,
+    "lvl": 117,
+    "up": 9,
+    "base": {
+     "k": "crit",
+     "v": 4
+    },
+    "aff": {
+     "critDmg": 135.625,
+     "ultPct": 85.25000000000001,
+     "dotPct": 182.3684210526316,
+     "cold": 189,
+     "execute": 186.00000000000003
+    },
+    "name": "Cœur des Anciens Rois",
+    "rid": "N3"
+   },
+   "bottes": {
+    "id": "obottesN5",
+    "slot": "bottes",
+    "r": 4,
+    "lvl": 117,
+    "up": 9,
+    "base": {
+     "k": "speed",
+     "v": 46
+    },
+    "aff": {
+     "dmgPct": 317.75,
+     "critDmg": 135.625,
+     "ultPct": 85.25000000000001,
+     "ccDmg": 189,
+     "cold": 189
+    },
+    "name": "Pas des Ancêtres",
+    "rid": "N5"
+   },
+   "anneau": {
+    "id": "oanneauN7",
+    "slot": "anneau",
+    "r": 4,
+    "lvl": 117,
+    "up": 9,
+    "base": {
+     "k": "dmgPct",
+     "v": 130
+    },
+    "aff": {
+     "execute": 186.00000000000003,
+     "dmgPct": 317.75,
+     "bossDmg": 127.875,
+     "multi": 4,
+     "cold": 189
+    },
+    "name": "Anneau des Anciens",
+    "rid": "N7"
+   },
+   "anneau2": {
+    "id": "oanneauN7",
+    "slot": "anneau",
+    "r": 4,
+    "lvl": 117,
+    "up": 9,
+    "base": {
+     "k": "dmgPct",
+     "v": 130
+    },
+    "aff": {
+     "novaPct": 174.375,
+     "execute": 186.00000000000003,
+     "ccDmg": 189,
+     "cold": 189,
+     "shard": 56.368421052631575
+    },
+    "name": "Anneau des Anciens",
+    "rid": "N7"
+   },
+   "dos": null
+  }
+ },
+ "ms": 1624,
+ "errs": []
+}
