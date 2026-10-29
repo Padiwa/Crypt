@@ -26,7 +26,9 @@ function dmgEnemy(e,d,crit,dot){
   if(e.mark>0)cb+=e.markV; // Marque du corbeau (v143)
   if(S.abHunt&&(e.type==='boss'||e.elite))cb+=S.abHunt;
   if(S.abSoul&&G.P.soulN)cb+=G.P.soulN*S.abSoul;
+  if(S.uqCond&&e.bldT>0&&e.bld&&e.bld.length>=BLD_MAX)cb+=S.uqCond; // Chaîne du Condamné (v147)
   if(cb>0)d*=1+Math.min(COND_CAP,cb)/100;
+  if(e.lord&&G.lordX>G.t)d*=PERF_X; // esquive parfaite : dégâts doublés sur le Boss étourdi (v147)
   if(NET.guest){if(dot)return;if(S.abExec&&e.type!=='boss'&&e.hp-d<e.max*S.abExec/100)d=Math.max(d,e.hp);if(e.hp-d<=0)fluxKill();
     netHit(e,d,crit);e.hp=Math.max(1,e.hp-d);e.shown=2;if(crit)critTick();hitFx(e,d,crit);
     if(crit)riftTry(e,d);return}
@@ -63,6 +65,7 @@ function doomBurst(e){G.rings.push({x:e.x,y:e.y,t:0,max:95,col:'214,170,80'});bu
   if(G._dm<4)for(const o of G.en){if(!o.dead&&o!==e&&Math.abs(o.x-e.x)<120&&Math.hypot(o.x-e.x,o.y-e.y)<85+o.r){o.curse=Math.max(o.curse||0,slowT(5));dmgEnemy(o,S.dmg*1.5,false)}}G._dm--}
 function kill(e){
   if(e.type==='mummy'){e.dead=true;mummyFall(e);return}
+  if(e.lord||e.stake){lordKill(e);return} // Boss et son pieu (v147, boss.js)
   e.dead=true;G.kills++;if(e.type==='boss')G.bossK=(G.bossK|0)+1;
   if(NET.host)netSend({t:'kill',id:e.id,type:e.type,x:e.x|0,y:e.y|0,elite:e.elite||0,corr:e.corr?1:0,gen:e.gen||0,nl:e.noLoot?1:0});
   if(S.abSoul){G.P.soulN=Math.min(10,(G.P.soulN||0)+1);G.P.soulT=5}
@@ -87,6 +90,7 @@ function kill(e){
     if(BAL.bossRelicEvery)for(let i=0;i<Math.floor((L-1)/BAL.bossRelicEvery);i++)push({kind:'relic',id:relicDrop()},50);
     if(Math.random()<Math.min(1,.15*lm*st))push({kind:'part',part:rollPart()},40);
     if(Math.random()<hfChance())push({kind:'part',part:{hf:1}},40);
+    keyDrop(push);
     for(let i=0;i<2;i++)push({kind:'mod',id:rollMod(true)},40);
     meta.essence+=25;saveMeta();G.shake=14;SND.play('bossdie');banner('Gardien vaincu · son butin est à toi','#e8853b',2);
     if(!G.en.some(o=>o.type==='boss'&&!o.dead))$('bossBar').hidden=true;

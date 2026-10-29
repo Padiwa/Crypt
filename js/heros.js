@@ -4,7 +4,7 @@ let lookCls=null;
 const lookC=()=>CLS[lookCls]?lookCls:heroCls;
 function lookHtml(){const c=lookC(),a=myLook(c),d=lookDef(c),same=a.every((x,i)=>x===d[i]),cn=CLS[c].n.toLowerCase();
   const chip=k=>`<button class="cx-chip cx-chip--sm" data-cact="lookcls" data-arg="${k}" aria-pressed="${k===c}">${CLS[k].n}</button>`;
-  const row=(p,i)=>{const L=LOOK_SW[p.k],free=!L.includes(a[i]);
+  const row=(p,i)=>{const L=lookSw(p.k),free=!L.includes(a[i]);
     return `<div class="lookrow"><span class="lookk">${p.n}</span><div class="looksw" role="radiogroup" aria-label="${p.n} du ${cn}">${L.map(col=>`<button class="lsw" role="radio" aria-checked="${col===a[i]}" data-cact="look" data-arg="${i}|${col}" style="--sw:${col}" aria-label="${p.n} ${col}${col===d[i]?', couleur d\'origine':''}"></button>`).join('')}<label class="lsw lsw--free${free?' is-on':''}" style="--sw:${a[i]}"><input type="color" value="${a[i]}" data-look="${i}" aria-label="${p.n} : autre couleur"></label></div></div>`};
   return `<section class="cx-section" id="lookSec"><h3 class="cx-section__label">Couleurs du héros</h3>
     <div class="lookhead"><canvas class="lookprev" id="lookPrev" width="240" height="240" role="img" aria-label="Aperçu du ${cn}"></canvas>

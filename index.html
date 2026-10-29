@@ -35,7 +35,7 @@
   </button>
 </div>
 <div class="hudmid"><div class="objbox" id="objBox" hidden><div class="objrow"><span class="objk" id="objK">Survie</span><b id="timeTxt">3:00</b></div><span class="objbar"><i id="objFill2"></i></span></div>
-<div class="boss" id="bossBar" hidden><b id="bossName">Le Gardien des Cendres</b><div class="hp-bar"><div class="hp-fill" id="bossFill"></div></div></div>
+<div class="boss" id="bossBar" hidden><b id="bossName">Le Gardien des Cendres</b><div class="hp-bar"><div class="hp-fill" id="bossFill"></div><i class="boss__notch" aria-hidden="true"></i></div></div>
 <div class="boss obj" id="objBar" hidden><b>Cryopode</b><div class="hp-bar"><div class="hp-fill" id="objFill"></div></div></div></div>
 <div class="toast" id="toast"></div>
 <div class="banner" id="banner" role="status" aria-live="polite" hidden></div>
@@ -112,6 +112,7 @@
       <p class="cx-hint msn__info" id="diffDesc"></p>
       <button class="cx-row msn__more" id="rowDiff"><span class="cx-row__k">Détail des difficultés</span><span class="cx-row__v" id="diffVal"></span></button></section>
     <section class="cx-section"><h3 class="cx-section__label">Reliques</h3><div class="cx-rows"><button class="cx-row" id="relicBtn"><span class="cx-row__k">Reliques équipées<small>Elles s'ouvrent pendant la mission</small></span><span class="cx-row__v" id="relicVal"></span></button></div></section>
+    <section class="cx-section" id="keySec" hidden><h3 class="cx-section__label">Clé d'antre</h3><div class="cx-rows"><button class="cx-row msn__key" id="keyBtn" aria-pressed="false"><span class="cx-row__k" id="keyK"></span><span class="cx-row__v" id="keyVal"></span></button></div></section>
   </div>
   <footer class="cx-screen__foot"><button class="cx-btn cx-btn--primary cx-btn--lg cx-btn--block" id="startBtn2">Lancer</button></footer>
 </div>
@@ -191,6 +192,7 @@
 <script src="js/equip.js"></script>
 <script src="js/game.js"></script>
 <script src="js/combat.js"></script>
+<script src="js/boss.js"></script>
 <script src="js/spells.js"></script>
 <script src="js/step.js"></script>
 <script src="js/render.js"></script>

@@ -1,0 +1,1980 @@
+{
+ "cls": "archer",
+ "L": 50,
+ "IL": 197,
+ "MAXR": 6,
+ "BAL": {
+  "condSum": 1,
+  "condCap": 300,
+  "fzK": 0.5,
+  "fzMax": 3
+ },
+ "src": {
+  "dmgPct": {
+   "best": 518.6999999999999,
+   "from": "relique",
+   "fused": 1296.7499999999998
+  },
+  "apsPct": {
+   "best": 55.86,
+   "from": "relique",
+   "fused": 139.65
+  },
+  "crit": {
+   "best": 27.93,
+   "from": "relique",
+   "fused": 69.825
+  },
+  "critDmg": {
+   "best": 139.65,
+   "from": "relique",
+   "fused": 349.125
+  },
+  "hp": {
+   "best": 2062.83,
+   "from": "relique",
+   "fused": 5157.075
+  },
+  "armor": {
+   "best": 27.93,
+   "from": "relique",
+   "fused": 69.825
+  },
+  "speed": {
+   "best": 35.910000000000004,
+   "from": "relique",
+   "fused": 89.775
+  },
+  "regen": {
+   "best": 203.49,
+   "from": "relique",
+   "fused": 508.725
+  },
+  "cdr": {
+   "best": 47.88,
+   "from": "relique",
+   "fused": 119.7
+  },
+  "frz": {
+   "best": 59.849999999999994,
+   "from": "relique",
+   "fused": 149.625
+  },
+  "cold": {
+   "best": 323.19,
+   "from": "relique",
+   "fused": 807.975
+  },
+  "shard": {
+   "best": 83.78999999999999,
+   "from": "relique",
+   "fused": 209.47499999999997
+  },
+  "curse": {
+   "best": 75.80999999999999,
+   "from": "relique",
+   "fused": 189.52499999999998
+  },
+  "hex": {
+   "best": 323.19,
+   "from": "relique",
+   "fused": 807.975
+  },
+  "doom": {
+   "best": 83.78999999999999,
+   "from": "relique",
+   "fused": 209.47499999999997
+  },
+  "novaPct": {
+   "best": 179.54999999999998,
+   "from": "relique",
+   "fused": 448.87499999999994
+  },
+  "multi": {
+   "best": 2,
+   "from": "arme",
+   "fused": 5
+  },
+  "pierce": {
+   "best": 3,
+   "from": "arme",
+   "fused": 6
+  },
+  "execute": {
+   "best": 218.88,
+   "from": "relique",
+   "fused": 547.2
+  },
+  "bossDmg": {
+   "best": 179.54999999999998,
+   "from": "relique",
+   "fused": 448.87499999999994
+  },
+  "lowDmg": {
+   "best": 174.42,
+   "from": "relique",
+   "fused": 436.04999999999995
+  },
+  "ultPct": {
+   "best": 87.78,
+   "from": "relique",
+   "fused": 219.45
+  },
+  "lowArmor": {
+   "best": 59.849999999999994,
+   "from": "relique",
+   "fused": 149.625
+  },
+  "antidote": {
+   "best": 63.839999999999996,
+   "from": "relique",
+   "fused": 159.6
+  },
+  "magnetPct": {
+   "best": 62.99999999999999,
+   "from": "monstres",
+   "fused": 157.49999999999997
+  },
+  "goldPct": {
+   "best": 93.23999999999998,
+   "from": "monstres",
+   "fused": 233.09999999999997
+  },
+  "xpPct": {
+   "best": 30.239999999999995,
+   "from": "monstres",
+   "fused": 75.6
+  },
+  "lootPct": {
+   "best": 17.64,
+   "from": "monstres",
+   "fused": 44.1
+  },
+  "dotPct": {
+   "best": 199.07999999999998,
+   "from": "monstres",
+   "fused": 497.69999999999993
+  },
+  "thorns": {
+   "best": 235.41,
+   "from": "relique",
+   "fused": 588.525
+  },
+  "ccDmg": {
+   "best": 204.12,
+   "from": "monstres",
+   "fused": 510.3
+  }
+ },
+ "bot": {
+  "P": {
+   "p": 933424.0774684765,
+   "atk": 15082.464952251687,
+   "skill": 19915.957855501787,
+   "ult": 885258.1569353755,
+   "pulse": 0,
+   "pet": 13167.49772534738
+  },
+  "S": {
+   "dmg": 336.921,
+   "aps": 3.0006,
+   "crit": 29.9,
+   "critDmg": 191.6,
+   "multi": 1,
+   "pierce": 0,
+   "reach": 0,
+   "splash": 0,
+   "nova": 4617.165384,
+   "cdr": 39.1,
+   "skillRad": 0,
+   "ultPct": 66.3,
+   "burn": 0,
+   "hp": 2083,
+   "armor": 8,
+   "execute": 173.10000000000002,
+   "bossDmg": 76.7,
+   "lowDmg": 0,
+   "dotPct": 84,
+   "ccDmg": 0,
+   "cold": 0,
+   "frz": 0,
+   "curse": 0,
+   "hex": 0,
+   "shard": 0,
+   "doom": 0,
+   "abSoul": 0,
+   "abPulse": 0,
+   "abRift": 0,
+   "abHunt": 0,
+   "abExec": 0,
+   "abWard": 0,
+   "fury": 22,
+   "echo": 0,
+   "psnCh": 60,
+   "bldCh": 0,
+   "shock": 27,
+   "stunCh": 0,
+   "rootCh": 0,
+   "contag": 0
+  },
+  "surv": 2777.333333333334,
+  "mods": {
+   "w": [
+    "orage",
+    "venin",
+    "surtension",
+    "boucherie"
+   ],
+   "h": [
+    "remanence",
+    "ame",
+    "garde",
+    null,
+    null,
+    null
+   ],
+   "au": "terreur",
+   "pet": {
+    "uid": 4,
+    "t": "corbeau",
+    "rk": 3,
+    "lv": 20,
+    "xp": 0
+   },
+   "p": [
+    "pmarque",
+    "pnuee",
+    "pcrocs",
+    null
+   ],
+   "kit": {
+    "s": 0,
+    "u": 0
+   }
+  },
+  "gear": {
+   "arme": {
+    "n": "Corde du Premier Chasseur",
+    "r": 4,
+    "lvl": 1,
+    "up": 0,
+    "base": {
+     "k": "dmg",
+     "v": 31
+    },
+    "aff": {
+     "multi": 1,
+     "apsPct": 22,
+     "crit": 8,
+     "bossDmg": 25,
+     "execute": 30
+    }
+   },
+   "armure": {
+    "n": "Cuirasse des Cendres",
+    "r": 2,
+    "lvl": 106,
+    "up": 3,
+    "base": {
+     "k": "hp",
+     "v": 838
+    },
+    "aff": {
+     "novaPct": 44,
+     "critDmg": 32,
+     "ultPct": 23
+    }
+   },
+   "amulette": {
+    "n": "Médaillon du Corbeau",
+    "r": 3,
+    "lvl": 97,
+    "up": 3,
+    "base": {
+     "k": "crit",
+     "v": 4
+    },
+    "aff": {
+     "novaPct": 61,
+     "ultPct": 28,
+     "cdr": 14,
+     "crit": 9
+    }
+   },
+   "bottes": {
+    "n": "Bottes de cuir de l'Ossuaire",
+    "r": 2,
+    "lvl": 105,
+    "up": 3,
+    "base": {
+     "k": "speed",
+     "v": 33
+    },
+    "aff": {
+     "execute": 50,
+     "novaPct": 41,
+     "dmgPct": 77
+    }
+   },
+   "anneau": {
+    "n": "Bague du Pèlerin",
+    "r": 2,
+    "lvl": 126,
+    "up": 2,
+    "base": {
+     "k": "dmgPct",
+     "v": 120
+    },
+    "aff": {
+     "novaPct": 44,
+     "dotPct": 70,
+     "dmgPct": 112
+    }
+   },
+   "anneau2": {
+    "n": "Bague de l'Ancêtre",
+    "r": 4,
+    "lvl": 125,
+    "up": 1,
+    "base": {
+     "k": "dmgPct",
+     "v": 139
+    },
+    "aff": {
+     "apsPct": 17,
+     "dmgPct": 135,
+     "execute": 71,
+     "cdr": 19,
+     "bossDmg": 47
+    }
+   }
+  }
+ },
+ "raw": {
+  "P": {
+   "p": 872502740.522218,
+   "atk": 12052734.482606363,
+   "skill": 248594646.6506332,
+   "ult": 605846519.4761386,
+   "pulse": 12915.501374719997,
+   "pet": 5995924.411465257
+  },
+  "S": {
+   "dmg": 1934.8485999999998,
+   "aps": 5.106599999999999,
+   "crit": 75,
+   "critDmg": 685.8000000000001,
+   "multi": 2,
+   "pierce": 2,
+   "reach": 0,
+   "splash": 0,
+   "nova": 47589.536165599995,
+   "cdr": 50,
+   "skillRad": 120,
+   "ultPct": 250.79999999999995,
+   "burn": 0,
+   "hp": 13125,
+   "armor": 60,
+   "execute": 0,
+   "bossDmg": 0,
+   "lowDmg": 0,
+   "dotPct": 0,
+   "ccDmg": 0,
+   "cold": 323,
+   "frz": 40,
+   "curse": 60,
+   "hex": 323,
+   "shard": 60,
+   "doom": 60,
+   "abSoul": 6,
+   "abPulse": 350,
+   "abRift": 25,
+   "abHunt": 0,
+   "abExec": 12,
+   "abWard": 126,
+   "fury": 24,
+   "echo": 0,
+   "psnCh": 60,
+   "bldCh": 0,
+   "shock": 29,
+   "stunCh": 0,
+   "rootCh": 0,
+   "contag": 0
+  },
+  "surv": 42615.162000000004,
+  "gear": {
+   "arme": {
+    "n": "Arc du Vide éternel",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "dmg",
+     "v": 42
+    },
+    "seal": null,
+    "aff": {
+     "multi": 2,
+     "pierce": 2,
+     "apsPct": 47.5,
+     "critDmg": 114,
+     "crit": 22.8,
+     "dmgPct": 47.5,
+     "abRift": 25
+    }
+   },
+   "armure": {
+    "n": "Linceul écarlate",
+    "r": 5,
+    "up": 9,
+    "base": {
+     "k": "hp",
+     "v": 1959
+    },
+    "seal": null,
+    "aff": {
+     "hp": 1768.9,
+     "novaPct": 153.9,
+     "ultPct": 76,
+     "armor": 24.7,
+     "cdr": 41.8,
+     "regen": 174.8
+    }
+   },
+   "amulette": {
+    "n": "Couronne de l'Éclipse",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "crit",
+     "v": 5
+    },
+    "seal": null,
+    "aff": {
+     "novaPct": 180.5,
+     "dmgPct": 518.7,
+     "cdr": 47.5,
+     "ultPct": 87.4,
+     "crit": 28.5,
+     "critDmg": 140.6,
+     "abPulse": 350
+    }
+   },
+   "bottes": {
+    "n": "Pas du Simoun",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "speed",
+     "v": 83
+    },
+    "seal": null,
+    "aff": {
+     "speed": 36.1,
+     "curse": 76,
+     "hex": 323,
+     "doom": 83.6,
+     "crit": 28.5,
+     "dmgPct": 518.7,
+     "abSoul": 5
+    }
+   },
+   "anneau": {
+    "n": "Anneau du Néant gelé",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "dmgPct",
+     "v": 246
+    },
+    "seal": null,
+    "aff": {
+     "shard": 83.6,
+     "cold": 323,
+     "apsPct": 55.1,
+     "frz": 60.8,
+     "crit": 28.5,
+     "critDmg": 140.6,
+     "abExec": 12
+    }
+   },
+   "anneau2": {
+    "n": "Anneau du Sablier noir",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "dmgPct",
+     "v": 246
+    },
+    "seal": null,
+    "aff": {
+     "cdr": 47.5,
+     "novaPct": 180.5,
+     "crit": 28.5,
+     "critDmg": 140.6,
+     "ultPct": 87.4,
+     "apsPct": 55.1,
+     "abSoul": 5
+    }
+   },
+   "dos": {
+    "n": "Cape du Néant",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "armor",
+     "v": 14
+    },
+    "seal": null,
+    "aff": {
+     "hp": 2063.4,
+     "armor": 28.5,
+     "regen": 203.3,
+     "lowArmor": 60.8,
+     "antidote": 64.6,
+     "thorns": 235.6,
+     "abWard": 126
+    }
+   }
+  },
+  "mods": {
+   "w": [
+    "venin",
+    "orage",
+    "oeil",
+    "surtension"
+   ],
+   "h": [
+    "remanence",
+    "ame",
+    "flux",
+    "intensite",
+    "etendue",
+    "persist"
+   ],
+   "au": "presence",
+   "pet": "corbeau",
+   "p": [
+    "pcrocs",
+    "pbec",
+    "pnuee",
+    "pmarque"
+   ],
+   "kit": {
+    "s": 1,
+    "u": 0,
+    "sn": "Tir du chasseur",
+    "un": "Pluie d'acier"
+   }
+  }
+ },
+ "forge": {
+  "P": {
+   "p": 7333112828144.904,
+   "atk": 1482462360.309398,
+   "skill": 837819687667.3954,
+   "ult": 6493121310915.507,
+   "pulse": 0,
+   "pet": 689367201.6928227
+  },
+  "S": {
+   "dmg": 8952.131899999997,
+   "aps": 2.2680000000000002,
+   "crit": 75,
+   "critDmg": 2593.875,
+   "multi": 0,
+   "pierce": 6,
+   "reach": 0,
+   "splash": 0,
+   "nova": 1160957.2254514997,
+   "cdr": 50,
+   "skillRad": 120,
+   "ultPct": 1536.15,
+   "burn": 0,
+   "hp": 7034,
+   "armor": 34.599999999999994,
+   "execute": 0,
+   "bossDmg": 0,
+   "lowDmg": 0,
+   "dotPct": 3483.899999999999,
+   "ccDmg": 0,
+   "cold": 0,
+   "frz": 0,
+   "curse": 60,
+   "hex": 807.975,
+   "shard": 60,
+   "doom": 60,
+   "abSoul": 6,
+   "abPulse": 0,
+   "abRift": 55,
+   "abHunt": 55,
+   "abExec": 20,
+   "abWard": 0,
+   "fury": 24,
+   "echo": 0,
+   "psnCh": 60,
+   "bldCh": 0,
+   "shock": 29,
+   "stunCh": 0,
+   "rootCh": 0,
+   "contag": 0
+  },
+  "surv": 9475.061668681983,
+  "gear": {
+   "arme": {
+    "n": "Arc du Vide éternel",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "dmg",
+     "v": 42
+    },
+    "seal": null,
+    "aff": {
+     "dotPct": 497.7,
+     "novaPct": 448.9,
+     "dmgPct": 1296.7,
+     "critDmg": 349.1,
+     "ultPct": 219.5,
+     "shard": 209.5,
+     "abRift": 25
+    }
+   },
+   "armure": {
+    "n": "Linceul des Mille Âmes",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "hp",
+     "v": 2099
+    },
+    "seal": "cri",
+    "aff": {
+     "dotPct": 497.7,
+     "ultPct": 219.5,
+     "curse": 189.5,
+     "critDmg": 349.1,
+     "dmgPct": 1296.7,
+     "novaPct": 448.9,
+     "abSoul": 5
+    }
+   },
+   "amulette": {
+    "n": "Œil du Néant",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "crit",
+     "v": 5
+    },
+    "seal": "sablier",
+    "aff": {
+     "dotPct": 497.7,
+     "ultPct": 219.5,
+     "novaPct": 448.9,
+     "critDmg": 349.1,
+     "dmgPct": 1296.7,
+     "doom": 209.5,
+     "abRift": 30
+    }
+   },
+   "bottes": {
+    "n": "Pas du Vide",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "speed",
+     "v": 83
+    },
+    "seal": null,
+    "aff": {
+     "dotPct": 497.7,
+     "ultPct": 219.5,
+     "dmgPct": 1296.7,
+     "novaPct": 448.9,
+     "cdr": 119.7,
+     "critDmg": 349.1,
+     "abExec": 12
+    }
+   },
+   "anneau": {
+    "n": "Anneau du Néant gelé",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "dmgPct",
+     "v": 246
+    },
+    "seal": null,
+    "aff": {
+     "crit": 69.8,
+     "dotPct": 497.7,
+     "novaPct": 448.9,
+     "dmgPct": 1296.7,
+     "ultPct": 219.5,
+     "critDmg": 349.1,
+     "abExec": 12
+    }
+   },
+   "anneau2": {
+    "n": "Sceau du Premier Roi",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "dmgPct",
+     "v": 246
+    },
+    "seal": null,
+    "aff": {
+     "dotPct": 497.7,
+     "novaPct": 448.9,
+     "dmgPct": 1296.7,
+     "critDmg": 349.1,
+     "pierce": 6,
+     "ultPct": 219.5,
+     "abHunt": 55
+    }
+   },
+   "dos": {
+    "n": "Ailes de l'Éclipse",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "armor",
+     "v": 14
+    },
+    "seal": null,
+    "aff": {
+     "novaPct": 448.9,
+     "dmgPct": 1296.7,
+     "hex": 808,
+     "critDmg": 349.1,
+     "dotPct": 497.7,
+     "ultPct": 219.5,
+     "abSoul": 5
+    }
+   }
+  },
+  "mods": {
+   "w": [
+    "venin",
+    "orage",
+    "virulence",
+    "hemorragie"
+   ],
+   "h": [
+    "remanence",
+    "ame",
+    "flux",
+    "intensite",
+    "etendue",
+    "persist"
+   ],
+   "au": "presence",
+   "pet": "corbeau",
+   "p": [
+    "pbec",
+    "pnuee",
+    "pecho",
+    "pmarque"
+   ],
+   "kit": {
+    "s": 1,
+    "u": 0,
+    "sn": "Tir du chasseur",
+    "un": "Pluie d'acier"
+   }
+  }
+ },
+ "flat": {
+  "P": {
+   "p": 1595605025467.0173,
+   "atk": 1289488234.667974,
+   "skill": 182189892125.62482,
+   "ult": 1411975737270.9932,
+   "pulse": 0,
+   "pet": 149907835.73138314
+  },
+  "S": {
+   "dmg": 8952.131899999997,
+   "aps": 2.2680000000000002,
+   "crit": 75,
+   "critDmg": 2593.875,
+   "multi": 0,
+   "pierce": 30,
+   "reach": 0,
+   "splash": 0,
+   "nova": 1160957.2254514997,
+   "cdr": 50,
+   "skillRad": 120,
+   "ultPct": 1536.15,
+   "burn": 0,
+   "hp": 7034,
+   "armor": 34.599999999999994,
+   "execute": 0,
+   "bossDmg": 0,
+   "lowDmg": 0,
+   "dotPct": 3483.899999999999,
+   "ccDmg": 0,
+   "cold": 0,
+   "frz": 0,
+   "curse": 0,
+   "hex": 0,
+   "shard": 0,
+   "doom": 0,
+   "abSoul": 6,
+   "abPulse": 0,
+   "abRift": 55,
+   "abHunt": 55,
+   "abExec": 20,
+   "abWard": 0,
+   "fury": 24,
+   "echo": 0,
+   "psnCh": 60,
+   "bldCh": 0,
+   "shock": 29,
+   "stunCh": 0,
+   "rootCh": 0,
+   "contag": 0
+  },
+  "surv": 9475.061668681983,
+  "gear": {
+   "arme": {
+    "n": "Arc du Vide éternel",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "dmg",
+     "v": 42
+    },
+    "seal": null,
+    "aff": {
+     "novaPct": 448.9,
+     "critDmg": 349.1,
+     "dmgPct": 1296.7,
+     "ultPct": 219.5,
+     "dotPct": 497.7,
+     "cdr": 119.7,
+     "abRift": 25
+    }
+   },
+   "armure": {
+    "n": "Linceul des Mille Âmes",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "hp",
+     "v": 2099
+    },
+    "seal": "cri",
+    "aff": {
+     "ultPct": 219.5,
+     "dmgPct": 1296.7,
+     "dotPct": 497.7,
+     "novaPct": 448.9,
+     "critDmg": 349.1,
+     "pierce": 6,
+     "abSoul": 5
+    }
+   },
+   "amulette": {
+    "n": "Œil du Néant",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "crit",
+     "v": 5
+    },
+    "seal": "sablier",
+    "aff": {
+     "critDmg": 349.1,
+     "ultPct": 219.5,
+     "novaPct": 448.9,
+     "dmgPct": 1296.7,
+     "dotPct": 497.7,
+     "pierce": 6,
+     "abRift": 30
+    }
+   },
+   "bottes": {
+    "n": "Pas du Vide",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "speed",
+     "v": 83
+    },
+    "seal": null,
+    "aff": {
+     "crit": 69.8,
+     "dotPct": 497.7,
+     "critDmg": 349.1,
+     "novaPct": 448.9,
+     "dmgPct": 1296.7,
+     "ultPct": 219.5,
+     "abExec": 12
+    }
+   },
+   "anneau": {
+    "n": "Anneau du Néant gelé",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "dmgPct",
+     "v": 246
+    },
+    "seal": null,
+    "aff": {
+     "dmgPct": 1296.7,
+     "novaPct": 448.9,
+     "ultPct": 219.5,
+     "critDmg": 349.1,
+     "dotPct": 497.7,
+     "pierce": 6,
+     "abExec": 12
+    }
+   },
+   "anneau2": {
+    "n": "Sceau du Premier Roi",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "dmgPct",
+     "v": 246
+    },
+    "seal": null,
+    "aff": {
+     "dotPct": 497.7,
+     "critDmg": 349.1,
+     "dmgPct": 1296.7,
+     "ultPct": 219.5,
+     "novaPct": 448.9,
+     "pierce": 6,
+     "abHunt": 55
+    }
+   },
+   "dos": {
+    "n": "Ailes de l'Éclipse",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "armor",
+     "v": 14
+    },
+    "seal": null,
+    "aff": {
+     "novaPct": 448.9,
+     "ultPct": 219.5,
+     "dotPct": 497.7,
+     "critDmg": 349.1,
+     "dmgPct": 1296.7,
+     "pierce": 6,
+     "abSoul": 5
+    }
+   }
+  },
+  "mods": {
+   "w": [
+    "venin",
+    "orage",
+    "virulence",
+    "hemorragie"
+   ],
+   "h": [
+    "remanence",
+    "ame",
+    "flux",
+    "intensite",
+    "etendue",
+    "persist"
+   ],
+   "au": "presence",
+   "pet": "corbeau",
+   "p": [
+    "pbec",
+    "pnuee",
+    "pecho",
+    "pmarque"
+   ],
+   "kit": {
+    "s": 1,
+    "u": 0,
+    "sn": "Tir du chasseur",
+    "un": "Pluie d'acier"
+   }
+  }
+ },
+ "states": {
+  "raw": {
+   "w": [
+    "venin",
+    "orage",
+    "oeil",
+    "surtension"
+   ],
+   "h": [
+    "remanence",
+    "ame",
+    "flux",
+    "intensite",
+    "etendue",
+    "persist"
+   ],
+   "au": "presence",
+   "pet": 901,
+   "p": [
+    "pcrocs",
+    "pbec",
+    "pnuee",
+    "pmarque"
+   ],
+   "kit": {
+    "s": 1,
+    "u": 0
+   }
+  },
+  "forge": {
+   "w": [
+    "venin",
+    "orage",
+    "virulence",
+    "hemorragie"
+   ],
+   "h": [
+    "remanence",
+    "ame",
+    "flux",
+    "intensite",
+    "etendue",
+    "persist"
+   ],
+   "au": "presence",
+   "pet": 901,
+   "p": [
+    "pbec",
+    "pnuee",
+    "pecho",
+    "pmarque"
+   ],
+   "kit": {
+    "s": 1,
+    "u": 0
+   }
+  },
+  "flat": {
+   "w": [
+    "venin",
+    "orage",
+    "virulence",
+    "hemorragie"
+   ],
+   "h": [
+    "remanence",
+    "ame",
+    "flux",
+    "intensite",
+    "etendue",
+    "persist"
+   ],
+   "au": "presence",
+   "pet": 901,
+   "p": [
+    "pbec",
+    "pnuee",
+    "pecho",
+    "pmarque"
+   ],
+   "kit": {
+    "s": 1,
+    "u": 0
+   }
+  },
+  "fixed": {
+   "w": [
+    "orage",
+    "oeil",
+    "surtension",
+    "catalyse"
+   ],
+   "h": [
+    "remanence",
+    "ame",
+    "flux",
+    "intensite",
+    "etendue",
+    "persist"
+   ],
+   "au": "presence",
+   "pet": 901,
+   "p": [
+    "pcrocs",
+    "pbec",
+    "pnuee",
+    "pmarque"
+   ],
+   "kit": {
+    "s": 1,
+    "u": 0
+   }
+  }
+ },
+ "items": {
+  "raw": {
+   "arme": {
+    "id": "w_a5",
+    "wid": "a5",
+    "cls": "archer",
+    "slot": "arme",
+    "r": 6,
+    "lvl": 1,
+    "base": {
+     "k": "dmg",
+     "v": 42
+    },
+    "aff": {
+     "multi": 2,
+     "pierce": 2,
+     "apsPct": 25,
+     "critDmg": 60,
+     "crit": 12,
+     "dmgPct": 25,
+     "abRift": 25
+    },
+    "name": "Arc du Vide éternel",
+    "type": "Arme",
+    "up": 9
+   },
+   "armure": {
+    "id": "rarmureS5",
+    "slot": "armure",
+    "r": 5,
+    "lvl": 197,
+    "up": 9,
+    "base": {
+     "k": "hp",
+     "v": 1959
+    },
+    "aff": {
+     "hp": 931,
+     "novaPct": 81,
+     "ultPct": 40,
+     "armor": 13,
+     "cdr": 22,
+     "regen": 92
+    },
+    "name": "Linceul écarlate",
+    "rid": "S5"
+   },
+   "amulette": {
+    "id": "ramuletteB3",
+    "slot": "amulette",
+    "r": 6,
+    "lvl": 197,
+    "up": 9,
+    "base": {
+     "k": "crit",
+     "v": 5
+    },
+    "aff": {
+     "novaPct": 95,
+     "dmgPct": 273,
+     "cdr": 25,
+     "ultPct": 46,
+     "crit": 15,
+     "critDmg": 74,
+     "abPulse": 350
+    },
+    "name": "Couronne de l'Éclipse",
+    "rid": "B3"
+   },
+   "bottes": {
+    "id": "rbottesB14",
+    "slot": "bottes",
+    "r": 6,
+    "lvl": 197,
+    "up": 9,
+    "base": {
+     "k": "speed",
+     "v": 83
+    },
+    "aff": {
+     "speed": 19,
+     "curse": 40,
+     "hex": 170,
+     "doom": 44,
+     "crit": 15,
+     "dmgPct": 273,
+     "abSoul": 5
+    },
+    "name": "Pas du Simoun",
+    "rid": "B14"
+   },
+   "anneau": {
+    "id": "ranneauB10",
+    "slot": "anneau",
+    "r": 6,
+    "lvl": 197,
+    "up": 9,
+    "base": {
+     "k": "dmgPct",
+     "v": 246
+    },
+    "aff": {
+     "shard": 44,
+     "cold": 170,
+     "apsPct": 29,
+     "frz": 32,
+     "crit": 15,
+     "critDmg": 74,
+     "abExec": 12
+    },
+    "name": "Anneau du Néant gelé",
+    "rid": "B10"
+   },
+   "anneau2": {
+    "id": "ranneauB7",
+    "slot": "anneau",
+    "r": 6,
+    "lvl": 197,
+    "up": 9,
+    "base": {
+     "k": "dmgPct",
+     "v": 246
+    },
+    "aff": {
+     "cdr": 25,
+     "novaPct": 95,
+     "crit": 15,
+     "critDmg": 74,
+     "ultPct": 46,
+     "apsPct": 29,
+     "abSoul": 5
+    },
+    "name": "Anneau du Sablier noir",
+    "rid": "B7"
+   },
+   "dos": {
+    "id": "rdosB11",
+    "slot": "dos",
+    "r": 6,
+    "lvl": 197,
+    "up": 9,
+    "base": {
+     "k": "armor",
+     "v": 14
+    },
+    "aff": {
+     "hp": 1086,
+     "armor": 15,
+     "regen": 107,
+     "lowArmor": 32,
+     "antidote": 34,
+     "thorns": 124,
+     "abWard": 126
+    },
+    "name": "Cape du Néant",
+    "rid": "B11"
+   }
+  },
+  "forge": {
+   "arme": {
+    "id": "w_a5",
+    "wid": "a5",
+    "cls": "archer",
+    "slot": "arme",
+    "r": 6,
+    "lvl": 1,
+    "base": {
+     "k": "dmg",
+     "v": 42
+    },
+    "aff": {
+     "dotPct": 261.9473684210526,
+     "novaPct": 236.24999999999997,
+     "dmgPct": 682.4999999999999,
+     "critDmg": 183.75,
+     "ultPct": 115.5,
+     "shard": 110.24999999999999,
+     "abRift": 25
+    },
+    "name": "Arc du Vide éternel",
+    "type": "Arme",
+    "up": 9
+   },
+   "armure": {
+    "id": "oarmureB2",
+    "slot": "armure",
+    "r": 6,
+    "lvl": 197,
+    "up": 9,
+    "base": {
+     "k": "hp",
+     "v": 2099
+    },
+    "aff": {
+     "dotPct": 261.9473684210526,
+     "ultPct": 115.5,
+     "curse": 99.74999999999999,
+     "critDmg": 183.75,
+     "dmgPct": 682.4999999999999,
+     "novaPct": 236.24999999999997,
+     "abSoul": 5
+    },
+    "name": "Linceul des Mille Âmes",
+    "rid": "B2",
+    "seal": "cri"
+   },
+   "amulette": {
+    "id": "oamuletteB1",
+    "slot": "amulette",
+    "r": 6,
+    "lvl": 197,
+    "up": 9,
+    "base": {
+     "k": "crit",
+     "v": 5
+    },
+    "aff": {
+     "dotPct": 261.9473684210526,
+     "ultPct": 115.5,
+     "novaPct": 236.24999999999997,
+     "critDmg": 183.75,
+     "dmgPct": 682.4999999999999,
+     "doom": 110.24999999999999,
+     "abRift": 30
+    },
+    "name": "Œil du Néant",
+    "rid": "B1",
+    "seal": "sablier"
+   },
+   "bottes": {
+    "id": "obottesB5",
+    "slot": "bottes",
+    "r": 6,
+    "lvl": 197,
+    "up": 9,
+    "base": {
+     "k": "speed",
+     "v": 83
+    },
+    "aff": {
+     "dotPct": 261.9473684210526,
+     "ultPct": 115.5,
+     "dmgPct": 682.4999999999999,
+     "novaPct": 236.24999999999997,
+     "cdr": 63.00000000000001,
+     "critDmg": 183.75,
+     "abExec": 12
+    },
+    "name": "Pas du Vide",
+    "rid": "B5"
+   },
+   "anneau": {
+    "id": "oanneauB10",
+    "slot": "anneau",
+    "r": 6,
+    "lvl": 197,
+    "up": 9,
+    "base": {
+     "k": "dmgPct",
+     "v": 246
+    },
+    "aff": {
+     "crit": 36.75,
+     "dotPct": 261.9473684210526,
+     "novaPct": 236.24999999999997,
+     "dmgPct": 682.4999999999999,
+     "ultPct": 115.5,
+     "critDmg": 183.75,
+     "abExec": 12
+    },
+    "name": "Anneau du Néant gelé",
+    "rid": "B10"
+   },
+   "anneau2": {
+    "id": "oanneauB4",
+    "slot": "anneau",
+    "r": 6,
+    "lvl": 197,
+    "up": 9,
+    "base": {
+     "k": "dmgPct",
+     "v": 246
+    },
+    "aff": {
+     "dotPct": 261.9473684210526,
+     "novaPct": 236.24999999999997,
+     "dmgPct": 682.4999999999999,
+     "critDmg": 183.75,
+     "pierce": 6,
+     "ultPct": 115.5,
+     "abHunt": 55
+    },
+    "name": "Sceau du Premier Roi",
+    "rid": "B4"
+   },
+   "dos": {
+    "id": "odosB12",
+    "slot": "dos",
+    "r": 6,
+    "lvl": 197,
+    "up": 9,
+    "base": {
+     "k": "armor",
+     "v": 14
+    },
+    "aff": {
+     "novaPct": 236.24999999999997,
+     "dmgPct": 682.4999999999999,
+     "hex": 425.25000000000006,
+     "critDmg": 183.75,
+     "dotPct": 261.9473684210526,
+     "ultPct": 115.5,
+     "abSoul": 5
+    },
+    "name": "Ailes de l'Éclipse",
+    "rid": "B12"
+   }
+  },
+  "flat": {
+   "arme": {
+    "id": "w_a5",
+    "wid": "a5",
+    "cls": "archer",
+    "slot": "arme",
+    "r": 6,
+    "lvl": 1,
+    "base": {
+     "k": "dmg",
+     "v": 42
+    },
+    "aff": {
+     "novaPct": 236.24999999999997,
+     "critDmg": 183.75,
+     "dmgPct": 682.4999999999999,
+     "ultPct": 115.5,
+     "dotPct": 261.9473684210526,
+     "cdr": 63.00000000000001,
+     "abRift": 25
+    },
+    "name": "Arc du Vide éternel",
+    "type": "Arme",
+    "up": 9
+   },
+   "armure": {
+    "id": "oarmureB2",
+    "slot": "armure",
+    "r": 6,
+    "lvl": 197,
+    "up": 9,
+    "base": {
+     "k": "hp",
+     "v": 2099
+    },
+    "aff": {
+     "ultPct": 115.5,
+     "dmgPct": 682.4999999999999,
+     "dotPct": 261.9473684210526,
+     "novaPct": 236.24999999999997,
+     "critDmg": 183.75,
+     "pierce": 6,
+     "abSoul": 5
+    },
+    "name": "Linceul des Mille Âmes",
+    "rid": "B2",
+    "seal": "cri"
+   },
+   "amulette": {
+    "id": "oamuletteB1",
+    "slot": "amulette",
+    "r": 6,
+    "lvl": 197,
+    "up": 9,
+    "base": {
+     "k": "crit",
+     "v": 5
+    },
+    "aff": {
+     "critDmg": 183.75,
+     "ultPct": 115.5,
+     "novaPct": 236.24999999999997,
+     "dmgPct": 682.4999999999999,
+     "dotPct": 261.9473684210526,
+     "pierce": 6,
+     "abRift": 30
+    },
+    "name": "Œil du Néant",
+    "rid": "B1",
+    "seal": "sablier"
+   },
+   "bottes": {
+    "id": "obottesB5",
+    "slot": "bottes",
+    "r": 6,
+    "lvl": 197,
+    "up": 9,
+    "base": {
+     "k": "speed",
+     "v": 83
+    },
+    "aff": {
+     "crit": 36.75,
+     "dotPct": 261.9473684210526,
+     "critDmg": 183.75,
+     "novaPct": 236.24999999999997,
+     "dmgPct": 682.4999999999999,
+     "ultPct": 115.5,
+     "abExec": 12
+    },
+    "name": "Pas du Vide",
+    "rid": "B5"
+   },
+   "anneau": {
+    "id": "oanneauB10",
+    "slot": "anneau",
+    "r": 6,
+    "lvl": 197,
+    "up": 9,
+    "base": {
+     "k": "dmgPct",
+     "v": 246
+    },
+    "aff": {
+     "dmgPct": 682.4999999999999,
+     "novaPct": 236.24999999999997,
+     "ultPct": 115.5,
+     "critDmg": 183.75,
+     "dotPct": 261.9473684210526,
+     "pierce": 6,
+     "abExec": 12
+    },
+    "name": "Anneau du Néant gelé",
+    "rid": "B10"
+   },
+   "anneau2": {
+    "id": "oanneauB4",
+    "slot": "anneau",
+    "r": 6,
+    "lvl": 197,
+    "up": 9,
+    "base": {
+     "k": "dmgPct",
+     "v": 246
+    },
+    "aff": {
+     "dotPct": 261.9473684210526,
+     "critDmg": 183.75,
+     "dmgPct": 682.4999999999999,
+     "ultPct": 115.5,
+     "novaPct": 236.24999999999997,
+     "pierce": 6,
+     "abHunt": 55
+    },
+    "name": "Sceau du Premier Roi",
+    "rid": "B4"
+   },
+   "dos": {
+    "id": "odosB12",
+    "slot": "dos",
+    "r": 6,
+    "lvl": 197,
+    "up": 9,
+    "base": {
+     "k": "armor",
+     "v": 14
+    },
+    "aff": {
+     "novaPct": 236.24999999999997,
+     "ultPct": 115.5,
+     "dotPct": 261.9473684210526,
+     "critDmg": 183.75,
+     "dmgPct": 682.4999999999999,
+     "pierce": 6,
+     "abSoul": 5
+    },
+    "name": "Ailes de l'Éclipse",
+    "rid": "B12"
+   }
+  },
+  "fixed": {
+   "arme": {
+    "id": "w_a5",
+    "wid": "a5",
+    "cls": "archer",
+    "slot": "arme",
+    "r": 6,
+    "lvl": 1,
+    "base": {
+     "k": "dmg",
+     "v": 42
+    },
+    "aff": {
+     "novaPct": 236.24999999999997,
+     "bossDmg": 236.24999999999997,
+     "ccDmg": 268.5789473684211,
+     "cold": 425.25000000000006,
+     "ultPct": 115.5,
+     "shard": 110.24999999999999,
+     "abRift": 25
+    },
+    "name": "Arc du Vide éternel",
+    "type": "Arme",
+    "up": 9
+   },
+   "armure": {
+    "id": "oarmureB2",
+    "slot": "armure",
+    "r": 6,
+    "lvl": 197,
+    "up": 9,
+    "base": {
+     "k": "hp",
+     "v": 2099
+    },
+    "aff": {
+     "ultPct": 115.5,
+     "critDmg": 183.75,
+     "curse": 99.74999999999999,
+     "multi": 5,
+     "execute": 288.00000000000006,
+     "novaPct": 236.24999999999997,
+     "abSoul": 5
+    },
+    "name": "Linceul des Mille Âmes",
+    "rid": "B2",
+    "seal": "cri"
+   },
+   "amulette": {
+    "id": "oamuletteB1",
+    "slot": "amulette",
+    "r": 6,
+    "lvl": 197,
+    "up": 9,
+    "base": {
+     "k": "crit",
+     "v": 5
+    },
+    "aff": {
+     "execute": 288.00000000000006,
+     "ultPct": 115.5,
+     "hex": 425.25000000000006,
+     "ccDmg": 268.5789473684211,
+     "dmgPct": 682.4999999999999,
+     "doom": 110.24999999999999,
+     "abRift": 30
+    },
+    "name": "Œil du Néant",
+    "rid": "B1",
+    "seal": "sablier"
+   },
+   "bottes": {
+    "id": "obottesB5",
+    "slot": "bottes",
+    "r": 6,
+    "lvl": 197,
+    "up": 9,
+    "base": {
+     "k": "speed",
+     "v": 83
+    },
+    "aff": {
+     "dmgPct": 682.4999999999999,
+     "ccDmg": 268.5789473684211,
+     "hex": 425.25000000000006,
+     "novaPct": 236.24999999999997,
+     "cold": 425.25000000000006,
+     "critDmg": 183.75,
+     "abExec": 12
+    },
+    "name": "Pas du Vide",
+    "rid": "B5",
+    "seal": "vif"
+   },
+   "anneau": {
+    "id": "oanneauB10",
+    "slot": "anneau",
+    "r": 6,
+    "lvl": 197,
+    "up": 9,
+    "base": {
+     "k": "dmgPct",
+     "v": 246
+    },
+    "aff": {
+     "crit": 36.75,
+     "frz": 78.75,
+     "execute": 288.00000000000006,
+     "lowDmg": 229.5,
+     "hex": 425.25000000000006,
+     "bossDmg": 236.24999999999997,
+     "abExec": 12
+    },
+    "name": "Anneau du Néant gelé",
+    "rid": "B10"
+   },
+   "anneau2": {
+    "id": "oanneauB4",
+    "slot": "anneau",
+    "r": 6,
+    "lvl": 197,
+    "up": 9,
+    "base": {
+     "k": "dmgPct",
+     "v": 246
+    },
+    "aff": {
+     "critDmg": 183.75,
+     "cold": 425.25000000000006,
+     "dmgPct": 682.4999999999999,
+     "bossDmg": 236.24999999999997,
+     "ccDmg": 268.5789473684211,
+     "ultPct": 115.5,
+     "abHunt": 55
+    },
+    "name": "Sceau du Premier Roi",
+    "rid": "B4"
+   },
+   "dos": {
+    "id": "odosB12",
+    "slot": "dos",
+    "r": 6,
+    "lvl": 197,
+    "up": 9,
+    "base": {
+     "k": "armor",
+     "v": 14
+    },
+    "aff": {
+     "novaPct": 236.24999999999997,
+     "cold": 425.25000000000006,
+     "hex": 425.25000000000006,
+     "critDmg": 183.75,
+     "lowDmg": 229.5,
+     "execute": 288.00000000000006,
+     "abSoul": 5
+    },
+    "name": "Ailes de l'Éclipse",
+    "rid": "B12"
+   }
+  }
+ },
+ "ms": 3445,
+ "fixed": {
+  "P": {
+   "p": 45175343453.02427,
+   "atk": 36067011.74864367,
+   "skill": 2225076915.3030925,
+   "ult": 42871455705.28777,
+   "pulse": 0,
+   "pet": 42743820.684760004
+  },
+  "S": {
+   "dmg": 4397.945899999999,
+   "aps": 2.2680000000000002,
+   "crit": 75,
+   "critDmg": 1546.5,
+   "multi": 5,
+   "pierce": 0,
+   "reach": 0,
+   "splash": 0,
+   "nova": 333452.25813799986,
+   "cdr": 0,
+   "skillRad": 120,
+   "ultPct": 877.8,
+   "burn": 0,
+   "hp": 7034,
+   "armor": 34.599999999999994,
+   "execute": 2188.8,
+   "bossDmg": 1346.6249999999998,
+   "lowDmg": 872.0999999999999,
+   "dotPct": 0,
+   "ccDmg": 2041.2000000000003,
+   "cold": 3231.9,
+   "frz": 40,
+   "curse": 60,
+   "hex": 3231.9,
+   "shard": 60,
+   "doom": 60,
+   "abSoul": 6,
+   "abPulse": 0,
+   "abRift": 55,
+   "abHunt": 55,
+   "abExec": 20,
+   "abWard": 0,
+   "fury": 24,
+   "echo": 0,
+   "psnCh": 0,
+   "bldCh": 0,
+   "shock": 29,
+   "stunCh": 0,
+   "rootCh": 0,
+   "contag": 0
+  },
+  "surv": 9475.061668681983,
+  "gear": {
+   "arme": {
+    "n": "Arc du Vide éternel",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "dmg",
+     "v": 42
+    },
+    "seal": null,
+    "aff": {
+     "novaPct": 448.9,
+     "bossDmg": 448.9,
+     "ccDmg": 510.3,
+     "cold": 808,
+     "ultPct": 219.5,
+     "shard": 209.5,
+     "abRift": 25
+    }
+   },
+   "armure": {
+    "n": "Linceul des Mille Âmes",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "hp",
+     "v": 2099
+    },
+    "seal": "cri",
+    "aff": {
+     "ultPct": 219.5,
+     "critDmg": 349.1,
+     "curse": 189.5,
+     "multi": 5,
+     "execute": 547.2,
+     "novaPct": 448.9,
+     "abSoul": 5
+    }
+   },
+   "amulette": {
+    "n": "Œil du Néant",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "crit",
+     "v": 5
+    },
+    "seal": "sablier",
+    "aff": {
+     "execute": 547.2,
+     "ultPct": 219.5,
+     "hex": 808,
+     "ccDmg": 510.3,
+     "dmgPct": 1296.7,
+     "doom": 209.5,
+     "abRift": 30
+    }
+   },
+   "bottes": {
+    "n": "Pas du Vide",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "speed",
+     "v": 83
+    },
+    "seal": "vif",
+    "aff": {
+     "dmgPct": 1296.7,
+     "ccDmg": 510.3,
+     "hex": 808,
+     "novaPct": 448.9,
+     "cold": 808,
+     "critDmg": 349.1,
+     "abExec": 12
+    }
+   },
+   "anneau": {
+    "n": "Anneau du Néant gelé",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "dmgPct",
+     "v": 246
+    },
+    "seal": null,
+    "aff": {
+     "crit": 69.8,
+     "frz": 149.6,
+     "execute": 547.2,
+     "lowDmg": 436.1,
+     "hex": 808,
+     "bossDmg": 448.9,
+     "abExec": 12
+    }
+   },
+   "anneau2": {
+    "n": "Sceau du Premier Roi",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "dmgPct",
+     "v": 246
+    },
+    "seal": null,
+    "aff": {
+     "critDmg": 349.1,
+     "cold": 808,
+     "dmgPct": 1296.7,
+     "bossDmg": 448.9,
+     "ccDmg": 510.3,
+     "ultPct": 219.5,
+     "abHunt": 55
+    }
+   },
+   "dos": {
+    "n": "Ailes de l'Éclipse",
+    "r": 6,
+    "up": 9,
+    "base": {
+     "k": "armor",
+     "v": 14
+    },
+    "seal": null,
+    "aff": {
+     "novaPct": 448.9,
+     "cold": 808,
+     "hex": 808,
+     "critDmg": 349.1,
+     "lowDmg": 436.1,
+     "execute": 547.2,
+     "abSoul": 5
+    }
+   }
+  },
+  "mods": {
+   "w": [
+    "orage",
+    "oeil",
+    "surtension",
+    "catalyse"
+   ],
+   "h": [
+    "remanence",
+    "ame",
+    "flux",
+    "intensite",
+    "etendue",
+    "persist"
+   ],
+   "au": "presence",
+   "pet": "corbeau",
+   "p": [
+    "pcrocs",
+    "pbec",
+    "pnuee",
+    "pmarque"
+   ],
+   "kit": {
+    "s": 1,
+    "u": 0,
+    "sn": "Tir du chasseur",
+    "un": "Pluie d'acier"
+   }
+  }
+ },
+ "errs": []
+}

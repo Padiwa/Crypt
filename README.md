@@ -10,10 +10,11 @@ Action-RPG de crypte en hordes, jouable au pouce sur mobile et au clavier. Site 
 | `js/data.js` | Outils communs, raretés, rythme (`BAL`), emplacements, biomes, classes, armes, reliques et objets des reliques |
 | `js/progress.js` | Sauvegarde `meta` et son chargement, Bonus de la Forge, talents, prestige, bonus de partie, sorts et ultimes |
 | `js/mods.js` | Statuts (constantes), mods d'arme et de héros, rangs, étoiles, capacité, conversions des mods (v141, v142) |
-| `js/items.js` | Affixes, objets (tirage, rang, fragments), statistiques du héros (`stats`) |
+| `js/items.js` | Affixes, objets (tirage, rang, fragments), objets uniques des Boss (`UQ`), statistiques du héros (`stats`) |
 | `js/equip.js` | Migrations v91 et v139, équipement par héros, équipements enregistrés |
 | `js/game.js` | État d'une mission (`newGame`), ennemis, apparitions, Nécropole des Sables, sol, effets |
 | `js/combat.js` | Dégâts, statuts, explosions, mort d'un ennemi et butin, coups reçus |
+| `js/boss.js` | Boss (v147) : fragments et clé d'antre, arène, Bourreau des Cendres, butin, ligne de l'écran Mission, dessins des deux rendus |
 | `js/spells.js` | Entrées (clavier, souris, tactile), sorts, ultimes, esquive et potion |
 | `js/step.js` | Grille spatiale et pas de simulation `update(dt)` |
 | `js/render.js` | Rendu Canvas 2D, formes communes aux deux rendus (sables, statuts, icônes de butin) et HUD |
@@ -46,6 +47,8 @@ Action-RPG de crypte en hordes, jouable au pouce sur mobile et au clavier. Site 
 | `js/nav.js` | Retour arrière (bouton Retour d'Android, Échap) et raccourcis clavier du Camp |
 | `aide/` | Guide du joueur |
 | `tools/tests/` | Suite de tests automatiques |
+| `tools/banc/` | Banc de mission : missions jouées par le bot pour mesurer l'équilibrage (voir son README) |
+| `CLAUDE.md` | Consignes de travail et état du projet pour Claude Code |
 | `js/settings.js` | Réglages de l'appareil, bannière d'événements, vibrations |
 | `js/audio.js` | Sons synthétisés (Web Audio) et musique d'ambiance |
 | `js/main.js` | Boucle à pas fixe et démarrage |
@@ -76,8 +79,8 @@ Le rythme chargé est celui de la balise `<script src="js/rythmes/….js">` d'`i
 Une suite unique vérifie le jeu dans un vrai navigateur (Chromium sans affichage) : démarrage, butin, reliques, fabrication et fusion, coffre, affixes, emplacements, missions, contrôles, sauvegarde, parcours, coopération.
 ```
 npm i playwright && npx playwright install chromium
-node tools/tests/run.mjs            # tout (162 tests, ≈ 5 min)
-node tools/tests/run.mjs --quick    # sans la coopération (151 tests)
+node tools/tests/run.mjs            # tout (178 tests, ≈ 6 min)
+node tools/tests/run.mjs --quick    # sans la coopération (167 tests)
 node tools/tests/run.mjs fusion     # seulement les suites dont le fichier contient « fusion »
 ```
 Chaque fichier de `tools/tests/suites/` exporte une liste `tests`. Toute erreur JavaScript dans la page fait échouer le test. **À lancer avant chaque nouvelle version** : la commande sort en erreur si un test échoue.

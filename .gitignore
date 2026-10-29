@@ -1,3 +1,4 @@
 *.zip
 misc
 project
+node_modules

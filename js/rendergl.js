@@ -62,6 +62,8 @@ function initPixi(){
   T.scarab=[0,1].map(f=>mkTex(50,50,()=>pEnemy('scarab',false,f)));T.scarabW=mkTex(50,50,()=>pEnemy('scarab',true,0));
   T.curse=mkTex(22,20,curseGlyph);T.mark=mkTex(20,20,markGlyph);T.star=mkTex(12,12,starGlyph);T.root=mkTex(66,52,()=>rootRing(26));T.fallen=mkTex(48,30,fallenShape);T.sand=mkTex(256,256,()=>sandPoolShape(0,0,120,0),1);
   for(const t of['ghoul','archer','brute','boss','poison','pyro','slime','givrin','mummy','mummyR']){const s=2*(ETYPE[t].r+16);T.en[t]=mkTex(s,s,()=>pEnemy(t,false));T.enW[t]=mkTex(s,s,()=>pEnemy(t,true))}
+  {const s=LORD_TEX(54);T.lord=mkTex(s,s,()=>bourreauShape(54,false));T.lordW=mkTex(s,s,()=>bourreauShape(54,true))} // v147 : Bourreau, pieu, fragment de clé
+  T.stake=[0,1].map(w=>mkTex(48,48,()=>stakeShape(16,!!w)));T.key=mkTex(34,24,()=>keyShape(LORD_C));
   T.bat=[0,1,2].map(f=>mkTex(48,40,()=>pEnemy('bat',false,f)));T.batW=mkTex(48,40,()=>pEnemy('bat',true,1));
   T.cible=[0,1,2].map(s=>mkTex(48,48,()=>pCible(s)));
   T.pl={};for(const c in CLS)T.pl[c]=[mkTex(100,100,()=>pPlayer(c,false)),mkTex(100,100,()=>pPlayer(c,true))];T.plc=new Map();
@@ -102,7 +104,8 @@ function initPixi(){
   const dark=new PIXI.Sprite(T.dark);dark.anchor.set(.5);
   const darkS=new PIXI.Sprite(T.darkS);darkS.anchor.set(.5);darkS.visible=false;
   const veil=new PIXI.Sprite(PIXI.Texture.WHITE);veil.tint=0x96703c;veil.visible=false; // voile de la tempête de sable (v136)
-  L.txt=C();top.addChild(L.txt);L.uiG=Gr();L.uiTxt=C();ui.addChild(L.uiG,L.uiTxt);
+  // topG (v147) : au-dessus de l'obscurité (arène, Sentence, chaîne du Bourreau)
+  L.topG=Gr();L.txt=C();top.addChild(L.topG,L.txt);L.uiG=Gr();L.uiTxt=C();ui.addChild(L.uiG,L.uiTxt);
   stage.addChild(world,dark,darkS,veil,top,ui);
   const pool=(layer,mk)=>({layer,mk,arr:[],n:0});
   const spr=()=>{const s=new PIXI.Sprite(PIXI.Texture.WHITE);s.anchor.set(.5);return s};
@@ -138,7 +141,8 @@ function renderPixi(){
   const {R,world,top,dark,T,L,P:PP}=PX;
   const {z,vw,vh,ox,oy,vis}=camView(),P=G.P;
   world.scale.set(z);world.position.set(-ox*z,-oy*z);top.scale.set(z);top.position.set(-ox*z,-oy*z);
-  for(const o of PX.statics){const v=vis(o.x,o.y,o.m);o.s.visible=v;if(!v)continue;
+  const bz=G.lordDk>.5; // v147 : braseros éteints pendant la phase d'ombre du Bourreau
+  for(const o of PX.statics){const v=vis(o.x,o.y,o.m)&&!(bz&&(o.glow||o.flame));o.s.visible=v;if(!v)continue;
     if(o.glow){const f=1+.06*Math.sin(G.t*11+o.b.ph)+.04*Math.sin(G.t*23+o.b.ph*2);o.s.width=o.s.height=340*f}
     else if(o.flame){const f=1+.06*Math.sin(G.t*11+o.b.ph)+.04*Math.sin(G.t*23+o.b.ph*2);o.s.scale.set(f)}
     else if(o.sand)o.s.rotation=G.t*.25*(o.sand.dir||1)}
@@ -173,6 +177,7 @@ function renderPixi(){
     else if(d.kind==='relic'){const r=RELICS[d.id].t;s.texture=T.relic[r];s.position.set(d.x,d.y+bob);beamC=RTIER[r].c;beamH=130;beamA=.4}
     else if(d.kind==='part'){const r=d.part.hf?6:bpdef(d.part.w).r;s.texture=T.part[r];s.position.set(d.x,d.y+bob);s.rotation=d.t*.8;beamC=RAR[r].c;beamH=90}
     else if(d.kind==='potion'){s.texture=T.potion;s.position.set(d.x,d.y+bob)}
+    else if(d.kind==='key'){s.texture=T.key;s.position.set(d.x,d.y+bob);s.rotation=Math.sin(d.t*2)*.3;beamC=LORD_C;beamH=130;beamA=.45}
     else{s.texture=T.item[d.item.r];s.position.set(d.x,d.y+bob);beamC=d.wish?'#ffe08a':RAR[d.item.r].c;beamH=d.wish?220:d.item.r>=3?150:d.item.r===2?100:60;beamA=d.wish?.6:.35;if(d.wish)s.scale.set(1+.25*Math.sin(G.t*8))}
     if(beamH){const b=take(PP.beam);b.texture=T.beam;b.tint=hexc(beamC);b.alpha=beamA;b.position.set(d.x,d.y);b.width=8;b.height=beamH}}
   // ennemis
@@ -182,7 +187,9 @@ function renderPixi(){
     if(e.corr){const a=take(PP.aura);a.texture=T.aura;a.position.set(e.x,e.y);a.scale.set((e.r+9)/25);a.tint=0xffffff;a.alpha=1;a.rotation=0}
     if(e.elite){const a=take(PP.aura);a.texture=T.aura;a.position.set(e.x,e.y);a.scale.set((e.r+12+Math.sin(G.t*5)*3)/25);a.tint=hexc(ELITE[e.elite].c);a.alpha=1;a.rotation=0}
     const s=take(PP.en);s.alpha=1;s.scale.set(1);s.position.set(e.x,e.y);s.tint=e.frz>0?0xe6f8ff:e.slow>0?0x9fd0ff:0xffffff;
-    if(e.type==='bat'){s.texture=e.flash>0?T.batW:T.bat[Math.round((Math.sin(G.t*22+e.wob)*.5+.5)*2)];s.rotation=0}
+    if(e.lord){s.texture=e.flash>0?T.lordW:T.lord;s.rotation=Math.atan2(P.y-e.y,P.x-e.x);s.alpha=lordAlpha(e)}
+    else if(e.stake){s.texture=T.stake[e.flash>0?1:0];s.rotation=0}
+    else if(e.type==='bat'){s.texture=e.flash>0?T.batW:T.bat[Math.round((Math.sin(G.t*22+e.wob)*.5+.5)*2)];s.rotation=0}
     else if(e.type==='scarab'){s.texture=e.flash>0?T.scarabW:T.scarab[Math.sin(G.t*30+e.wob)>0?1:0];const tg=(e.tgtPod&&G.pod)?G.pod:P;s.rotation=Math.atan2(tg.y-e.y,tg.x-e.x)}
     else if(e.type==='cible'){s.texture=e.downed?T.cible[2]:e.flash>0?T.cible[1]:T.cible[0];s.rotation=Math.atan2(e.y-P.y,e.x-P.x)+Math.PI}
     else if(e.type==='boss'){s.texture=e.flash>0?T.enW.boss:T.en.boss;s.rotation=0}
@@ -229,9 +236,11 @@ function renderPixi(){
   for(const p of G.parts){if(!vis(p.x,p.y,10))continue;const s=take(PP.part);s.texture=T.circle;s.position.set(p.x,p.y);if(p.w)s.scale.set(p.size*3/8,p.size*.5/8);else s.scale.set(p.size/8);s.tint=hexc(p.col);s.alpha=Math.max(0,p.life/p.max)}
   // obscurité
   // tempête (v137) : l'obscurité garde sa taille (elle couvre tout l'écran, quel que soit le zoom) ; on passe en fondu à la version resserrée
-  const sk=stormK(),out=Math.max(vw,vh)*.62,ds=PX.darkS;dark.position.set((P.x-ox)*z,(P.y-oy)*z);dark.width=dark.height=out*2*1.3*z;dark.alpha=1-sk;
+  // v147 : phase d'ombre du Bourreau comprise (darkK), voile de sable seulement en tempête (stormK)
+  const sk=darkK(),sv=stormK(),out=Math.max(vw,vh)*.62,ds=PX.darkS;dark.position.set((P.x-ox)*z,(P.y-oy)*z);dark.width=dark.height=out*2*1.3*z;dark.alpha=1-sk;
   ds.visible=sk>0;if(sk>0){ds.position.set(dark.position.x,dark.position.y);ds.width=ds.height=dark.width;ds.alpha=sk}
-  {const v=PX.veil;v.visible=sk>0;if(sk>0){v.position.set(0,0);v.width=innerWidth;v.height=innerHeight;v.alpha=.38*sk}}
+  {const v=PX.veil;v.visible=sv>0;if(sv>0){v.position.set(0,0);v.width=innerWidth;v.height=innerHeight;v.alpha=.38*sv}}
+  lordTopGL(L.topG);
   // textes
   for(const tx of G.texts){if(!vis(tx.x,tx.y,30))continue;const b=take(PP.txt);if(b.text!==tx.txt)b.text=String(tx.txt);b.fontSize=tx.size;b.tint=hexc(tx.col);b.alpha=Math.max(0,1-tx.t/.8);b.position.set(tx.x,tx.y-tx.t*40+4)}
   // interface : flèches, joystick

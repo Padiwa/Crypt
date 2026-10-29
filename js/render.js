@@ -63,6 +63,7 @@ function hpBar2d(e){if(e.shown>0&&e.hp<e.max){const w=e.r*2;ctx.fillStyle='rgba(
 function drawEnemy(e){
   shadow(e.x,e.y,e.r);
   const fl=e.flash>0, a=Math.atan2(G.P.y-e.y,G.P.x-e.x);
+  if(e.lord||e.stake){ctx.save();ctx.translate(e.x,e.y);ctx.globalAlpha=lordAlpha(e);if(e.lord){ctx.rotate(a);bourreauShape(e.r,fl)}else stakeShape(e.r,fl);ctx.restore();hpBar2d(e);return} // v147
   if(e.type==='cible'){
     if(e.downed){ctx.setLineDash([6,6]);ctx.strokeStyle='rgba(240,207,74,.55)';ctx.lineWidth=2;circle(e.x,e.y,80);ctx.stroke();ctx.setLineDash([])}
     ctx.fillStyle=e.downed?'#5a5040':fl?'#fff':e.col;circle(e.x,e.y,e.r);ctx.fill();ctx.strokeStyle='#f0cf4a';ctx.lineWidth=3;ctx.stroke();
@@ -164,6 +165,7 @@ function drawDrop(d){
   if(d.kind==='gold'){ctx.fillStyle='#f0cf4a';circle(d.x,d.y+bob*.6,5);ctx.fill();ctx.strokeStyle='#7a5a10';ctx.lineWidth=1.5;ctx.stroke();ctx.fillStyle='#fff6c4';circle(d.x-1.5,d.y+bob*.6-1.5,1.5);ctx.fill();return}
   if(d.kind==='mod'){const c=MOD_RAR[MODS[d.id].r].c;beam(d.x,d.y,90,c,.3);
     ctx.save();ctx.translate(d.x,d.y+bob);ctx.rotate(Math.sin(d.t*2)*.25);modShape(c);ctx.restore();return}
+  if(d.kind==='key'){beam(d.x,d.y,130,LORD_C,.45);ctx.save();ctx.translate(d.x,d.y+bob);ctx.rotate(Math.sin(d.t*2)*.3);keyShape(LORD_C);ctx.restore();return}
   if(d.kind==='part'){const c=RAR[d.part.hf?6:bpdef(d.part.w).r].c;beam(d.x,d.y,90,c,.3);
     ctx.save();ctx.translate(d.x,d.y+bob);ctx.rotate(d.t*.8);partShape(c);ctx.restore();return}
   const col=d.kind==='potion'?'#5fbf7a':RAR[d.item.r].c;
@@ -185,7 +187,7 @@ const distTxt=(x,y)=>`${Math.round(Math.hypot(x-G.P.x,y-G.P.y)/10)} m`;
 function offArrows(vis,draw){const P=G.P;
   const arrow=(wx,wy,col,label)=>{if(vis(wx,wy,-10))return;
     const a=Math.atan2(wy-G.cam.y,wx-G.cam.x),cx=innerWidth/2,cy=innerHeight/2,k=arrowK(a,cx,cy);draw(cx+Math.cos(a)*k,cy+Math.sin(a)*k,a,col,label)};
-  for(const e of G.en)if(e.type==='boss')arrow(e.x,e.y,'#b06ae0');
+  for(const e of G.en)if(e.type==='boss'&&!(e.lord&&e.ph===2))arrow(e.x,e.y,e.lord?LORD_C:'#b06ae0'); // v147 : le Bourreau dans l'ombre n'a pas de flèche
   if(G.target)arrow(G.target.x,G.target.y,'#f0cf4a',distTxt(G.target.x,G.target.y));
   if(G.exitPt)arrow(G.exitPt.x,G.exitPt.y,'#5fbf7a',distTxt(G.exitPt.x,G.exitPt.y));
   if(G.pod)arrow(G.pod.x,G.pod.y,'#8fd3e0','Cryopode');
@@ -236,15 +238,17 @@ function render2D(){
   for(const r of G.rings){const k=r.t/.45,R=r.max||175;ctx.strokeStyle=`rgba(${r.col||'255,140,60'},${1-k})`;ctx.lineWidth=14*(1-k)+2;circle(r.x,r.y,R*.17+R*.83*k);ctx.stroke()}
   // obscurité + braseros
   // tempête de sable (v136) : la lumière se resserre autour du héros et un voile de sable couvre l'écran
-  const sk=stormK(),out=Math.max(vw,vh)*.62*(1-.55*sk),dk=ctx.createRadialGradient(P.x,P.y,150*(1-.5*sk),P.x,P.y,out);dk.addColorStop(0,'rgba(6,4,9,0)');dk.addColorStop(1,sk?`rgba(6,4,9,${(.74+.2*sk).toFixed(3)})`:'rgba(6,4,9,.74)');
+  // v147 : la phase d'ombre du Bourreau resserre aussi la lumière (darkK), sans le voile de sable
+  const sk=darkK(),sv=stormK(),out=Math.max(vw,vh)*.62*(1-.55*sk),dk=ctx.createRadialGradient(P.x,P.y,150*(1-.5*sk),P.x,P.y,out);dk.addColorStop(0,'rgba(6,4,9,0)');dk.addColorStop(1,sk?`rgba(6,4,9,${(.74+.2*sk).toFixed(3)})`:'rgba(6,4,9,.74)');
   ctx.fillStyle=dk;ctx.fillRect(ox-20,oy-20,vw+40,vh+40);
-  if(sk>0){ctx.fillStyle=`rgba(150,112,60,${(.36*sk).toFixed(3)})`;ctx.fillRect(ox-20,oy-20,vw+40,vh+40)}
+  if(sv>0){ctx.fillStyle=`rgba(150,112,60,${(.36*sv).toFixed(3)})`;ctx.fillRect(ox-20,oy-20,vw+40,vh+40)}
   ctx.globalCompositeOperation='lighter';
-  for(const b of G.braziers){if(!vis(b.x,b.y,180))continue;const f=1+.06*Math.sin(G.t*11+b.ph)+.04*Math.sin(G.t*23+b.ph*2),gr=ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,170*f);gr.addColorStop(0,`rgba(${BI.light},.26)`);gr.addColorStop(1,`rgba(${BI.light},0)`);ctx.fillStyle=gr;ctx.fillRect(b.x-180,b.y-180,360,360);
+  if(!(G.lordDk>.5))for(const b of G.braziers){if(!vis(b.x,b.y,180))continue;const f=1+.06*Math.sin(G.t*11+b.ph)+.04*Math.sin(G.t*23+b.ph*2),gr=ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,170*f);gr.addColorStop(0,`rgba(${BI.light},.26)`);gr.addColorStop(1,`rgba(${BI.light},0)`);ctx.fillStyle=gr;ctx.fillRect(b.x-180,b.y-180,360,360);
     ctx.fillStyle=`rgba(${BI.flame},.9)`;ctx.beginPath();ctx.ellipse(b.x,b.y-5,4*f,8*f,0,0,7);ctx.fill()}
   if(G.pod){const p=G.pod,gr=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,150);gr.addColorStop(0,'rgba(120,210,230,.3)');gr.addColorStop(1,'rgba(120,210,230,0)');ctx.fillStyle=gr;ctx.fillRect(p.x-150,p.y-150,300,300)}
   if(G.exitPt){const x=G.exitPt,gr=ctx.createRadialGradient(x.x,x.y,0,x.x,x.y,140);gr.addColorStop(0,'rgba(95,191,122,.3)');gr.addColorStop(1,'rgba(95,191,122,0)');ctx.fillStyle=gr;ctx.fillRect(x.x-140,x.y-140,280,280)}
   ctx.globalCompositeOperation='source-over';
+  lordTop2D();
   ctx.textAlign='center';
   for(const t of G.texts){if(!vis(t.x,t.y,30))continue;ctx.globalAlpha=1-t.t/.8;ctx.font=`700 ${t.size}px 'Alegreya Sans',system-ui,sans-serif`;ctx.fillStyle='#000';ctx.fillText(t.txt,t.x+1,t.y-t.t*40+1);ctx.fillStyle=t.col;ctx.fillText(t.txt,t.x,t.y-t.t*40)}
   ctx.globalAlpha=1;
@@ -314,8 +318,10 @@ function hud(){
   const live=started&&!G.over;
   {const rd=live&&P.dashCd<=0,rn=live&&P.novaCd<=0,rp=live&&G.potions>0&&P.hp<S.hp,sec=v=>live&&v>.05?String(Math.ceil(v)):'';
    setCls('bDash','ready',rd);setCls('bNova','ready',rn);setCls('bPot','ready',rp);skTxt('bDash',sec(P.dashCd));skTxt('bNova',sec(P.novaCd));skFire('bDash',rd);skFire('bNova',rn);{const pb=el('bPot');if(pb!==NOEL){if(pb._n!=null&&G.potions<pb._n)pressFx(pb);pb._n=G.potions}}}
-  {let bh=0,bm=0,bn=0;for(const e of G.en)if(e.type==='boss'&&!e.dead){bh+=Math.max(0,e.hp);bm+=e.max;bn++}
-   if(bn){setSt('bossFill','transform',`scaleX(${r3(bh/bm)})`);setTx('bossName',bn>1?`${bn} Gardiens des Cendres`:'Le Gardien des Cendres')}}
+  {let bh=0,bm=0,bn=0;const lo=lordOn()?G.lord:null;for(const e of G.en)if(e.type==='boss'&&!e.dead&&!e.lord){bh+=Math.max(0,e.hp);bm+=e.max;bn++}
+   setCls('bossBar','lord',!!lo); // v147 : barre du Boss, crantée à la moitié (phase d'ombre)
+   if(lo){setSt('bossFill','transform',`scaleX(${r3(Math.max(0,lo.hp)/lo.max)})`);setTx('bossName',LORDS[lo.lord].n)}
+   else if(bn){setSt('bossFill','transform',`scaleX(${r3(bh/bm)})`);setTx('bossName',bn>1?`${bn} Gardiens des Cendres`:'Le Gardien des Cendres')}}
   {const un=ultNeed(),ur=Math.min(1,(G.ult||0)/un);setSt('bUlt','--cd',r3(1-ur));setCls('bUlt','ready',live&&ur>=1);skFire('bUlt',live&&ur>=1);setTx('ultN',ur>=1?'':String(Math.ceil(un-(G.ult||0))))}
   setHid('badge',!G.fresh);setTx('badge',String(G.fresh));
 }

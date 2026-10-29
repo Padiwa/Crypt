@@ -75,7 +75,7 @@ function homeDraw(){
     $('missionCard').innerHTML=`<span class="home__mico"><svg viewBox="0 0 24 24">${MODE_SVG[m]}</svg><b>${MODES[m].n}</b></span>
       <span class="home__minfo"><span class="home__mlv"><b>Niveau ${st}</b><span class="home__pill" style="--c:${di?DIFF[di].c:'#bdb6a8'}">${esc(D.n)}</span></span>
       <small>${BIOMES[bi].ic?BIOMES[bi].ic+' ':''}${esc(BIOMES[bi].n)} · ${D.cnt>1?D.cnt+' Gardiens':'1 Gardien'} toutes les ${iv} s</small>
-      <span class="home__tags">${relTag}<span class="home__tag">${rq?`${rq} relique${rq>1?'s':''} équipée${rq>1?'s':''}`:'Aucune relique équipée'}</span></span></span>
+      <span class="home__tags">${lordTag()}${relTag}<span class="home__tag">${rq?`${rq} relique${rq>1?'s':''} équipée${rq>1?'s':''}`:'Aucune relique équipée'}</span></span></span>
       <span class="home__chev" aria-hidden="true">›</span>`;
     $('missionCard').setAttribute('aria-label',`Mission : ${MODES[m].n}, niveau ${st}, ${D.n}, ${BIOMES[bi].n}. Toucher pour changer.`)}
 }
@@ -101,7 +101,7 @@ function missionDraw(){
     $('tormDesc').textContent=tormMax()<10?`Palier ${ROM[tormMax()]} : réussis d'abord le palier ${ROM[tormMax()-1]}.`:'Plus haut : monstres plus forts, reliques plus rares'}
   $('diffDesc').textContent=diffLine(di);
   const st=clamp(meta.start|0||1,1,LV_MAX),m=MODES[meta.mode]||MODES.survie;
-  $('startBtn2').innerHTML=`Lancer<small>${esc(m.n)} · niveau ${st} · ${esc(dif().n)}</small>`}
+  $('startBtn2').innerHTML=`Lancer<small>${esc(m.n)} · niveau ${st} · ${esc(dif().n)}</small>`;lordMsnDraw()}
 $('bioCards').addEventListener('click',e=>{const b=e.target.closest('[data-bio]');if(!b)return;const i=+b.dataset.bio;
   if(b.getAttribute('aria-disabled')==='true'){const u=UNL_BY[BIOMES[i].unl];toast(`${u.n} : ${u.need.replace(/^./,c=>c.toLowerCase())}`);return}
   meta.biome=i;saveMeta();newGame();refreshMenus()});
