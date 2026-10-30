@@ -10,7 +10,7 @@ Jeu d'action-RPG en hordes (survivor façon Diablo / Warframe), en français, jo
 - **Sauvegarde des joueurs** : ne jamais conseiller d'effacer les données du site sans avoir d'abord exporté la sauvegarde (Réglages › Sauvegarde › Exporter). Une version ne doit jamais casser une sauvegarde : prévoir une conversion dans `progress.js` / `equip.js` / `mods.js` si un format change.
 - **Git** : ne pousser ou publier sur GitHub que si l'auteur le demande. Jusqu'à la v146, l'auteur déposait lui-même le contenu du dossier à la racine du dépôt.
 - **Avant de livrer une version** :
-  - incrémenter `VERSION` en haut de `sw.js` (`crypte-v148`…) ;
+  - incrémenter `VERSION` en haut de `sw.js` (`crypte-v149`…) ;
   - un nouveau script se déclare dans `index.html`, à la bonne place, et dans la liste `CORE` de `sw.js` ;
   - lancer la suite de tests ;
   - mettre à jour le guide (`aide/index.html`), les textes du jeu touchés et `README.md` si la structure change.
@@ -42,7 +42,9 @@ Pièges connus :
 - **`pkill -f "<motif>"`** tue aussi le shell qui lance la commande, puisqu'elle contient le motif. Tuer par numéro de processus.
 - **Navigateur de test** : il coupe le réseau, donc pas de PixiJS ; le rendu WebGL est testé avec `tools/tests/fixtures/pixi-mock.js`.
 
-## État au 29 octobre 2026 : v147 en cours (non publiée)
+## État au 30 octobre 2026 : v148
+
+v147 : Boss et clé d'antre, avec des valeurs provisoires. v148 : valeurs du Bourreau réglées au banc et validées par l'auteur (vie 4 Gardiens, hordes ×0,5 pendant le combat).
 
 Boss, d'après `boss.md` (choix de l'auteur : clé d'antre, objets uniques pour un build, solo, pas une réponse à la fin de jeu) :
 
