@@ -1,8 +1,8 @@
-// Crypte des Cendres — arsenal.js : onglet Arsenal (coffre, plans et fragments, fabrication, recyclage) et ses actions. Les armes possédées sont dans Héros › Équipement › Arme depuis la v137. Découpé de camp.js en v135.
-// Héros : les objets dont tu as des fragments, avec un lien vers l'Arsenal.
+// Crypte des Cendres — arsenal.js : onglet Coffre, et Forge › Fabriquer (plans et fragments) ; Forge › Recycler dans recycle.js (v151 : l'Arsenal est devenu le Coffre). Les armes possédées sont dans Héros › Équipement › Arme depuis la v137. Découpé de camp.js en v135.
+// Héros : les objets dont tu as des fragments, avec un lien vers Forge › Fabriquer.
 function fragInv(){
   const ids=craftIds().filter(id=>(meta.parts[id]||[]).some(n=>n>0)).sort((a,b)=>fragStatus(b)-fragStatus(a)||bpdef(b).r-bpdef(a).r);
-  if(!ids.length)return '<p class="cx-hint" style="margin:0">Aucun fragment. Ouvre des reliques en mission : chacune donne un fragment d\'un objet de sa rareté. Trois fragments d\'un même objet se fabriquent dans Arsenal › Recettes.</p>';
+  if(!ids.length)return '<p class="cx-hint" style="margin:0">Aucun fragment. Ouvre des reliques en mission : chacune donne un fragment d\'un objet de sa rareté. Trois fragments d\'un même objet se fabriquent dans Forge › Fabriquer.</p>';
   return `<ul class="partlist">${ids.slice(0,12).map(id=>{const b=bpdef(id),pc=meta.parts[id];
     return `<li><b style="color:${RAR[b.r].c}">${esc(b.n)}</b> <span style="color:var(--muted)">(${fragStatus(id)} / 3)</span> · ${b.frag.map((n,i)=>`<span style="color:${pc[i]?'var(--heal)':'var(--muted)'}">${n}${pc[i]>1?' ×'+pc[i]:''}</span>`).join(', ')}</li>`}).join('')}${ids.length>12?`<li class="cx-hint" style="margin:0">… et ${ids.length-12} autres</li>`:''}</ul>
 `;
@@ -37,17 +37,16 @@ function craftOne(id){const b=bpdef(id),pc=meta.parts[id];if(!b||b.r<3||!pc||!pc
   if(b.kind==='arme'){const g=gainWeapon(id);if(g==='new'&&b.cls===heroCls)meta.wpn[heroCls]=id;return g}
   const it=rgItem(id,relicItemLvl());meta.stash.push(it);return it}
 function arsBar(){const cp=craftPlan();
-  let h=`<div class="actions" style="margin:0"><button class="btn cost-btn${cp.plan.length?' main':''}" data-cact="craftask" ${cp.plan.length?'':'disabled'}><span>Tout fabriquer${cp.plan.length?` · ${cp.plan.length}`:''}</span>${cp.plan.length?costHtml([['or',cp.cost],['pf',cp.plan.length*3]]):''}</button>${isUnl('fuse')?'<button class="btn" data-cact="gofuse">Fusionner à la Forge</button>':''}</div>`;
+  let h=`<div class="actions" style="margin:0"><button class="btn cost-btn${cp.plan.length?' main':''}" data-cact="craftask" ${cp.plan.length?'':'disabled'}><span>Tout fabriquer${cp.plan.length?` · ${cp.plan.length}`:''}</span>${cp.plan.length?costHtml([['or',cp.cost],['pf',cp.plan.length*3]]):''}</button>${isUnl('fuse')?'<button class="btn" data-cact="gofuse">Aller à la Fusion</button>':''}</div>`;
   if(arsAsk==='craft'&&cp.plan.length){const cnt={};for(const id of cp.plan)cnt[id]=(cnt[id]||0)+1;
     h+=`<div class="card"><p style="margin:0;font-size:14px">Fabriquer ${cp.plan.length} objet${cp.plan.length>1?'s':''} pour <b><span class="coin"></span> ${cp.cost} or</b> : ${Object.keys(cnt).map(id=>`<b style="color:${RAR[bpdef(id).r].c}">${esc(bpdef(id).n)}</b>${cnt[id]>1?' ×'+cnt[id]:''}`).join(', ')}.</p><div class="actions"><button class="btn main cost-btn" data-cact="craftall"><span>Fabriquer</span>${costHtml([['or',cp.cost],['pf',cp.plan.length*3]])}</button><button class="btn" data-cact="arsno">Annuler</button></div></div>`}
   return h}
 let arsView='coffre',arsR='w';
 function campArsenal2(){
-  const cur=arsView==='heros'?'coffre':arsView,tv=(k,lab,n)=>`<button class="cx-tab" role="tab" data-cact="arsv" data-arg="${k}" aria-selected="${cur===k}">${lab}${n!=null?` <span class="n">${n}</span>`:''}</button>`;
+  const cur=arsView==='heros'?'coffre':arsView;
   const ak={rec:'craft',recy:'recy'},lk=k=>ak[k]&&!isUnl(ak[k]);
-  const tv2=(k,lab,n)=>lk(k)?tv(k,`<span class="lockmini" aria-hidden="true">${LOCK_SVG}</span>${lab}`).replace('class="cx-tab"','class="cx-tab is-locked"'):tv(k,lab,n);
-  const tabs=`<div class="cx-tabs" role="tablist" aria-label="Arsenal">${tv('coffre','Coffre')}${tv2('rec','Recettes')}${tv2('recy','Recycler')}</div>`
-    +(cur==='coffre'?`<div class="cx-chips ars__sub" role="radiogroup" aria-label="Affichage du coffre"><button class="cx-chip cx-chip--sm" role="radio" data-cact="arsv" data-arg="coffre" aria-checked="${arsView==='coffre'}">Tout le coffre <span class="n">${stashN()}</span></button><button class="cx-chip cx-chip--sm" role="radio" data-cact="arsv" data-arg="heros" aria-checked="${arsView==='heros'}">Par héros</button></div>`:'');
+  // v151 : le Coffre seul (plus de « Par héros » : filtre Porté par) ; Fabriquer et Recycler sous les onglets de la Forge
+  const tabs=cur==='coffre'?'':forgeTabs();
   if(lk(arsView))return `${campMsg}${tabs}${lockedHtml(ak[arsView])}`;
   const nc=ak[arsView]?newCard(ak[arsView]):'';
   if(arsView==='coffre')return `${campMsg}${tabs}${campCoffre()}`;

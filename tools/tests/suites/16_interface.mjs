@@ -21,16 +21,8 @@ export const tests = [
       await openMission(p);
       t.ok(await p.evaluate(() => { const q = (id) => $(id).getBoundingClientRect(); return !$('tormRow').hidden && q('tormPlus').right <= innerWidth && q('tormMinus').width >= 32 && $('tormVal').textContent === 'V'; }), `${w} px : palier V sur l'écran Mission, − et + visibles`);
       await p.click('#tormPlus'); t.eq(await p.evaluate(() => meta.torm), 6, `${w} px : + de l'écran Mission`);
-      await p.click('#tormMinus');
-      await p.click('#rowDiff');
-      const r = await p.evaluate(() => {
-        const st = document.querySelector('#pickBody .cx-stepper'), q = (e) => e.getBoundingClientRect(), S = q(st);
-        const inside = (e) => { const x = q(e); return x.left >= S.left - .5 && x.right <= S.right + .5 && x.right <= innerWidth && x.width >= 32; };
-        return [inside(st.querySelector('[data-torm="-1"]')), inside(st.querySelector('[data-torm="1"]'))];
-      });
-      t.eq(r, [true, true], `${w} px : − et + entiers dans le sélecteur`);
-      await p.click('#pickBody [data-torm="1"]');
-      t.eq(await p.evaluate(() => meta.torm), 6, `${w} px : + monte au palier VI`);
+      await p.click('#tormMinus'); t.eq(await p.evaluate(() => meta.torm), 5, `${w} px : − de l'écran Mission`);
+      t.ok(await p.evaluate(() => { const r = $('startBtn2').getBoundingClientRect(); return r.bottom <= innerHeight && r.width > 200; }), `${w} px : Combattre visible en bas du panneau`);
       await p.ctx.close();
     }
   } },
@@ -57,7 +49,7 @@ export const tests = [
       mk(1, 2); mk(2, 2); meta.stash.push(rgItem('L1', 40), rgItem('L1', 40), rgItem('S2', 50), rgItem('S2', 50)); saveMeta();
     });
     await campView(p, 'forge', 'fuse');
-    t.eq(await p.evaluate(() => [...document.querySelectorAll('[data-cact="fsub"]')].map((x) => x.textContent.replace(/\d+$/, '').trim())), ['Affixes', 'Fusion', 'Bonus', 'Sceaux'], 'sous-onglets : Affixes, Fusion, Bonus, Sceaux');
+    t.eq(await p.evaluate(() => [...document.querySelectorAll('.ftabs .cx-tab')].map((x) => x.textContent.trim())), ['Fabriquer', 'Fusion', 'Affixes', 'Bonus', 'Sceaux', 'Recycler'], 'onglets de la Forge : Fabriquer, Fusion, Affixes, Bonus, Sceaux, Recycler (v151)');
     t.eq(await p.evaluate(() => [document.querySelector('[data-cact="fsub"][aria-selected="true"]').dataset.arg, document.querySelectorAll('[data-cact="afmode"]').length]), ['fuse', 0], 'Fusion choisie, plus de puces de mode');
     await p.click('[data-cact="fzr"][data-arg="5"]'); await p.click('[data-cact="fzr"][data-arg="3"]');
     // le prix et le nombre se calculent juste après l'affichage du pied (« calcul du coût… ») : on attend la fin du calcul

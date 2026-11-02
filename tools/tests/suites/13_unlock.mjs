@@ -8,7 +8,7 @@ export const tests = [
     await campView(p, 'mods');
     t.ok(await p.evaluate(() => !!document.querySelector('.lockc') && /Réussis 2 missions/.test($('campBody').textContent)), 'Mods : carte verrouillée et condition');
     await campView(p, 'equip');
-    t.eq(await p.evaluate(() => ['mods', 'pets'].map((k) => document.querySelector(`.htile[data-arg="${k}"]`).classList.contains('is-locked'))), [true, true], 'Héros : tuiles Mods et Familier verrouillées (v137)');
+    t.eq(await p.evaluate(() => ['mods', 'pets'].map((k) => document.querySelector(`.htabs [data-cact="hview"][data-arg="${k}"]`).classList.contains('is-locked'))), [true, true], 'Héros : onglets Mods et Familier verrouillés (v149)');
     await campView(p, 'relics');
     t.ok(await p.evaluate(() => !!document.querySelector('.lockc') && !document.querySelector('[data-cact="coll"]')), 'Collection : Reliques verrouillées, sans sous-onglets');
     t.eq(await p.evaluate(() => ['coll', 'forge', 'heros'].map((k) => document.querySelector(`#tabbar [data-nav="${k}"]`).classList.contains('is-locked'))), [true, true, false], 'barre : Collection et Forge verrouillées, Héros ouvert');
@@ -16,9 +16,8 @@ export const tests = [
     t.ok(await p.evaluate(() => !!document.querySelector('.lockc') && !document.querySelector('#invGrid')), 'Recyclage verrouillé');
     t.eq(await p.evaluate(() => ['defense', 'capture'].map((m) => document.querySelector(`.cx-pick[data-m="${m}"]`).getAttribute('aria-disabled'))), ['true', 'true'], 'Défense et Capture verrouillées');
     t.eq(await p.evaluate(() => { closeCamp(); openMission(); return [...document.querySelectorAll('#diffSeg [data-diff]')].map((x) => x.getAttribute('aria-disabled') === 'true'); }), [false, true, true, true], 'écran Mission : seul Normal est ouvert');
-    await p.evaluate(() => { $('rowDiff').click(); });
-    t.eq(await p.evaluate(() => [...document.querySelectorAll('#pickBody .cx-choice')].map((c) => c.classList.contains('is-locked'))), [false, true, true, true], 'seul Normal est ouvert');
-    await p.evaluate(() => document.querySelector('#pickBody [data-pick="3"]').click());
+    t.ok(await p.evaluate(() => document.querySelector('.cx-pick[data-m="breche"]').hidden), 'Brèche cachée hors coopération (v149)');
+    await p.evaluate(() => document.querySelector('#diffSeg [data-diff="3"]').click());
     t.eq(await p.evaluate(() => meta.diff | 0), 0, 'Tourment refusé');
   } },
   { name: 'première mission réussie : Forge › Bonus et Familier, annoncés puis expliqués', fn: async (b, t) => {

@@ -168,7 +168,7 @@ function campForge(){
 $('campBody').addEventListener('change',e=>{if(e.target.id==='xfAff'){xf.k=e.target.value;xf.rep='';xf.op='';const s=xfGet(xf.src);if(s&&(!xf.k||s.aff[xf.k]==null))xf.src='';xf.pick='src';drawCamp()}else if(e.target.id==='xfSrc'){xf={src:e.target.value,k:'',dst:xf.dst===e.target.value?'':xf.dst,rep:''};drawCamp()}else if(e.target.id==='xfDst'){xf.dst=e.target.value;xf.rep='';drawCamp()}});
 
 Object.assign(CAMP_ACT,{
-  xftake:function(a,arg,b,d){{const sc=$('campBody').parentElement.scrollTop;campBack={tab:campTab,sel:campSel,scroll:sc,label:{equip:'Héros',arsenal:arsView==='coffre'?'Coffre':'Arsenal'}[campTab]||'Héros',mode:a==='xfrecv'?'recv':'take'};
+  xftake:function(a,arg,b,d){{const sc=$('campBody').parentElement.scrollTop;campBack={tab:campTab,sel:campSel,scroll:sc,label:{equip:'Héros',arsenal:arsView==='coffre'?'Coffre':'Forge'}[campTab]||'Héros',mode:a==='xfrecv'?'recv':'take'};
       xf=a==='xftake'?{src:arg,k:'',dst:'',rep:'',pick:'dst'}:{src:'',k:'',dst:arg,rep:'',pick:'src'};campTab='forge';forgeSub='affix';campSel=null;drawCamp();$('campBody').parentElement.scrollTop=0;return}return CAMP_GO},
   xfk:function(a,arg,b,d){{xf.k=arg;xf.rep='';xf.op=''}return CAMP_GO},
   xfpick:function(a,arg,b,d){{xf.pick=arg}return CAMP_GO},

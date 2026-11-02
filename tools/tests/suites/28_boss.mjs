@@ -1,7 +1,7 @@
 // v147 : Boss. Fragments et clé d'antre, arrivée après le premier objectif, arène fermée, pauses (Gardiens, manche, extraction),
 // Bourreau des Cendres (Sentence et esquive parfaite, Chaîne, phase d'ombre), butin (objet unique, couleurs), Chaîne du Condamné,
 // écran Mission, rendus Canvas et WebGL.
-import { GAME, FIX, sleep, newPage, startMission } from '../lib.mjs';
+import { GAME, FIX, sleep, newPage, startMission, campView } from '../lib.mjs';
 
 // Mission avec le Bourreau appelé ; avance jusqu'à son apparition (après le premier objectif), monstres retirés.
 async function lordMission(p, o = {}) {
@@ -107,14 +107,14 @@ export const tests = [
       meta.biome = 0; meta.keyF = {}; meta.keys = {}; meta.lordW = {}; meta.keyOn = false; refreshMenus(); const hid0 = $('keySec').hidden;
       meta.keyF = { crypte: 2 }; refreshMenus(); const one = { hid: $('keySec').hidden, dis: $('keyBtn').disabled, txt: $('keyK').textContent };
       meta.keys = { crypte: 1 }; refreshMenus(); const en = !$('keyBtn').disabled; $('keyBtn').click();
-      const on = { on: meta.keyOn, pr: $('keyBtn').getAttribute('aria-pressed'), card: /Bourreau/.test($('missionCard').textContent), key: G.lordKey };
+      const on = { on: meta.keyOn, pr: $('keyBtn').getAttribute('aria-pressed'), card: /Bourreau/.test($('missionCard').textContent), key: G.lordKey, btn: /· Bourreau/.test($('startBtn').textContent) && /· Bourreau/.test($('startBtn2').textContent) };
       meta.biome = 1; saveMeta(); newGame(); refreshMenus(); const givre = { dis: $('keyBtn').disabled, key: G.lordKey, card: /Bourreau/.test($('missionCard').textContent) };
       return { hid0, one, en, on, givre };
     });
     t.ok(r.hid0, 'cachée tant qu\'aucun fragment n\'est tombé');
     t.ok(!r.one.hid && r.one.dis && /2 \/ 3/.test(r.one.txt), `2 fragments : « ${r.one.txt} »`);
     t.ok(r.en, 'une clé : la ligne se touche');
-    t.eq(r.on, { on: true, pr: 'true', card: true, key: 'bourreau' }, 'Bourreau appelé, sur la carte de mission');
+    t.eq(r.on, { on: true, pr: 'true', card: true, key: 'bourreau', btn: true }, 'Bourreau appelé, sur la carte de mission et sous les deux boutons Combattre (v150)');
     t.eq(r.givre, { dis: true, key: null, card: false }, 'aux Abîmes gelés : pas encore de Boss');
   } },
   { name: 'Bourreau en WebGL (maquette) et en Canvas : arène, Sentence, pieu, phase d\'ombre, fragment de clé, sans erreur (v147)', fn: async (b, t) => {
@@ -134,6 +134,24 @@ export const tests = [
     });
     await sleep(p, 200);
     t.eq(r, { gl: true, ph: 2, canvas: true }, 'dessiné en WebGL puis en Canvas');
+  } },
+  { name: 'Collection › Uniques et Couleurs : objet du Boss à gagner puis possédé, filtre commun, fiche ; couleurs gagnées (v152)', fn: async (b, t) => {
+    const p = t.track(await newPage(b));
+    await campView(p, 'uniq');
+    t.ok(await p.evaluate(() => !!document.querySelector('.uqr.is-lock') && /Chaîne du Condamné/.test($('campBody').textContent) && !document.querySelector('.uqr[data-stash]')), 'pas encore gagné : objet à gagner, avec son Boss');
+    const id = await p.evaluate(() => { const it = uqItem('condamne', 40); meta.stash.push(it); meta.lordW.bourreau = 1; saveMeta(); drawCamp(); return it.id; });
+    t.eq(await p.evaluate(() => [...document.querySelectorAll('.uqr[data-stash]')].map((x) => +x.dataset.stash)), [id], 'possédé : dans la liste');
+    await p.evaluate(() => { fA = ['speed']; drawCamp(); });
+    t.eq(await p.evaluate(() => document.querySelectorAll('.uqr[data-stash]').length), 0, 'filtre commun : une affixe qu\'il n\'a pas le cache');
+    await p.evaluate(() => { fA = ['crit']; drawCamp(); });
+    t.eq(await p.evaluate(() => document.querySelectorAll('.uqr[data-stash]').length), 1, 'une affixe qu\'il a le montre');
+    await p.click('.uqr[data-stash]');
+    t.ok(await p.evaluate(() => !$('campDock').hidden && /Chaîne du Condamné/.test($('campDock').textContent) && !!document.querySelector('#campDock [data-cact="equip"]')), 'fiche avec Équiper');
+    await p.evaluate(() => { fA = []; campSel = null; });
+    await campView(p, 'colors');
+    t.ok(await p.evaluate(() => !document.querySelector('.lcol.is-lock') && /Gagnées/.test($('campBody').textContent)), 'Couleurs : celles du Bourreau gagnées');
+    await p.click('[data-cact="golook"]');
+    t.eq(await p.evaluate(() => [campTab, heroSub, lookSw('cloak').includes(LORDS.bourreau.sw.cloak)]), ['equip', 'look', true], 'le bouton ouvre Héros › Apparence, avec la couleur du Bourreau');
   } },
 ];
 const LORD_HP_EXPECT = 4;

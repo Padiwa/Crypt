@@ -14,6 +14,8 @@ function cmpRows(e,it){const tk=slotFor(e,it)||it.slot,a=stats(e),b=stats({...e,
 
 /* ---------- CompareObjet : l'objet choisi face à l'objet équipé du même emplacement, affixe par affixe ---------- */
 let cmpPage=0,cmpKey='',dockMore=false,dockAll=false;
+// v153 : fiche dans la page (Héros › Équipement) : toutes les affixes sans pages, toutes les statistiques, toutes les actions.
+let dockInline=false;
 const BASE_N={dmg:'Dégâts de base',hp:'Vie',crit:'Critique',speed:'Vitesse',dmgPct:'Dégâts'};
 const CMP_PCT=k=>!['hp','regen','burn','multi','pierce','dmg','abWard'].includes(k);
 const cmpV=(k,v)=>v==null?'—':fmtN(v)+(CMP_PCT(k)?' %':'');
@@ -37,7 +39,7 @@ function cmpObjet(eq,it,heroRows=true){
   if(so||sn){if(so&&sn&&so===sn)rows.push({h:`<div class="cx-cmp__row is-seal"><span class="k">${SEALS[sn].n}</span><span class="o">sceau</span><span class="n">sceau</span><span class="d eq">=</span></div>`});
     else{if(sn)rows.push({h:`<div class="cx-cmp__row is-seal is-gain"><span class="k">${SEALS[sn].n}</span><span class="o">—</span><span class="n">sceau</span><span class="d up">nouveau</span></div>`});
       if(so)rows.push({h:`<div class="cx-cmp__row is-seal is-lost"><span class="k">${SEALS[so].n}</span><span class="o">sceau</span><span class="n">—</span><span class="d dn">perdu</span></div>`,lost:1})}}
-  const PG=4,pages=Math.max(1,Math.ceil(rows.length/PG));cmpPage=Math.max(0,Math.min(cmpPage,pages-1));
+  const PG=dockInline?999:4,pages=Math.max(1,Math.ceil(rows.length/PG));cmpPage=Math.max(0,Math.min(cmpPage,pages-1));
   const vis=rows.slice(cmpPage*PG,cmpPage*PG+PG),later=rows.slice((cmpPage+1)*PG).filter(r=>r.lost).length;
   const pager=rows.length>PG?`<div class="cx-cmp__pager"><span>Affixes ${cmpPage*PG+1}–${Math.min(rows.length,cmpPage*PG+PG)} sur ${rows.length}${later?` <em>· ${later} perte${later>1?'s':''} ensuite</em>`:''}</span><div><button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-cmp="-1" ${cmpPage?'':'disabled'} aria-label="Affixes précédentes">${XSVG.prev}</button><button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-cmp="1" ${cmpPage<pages-1?'':'disabled'} aria-label="Affixes suivantes">${XSVG.next}</button></div></div>`:'';
   let h=`<div class="cx-cmp"><p class="cx-cmp__vs" style="margin:0">${cur?`Face à ce que tu portes : <b style="color:${RAR[cur.r].c}">${esc(itemName(cur))}</b> · ${RAR[cur.r].n}${cur.wid?'':` · niv. ${cur.lvl||1}`}`:'Face à : rien de porté ici'}</p>
@@ -46,13 +48,23 @@ function cmpObjet(eq,it,heroRows=true){
     const rd=(v,dc)=>Math.round(v*10**dc)/10**dc;
     const H=statPairs(a,b).slice(0,3).map(([l,x,y,dc,u])=>[l,rd(x,dc),rd(y,dc),dc,u]).filter(([,x,y])=>x!==y),f=fmtDc;
     if(H.length)h+=`<div class="cx-cmp__rows"><div class="cx-cmp__row is-head"><span>Ton héros</span><span>Porté</span><span>Choisi</span><span>Écart</span></div>${H.map(([l,x,y,dc,u])=>{const d=y-x;return `<div class="cx-cmp__row"><span class="k">${l}</span><span class="o">${f(x,dc)}${u}</span><span class="n">${f(y,dc)}${u}</span><span class="d ${d>0?'up':'dn'}">${d>0?'▲ +':'▼ −'}${f(Math.abs(d),dc)}${u}</span></div>`}).join('')}</div>`;
-    if(dockAll)h+=cmpRows(eq,it)}
+    if(dockAll||dockInline)h+=cmpRows(eq,it)}
   return h+'</div>'}
 // Clics de pagination dans n'importe quelle fiche ancrée
 document.addEventListener('click',e=>{const b=e.target.closest('[data-cmp]');if(!b||b.disabled)return;e.stopPropagation();cmpPage+=+b.dataset.cmp;if(!$('camp').hidden)drawCamp();if(!$('bag').hidden)drawBag()},true);
+// Héros › Équipement (v153) : la fiche de l'objet choisi, dans la page, au-dessus de la liste ; par défaut l'objet porté de l'emplacement.
+// Pour un objet porté, ce qu'il apporte au héros (Puissance, survie) s'ajoute sous ses affixes.
+function gearDetail(){const e=curEq(),k=gearSlot;
+  if(!campSel||!gearSelOk())campSel=e[k]?{slot:k}:null;
+  if(!campSel)return '';
+  dockInline=true;try{let h=campDockHtml();if(campSel.slot&&e[k]&&k!=='arme'){const b=eqVal(e),v=eqVal({...e,[k]:null}),dp=b.p?1-v.p/b.p:0,dv=b.v?1-v.v/b.v:0;h=h.replace('</ul>','</ul><p class="cx-hint" style="margin:0">Apporte '+fmtN(Math.max(0,dp)*100)+' % de ta Puissance'+(dv>=.005?' et '+fmtN(dv*100)+' % de ta survie':'')+'.</p>')}return h}finally{dockInline=false}}
+// L'objet choisi va-t-il dans l'emplacement ouvert ? (sinon la fiche revient à l'objet porté)
+function gearSelOk(){const k=gearSlot;if(campSel.slot)return campSel.slot===k;if(k==='arme')return !!campSel.wpn;if(campSel.wpn)return false;
+  const it=campSel.stash?findItem(campSel.stash):campSel.oth?(meta.gearBy[campSel.oth.split('|')[0]]||{})[campSel.oth.split('|')[1]]:null;return !!it&&it.slot===keySlot(k)}
 function campDockHtml(){
   if((campTab==='mods'||campTab==='pets')&&modSel&&meta.mods[modSel]!=null)return modDock(modSel);
-  if(!(campTab==='equip'||isCoffre()||isHerosV())||!campSel)return '';
+  if(!(campTab==='equip'||campTab==='uniq'||isCoffre()||isHerosV())||!campSel)return '';
+  if(gearOn()&&!dockInline)return ''; // Héros › Équipement : la fiche est dans la page (gearDetail)
   const eq=curEq();let it=null,key='',worn=false,othC=null;
   if(campSel.wpn){const c=wclsOf(campSel.wpn);if(c&&ownedW(campSel.wpn)){it=weaponItem(c,campSel.wpn);key='w:'+campSel.wpn;if(curWid(heroCls)===campSel.wpn){worn=true}}}
   else if(campSel.stash){it=meta.stash.find(i=>i.id===campSel.stash);key='s:'+campSel.stash}
@@ -91,15 +103,15 @@ function campDockHtml(){
   return `<div class="cx-dock__head"><h3 class="cx-dock__title" style="color:${r.c}">${esc(itemName(it))}${it.lock?` <span class="lockchip">${LOCK_SVG}</span>`:''}</h3>${nav}<button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-cact="dclose" aria-label="Fermer la fiche">${XSVG.x}</button></div>
     <span class="cx-dock__meta">${r.n} · ${SLOT[it.slot]}${it.wid?' · fabriquée':` · niveau ${it.lvl}`}${` · ${rkTxt(n)}`}${worn?' · <b style="color:var(--heal)">Porté</b>':''}${whoW?` · <b style="color:${CLS[whoW].col}">Porté ${parCls(whoW)}</b>`:''}${idx>=0?` · ${idx+1} / ${list.length}`:''}</span>
     ${worn||other?affs:cmpObjet(eq,it)}${main}${fuse}${othC?`<p class="cx-hint" style="margin:0">Un objet n'est porté que par un héros à la fois : l'équiper ici le retire ${parCls(othC).replace('par ','à ').replace("à le ","au ")}.</p>`:''}
-    <div class="cx-actions" style="gap:6px"><button class="cx-btn cx-btn--sm" data-cact="dmore" aria-expanded="${dockMore}">${dockMore?'Moins d\'actions':'Plus d\'actions'}</button>${worn?'':`<button class="cx-btn cx-btn--sm" data-cact="dall" aria-pressed="${dockAll}">${dockAll?'Masquer les statistiques':'Toutes les statistiques'}</button>`}</div>
-    ${dockMore?`<div class="cx-dock__more">${more.join('')}</div>`:''}${it.lock&&!worn?`<p class="cx-hint" style="margin:0">${it.wid?'Verrouillée : l\'arme n\'est ni recyclée ni utilisée comme source d\'affixe ; ses doubles peuvent être recyclés.':'Verrouillé : ni recyclé, ni sacrifié par une fusion, ni utilisé comme source d\'affixe.'}</p>`:''}`;
+    ${dockInline?`<div class="cx-dock__more gd__acts">${more.join('')}</div>`:`<div class="cx-actions" style="gap:6px"><button class="cx-btn cx-btn--sm" data-cact="dmore" aria-expanded="${dockMore}">${dockMore?'Moins d\'actions':'Plus d\'actions'}</button>${worn?'':`<button class="cx-btn cx-btn--sm" data-cact="dall" aria-pressed="${dockAll}">${dockAll?'Masquer les statistiques':'Toutes les statistiques'}</button>`}</div>
+    ${dockMore?`<div class="cx-dock__more">${more.join('')}</div>`:''}`}${it.lock&&!worn?`<p class="cx-hint" style="margin:0">${it.wid?'Verrouillée : l\'arme n\'est ni recyclée ni utilisée comme source d\'affixe ; ses doubles peuvent être recyclés.':'Verrouillé : ni recyclé, ni sacrifié par une fusion, ni utilisé comme source d\'affixe.'}</p>`:''}`;
 }
 
 /* ---------- Parcours affixe : départ depuis la fiche, puce de retour ---------- */
 let campBack=null; // {tab, sel, scroll, f, q, label}
 // Revient là où campBack a été posé (onglet, objet choisi, défilement) ; pre() s'exécute avant de redessiner.
 function campRestore(pre){const B=campBack;campBack=null;campTab=B.tab;campSel=B.sel;if(pre)pre();drawCamp();$('campBody').parentElement.scrollTop=B.scroll||0}
-function backChip(){return campBack?`<button class="cx-back" data-cact="goback">Retour ${({'Héros':'au Héros','Coffre':'au Coffre','Arsenal':'à l\'Arsenal'})[campBack.label]||'à '+campBack.label}</button>`:''}
+function backChip(){return campBack?`<button class="cx-back" data-cact="goback">Retour ${({'Héros':'au Héros','Coffre':'au Coffre','Arsenal':'à l\'Arsenal','Forge':'à la Forge'})[campBack.label]||'à '+campBack.label}</button>`:''}
 function xfSteps(){if(!campBack)return '';const rev=campBack.mode==='recv',s=!!xf.src,k=!!xf.k,d=!!xf.dst;
   const L=rev?[['Cible',d],['Affixe',k],['Source',s]]:[['Source',s],['Affixe',k],['Cible',d]];let now=L.findIndex(x=>!x[1]);
   return `<ol class="cx-steps">${L.map(([l,ok],i)=>`<li class="${ok?'is-done':i===now?'is-now':''}"><span>${i+1} ${l}${ok?' ✓':''}</span></li>`).join('')}</ol>`}

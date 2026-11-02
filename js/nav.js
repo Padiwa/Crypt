@@ -1,5 +1,5 @@
 // Crypte des Cendres — nav.js : retour arrière un niveau à la fois (bouton Retour d'Android, Échap) et raccourcis du Camp.
-// Niveaux : 4 fiche ancrée · 3 feuille de choix, Réglages, Coop · 2 onglet du Camp, écran Mission ou Pause · 1 accueil ou partie (rien à fermer).
+// Niveaux : 4 fiche ancrée · 3 feuille de choix, Réglages, Coop · 2 onglet du Camp, panneau Mission ou Pause · 1 accueil ou partie (rien à fermer).
 // Touches 1 à 5 au Camp : les onglets de la barre du bas.
 let navDepth=0,navWas={};
 function navPush(k){try{history.pushState({crypte:++navDepth,k},'')}catch{}}

@@ -10,7 +10,7 @@ Jeu d'action-RPG en hordes (survivor façon Diablo / Warframe), en français, jo
 - **Sauvegarde des joueurs** : ne jamais conseiller d'effacer les données du site sans avoir d'abord exporté la sauvegarde (Réglages › Sauvegarde › Exporter). Une version ne doit jamais casser une sauvegarde : prévoir une conversion dans `progress.js` / `equip.js` / `mods.js` si un format change.
 - **Git** : ne pousser ou publier sur GitHub que si l'auteur le demande. Jusqu'à la v146, l'auteur déposait lui-même le contenu du dossier à la racine du dépôt.
 - **Avant de livrer une version** :
-  - incrémenter `VERSION` en haut de `sw.js` (`crypte-v149`…) ;
+  - incrémenter `VERSION` en haut de `sw.js` (`crypte-v154`…) ;
   - un nouveau script se déclare dans `index.html`, à la bonne place, et dans la liste `CORE` de `sw.js` ;
   - lancer la suite de tests ;
   - mettre à jour le guide (`aide/index.html`), les textes du jeu touchés et `README.md` si la structure change.
@@ -26,8 +26,8 @@ Jeu d'action-RPG en hordes (survivor façon Diablo / Warframe), en français, jo
 
 ```
 npm i playwright && npx playwright install chromium   # une fois
-node tools/tests/run.mjs                 # tous les tests (178 en 29 suites, environ 6 min)
-node tools/tests/run.mjs --quick         # sans la coopération (167)
+node tools/tests/run.mjs                 # tous les tests (184 en 30 suites, environ 6 min)
+node tools/tests/run.mjs --quick         # sans la coopération (173)
 node tools/tests/run.mjs 27_difficulte   # une suite (filtre sur le nom de fichier)
 python3 -m http.server 8000              # jouer en local : http://localhost:8000 (#test, #test2d, #rapide)
 node tools/progression/run.mjs --cls guerrier --hours 4 --seed 1 --out x.jsonl   # carrière simulée (voir README)
@@ -42,9 +42,23 @@ Pièges connus :
 - **`pkill -f "<motif>"`** tue aussi le shell qui lance la commande, puisqu'elle contient le motif. Tuer par numéro de processus.
 - **Navigateur de test** : il coupe le réseau, donc pas de PixiJS ; le rendu WebGL est testé avec `tools/tests/fixtures/pixi-mock.js`.
 
-## État au 30 octobre 2026 : v148
+## État au 2 novembre 2026 : v153
 
 v147 : Boss et clé d'antre, avec des valeurs provisoires. v148 : valeurs du Bourreau réglées au banc et validées par l'auteur (vie 4 Gardiens, hordes ×0,5 pendant le combat).
+
+**Refonte de l'interface des menus** (maquette validée par l'auteur, codée par étapes, une version chacune) :
+
+1. v149 : onglet **Héros**. Titre avec flèches de héros (`heroTitle`), une rangée d'onglets Équipement · Sorts · Mods · Familier · Prestige (`heroTabs`, `heroDots` dans `js/inv.js`), plus de tuiles ni de « Retour au héros » ; Apparence en 6e onglet (v151, demande de l'auteur) ; Héros › Équipement sans aide en haut, équipements enregistrés en bas ; points au lieu de nombres sur la barre du bas.
+2. v150 : **Mission** en panneau qui monte du bas, par-dessus l'accueil (`#mission`, `.msn__sheet`), un seul bouton « Combattre » (`#startBtn2`), Brèche cachée hors coopération (3 modes en ligne), plus de « Détail des difficultés » (le palier reste sous les onglets de difficulté).
+3. v151 : **Coffre** (l'onglet Arsenal renommé, `data-nav="arsenal"` et `campTab` `arsenal` gardés en interne, plus de sous-onglets ni de « Par héros ») et **Forge** à six onglets Fabriquer · Fusion · Affixes · Bonus · Sceaux · Recycler (`forgeTabs`, `arsForge()` dans `js/camp.js` : Fabriquer et Recycler restent les vues `arsView` `rec` et `recy`, affichées sous la Forge). Filtre commun « Trier et filtrer » (`fR`, `fW`, `fO`, `fA`, `fAM`, `invPass`, `filtBar`, `openFilt` dans `js/inv.js`) dans le Coffre, Héros › Équipement, Forge › Fusion, Affixes et Recycler : tri (dont valeur des affixes), affixes Toutes / Au moins une, emplacement, rareté, porté par, afficher seulement ; il reste le même d'un onglet à l'autre (choix de l'auteur). Tests : `tools/tests/suites/29_filtres.mjs`.
+4. v152 : **Collection** à trois onglets Reliques · Uniques · Couleurs (`COLL` dans `js/shell.js`, `campUniq`, `campColors` dans `js/collection.js`). Uniques : objets des Boss possédés (filtre commun, fiche) et à gagner ; Couleurs : couleurs gagnées contre les Boss, bouton vers Héros › Apparence. Sous-onglets : un point au lieu d'un nombre.
+5. v153 : **Pause** allégée : plus de grille d'équipement (déjà dans l'onglet Héros) ni de « Équiper le meilleur butin » : rien ne s'équipe en mission (demande de l'auteur), la fiche d'un objet du butin compare seulement, les mods de la Pause sont en lecture seule (`modsRO` dans `js/ui.js`) ; bandeau sur deux lignes avec reliques ouvertes, reliques trouvées et fragments de clé d'antre (`G.loot.keys`) ; le reste est gardé, dont « Retour au Camp » en toutes lettres (test `08_mission`).
+
+Aussi en v153 : Tourbillon du Guerrier corrigé (angle de tournoiement `P.spinA` séparé de `P.face`, que la marche remettait à chaque image ; cercle de la vraie zone `spinR()`, qui compte aussi le rayon des compétences).
+Tourbillon lancé : cercle de la zone et trait qui tourne avec le Guerrier, suivi d'une traînée (render.js, rendergl.js). Aire de la compétence (demande de l'auteur) : zone autour du héros quand la compétence est prête : voile dégradé à la couleur du héros (`skZoneRGB`), bord net, anneau en pointillés qui tourne (`skillRange`, `skRangeOn` dans `js/spells.js` ; sprite `L.skz`, texture `T.skz` et calque `underG` en WebGL), réglage `SET.skRange` (Réglages › Portée des compétences, activé par défaut). Touche à l'aspect en mission, demandé explicitement.
+Héros › Équipement (demande de l'auteur) : la fiche de l'objet est dans la page, au-dessus de la liste (`gearDetail` dans `js/dock.js`, `dockInline`) : objet porté par défaut, objet touché sinon ; toutes les affixes sans pages, toutes les statistiques, toutes les actions ; plus de fiche ancrée en bas dans cette vue.
+
+La refonte prévue par la maquette est terminée. Écarts gardés : le choix d'un emplacement reste une vue dans la page (pas un panneau), Fabriquer garde ses puces de recettes, pas de filtre « Nouveaux » (le jeu ne marque pas les objets récents).
 
 Boss, d'après `boss.md` (choix de l'auteur : clé d'antre, objets uniques pour un build, solo, pas une réponse à la fin de jeu) :
 

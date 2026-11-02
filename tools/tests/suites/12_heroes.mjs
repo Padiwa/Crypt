@@ -93,7 +93,7 @@ export const tests = [
     await p.evaluate(() => { setWear(0); drawCamp(); });
     t.eq(await p.evaluate(() => [build('h').load.filter(Boolean).length, meta.petEq]), [0, 2], 'ancien enregistrement : mods et familier inchangés');
   } },
-  { name: 'équipements enregistrés : aperçu sous le héros, toucher pour porter, en haut de Équipement, mettre à jour (v143)', fn: async (b, t) => {
+  { name: 'équipements enregistrés : aperçu sous le héros, toucher pour porter, en bas de Équipement (v149), mettre à jour (v143)', fn: async (b, t) => {
     const p = t.track(await newPage(b));
     await p.evaluate(() => { unlockAll(); heroCls = 'archer'; meta.gear.armure = rgItem('L1', 50); meta.gear.anneau = rgItem('L7', 50); meta.stash = [rgItem('L3', 50)]; setSave(0); setsOf()[0].n = 'Boss';
       meta.stash.push(meta.gear.armure); meta.gear.armure = null; setSave(1); setsOf()[1].n = 'Hordes'; saveMeta(); });
@@ -106,9 +106,9 @@ export const tests = [
     // toucher « Boss » sur l'onglet Héros le porte
     await p.click('.hsets [data-cact="setwear"][data-arg="0"]');
     t.eq(await p.evaluate(() => [meta.gear.armure && meta.gear.armure.rid, setsOf()[0].act, !setsOf()[1].act]), ['L1', 1, true], 'Boss porté, en cours');
-    // Héros › Équipement : les équipements en haut, avant les emplacements ; un objet changé → « modifié » et « Mettre à jour »
+    // Héros › Équipement : les équipements en bas, après les emplacements et la liste (v149) ; un objet changé → « modifié » et « Mettre à jour »
     await campView(p, 'equip', 'gear');
-    t.ok(await p.evaluate(() => { const s = document.getElementById('setsSec'), g = document.querySelector('#campBody .gslots'); return !!(s.compareDocumentPosition(g) & Node.DOCUMENT_POSITION_FOLLOWING); }), 'en haut de Équipement');
+    t.ok(await p.evaluate(() => { const s = document.getElementById('setsSec'), g = document.querySelector('#campBody .gslots'); return !!(s.compareDocumentPosition(g) & Node.DOCUMENT_POSITION_PRECEDING); }), 'en bas de Équipement');
     await p.evaluate(() => { const it = meta.stash.find((i) => i.rid === 'L3'); meta.stash = meta.stash.filter((i) => i !== it); wearGear('bottes', it); drawCamp(); });
     t.ok(await p.evaluate(() => /modifié/.test(document.querySelector('#setsSec .scard').textContent) && /Mettre à jour « Boss »/.test(document.getElementById('setsSec').textContent)), 'Boss modifié, bouton Mettre à jour');
     await p.click('#setsSec .sacts [data-arg="0"]');
@@ -117,17 +117,20 @@ export const tests = [
     await p.click('#setsSec [data-cact="setwear"][data-arg="0"]');
     t.ok(await p.evaluate(() => /déjà porté/.test(document.getElementById('toast').textContent)), 'déjà porté');
   } },
-  { name: 'Armurerie › Par héros : ce que porte chaque héros, objet repris sur le héros joué', fn: async (b, t) => {
+  { name: 'Coffre, filtre « Porté par » (v151, ex-Par héros) : objet porté par un autre héros, repris sur le héros joué', fn: async (b, t) => {
     const p = t.track(await newPage(b));
     await p.evaluate(() => { heroCls = 'archer'; meta.gear.armure = rgItem('L1', 50); meta.gearBy.guerrier.bottes = rgItem('L2', 50); meta.gearBy.guerrier.bottes.slot = 'bottes'; saveMeta(); });
-    await campView(p, 'equip', 'gear');
-    await p.click('[data-cact="goheros"]');
-    t.eq(await p.evaluate(() => [arsView, [...document.querySelectorAll('.hgear h3')].map((h) => h.textContent.slice(1).split(' · ')[0])]), ['heros', ['Archer', 'Guerrier', 'Magicien']], 'trois héros, le héros joué en premier');
-    t.ok(await p.evaluate(() => /Rien de porté/.test(document.querySelectorAll('.hgear')[2].textContent)), 'héros sans équipement : conseil');
-    await p.evaluate(() => document.querySelectorAll('.hgear')[1].querySelector('button[data-stash]').click());
+    await campView(p, 'arsenal', 'coffre');
+    await p.click('#campBody [data-cact="fopen"] >> nth=1');
+    await p.click('#pickBody [data-f="w"][data-v="guerrier"]');
+    t.eq(await p.evaluate(() => [fW, [...document.querySelectorAll('#invGrid [data-stash]')].map((x) => findItem(+x.dataset.stash).rid), /Porté : Guerrier/.test($('campBody').textContent)]), ['guerrier', ['L2'], true], 'filtre Porté par Guerrier : ses bottes seules, pastille du filtre');
+    await p.click('#pickBody [data-f="close"]');
+    await p.click('#invGrid [data-stash]');
     t.ok(await p.evaluate(() => !$('campDock').hidden && /Porté par le Guerrier/.test($('campDock').textContent) && !!document.querySelector('#campDock [data-cact="equipoth"]')), 'fiche : porté par le Guerrier, « Équiper sur Archer »');
     await p.click('#campDock [data-cact="equipoth"]');
-    t.eq(await p.evaluate(() => [!!meta.gearBy.archer.bottes, !!meta.gearBy.guerrier.bottes, /1 objet/.test(document.querySelectorAll('.hgear')[0].querySelector('h3').textContent)]), [true, false, false], 'objet passé à l\'Archer');
+    t.eq(await p.evaluate(() => [!!meta.gearBy.archer.bottes, !!meta.gearBy.guerrier.bottes]), [true, false], 'objet passé à l\'Archer');
+    await p.click('#campBody [data-cact="fdel"][data-arg="w"]');
+    t.eq(await p.evaluate(() => [fW, !document.querySelector('#campBody .fchip')]), ['all', true], 'la pastille retire le filtre');
   } },
   { name: 'Équiper le meilleur prend aussi la meilleure arme possédée du héros', fn: async (b, t) => {
     const p = t.track(await newPage(b));
@@ -141,7 +144,7 @@ export const tests = [
   { name: 'couleurs du héros : 3 couleurs par classe, aperçu, rendu en mission, retour aux couleurs d\'origine', fn: async (b, t) => {
     const p = t.track(await newPage(b));
     await campView(p, 'equip');
-    await p.click('.htile[data-arg="look"]');
+    await p.click('.htabs [data-arg="look"]');
     t.ok(await p.evaluate(() => !!document.querySelector('#lookSec [aria-pressed="true"][data-arg="' + heroCls + '"]')), 'section ouverte sur le héros joué');
     await p.click('#lookSec [data-cact="lookcls"][data-arg="guerrier"]');
     await p.click('#lookSec [data-cact="look"][data-arg="0|#1f4a6b"]');
