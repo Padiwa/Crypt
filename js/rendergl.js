@@ -154,7 +154,7 @@ function renderPixi(){
     const b=take(PP.beam);b.texture=T.beam;b.tint=0x5fbf7a;b.alpha=.45;b.position.set(x.x,x.y);b.width=8;b.height=170;
     const gl=take(PP.glow);gl.texture=T.glow;gl.tint=0x5fbf7a;gl.alpha=.3;gl.position.set(x.x,x.y);gl.width=gl.height=280}
   // v153 : aire de la compétence (voile teinté, bord net, anneau en pointillés qui tourne)
-  {const on=skRangeOn(),R=on?skillRange():0,z=L.skz;z.visible=!!R;if(R){const [r,g,b]=skZoneRGB(),c=(r<<16)|(g<<8)|b,x=G.P.x,y=G.P.y;z.tint=c;z.alpha=.24;z.position.set(x,y);z.width=z.height=R*2;
+  {const on=skRangeOn(),R=on?skillRange():0,z=L.skz;z.visible=!!R;if(R){const c=skZoneHex(),x=G.P.x,y=G.P.y;z.tint=c;z.alpha=.24;z.position.set(x,y);z.width=z.height=R*2;
     u.lineStyle(2.5,c,.6);u.drawCircle(x,y,R);u.lineStyle(2,c,.35);const n=Math.max(12,Math.round(R/14)),o=G.t*24/(R*.9);for(let i=0;i<n;i++){const a0=o+i/n*Math.PI*2;arcLine(u,x,y,R*.9,a0,a0+Math.PI/n*.8)}u.lineStyle(0);}}
   for(const z of G.zones){if(!vis(z.x,z.y,z.r))continue;const al=Math.min(1,z.life/.5)*(z.kind==='poison'?.33:.4),c=z.kind==='poison'?0xc846be:0xff7828;u.lineStyle(2,c,Math.min(1,al+.3));u.beginFill(c,al);u.drawCircle(z.x,z.y,z.r*(1+.04*Math.sin(G.t*6)));u.endFill()}
   for(const l of G.lobs){const k=l.t/l.T,c=l.kind==='poison'?0xc846be:0xff7828;u.lineStyle(2,c,.3+.5*k);u.drawCircle(l.tx,l.ty,l.r*k);u.drawCircle(l.tx,l.ty,l.r)}
@@ -218,7 +218,7 @@ function renderPixi(){
   if(t){if(!t.downed){f.lineStyle(2,0xf0cf4a,.5);f.drawCircle(t.x,t.y,t.r+7+Math.sin(G.t*6)*1.5);const w=48;f.lineStyle(0);f.beginFill(0,.6);f.drawRect(t.x-w/2,t.y-t.r-14,w,5);f.endFill();f.beginFill(0xf0cf4a,1);f.drawRect(t.x-w/2,t.y-t.r-14,w*t.hp/t.max,5);f.endFill()}
     else if(G.capT>0){f.lineStyle(5,0xf0cf4a,1);arcLine(f,t.x,t.y,t.r+14,-Math.PI/2,-Math.PI/2+Math.PI*2*G.capT/2.5)}}
   // Tourbillon lancé : cercle de la zone, trait qui tourne avec le héros et sa traînée (demande de l'auteur)
-  if(P.spin>0){const R2=spinR(),a=P.spinA||P.face,[r,g,b]=skZoneRGB(),c=(r<<16)|(g<<8)|b;f.lineStyle(2,c,.5);f.drawCircle(P.x,P.y,R2);f.lineStyle(0);
+  if(P.spin>0){const R2=spinR(),a=P.spinA||P.face,c=skZoneHex();f.lineStyle(2,c,.5);f.drawCircle(P.x,P.y,R2);f.lineStyle(0);
     for(let i=0;i<6;i++){f.beginFill(c,.16*(1-i/6));f.moveTo(P.x,P.y);f.arc(P.x,P.y,R2,a-(i+1)*.14,a-i*.14);f.lineTo(P.x,P.y);f.endFill()}
     f.lineStyle(3,c,.8);f.moveTo(P.x+Math.cos(a)*(P.r+6),P.y+Math.sin(a)*(P.r+6));f.lineTo(P.x+Math.cos(a)*R2,P.y+Math.sin(a)*R2);f.lineStyle(0)}
   for(const l of G.lobs){const k=l.t/l.T;f.lineStyle(0);f.beginFill(l.kind==='poison'?0xc846be:0xff7828,1);f.drawCircle(l.x0+(l.tx-l.x0)*k,l.y0+(l.ty-l.y0)*k-Math.sin(k*Math.PI)*80,6);f.endFill()}

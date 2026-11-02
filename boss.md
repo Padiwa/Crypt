@@ -4,7 +4,7 @@
 
 ## État (v147, 29 octobre 2026)
 
-Construit : le socle (fragments, clé, écran Mission, arène, pauses, barre crantée, butin, couleurs, bot, banc, tests, guide) et le Bourreau avec la Chaîne du Condamné. Code : `js/boss.js`, `UQ` dans `js/items.js`, tests `tools/tests/suites/28_boss.mjs`, banc `LORD=1` (`tools/banc/README.md`).
+Construit : le socle (fragments, clé, panneau Mission, arène, pauses, barre crantée, butin, couleurs, bot, banc, tests, guide) et le Bourreau avec la Chaîne du Condamné. Code : `js/boss.js`, `UQ` dans `js/items.js`, tests `tools/tests/suites/28_boss.mjs`, banc `LORD=1` (`tools/banc/README.md`).
 
 Choix faits en construisant, à confirmer par l'auteur :
 

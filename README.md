@@ -5,7 +5,7 @@ Action-RPG de crypte en hordes, jouable au pouce sur mobile et au clavier. Site 
 ## Structure
 | Fichier | Rôle |
 | --- | --- |
-| `index.html` | Interface (HUD, accueil Combat, écran Mission, Camp, barre des 5 onglets, Réglages) et ordre de chargement des scripts |
+| `index.html` | Interface (HUD, accueil Combat, panneau Mission, Camp, barre des 5 onglets, Réglages) et ordre de chargement des scripts |
 | `css/game.css` | Toute la feuille de style : mise en page et design system « Crypte » (tokens + composants `cx-`), puis l'habillage de la refonte v130, style « AAA mobile » (cadres dorés, boutons à relief, cases serties). `aaa.css` y est fusionné depuis la v135 |
 | `js/data.js` | Outils communs, raretés, rythme (`BAL`), emplacements, biomes, classes, armes, reliques et objets des reliques |
 | `js/progress.js` | Sauvegarde `meta` et son chargement, Bonus de la Forge, talents, prestige, bonus de partie, sorts et ultimes |
@@ -14,7 +14,7 @@ Action-RPG de crypte en hordes, jouable au pouce sur mobile et au clavier. Site 
 | `js/equip.js` | Migrations v91 et v139, équipement par héros, équipements enregistrés |
 | `js/game.js` | État d'une mission (`newGame`), ennemis, apparitions, Nécropole des Sables, sol, effets |
 | `js/combat.js` | Dégâts, statuts, explosions, mort d'un ennemi et butin, coups reçus |
-| `js/boss.js` | Boss (v147) : fragments et clé d'antre, arène, Bourreau des Cendres, butin, ligne de l'écran Mission, dessins des deux rendus |
+| `js/boss.js` | Boss (v147) : fragments et clé d'antre, arène, Bourreau des Cendres, butin, ligne du panneau Mission, dessins des deux rendus |
 | `js/spells.js` | Entrées (clavier, souris, tactile), sorts, ultimes, esquive et potion |
 | `js/step.js` | Grille spatiale et pas de simulation `update(dt)` |
 | `js/render.js` | Rendu Canvas 2D, formes communes aux deux rendus (sables, statuts, icônes de butin) et HUD |
@@ -28,7 +28,7 @@ Action-RPG de crypte en hordes, jouable au pouce sur mobile et au clavier. Site 
 | `js/forge.js` | Onglet Forge : transfert d'affixe, liste de souhaits, Bonus |
 | `js/collection.js` | Collection › Reliques (file d'ouverture, reliques forgées, raffinage), Uniques (objets des Boss) et Couleurs |
 | `js/save.js` | Réglages › Sauvegarde : exporter, importer, recommencer à zéro |
-| `js/shell.js` | Navigation de la refonte : barre des 5 onglets, accueil Combat (héros dessiné, carte de mission), écran Mission, feuille du Parcours |
+| `js/shell.js` | Navigation de la refonte : barre des 5 onglets, accueil Combat (héros dessiné, carte de mission), panneau Mission, feuille du Parcours |
 | `js/inv.js` | Inventaire unique (recherche, barre et panneau « Trier et filtrer » communs, grilles de 120 cases) et onglet Héros (titre avec flèches de héros, onglets Équipement, Sorts, Mods, Familier, Prestige) |
 | `js/gearview.js` | Héros › Équipement (emplacement par emplacement, objets classés par Puissance), équipements enregistrés, Coffre |
 | `js/dock.js` | Fiche d'objet ancrée, comparaison, départ d'un transfert d'affixe, message « Annuler » |

@@ -13,10 +13,6 @@ function statRows(St){
       ].filter(r=>r[1]>0).map(([a,v,u,sg])=>[a,(sg||'')+(v>=10?Math.round(v):+(+v).toFixed(1)).toString().replace('.',',')+u])];
   return rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join('');
 }
-function slotsHtml(eq,click,selSlot){
-  return Object.keys(SLOT).map(k=>{if(!slotOpen(k))return `<div class="slot locked" aria-disabled="true"><span>${SLOT[k]}</span><strong style="color:var(--muted)">Verrouillé</strong></div>`;const it=eq[k],tag=click?'button':'div';
-    return `<${tag} class="slot${selSlot===k?' sel':''}"${click?` data-slot="${k}"`:''}><span>${SLOT[k]}</span><strong style="color:${it?RAR[it.r].c:'var(--muted)'}">${it?itemName(it):'Vide'}${it&&it.lock?`<span class="li" aria-label="verrouillé">${LOCK_SVG}</span>`:''}</strong></${tag}>`}).join('');
-}
 // ▲ : l'objet augmente la Puissance du héros (ou, à Puissance égale, sa survie).
 function better(it){return memoOn('better',it,()=>{const e=curEq(),k=tgtKey(e,it);if(!k)return false;return eqGt(eqVal({...e,[k]:it}),eqVal(e))})}
 const LOCK_SVG='<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
@@ -51,8 +47,6 @@ function drawBag(){
   // v153 : bandeau sur deux lignes : niveau, or, monstres ; reliques ouvertes (sur celles équipées), reliques trouvées, fragments de clé d'antre ramassés (demande de l'auteur)
   {const no=(G.opened||[]).length,c=(v,l,k='')=>`<span><b${k?` class="${k}"`:''}>${v}</b><small>${l}</small></span>`;
     $('bagSum').innerHTML=c(G.level,'niveau')+c(G.gold,'or','g')+c(G.kills|0,'monstres')+c(G.relQ.length?`${no} / ${G.relQ.length}`:'—',no>1?'reliques ouvertes':'relique ouverte','r')+c(G.loot.relics.length,G.loot.relics.length>1?'reliques trouvées':'relique trouvée','r')+c(G.loot.keys|0,(G.loot.keys|0)>1?'fragments de clé':'fragment de clé')+(()=>{const b=Math.round(stayBonus()*100);return b?`<em class="bagsum__stay">Bonus de séjour · butin des monstres +${b} %</em>`:''})()}
-  // v152 : la pause ne montre plus la grille d'équipement (déjà dans l'onglet Héros) ; la page en cache plus ancienne la garde
-  {const sl=$('slots');if(sl)sl.innerHTML=slotsHtml(G.eq,false)}
   $('statgrid').innerHTML=statRows(S);
   $('bagKey').innerHTML=typeof keyStats==='function'?keyStats(S):'';
   $('runUpsTitle').textContent=`Bonus de la partie · héros niveau ${G.hl}`;

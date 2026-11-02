@@ -10,7 +10,7 @@ Jeu d'action-RPG en hordes (survivor façon Diablo / Warframe), en français, jo
 - **Sauvegarde des joueurs** : ne jamais conseiller d'effacer les données du site sans avoir d'abord exporté la sauvegarde (Réglages › Sauvegarde › Exporter). Une version ne doit jamais casser une sauvegarde : prévoir une conversion dans `progress.js` / `equip.js` / `mods.js` si un format change.
 - **Git** : ne pousser ou publier sur GitHub que si l'auteur le demande. Jusqu'à la v146, l'auteur déposait lui-même le contenu du dossier à la racine du dépôt.
 - **Avant de livrer une version** :
-  - incrémenter `VERSION` en haut de `sw.js` (`crypte-v154`…) ;
+  - incrémenter `VERSION` en haut de `sw.js` (`crypte-v155`…) ;
   - un nouveau script se déclare dans `index.html`, à la bonne place, et dans la liste `CORE` de `sw.js` ;
   - lancer la suite de tests ;
   - mettre à jour le guide (`aide/index.html`), les textes du jeu touchés et `README.md` si la structure change.
@@ -42,7 +42,7 @@ Pièges connus :
 - **`pkill -f "<motif>"`** tue aussi le shell qui lance la commande, puisqu'elle contient le motif. Tuer par numéro de processus.
 - **Navigateur de test** : il coupe le réseau, donc pas de PixiJS ; le rendu WebGL est testé avec `tools/tests/fixtures/pixi-mock.js`.
 
-## État au 2 novembre 2026 : v153
+## État au 2 novembre 2026 : v154
 
 v147 : Boss et clé d'antre, avec des valeurs provisoires. v148 : valeurs du Bourreau réglées au banc et validées par l'auteur (vie 4 Gardiens, hordes ×0,5 pendant le combat).
 
@@ -58,11 +58,13 @@ Aussi en v153 : Tourbillon du Guerrier corrigé (angle de tournoiement `P.spinA`
 Tourbillon lancé : cercle de la zone et trait qui tourne avec le Guerrier, suivi d'une traînée (render.js, rendergl.js). Aire de la compétence (demande de l'auteur) : zone autour du héros quand la compétence est prête : voile dégradé à la couleur du héros (`skZoneRGB`), bord net, anneau en pointillés qui tourne (`skillRange`, `skRangeOn` dans `js/spells.js` ; sprite `L.skz`, texture `T.skz` et calque `underG` en WebGL), réglage `SET.skRange` (Réglages › Portée des compétences, activé par défaut). Touche à l'aspect en mission, demandé explicitement.
 Héros › Équipement (demande de l'auteur) : la fiche de l'objet est dans la page, au-dessus de la liste (`gearDetail` dans `js/dock.js`, `dockInline`) : objet porté par défaut, objet touché sinon ; toutes les affixes sans pages, toutes les statistiques, toutes les actions ; plus de fiche ancrée en bas dans cette vue.
 
+v154 : nettoyage (code mort de la vue « Par héros », CSS sans usage, rangées d'onglets factorisées avec `tabRow`), doc remise à jour ; version incrémentée pour que les joueurs reçoivent la mise à jour.
+
 La refonte prévue par la maquette est terminée. Écarts gardés : le choix d'un emplacement reste une vue dans la page (pas un panneau), Fabriquer garde ses puces de recettes, pas de filtre « Nouveaux » (le jeu ne marque pas les objets récents).
 
 Boss, d'après `boss.md` (choix de l'auteur : clé d'antre, objets uniques pour un build, solo, pas une réponse à la fin de jeu) :
 
-- **Socle** (`js/boss.js`) : fragments de clé sur les Gardiens (solo, lieu qui a son Boss, un au plus par mission), 3 font une clé (`meta.keyF`, `meta.keys`), ligne « Clé d'antre » de l'écran Mission (`meta.keyOn`), arrivée après le premier objectif, arène fermée, Gardiens, manche et extraction en pause, barre crantée, butin (objet unique gardé tout de suite, relique, essence, couleurs `meta.lordW`).
+- **Socle** (`js/boss.js`) : fragments de clé sur les Gardiens (solo, lieu qui a son Boss, un au plus par mission), 3 font une clé (`meta.keyF`, `meta.keys`), ligne « Clé d'antre » du panneau Mission (`meta.keyOn`), arrivée après le premier objectif, arène fermée, Gardiens, manche et extraction en pause, barre crantée, butin (objet unique gardé tout de suite, relique, essence, couleurs `meta.lordW`).
 - **Bourreau des Cendres** (Crypte) : Sentence et esquive parfaite (`P.dashAt`), Chaîne (pieu), phase d'ombre (`darkK()`). Objet : **Chaîne du Condamné** (`UQ` dans `js/items.js`, compté dans la Puissance).
 - Le Boss est un ennemi de type `'boss'` avec `e.lord` (règles des Gardiens pour les statuts et les bonus) ; son pieu a `e.stake`. Les deux passent par `lordStep` et `lordKill` au lieu du comportement et du butin habituels.
 - Valeurs mesurées au banc (`LORD=1`, `PERF_MISS` dans `tools/banc/mission.mjs`) et validées par l'auteur : tableau dans `boss.md`. Vie 4 Gardiens, hordes ×0,5 pendant le combat, fragments 10 % (un par mission).
