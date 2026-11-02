@@ -73,6 +73,7 @@ function skillRange(){const sp=SPELLS[G.cls].s[(G.kit&&G.kit.s)|0],R=1+S.skillRa
   return {tourbillon:spinR(),nova:175*R,cri:200*R,bond:300,recul:220,transfert:240,eclair:520*R,chasseur:900*R,volee:640*1.2*R}[sp.k]||0}
 // Couleur de la zone : celle du héros (CLS.col), en « r,g,b » pour le rendu 2D et en nombre pour WebGL.
 const skZoneRGB=()=>{const h=(CLS[G.cls]||CLS.archer).col.slice(1);return [0,2,4].map(i=>parseInt(h.slice(i,i+2),16))};
+const skZoneHex=()=>parseInt((CLS[G.cls]||CLS.archer).col.slice(1),16);
 const skRangeOn=()=>(typeof SET==='undefined'||SET.skRange!==false)&&!!G&&!!G.P&&!G.P.down&&!(G.P.spin>0)&&(G.P.novaCd||0)<=0;
 function doNova0(){
   const P=G.P;if(P.down)return;if(P.novaCd>0)return;const sp=SPELLS[G.cls].s[(G.kit&&G.kit.s)|0],k=sp.k;

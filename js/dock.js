@@ -63,7 +63,7 @@ function gearSelOk(){const k=gearSlot;if(campSel.slot)return campSel.slot===k;if
   const it=campSel.stash?findItem(campSel.stash):campSel.oth?(meta.gearBy[campSel.oth.split('|')[0]]||{})[campSel.oth.split('|')[1]]:null;return !!it&&it.slot===keySlot(k)}
 function campDockHtml(){
   if((campTab==='mods'||campTab==='pets')&&modSel&&meta.mods[modSel]!=null)return modDock(modSel);
-  if(!(campTab==='equip'||campTab==='uniq'||isCoffre()||isHerosV())||!campSel)return '';
+  if(!(campTab==='equip'||campTab==='uniq'||isCoffre())||!campSel)return '';
   if(gearOn()&&!dockInline)return ''; // Héros › Équipement : la fiche est dans la page (gearDetail)
   const eq=curEq();let it=null,key='',worn=false,othC=null;
   if(campSel.wpn){const c=wclsOf(campSel.wpn);if(c&&ownedW(campSel.wpn)){it=weaponItem(c,campSel.wpn);key='w:'+campSel.wpn;if(curWid(heroCls)===campSel.wpn){worn=true}}}
@@ -71,7 +71,7 @@ function campDockHtml(){
   else if(campSel.slot){it=eq[campSel.slot];worn=true;key=campSel.slot==='arme'?'w:'+curWid():'g:'+campSel.slot}
   else if(campSel.oth){const [c,k]=campSel.oth.split('|');it=(meta.gearBy[c]||{})[k]||null;othC=c;key='o:'+(it&&it.id)}
   if(!it)return '';
-  const list=gearOn()?gearList():invList('equip'),idx=!isHerosV()&&(isCoffre()||campSel.stash||campSel.wpn)?list.findIndex(isSel):-1,r=RAR[it.r];
+  const list=gearOn()?gearList():invList('equip'),idx=(isCoffre()||campSel.stash||campSel.wpn)?list.findIndex(isSel):-1,r=RAR[it.r];
   const wc=it.wid?wornBy(it):null,whoW=othC||(wc&&wc!==heroCls?wc:null);
   const nav=idx>=0?`<span class="cx-dock__nav"><button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-cact="dnav" data-arg="-1" ${idx>0?'':'disabled'} aria-label="Objet précédent">${XSVG.prev}</button><button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-cact="dnav" data-arg="1" ${idx<list.length-1?'':'disabled'} aria-label="Objet suivant">${XSVG.next}</button></span>`:'';
   const n=it.up||0;

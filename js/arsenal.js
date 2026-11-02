@@ -43,14 +43,13 @@ function arsBar(){const cp=craftPlan();
   return h}
 let arsView='coffre',arsR='w';
 function campArsenal2(){
-  const cur=arsView==='heros'?'coffre':arsView;
+  const cur=arsView;
   const ak={rec:'craft',recy:'recy'},lk=k=>ak[k]&&!isUnl(ak[k]);
   // v151 : le Coffre seul (plus de « Par héros » : filtre Porté par) ; Fabriquer et Recycler sous les onglets de la Forge
   const tabs=cur==='coffre'?'':forgeTabs();
   if(lk(arsView))return `${campMsg}${tabs}${lockedHtml(ak[arsView])}`;
   const nc=ak[arsView]?newCard(ak[arsView]):'';
   if(arsView==='coffre')return `${campMsg}${tabs}${campCoffre()}`;
-  if(arsView==='heros')return `${campMsg}${tabs}${herosView()}`;
   if(arsView==='recy')return `${campMsg}${tabs}${nc}${campRecycle()}`;
   const ready=id=>{const pc=meta.parts[id]||[0,0,0];return pc.every(x=>x>0)};
   const nReady=craftIds().filter(ready).length;
@@ -69,7 +68,6 @@ function campArsenal2(){
 Object.assign(CAMP_ACT,{
   // depuis Héros › Équipement, le coffre s'ouvre filtré sur l'emplacement choisi (arg = arme, armure, anneau…)
   gocoffre:function(a,arg,b,d){{campTab='arsenal';arsView='coffre';campSel=null;if(arg&&(arg==='arme'||SLOT[arg])){stF=arg;campTop=true}}return CAMP_GO},
-  goheros:function(a,arg,b,d){{campTab='arsenal';arsView='heros';campSel=null}return CAMP_GO},
   craftask:function(a,arg,b,d){{arsAsk=arsAsk==='craft'?null:'craft'}return CAMP_GO},
   arsno:function(a,arg,b,d){{arsAsk=null}return CAMP_GO},
   craftall:function(a,arg,b,d){{const cp=craftPlan();let n=0;for(const id of cp.plan)if(craftOne(id))n++;arsAsk=null;if(n){SND.play('pick3');toast(`${n} objet${n>1?'s':''} fabriqué${n>1?'s':''}`)}}return CAMP_GO},
