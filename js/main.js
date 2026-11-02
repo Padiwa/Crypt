@@ -5,7 +5,7 @@ addEventListener('resize',resize);resize();
 let last=performance.now(),acc=0;const STEP=1/60;
 let lastErr=null;
 function noteErr(where,err){const m=`${where} : ${(err&&err.message)||err}`;if(lastErr===m)return;lastErr=m;console.error(where,err);try{localStorage.setItem('crypte-err',new Date().toLocaleString('fr-FR')+' · '+m)}catch{}}
-/* Économie d'énergie (v134). L'accueil, le Camp, l'écran Mission et l'écran de fin couvrent tout l'écran et cachent le jeu : on n'y dessine rien et la boucle
+/* Économie d'énergie (v134). L'accueil, le Camp, le panneau Mission et l'écran de fin couvrent tout l'écran et cachent le jeu : on n'y dessine rien et la boucle
    ne se réveille que 4 fois par seconde. Partie figée (pause, montée de niveau, fin de manche ou de partie) : 5 images par seconde
    (20 pendant l'écran de fin, le temps que les éclats retombent). Réglage « Économie de batterie » : 30 images par seconde en mission
    et image en résolution 1×. La simulation garde son pas fixe de 1/60 s. */

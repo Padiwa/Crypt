@@ -24,15 +24,15 @@ Action-RPG de crypte en hordes, jouable au pouce sur mobile et au clavier. Site 
 | `js/modsui.js` | Interface des mods (Héros › Mods) : builds d'arme, de héros et de familier, collection, surcharge |
 | `js/camp.js` | Cœur du Camp : état, affichage des onglets et du pied, table d'actions `CAMP_ACT` (chaque fichier du Camp y ajoute les siennes), accueil, feuille de choix |
 | `js/heros.js` | Onglet Héros : couleurs, prestige, sorts et talents, équipements enregistrés (actions) |
-| `js/arsenal.js` | Onglet Arsenal : Coffre, Recettes (plans, fragments, fabrication), Recycler |
+| `js/arsenal.js` | Onglet Coffre (l'ancien Arsenal) et Forge › Fabriquer (plans, fragments, fabrication) |
 | `js/forge.js` | Onglet Forge : transfert d'affixe, liste de souhaits, Bonus |
-| `js/collection.js` | Collection › Reliques : file d'ouverture, reliques forgées, raffinage |
+| `js/collection.js` | Collection › Reliques (file d'ouverture, reliques forgées, raffinage), Uniques (objets des Boss) et Couleurs |
 | `js/save.js` | Réglages › Sauvegarde : exporter, importer, recommencer à zéro |
 | `js/shell.js` | Navigation de la refonte : barre des 5 onglets, accueil Combat (héros dessiné, carte de mission), écran Mission, feuille du Parcours |
-| `js/inv.js` | Inventaire unique (recherche, tri, filtres, grilles de 120 cases) et onglet Héros (six tuiles) |
-| `js/gearview.js` | Héros › Équipement (emplacement par emplacement, objets classés par Puissance), équipements enregistrés, Arsenal › Coffre |
+| `js/inv.js` | Inventaire unique (recherche, barre et panneau « Trier et filtrer » communs, grilles de 120 cases) et onglet Héros (titre avec flèches de héros, onglets Équipement, Sorts, Mods, Familier, Prestige) |
+| `js/gearview.js` | Héros › Équipement (emplacement par emplacement, objets classés par Puissance), équipements enregistrés, Coffre |
 | `js/dock.js` | Fiche d'objet ancrée, comparaison, départ d'un transfert d'affixe, message « Annuler » |
-| `js/recycle.js` | Arsenal › Recycler |
+| `js/recycle.js` | Forge › Recycler |
 | `js/fuse.js` | Fusion de rang (armes et équipements) et son écran, Forge › Fusion |
 | `js/seal.js` | Sceaux légendaires de la Brèche (Forge › Sceaux) |
 | `js/pet.js` | Familiers (Héros › Familier) |
@@ -79,8 +79,8 @@ Le rythme chargé est celui de la balise `<script src="js/rythmes/….js">` d'`i
 Une suite unique vérifie le jeu dans un vrai navigateur (Chromium sans affichage) : démarrage, butin, reliques, fabrication et fusion, coffre, affixes, emplacements, missions, contrôles, sauvegarde, parcours, coopération.
 ```
 npm i playwright && npx playwright install chromium
-node tools/tests/run.mjs            # tout (178 tests, ≈ 6 min)
-node tools/tests/run.mjs --quick    # sans la coopération (167 tests)
+node tools/tests/run.mjs            # tout (184 tests, ≈ 6 min)
+node tools/tests/run.mjs --quick    # sans la coopération (173 tests)
 node tools/tests/run.mjs fusion     # seulement les suites dont le fichier contient « fusion »
 ```
 Chaque fichier de `tools/tests/suites/` exporte une liste `tests`. Toute erreur JavaScript dans la page fait échouer le test. **À lancer avant chaque nouvelle version** : la commande sort en erreur si un test échoue.

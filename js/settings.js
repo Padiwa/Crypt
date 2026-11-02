@@ -1,5 +1,5 @@
 // Crypte des Cendres — settings.js : réglages propres à l'appareil (son, tremblement, flash, vibrations, chiffres)
-const SET_DEF={sfx:.7,music:.35,shake:1,flash:true,vib:true,dmgNum:true,hand:'right',pickSnd:'imp',mouse:'follow',zoom:1,eco:false};
+const SET_DEF={sfx:.7,music:.35,shake:1,flash:true,vib:true,dmgNum:true,skRange:true,hand:'right',pickSnd:'imp',mouse:'follow',zoom:1,eco:false};
 // Zoom de la vue en mission, réglé par le joueur : 70 % (on voit plus loin) à 140 % (tout est plus gros). Le HUD ne change pas.
 const ZOOM_MIN=.7,ZOOM_MAX=1.4;
 const setZoom=()=>Math.min(ZOOM_MAX,Math.max(ZOOM_MIN,+SET.zoom||1));
@@ -28,6 +28,7 @@ function drawSettings(){
       ${tog('eco','Économie de batterie','30 images par seconde en mission et image moins fine sur les écrans haute définition. Couper la musique économise aussi la batterie.')}
       ${tog('flash','Flash de butin','Éclair doré quand une affixe recherchée ou un légendaire tombe')}
       ${tog('dmgNum','Chiffres de dégâts','Nombres au-dessus des ennemis touchés')}
+      ${tog('skRange','Portée des compétences','Cercle autour du héros : la zone de ta compétence quand elle est prête')}
       ${tog('vib','Vibrations','Quand tu es touché ou qu\'un légendaire tombe (téléphones Android)')}</section>
     <section class="cx-section"><h3 class="cx-section__label">Rendu</h3>
       <div class="setrow"><div><b>${PX?'WebGL (PixiJS)':'Standard (Canvas)'}</b><span>WebGL est plus fluide ; le rendu standard sert de secours.</span></div><button class="cx-btn cx-btn--sm" id="setRend">${PX?'Passer au standard':'Essayer WebGL'}</button></div></section>`+`<section class="cx-section setsave">${typeof saveSection==='function'?saveSection():''}</section>`+(typeof updSection==='function'?updSection():'');

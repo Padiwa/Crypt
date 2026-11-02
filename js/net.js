@@ -61,7 +61,7 @@ function wireDc(dc,peer){
   if(peer)peer.dc=dc;else NET.dc=dc;
   dc.onopen=()=>{
     if(peer){peer.state='open';peer.lastRx=performance.now();NET.on=true;NET.state='lobby';netSendTo(peer,{...helloMsg(),slot:peer.slot});sendRoster();
-      // Mission déjà lancée (l'hôte a touché Lancer pendant la connexion) : le joueur rejoint en cours de route.
+      // Mission déjà lancée (l'hôte a touché Combattre pendant la connexion) : le joueur rejoint en cours de route.
       if(started&&G&&!G.over){netStartFor(peer);if(!NET.tick)netTicks();toast(`${whoHtml(peer.slot)} rejoint la mission.`)}}
     else{relayClose();NET.on=true;NET.lastRx=performance.now();NET.state='connected';NET.via=RL.code||'';netSend(helloMsg());
       if(NET.retry){NET.retry=null;toast('<b style="color:#8fd3e0">Reconnecté à la partie.</b>',true)}coopSave()}

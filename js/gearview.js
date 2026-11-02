@@ -12,9 +12,10 @@ const gearVal=(e,k,x)=>k==='arme'?withWeapon(e,x.wid,eqVal):eqVal({...e,[k]:x});
 // Objets possibles : armes possédées du héros (sauf la portée) ; objets du coffre et ceux que portent les autres héros.
 function gearPool(k){if(k==='arme')return WPN[heroCls].filter(w=>ownedW(w.id)&&w.id!==curWid()).map(w=>weaponItem(heroCls,w.id));
   const s=keySlot(k);return [...meta.stash.filter(i=>i.slot===s),...allWorn().filter(i=>i.slot===s&&wornBy(i)!==heroCls)]}
-function gearRows(k){return memo('gr|'+heroCls+'|'+k+'|'+gearSort+'|'+meta.stash.length,()=>{const e=curEq(),b=eqVal(e);
-  const L=gearPool(k).map(it=>{const v=gearVal(e,k,it);return {it,v,dp:b.p?v.p/b.p-1:0,dv:b.v?v.v/b.v-1:0,gt:eqGt(v,b)}});
-  const f=gearSort==='pow'?(x,y)=>y.v.p-x.v.p||y.v.v-x.v.v:gearSort==='new'?(x,y)=>(y.it.wid?-1:y.it.id)-(x.it.wid?-1:x.it.id):(x,y)=>(invSortFn[gearSort]||invSortFn.rar)(x.it,y.it);
+// v151 : le filtre commun (rareté, porté par, afficher seulement, affixes) s'applique aussi ici.
+function gearRows(k){return memo('gr|'+heroCls+'|'+k+'|'+gearSort+'|'+meta.stash.length+'|'+filtKey(),()=>{const e=curEq(),b=eqVal(e);
+  const L=gearPool(k).filter(invPass).map(it=>{const v=gearVal(e,k,it);return {it,v,dp:b.p?v.p/b.p-1:0,dv:b.v?v.v/b.v-1:0,gt:eqGt(v,b)}});
+  const f=gearSort==='aff'?(x,y)=>affSum(y.it)-affSum(x.it)||y.v.p-x.v.p:gearSort==='pow'?(x,y)=>y.v.p-x.v.p||y.v.v-x.v.v:gearSort==='new'?(x,y)=>(y.it.wid?-1:y.it.id)-(x.it.wid?-1:x.it.id):(x,y)=>(invSortFn[gearSort]||invSortFn.rar)(x.it,y.it);
   return {L:L.sort(f),b}})}
 const gearList=()=>gearRows(gearSlot).L.map(r=>r.it);
 const gPct=x=>`${x>=0?'+':'−'}${fmtN(Math.abs(x*100))} %`;
@@ -42,24 +43,23 @@ function gslotBtn(k,e,plan){const on=k===gearSlot,lab=SLOT[k];
     return `<button class="gslot gslot--lock" role="tab" aria-selected="${on}" data-cact="gslot" data-arg="${k}" aria-label="${lab} verrouillé"><span class="gslot__i">${LOCK_SVG}</span><small>${lab}</small>${can?'<span class="dot" aria-hidden="true"></span>':''}</button>`}
   const it=e[k],up=!!plan[k];
   return `<button class="gslot${it?'':' is-empty'}${up?' is-up':''}" role="tab" aria-selected="${on}" data-cact="gslot" data-arg="${k}" style="--rar:${it?RARV[it.r]:'#5c4a66'}" aria-label="${lab}${it?' : '+esc(itemName(it)):' : vide'}${up?', meilleur objet disponible':''}"><span class="gslot__i">${GLYPH[keySlot(k)]}</span><small>${lab}</small></button>`}
+// v149 : les emplacements d'abord, puis l'objet porté et la liste ; les équipements enregistrés en bas ; l'aide détaillée passe dans le guide (bouton ?).
 function gearView(){
   if(!GEAR_ALL.includes(gearSlot))gearSlot='arme';
   const e=curEq(),k=gearSlot,open=k==='arme'||slotOpen(k),plan=bestPlan(e,meta.stash,true);
   const nc=['arms','sets','slots'].map(newCard).join('');
-  const more=cxMore('equip_gear','Touche un emplacement, puis un objet pour sa fiche.','<p>La liste montre tous tes objets pour cet emplacement : ceux du coffre et ceux que portent tes autres héros (pastille A, G ou M). Le pourcentage à droite est l\'écart de Puissance si tu l\'équipes à la place de l\'objet porté ; l\'écart de survie (vie, réduction, régénération) s\'affiche quand il compte. Le triangle vert marque un objet meilleur que le tien : plus de Puissance, ou autant de Puissance et plus de survie.</p><p>Touche une ligne : sa fiche le compare affixe par affixe et propose Équiper, Verrouiller, Fusionner, Prendre ou Recevoir une affixe, Recycler. Pour l\'arme, la liste montre les armes de ce héros, chacune avec son rang, sa maîtrise et ses propres mods. Le 2e anneau se remplit depuis son propre emplacement.</p>');
   const strip=`<div class="gslots" role="tablist" aria-label="Emplacements">${GEAR_ALL.map(s=>gslotBtn(s,e,plan)).join('')}</div>`;
-  if(!open)return nc+setsHtml()+more+strip+`<p class="cx-hint" style="margin:0">${SLOT[k]} : emplacement verrouillé ${pourCls(heroCls)} ; chaque héros débloque les siens.</p>`+(slotUnlockHtml()||lockedHtml('slots'));
+  if(!open)return nc+strip+`<p class="cx-hint" style="margin:0">${SLOT[k]} : emplacement verrouillé ${pourCls(heroCls)} ; chaque héros débloque les siens.</p>`+(slotUnlockHtml()||lockedHtml('slots'));
   const {L,b}=gearRows(k),show=L.slice(0,GEAR_PAGE*(1+gearMore)),rest=L.length-show.length;
-  const sc=(v,l)=>`<button class="cx-chip cx-chip--sm" role="radio" aria-checked="${gearSort===v}" data-cact="gsort" data-arg="${v}">${l}</button>`;
   const nb=L.filter(r=>r.gt).length,isW=k==='arme';
-  const empty=isW?`Aucune autre arme ${deCls(heroCls)}. Les armes communes à rares tombent des monstres ; les légendaires et plus se fabriquent (Arsenal › Recettes).`:`Aucun autre objet pour cet emplacement. Sors vivant d'une mission pour en ramener ; les plus rares se fabriquent (Arsenal › Recettes).`;
-  return `${nc}${setsHtml()}${more}${strip}
-    <section class="cx-section"><h3 class="cx-section__label">${SLOT[k]} · porté</h3>${gearCur(k,e,b)}</section>
+  const empty=isW?`Aucune autre arme ${deCls(heroCls)}. Les armes communes à rares tombent des monstres ; les légendaires et plus se fabriquent (Forge › Fabriquer).`:`Aucun autre objet pour cet emplacement. Sors vivant d'une mission pour en ramener ; les plus rares se fabriquent (Forge › Fabriquer).`;
+  return `${nc}${strip}
+    ${(()=>{const d=gearDetail();return `<section class="cx-section gdetail" id="gearDetail"><h3 class="cx-section__label">${SLOT[k]} · ${campSel&&!campSel.slot?'objet choisi':'porté'}</h3>${d?`<div class="cx-dock gd" role="region" aria-label="Fiche de l'objet">${d}</div>`:gearCur(k,e,b)}</section>`})()}
     <section class="cx-section"><h3 class="cx-section__label">${isW?`Tes armes ${deCls(heroCls)}`:'Tes objets'} · ${L.length}${nb?` · ${nb} meilleur${nb>1?'s':''}`:''}</h3>
-      ${L.length>1?`<div class="cx-chips" role="radiogroup" aria-label="Trier">${sc('pow','Puissance')}${sc('rar','Rareté')}${isW?'':sc('lvl','Niveau')+sc('new','Récents')}</div>`:''}
-      ${L.length?`<div class="gearl">${show.map(gearRow).join('')}</div>${rest?`<button class="cx-btn cx-btn--sm cx-btn--block gridmore" data-cact="gmore">Afficher ${Math.min(GEAR_PAGE,rest)} de plus · encore ${rest}</button>`:''}`:`<p class="cx-hint" style="margin:0">${empty}</p>`}
+      <div class="cx-toolbar gbar">${filtBar(GEAR_SORT_N[gearSort]||GEAR_SORT_N.pow)}</div>
+      ${L.length?`<div class="gearl">${show.map(gearRow).join('')}</div>${rest?`<button class="cx-btn cx-btn--sm cx-btn--block gridmore" data-cact="gmore">Afficher ${Math.min(GEAR_PAGE,rest)} de plus · encore ${rest}</button>`:''}`:`<p class="cx-hint" style="margin:0">${filtN()&&gearPool(k).length?'Aucun objet ne correspond aux filtres.':empty}</p>`}
     </section>
-    <div class="cx-actions hacts" style="margin:0"><button class="cx-btn cx-btn--sm" data-cact="gocoffre" data-arg="${keySlot(k)}" aria-label="Ouvrir le coffre, filtré sur ${SLOT[keySlot(k)].toLowerCase()}">Ouvrir le coffre · ${SLOT[keySlot(k)]}</button><button class="cx-btn cx-btn--sm" data-cact="goheros">Par héros</button></div>`;
+    <div class="cx-actions hacts" style="margin:0"><button class="cx-btn cx-btn--sm" data-cact="gocoffre" data-arg="${keySlot(k)}" aria-label="Ouvrir le coffre, filtré sur ${SLOT[keySlot(k)].toLowerCase()}">Ouvrir le coffre · ${SLOT[keySlot(k)]}</button></div>${setsHtml()}`;
 }
 // Héros › Équipements enregistrés : jusqu'à SET_MAX par héros ; toucher un équipement le porte (chaque objet repris dans le coffre ou sur un autre héros).
 // v143 : aperçu sous le héros (onglet Héros) et en haut de Héros › Équipement ; l'équipement porté en dernier est « en cours » (act) :
@@ -94,8 +94,8 @@ function slotUnlockHtml(){if(!isUnl('slots'))return '';const next=SLOT_U.filter(
   return `<section class="cx-section"><h3 class="cx-section__label">Emplacements ${deCls(heroCls)} · ${hf} fragment${hf>1?'s':''} de harnais</h3><div class="cx-rows">${next.map(u=>{const ok=!u.need||slotOpen(u.need),can=ok&&hf>=u.hf&&meta.gold>=u.gold;
     return `<div class="cx-row"><span class="cx-row__k" style="color:var(--ink)">${u.n}<small>${ok?`${u.hf} fragments de harnais et ${u.gold} or · tu as ${hf} fragment${hf>1?'s':''}`:`Après l'${SLOT_U.find(x=>x.k===u.need).n}`}</small></span><button class="cx-btn cx-btn--sm cost-btn${can?' cx-btn--primary':''}" data-cact="slotopen" data-arg="${u.k}" style="margin:0" ${can?'':'disabled'}><span>Débloquer</span>${ok?costHtml([['hf',u.hf],['or',u.gold]]):''}</button></div>`}).join('')}</div>
     <p class="cx-hint" style="margin:0">Chaque héros débloque ses emplacements ; les fragments de harnais sont communs. Ils tombent seulement sur les Gardiens (3 % en Normal, jusqu'à 11 % en Tourment X).</p></section>`}
-// Arsenal › Coffre : tout ce que tu possèdes, armes et objets portés compris (pastille du héros qui les porte).
+// Coffre (l'onglet Arsenal avant la v151) : tout ce que tu possèdes, armes et objets portés compris (pastille du héros qui les porte).
 function campCoffre(){const list=invList('equip'),n=stashN();
   return `<section class="cx-section"><h3 class="cx-section__label">Coffre · ${n} objet${n>1?'s':''}</h3>
-    ${n?invToolbar(list,'equip'):''}<div id="invGrid">${invGrid(list,'equip')}</div>${n?`<p class="cx-hint" style="margin:0">La pastille A, G ou M montre le héros qui porte l'objet (Archer, Guerrier, Magicien) ; « Par héros », en haut, les range héros par héros.${isUnl('recy')?' Pour recycler : onglet Recycler, en haut de l\'Arsenal.':''}</p>`:''}</section>`}
+    ${n?invToolbar(list,'equip'):''}<div id="invGrid">${invGrid(list,'equip')}</div>${n?`<p class="cx-hint" style="margin:0">La pastille A, G ou M montre le héros qui porte l'objet.</p>`:''}</section>`}
 

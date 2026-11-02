@@ -1,7 +1,7 @@
 // Crypte des Cendres — shell.js : navigation de la refonte (v130).
-// Barre des 5 onglets en bas (Héros, Arsenal, Combat, Forge, Collection), accueil Combat, écran Mission, feuille du Parcours.
+// Barre des 5 onglets en bas (Héros, Coffre, Combat, Forge, Collection ; Coffre = l'ancien Arsenal, v151), accueil Combat, panneau Mission, feuille du Parcours.
 // Les onglets du Camp restent ceux de camp.js (campTab : equip, arsenal, forge, mods, pets, relics). Depuis la v137, Mods et Familier sont des vues
-// de l'onglet Héros (tuiles) et la Collection ne garde que les Reliques.
+// de l'onglet Héros (onglets internes depuis la v149) et la Collection ne garde que les Reliques.
 
 /* ---------- Dessin du héros et du familier (mêmes dessins qu'en mission) ---------- */
 // rot : orientation du dessin (le héros regarde vers la droite à 0) ; k : taille du héros dans le cadre.
@@ -14,13 +14,13 @@ function petPaint(el,p){if(!el||!el.getContext)return;const g=el.getContext('2d'
 
 /* ---------- Barre des onglets ---------- */
 const NAV_TAB={heros:'equip',arsenal:'arsenal',forge:'forge'};
-const navOf=t=>t==='arsenal'?'arsenal':t==='forge'?'forge':t==='relics'?'coll':'heros';
-const COLL=['relics'];
+const navOf=t=>t==='arsenal'?(arsForge()?'forge':'arsenal'):t==='forge'?'forge':t==='relics'||t==='uniq'||t==='colors'?'coll':'heros';
+const COLL=['relics','uniq','colors']; // v152 : Reliques · Uniques · Couleurs
 let collLast='relics',heroSub='main';
 // Collection : la dernière vue ouverte, sinon la première débloquée.
 const collFirst=()=>!tabLocked(collLast)?collLast:COLL.find(t=>!tabLocked(t))||collLast;
 // Onglet verrouillé (Forge, ou Collection tant que les Reliques sont fermées) : grisé avec un cadenas, mais il s'ouvre et dit comment le débloquer.
-const navLocked=k=>k==='forge'?tabLocked('forge'):k==='coll'?COLL.every(tabLocked):false;
+const navLocked=k=>k==='forge'?forgeAllLocked():k==='coll'?COLL.every(tabLocked):false;
 function navSync(){const cur=!$('camp').hidden?navOf(campTab):'combat';
   document.querySelectorAll('#tabbar [data-nav]').forEach(b=>{const on=b.dataset.nav===cur,lk=navLocked(b.dataset.nav);b.classList.toggle('is-on',on);b.classList.toggle('is-locked',lk);if(lk)b.setAttribute('aria-description','verrouillé');else b.removeAttribute('aria-description');if(on)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')})}
 function navGo(k){
@@ -30,16 +30,19 @@ function navGo(k){
   if(open)campScroll[campTab]=sc.scrollTop;
   const same=open&&navOf(campTab)===k;
   campTab=t;campSel=null;campBack=null;campMsg='';fzc=null;fzRole='a';gridMore=0;if(k==='heros')heroSub='main';
+  // v151 : Coffre seul dans l'onglet Coffre ; la Forge encore fermée s'ouvre sur Fabriquer ou Recycler s'ils sont débloqués
+  if(k==='arsenal'&&arsView!=='coffre')arsView='coffre';
+  if(k==='forge'&&tabLocked('forge')&&(isUnl('craft')||isUnl('recy'))){campTab='arsenal';arsView=isUnl('craft')?'rec':'recy'}
   if(!open)openCamp();else drawCamp();
   sc.scrollTop=same?0:campScroll[campTab]||0;navSync()}
 $('tabbar').addEventListener('click',e=>{const b=e.target.closest('[data-nav]');if(b)navGo(b.dataset.nav)});
-// Pastilles de la barre : une par onglet (Héros additionne l'équipement, les talents, le prestige, les Mods et le Familier).
+// Pastilles de la barre : un point par onglet quand une action attend (v149 : plus de nombre ; le détail reste dans l'info-bulle) (Héros additionne l'équipement, les talents, le prestige, les Mods et le Familier).
 function navBadges(B){const N={heros:[B.equip,B.mods,B.pets],arsenal:[B.arsenal],forge:[B.forge],coll:[B.relics]};
   document.querySelectorAll('#tabbar [data-nav]').forEach(b=>{const L=(N[b.dataset.nav]||[]).filter(Boolean);let el=b.querySelector('.tabbar__badge');
     if(!L.length){if(el)el.remove();return}
     const nw=L.some(x=>x.n==='!'),n=L.reduce((a,x)=>a+(x.n==='!'?0:+x.n||0),0),txt=nw?'!':n>9?'9+':String(n);
     if(!el){el=document.createElement('span');el.className='tabbar__badge';b.appendChild(el)}
-    el.textContent=txt;const t=L.map(x=>x.t).join(' · ');el.title=t;el.setAttribute('aria-label',t)})}
+    el.textContent='';el.dataset.n=txt;const t=L.map(x=>x.t).join(' · ');el.title=t;el.setAttribute('aria-label',t)})}
 
 /* ---------- Accueil Combat ---------- */
 const MODE_SVG={survie:'<path d="M6 3h12M6 21h12M7 3c0 5 10 6 10 9s-10 4-10 9M17 3c0 5-10 6-10 9"/>',defense:'<path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z"/><path d="M12 7l3 5-3 5-3-5z"/>',
@@ -86,10 +89,11 @@ $('heroNext').onclick=()=>{const o=heroOrder();pickCls(o[(o.indexOf(heroCls)+1)%
 $('petBtn').onclick=()=>{navGo('heros');campTab='pets';campSel=null;modSel=null;drawCamp();navSync()};
 $('relicHomeBtn').onclick=()=>{collLast='relics';navGo('coll')};
 
-/* ---------- Écran Mission ---------- */
-function openMission(){$('mission').hidden=false;refreshMenus();$('mission').querySelector('.cx-screen__body').scrollTop=0}
+/* ---------- Mission (v149 : panneau qui monte du bas, par-dessus l'accueil ; un seul bouton Combattre) ---------- */
+function openMission(){$('mission').hidden=false;refreshMenus();$('mission').querySelector('.cx-sheet__body').scrollTop=0}
 function closeMission(){$('mission').hidden=true;refreshMenus()}
 $('missionCard').onclick=openMission;$('msnBack').onclick=closeMission;
+$('mission').addEventListener('click',e=>{if(e.target.id==='mission')closeMission()});
 function missionDraw(){
   const bi=Math.max(0,Math.min(BIOMES.length-1,meta.biome|0));
   $('bioCards').innerHTML=BIOMES.map((b,i)=>{const lock=!!b.unl&&!isUnl(b.unl);
@@ -101,7 +105,7 @@ function missionDraw(){
     $('tormDesc').textContent=tormMax()<10?`Palier ${ROM[tormMax()]} : réussis d'abord le palier ${ROM[tormMax()-1]}.`:'Plus haut : monstres plus forts, reliques plus rares'}
   $('diffDesc').textContent=diffLine(di);
   const st=clamp(meta.start|0||1,1,LV_MAX),m=MODES[meta.mode]||MODES.survie;
-  $('startBtn2').innerHTML=`Lancer<small>${esc(m.n)} · niveau ${st} · ${esc(dif().n)}</small>`;lordMsnDraw()}
+  if(!$('startBtn2').disabled)$('startBtn2').innerHTML=`Combattre<small>${esc(m.n)} · niveau ${st} · ${esc(dif().n)}${lordBtnTxt()}</small>`;lordMsnDraw()}
 $('bioCards').addEventListener('click',e=>{const b=e.target.closest('[data-bio]');if(!b)return;const i=+b.dataset.bio;
   if(b.getAttribute('aria-disabled')==='true'){const u=UNL_BY[BIOMES[i].unl];toast(`${u.n} : ${u.need.replace(/^./,c=>c.toLowerCase())}`);return}
   meta.biome=i;saveMeta();newGame();refreshMenus()});

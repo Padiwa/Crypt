@@ -123,14 +123,17 @@ const palOf=(P,cls)=>lookPal(cls,P===G.P?myLook(cls):(typeof who==='function'&&N
 function drawPlayer(P){
   shadow(P.x,P.y,P.r);
   ctx.globalAlpha=P.dashT>0?.55:(P.inv>0&&Math.floor(G.t*20)%2?.6:1);
-  const a=P.face,C=palOf(P,G.cls);ctx.lineCap='round';
+  const a=P.spin>0?(P.spinA||P.face):P.face,C=palOf(P,G.cls);ctx.lineCap='round';
   if(G.cls==='archer'){
     ctx.strokeStyle='#d6b17c';ctx.lineWidth=4;
     const bx=P.x+Math.cos(a)*(P.r+9),by=P.y+Math.sin(a)*(P.r+9);
     ctx.beginPath();ctx.moveTo(P.x+Math.cos(a)*P.r*.3,P.y+Math.sin(a)*P.r*.3);ctx.lineTo(bx,by);ctx.stroke();
     ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(bx-Math.sin(a)*11-Math.cos(a)*4,by+Math.cos(a)*11-Math.sin(a)*4);ctx.quadraticCurveTo(bx+Math.cos(a)*3,by+Math.sin(a)*3,bx+Math.sin(a)*11-Math.cos(a)*4,by-Math.cos(a)*11-Math.sin(a)*4);ctx.stroke();
   }else if(G.cls==='guerrier'){
-    if(P.spin>0){const R=130*(1+S.reach/100);ctx.strokeStyle='rgba(255,225,190,.28)';ctx.lineWidth=12;ctx.beginPath();ctx.arc(P.x,P.y,R*.8,a,a+4.5);ctx.stroke()}
+    // Tourbillon lancé : le cercle de la zone et un trait qui tourne avec le héros, suivi d'une traînée (demande de l'auteur)
+    if(P.spin>0){const R=spinR(),c=skZoneRGB().join(',');ctx.strokeStyle=`rgba(${c},.5)`;ctx.lineWidth=2;ctx.beginPath();ctx.arc(P.x,P.y,R,0,7);ctx.stroke();
+      for(let i=0;i<6;i++){ctx.fillStyle=`rgba(${c},${(.16*(1-i/6)).toFixed(3)})`;ctx.beginPath();ctx.moveTo(P.x,P.y);ctx.arc(P.x,P.y,R,a-(i+1)*.14,a-i*.14);ctx.closePath();ctx.fill()}
+      ctx.strokeStyle=`rgba(${c},.8)`;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(P.x+Math.cos(a)*(P.r+6),P.y+Math.sin(a)*(P.r+6));ctx.lineTo(P.x+Math.cos(a)*R,P.y+Math.sin(a)*R);ctx.stroke()}
     const hx=P.x+Math.cos(a)*(P.r+1),hy=P.y+Math.sin(a)*(P.r+1),bx=P.x+Math.cos(a)*(P.r+26),by=P.y+Math.sin(a)*(P.r+26);
     ctx.strokeStyle='#cfd6dc';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(hx,hy);ctx.lineTo(bx,by);ctx.stroke();
     ctx.strokeStyle='#8a6a45';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(hx-Math.sin(a)*8,hy+Math.cos(a)*8);ctx.lineTo(hx+Math.sin(a)*8,hy-Math.cos(a)*8);ctx.stroke();
@@ -207,6 +210,10 @@ function render2D(){
   for(const r of G.runes){if(!vis(r.x,r.y,r.r))continue;circle(r.x,r.y,r.r);ctx.stroke();circle(r.x,r.y,r.r*.82);ctx.stroke();
     for(let i=0;i<12;i++){const a=i/12*Math.PI*2;ctx.beginPath();ctx.moveTo(r.x+Math.cos(a)*r.r*.84,r.y+Math.sin(a)*r.r*.84);ctx.lineTo(r.x+Math.cos(a+.2)*r.r*.98,r.y+Math.sin(a+.2)*r.r*.98);ctx.stroke()}}
   for(const q of G.sands||[])if(vis(q.x,q.y,q.r))sandPoolShape(q.x,q.y,q.r,G.t*.25*(q.dir||1));
+  // v153 : aire de la compétence, comme un voile (tempête, nuit du Bourreau) : dégradé à la couleur du héros, plus dense vers le bord, bord net et anneau en pointillés qui tourne
+  if(skRangeOn()){const R=skillRange();if(R){const c=skZoneRGB().join(','),x=G.P.x,y=G.P.y,gr=ctx.createRadialGradient(x,y,R*.25,x,y,R);gr.addColorStop(0,`rgba(${c},0)`);gr.addColorStop(.7,`rgba(${c},.10)`);gr.addColorStop(1,`rgba(${c},.24)`);
+    ctx.fillStyle=gr;ctx.beginPath();ctx.arc(x,y,R,0,7);ctx.fill();ctx.strokeStyle=`rgba(${c},.6)`;ctx.lineWidth=2.5;ctx.stroke();
+    ctx.save();ctx.setLineDash([10,16]);ctx.lineDashOffset=-G.t*24;ctx.strokeStyle=`rgba(${c},.35)`;ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,R*.9,0,7);ctx.stroke();ctx.restore()}}
   for(const z of G.zones){if(!vis(z.x,z.y,z.r))continue;const al=Math.min(1,z.life/.5)*(z.kind==='poison'?.33:.4),pc=z.kind==='poison'?'200,70,190':'255,120,40';ctx.fillStyle=`rgba(${pc},${al})`;circle(z.x,z.y,z.r*(1+.04*Math.sin(G.t*6)));ctx.fill();ctx.strokeStyle=`rgba(${pc},${al+.3})`;ctx.lineWidth=2;ctx.stroke()}
   for(const l of G.lobs){const k=l.t/l.T,pc=l.kind==='poison'?'200,70,190':'255,120,40';ctx.strokeStyle=`rgba(${pc},${.3+.5*k})`;ctx.lineWidth=2;circle(l.tx,l.ty,l.r*k);ctx.stroke();circle(l.tx,l.ty,l.r);ctx.stroke();
     ctx.fillStyle=`rgb(${pc})`;circle(l.x0+(l.tx-l.x0)*k,l.y0+(l.ty-l.y0)*k-Math.sin(k*Math.PI)*80,6);ctx.fill()}

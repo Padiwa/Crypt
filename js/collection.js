@@ -110,3 +110,32 @@ Object.assign(CAMP_ACT,{
   // Raffinage en nombre (v140) : « id|n » ; « id » seul = une relique
   refine:function(a,arg,b,d){{const [id,n]=arg.split('|'),k=relRefine(id,n==null?1:+n);if(k){SND.play('relic');toast(`${k} relique${k>1?'s':''} ${RELICS[id].fz?'forgée'+(k>1?'s':''):RTIER[RELICS[id].t].n} raffinée${k>1?'s':''} : éclatante${k>1?'s':''}`)}}return CAMP_GO},
 });
+
+/* ---------- Collection › Uniques et Couleurs (v152) ---------- */
+// Uniques : un objet unique par Boss d'antre (UQ dans items.js, LORDS dans boss.js). Ceux que tu possèdes passent par le filtre commun
+// (inv.js : affixes, rareté, porté par…) et ouvrent leur fiche ; ceux qui manquent disent quel Boss les donne.
+const uqOwned=k=>[...meta.stash,...allWorn()].filter(i=>i&&i.uq===k);
+function uqRow(it,L){const w=wornBy(it),U=UQ[it.uq],affs=Object.keys(it.aff).map(k=>affName(k)).join(' · ');
+  return `<button class="gearr uqr${isSel(it)?' is-sel':''}" data-stash="${it.id}" aria-label="${esc(itemName(it))}, ${w?'porté '+parCls(w):'au coffre'}">
+    <span class="cx-cell gearr__ic" style="--rar:#ff6a50" aria-hidden="true">${cellIn(it)}${whoTag(w)}</span>
+    <span class="gearr__t"><b style="color:#ff6a50">${esc(itemName(it))}</b><small>${SLOT[it.slot]} · ${esc(L.n)} · niveau ${it.lvl}${w?` · porté ${parCls(w)}`:' · au coffre'}</small><small class="uqr__p">${U.d(U.v)}</small><small>${affs}</small></span></button>`}
+function campUniq(){const ids=Object.keys(LORDS);let own=[],miss=[];
+  for(const id of ids){const L=LORDS[id],k=L.uq;if(!UQ[k])continue;const its=uqOwned(k);if(its.length)its.forEach(it=>own.push([it,L]));else miss.push(L)}
+  const shown=own.filter(([it])=>invPass(it)&&(stF==='all'||stF===it.slot));
+  const lock=L=>{const U=UQ[L.uq],B=BIOMES[L.bio];return `<div class="gearr uqr is-lock"><span class="cx-cell gearr__ic" style="--rar:#5c4a66" aria-hidden="true">${LOCK_SVG}</span><span class="gearr__t"><b>${esc(U.n)}</b><small>${SLOT[U.slot]} · ${esc(L.n)}, ${esc(B?B.n:'')}</small><small>Bats ${esc(L.n)} avec une clé d'antre pour l'obtenir.</small></span></div>`};
+  return `<p class="cx-hint" style="margin:0">Un objet unique par Boss d'antre. Il complète un build précis.</p>
+    ${own.length?`<div class="cx-toolbar gbar">${filtBar(SORT_N[stS]||SORT_N.rar)}</div>`:''}
+    ${shown.length?`<div class="gearl">${shown.map(([it,L])=>uqRow(it,L)).join('')}</div>`:own.length?'<p class="cx-hint" style="margin:0">Aucun objet unique ne correspond aux filtres.</p>':''}
+    ${miss.length?`<section class="cx-section"><h3 class="cx-section__label">À gagner · ${miss.length}</h3><div class="gearl">${miss.map(lock).join('')}</div></section>`:''}
+    <p class="cx-hint" style="margin:0">D'autres Boss viendront avec d'autres lieux.</p>`}
+// Couleurs : les couleurs de tenue gagnées contre chaque Boss ; elles s'ajoutent aux nuanciers de Héros › Apparence (lookSw dans boss.js).
+function campColors(){const ids=Object.keys(LORDS);
+  const card=id=>{const L=LORDS[id],won=meta.lordW[id]>0;
+    return `<div class="lcol${won?'':' is-lock'}"><div class="lcol__sw" aria-hidden="true">${LOOK_PARTS.map(p=>`<i style="--sw:${won?L.sw[p.k]:'#2a2230'}"></i>`).join('')}</div>
+      <div class="lcol__t"><b>${esc(L.n)}</b><small>${won?`Gagnées · ${LOOK_PARTS.map(p=>p.n.toLowerCase()).join(', ')} dans les nuanciers`:`Bats ${esc(L.n)} pour les obtenir`}</small></div></div>`};
+  return `<p class="cx-hint" style="margin:0">Chaque Boss vaincu ajoute ses couleurs aux nuanciers de l'Apparence.</p>
+    <div class="col">${ids.map(card).join('')}</div>
+    <div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-cact="golook">Changer de couleurs (Héros › Apparence)</button></div>`}
+Object.assign(CAMP_ACT,{
+  golook:function(){campTab='equip';heroSub='look';campSel=null;campTop=true;return CAMP_GO},
+});

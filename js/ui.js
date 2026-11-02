@@ -44,10 +44,15 @@ $('bagBtn').addEventListener('click',()=>{if(started&&!G.over&&$('extract').hidd
 $('closeBag').addEventListener('click',closeBag);$('closeBagX').addEventListener('click',closeBag);
 // Bascule WebGL ↔ rendu standard (Réglages › Rendu).
 function rendToggle(){if(PX){dropPixi('choix du joueur');try{localStorage.setItem('crypte-nogl','1')}catch{}}else{try{localStorage.removeItem('crypte-nogl')}catch{}location.reload()}}
+// Pause : les mods portés, en lecture seule (arme, héros, familier).
+function modsRO(){const L=[['w','Arme'],...(isUnl('hmods')?[['h','Héros']]:[]),...(petEq()?[['p','Familier']]:[])];
+  return `<ul class="partlist">${L.map(([k,n])=>{const b=build(k),ids=(b.load||[]).filter(Boolean);return `<li><b>${n}</b> : ${ids.length?ids.map(id=>MODS[id].n).join(', '):'aucun mod'}${b.aura?` · aura ${MODS[b.aura].n}`:''}</li>`}).join('')}</ul><p class="cx-hint" style="margin:0">Les mods se changent au Camp (onglet Héros › Mods).</p>`}
 function drawBag(){
-  {const rq=G.relic?`${G.react|0} / ${reactNeed()}`:`${(G.opened||[]).length} / ${G.relQ.length}`;
-    $('bagSum').innerHTML=`<span><b>${G.level}</b><small>niveau</small></span><span><b class="g">${G.gold}</b><small>or</small></span><span><b>${G.kills|0}</b><small>monstres</small></span><span><b class="r">${G.relQ.length?rq:'—'}</b><small>${G.relic?'réactifs':'reliques'}</small></span>`+(()=>{const b=Math.round(stayBonus()*100);return b?`<em class="bagsum__stay">Bonus de séjour · butin des monstres +${b} %</em>`:''})()}
-  $('slots').innerHTML=slotsHtml(G.eq,false);
+  // v153 : bandeau sur deux lignes : niveau, or, monstres ; reliques ouvertes (sur celles équipées), reliques trouvées, fragments de clé d'antre ramassés (demande de l'auteur)
+  {const no=(G.opened||[]).length,c=(v,l,k='')=>`<span><b${k?` class="${k}"`:''}>${v}</b><small>${l}</small></span>`;
+    $('bagSum').innerHTML=c(G.level,'niveau')+c(G.gold,'or','g')+c(G.kills|0,'monstres')+c(G.relQ.length?`${no} / ${G.relQ.length}`:'—',no>1?'reliques ouvertes':'relique ouverte','r')+c(G.loot.relics.length,G.loot.relics.length>1?'reliques trouvées':'relique trouvée','r')+c(G.loot.keys|0,(G.loot.keys|0)>1?'fragments de clé':'fragment de clé')+(()=>{const b=Math.round(stayBonus()*100);return b?`<em class="bagsum__stay">Bonus de séjour · butin des monstres +${b} %</em>`:''})()}
+  // v152 : la pause ne montre plus la grille d'équipement (déjà dans l'onglet Héros) ; la page en cache plus ancienne la garde
+  {const sl=$('slots');if(sl)sl.innerHTML=slotsHtml(G.eq,false)}
   $('statgrid').innerHTML=statRows(S);
   $('bagKey').innerHTML=typeof keyStats==='function'?keyStats(S):'';
   $('runUpsTitle').textContent=`Bonus de la partie · héros niveau ${G.hl}`;
@@ -55,25 +60,24 @@ function drawBag(){
   $('runUps').innerHTML=ru.length?ru.map(u=>`<span style="border-color:${u.c}">${u.n} <b>${G.run[u.k]>=u.max?'max':`${G.run[u.k]} / ${u.max}`}</b></span>`).join(''):'<p class="cx-hint" style="margin:0">Ramasse les cristaux d\'expérience pour monter de niveau et choisir des bonus.</p>';
   const L=G.loot,n=L.items.length;
   $('lootTitle').textContent=`Butin de la partie · ${n+L.relics.length+L.parts.length}`;
-  const rplan=n?bestPlan(G.eq,L.items):{},rpn=Object.keys(rplan).length;
   if(runSel&&!L.items.some(i=>i.id===runSel))runSel=null;
   $('runLoot').innerHTML=(n||L.parts.length||L.relics.length)
-    ?(rpn?`<button class="cx-btn cx-btn--block" id="bestRun" style="margin:0 0 3px">Équiper le meilleur butin · ${rpn}</button>`:'')+(n?`<div class="grid">${L.items.map(it=>cellHtml(it,'run',runSel===it.id,better(it))).join('')}</div><p class="cx-hint" style="margin:0">▲ : meilleur que ce que tu portes. Ce que tu n'équipes pas part au coffre si tu sors, et se perd si tu meurs.</p>`:'')
-      +(L.relics.length?(()=>{const g={};for(const id of L.relics)g[id]=(g[id]||0)+1;return `<ul class="partlist">${Object.keys(g).sort((a,b)=>RELICS[b].t-RELICS[a].t).map(id=>`<li>Relique <b style="color:${RTIER[RELICS[id].t].c}">${relicName(id)}</b>${g[id]>1?` ×${g[id]}`:''}</li>`).join('')}</ul>`})():'')
+    ?(n?`<div class="grid">${L.items.map(it=>cellHtml(it,'run',runSel===it.id,better(it))).join('')}</div><p class="cx-hint" style="margin:0">▲ : meilleur que ce que tu portes. Le butin part au coffre si tu sors, et se perd si tu meurs. Il s'équipe au Camp.</p>`:'')
+      +(L.relics.length?(()=>{const g={};for(const id of L.relics)g[id]=(g[id]||0)+1;return `<ul class="partlist">${Object.keys(g).sort((a,b)=>RELICS[b].t-RELICS[a].t).map(id=>`<li>${/^Relique/.test(relicName(id))?'':'Relique '}<b style="color:${RTIER[RELICS[id].t].c}">${relicName(id)}</b>${g[id]>1?` ×${g[id]}`:''}</li>`).join('')}</ul>`})():'')
       +(L.parts.length?`<ul class="partlist">${L.parts.map(p=>`<li>${partLabel(p)}</li>`).join('')}</ul>`:'')
     :'<p class="cx-hint" style="margin:0">Rien pour l\'instant. Les monstres lâchent parfois des équipements et des reliques, les Gardiens toujours.</p>';
   $('runLoot').querySelectorAll('[data-run]').forEach(b=>b.onclick=()=>{const id=+b.dataset.run;runSel=runSel===id?null:id;modSel=null;drawBag()});
-  if($('bestRun'))$('bestRun').onclick=()=>{const plan=bestPlan(G.eq,G.loot.items);for(const sl in plan){const it=plan[sl];G.loot.items=G.loot.items.filter(i=>i!==it);wearGear(sl,it);G.eq[sl]=it}saveMeta();refreshStats();runSel=null;toast(`${Object.keys(plan).length} objet${Object.keys(plan).length>1?'s':''} équipé${Object.keys(plan).length>1?'s':''}`);drawBag()};
-  if(modTab==='p'&&!petEq())modTab='h';
+  // v153 : plus de « Équiper le meilleur butin » dans la pause (demande de l'auteur) ; un objet se prend encore un par un depuis sa fiche
   {const d=$('bagModsT').closest('details');if(d)d.hidden=!isUnl('mods')}
   $('bagModsT').textContent=`Mods · ${bActive(build('w')).length+bActive(build('h')).length} actifs`;
-  renderMods('modsBag');
+  // v153 : rien ne s'équipe en mission (demande de l'auteur) : les mods se lisent, ils se changent au Camp
+  $('modsBag').innerHTML=modsRO();
   // fiche ancrée : objet du butin choisi (prioritaire sur le détail d'un mod)
   if(quitAsk){runSel=null;modSel=null}
   if(runSel){const it=L.items.find(i=>i.id===runSel),cur=G.eq[tgtKey(G.eq,it)];
     $('bagDock').innerHTML=`<div class="cx-dock__head"><h3 class="cx-dock__title" style="color:${RAR[it.r].c}">${esc(itemName(it))}</h3><button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-bag="close" aria-label="Fermer le détail"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
       <span class="cx-dock__meta">${RAR[it.r].n} · ${SLOT[it.slot]} · niveau ${it.lvl}</span>
-      ${(()=>{const k='r:'+it.id;if(k!==cmpKey){cmpKey=k;cmpPage=0}return cmpObjet(G.eq,it)})()}<button class="cx-btn cx-btn--primary cx-btn--block" data-bag="equip" data-arg="${it.id}" style="margin-top:4px">Équiper maintenant${cur?` · remplace ${esc(itemName(cur))}`:''}</button><p class="cx-hint" style="margin:0">Un objet équipé est gardé même si tu meurs. L'ancien part au coffre du Camp.</p>`;
+      ${(()=>{const k='r:'+it.id;if(k!==cmpKey){cmpKey=k;cmpPage=0}return cmpObjet(G.eq,it)})()}<p class="cx-hint" style="margin:0">Il s'équipe au Camp, une fois la mission finie.</p>`;
     $('bagDock').hidden=false;$('bagFoot').hidden=true}
   else if(quitAsk){const L=G.loot,no=L.items.length+L.parts.length,nr=L.relics.length,pl=(n,w)=>`${n} ${w}${n>1?'s':''}`,lostL=[no?pl(no,'objet'):'',nr?pl(nr,'relique'):'',G.gold?`${G.gold} or`:''].filter(Boolean),lost=lostL.length;
     $('bagDock').innerHTML=`<div class="cx-dock__head"><h3 class="cx-dock__title">Retourner au Camp ?</h3></div>
@@ -85,7 +89,7 @@ function drawBag(){
 }
 $('bagDock').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;
   if(b.dataset.bag==='quitno'){quitAsk=false;drawBag();return}if(b.dataset.bag==='quitok'){abandonRun();return}
-  if(b.dataset.bag==='close'){runSel=null;drawBag()}else if(b.dataset.bag==='equip')equipRun(+b.dataset.arg);else if(b.dataset.act)modAct(b.dataset.act,b.dataset)});
+  if(b.dataset.bag==='close'){runSel=null;drawBag()}});
 /* ---------- Montée de niveau ---------- */
 function gainXp(v){
   // En coopération chacun reçoit l'expérience de tous les monstres, plus nombreux : on la divise d'autant pour garder le rythme du solo.
@@ -124,14 +128,6 @@ function pickUp(k){
   G.pend--;$('lvlup').hidden=true;
   burst(G.P.x,G.P.y,20,'#9fe3f0',160);
   if(G.pend>0)showLevelUp();else{paused=false;last=performance.now()}
-}
-function equipRun(id){
-  const it=G.loot.items.find(i=>i.id===id);if(!it)return;
-  G.loot.items=G.loot.items.filter(i=>i!==it);
-  const k=tgtKey(G.eq,it);if(!k){G.loot.items.push(it);toast('Emplacement verrouillé');return}
-  const old=meta.gear[k];if(old){meta.stash.push(old)}
-  meta.gear[k]=it;G.eq[k]=it;saveMeta();refreshStats();runSel=null;
-  toast(`<span style="color:${RAR[it.r].c}">${it.name}</span> équipé`);drawBag();
 }
 function refreshStats(){if(!G)return;const ratio=G.P.hp/S.hp;S=stats(G.eq);G.P.hp=Math.max(1,Math.min(S.hp,ratio*S.hp))}
 

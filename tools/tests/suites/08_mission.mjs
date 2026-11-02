@@ -262,4 +262,16 @@ export const tests = [
     await q.evaluate(() => { G.t = 200; capReward(); });
     t.eq(await q.evaluate(() => G.objT), 90, 'les captures suivantes ne relancent pas le compte');
   } },
+  { name: 'pause (v153) : reliques ouvertes, reliques trouvées et fragments de clé ; rien ne s\'équipe en mission', fn: async (b, t) => {
+    const p = t.track(await newPage(b));
+    await startMission(p);
+    await p.evaluate(() => { G.loot.items.push(genItem(10, 3)); G.loot.relics.push(Object.keys(RELICS)[0], Object.keys(RELICS)[0]); G.loot.parts.push({ hf: 1 }); G.loot.keys = 1; openBag(); });
+    const r = await p.evaluate(() => [...document.querySelectorAll('#bagSum span')].map((s) => s.textContent));
+    t.eq(r.slice(3), ['—relique ouverte', '2reliques trouvées', '1fragment de clé'], 'bandeau : ouvertes, trouvées, fragments de clé');
+    t.ok(await p.evaluate(() => !document.getElementById('bestRun') && !/Équiper le meilleur/.test($('bag').textContent)), 'pas de « Équiper le meilleur butin »');
+    t.ok(await p.evaluate(() => !/Relique Relique/.test($('runLoot').textContent)), 'nom de relique sans doublon');
+    await p.click('#runLoot [data-run]');
+    t.ok(await p.evaluate(() => !$('bagDock').hidden && !document.querySelector('#bagDock [data-bag="equip"]') && /au Camp/.test($('bagDock').textContent)), 'fiche du butin : comparaison, sans bouton Équiper');
+    t.ok(await p.evaluate(() => !document.querySelector('#modsBag button') && /Héros › Mods/.test($('modsBag').textContent)), 'mods en lecture seule');
+  } },
 ];

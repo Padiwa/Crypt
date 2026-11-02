@@ -1,15 +1,15 @@
-// Crypte des Cendres — boss.js : Boss (v147). Clé d'antre, arène fermée, Bourreau des Cendres, objet unique ; écran Mission et dessins.
+// Crypte des Cendres — boss.js : Boss (v147). Clé d'antre, arène fermée, Bourreau des Cendres, objet unique ; panneau Mission et dessins.
 /* Boss (v147) : rencontres nommées, en solo, au plus une par mission.
    Fragments : un Gardien peut lâcher un fragment de clé d'antre (BAL.keyFrag, un au plus par mission), seulement en solo et dans un lieu
    qui a son Boss. Ils sont gardés au retour, comme le reste du butin ; 3 fragments du même lieu font une clé (meta.keyF, meta.keys).
-   Clé : choisie dans l'écran Mission (meta.keyOn), cachée en coopération. Le Boss arrive après le premier objectif (fin de la 1re manche
+   Clé : choisie dans le panneau Mission (meta.keyOn), cachée en coopération. Le Boss arrive après le premier objectif (fin de la 1re manche
    en Survie, 3e vague en Défense, première capture) ; la clé est consommée quand il apparaît.
    Combat : un cercle de runes se referme (on ne peut plus en sortir), le minuteur des Gardiens et l'horloge de la manche sont en pause,
    l'extraction de la Capture est fermée. Le Boss compte comme un Gardien pour les statuts et les bonus (type 'boss', e.lord).
    Butin : l'objet unique (dans le coffre tout de suite ; déjà possédé, de l'essence), une relique garantie, de l'essence, une couleur de héros
    à la première victoire. Valeurs mesurées au banc et choisies par l'auteur le 29 octobre 2026 (BAL.lordHp, BAL.sentHp… pour les essais). */
 const LORDS={
-  bourreau:{n:'Le Bourreau des Cendres',bio:0,col:'#4a1c18',uq:'condamne',sw:{cloak:'#3b0e0c',rim:'#b8322a',inner:'#120707'}},
+  bourreau:{n:'Le Bourreau des Cendres',sn:'Bourreau',bio:0,col:'#4a1c18',uq:'condamne',sw:{cloak:'#3b0e0c',rim:'#b8322a',inner:'#120707'}},
 };
 const lordOfBio=b=>Object.keys(LORDS).find(k=>LORDS[k].bio===b)||null;
 const LORD_C='#ff6a50',KEY_N=3,LORD_IN=4,ARENA_R=560,LORD_ESS=100,UQ_DUP_ESS=150;
@@ -38,7 +38,7 @@ function keyDrop(push){if(NET.on||!lordOfBio(G.biome)||(G.keyN|0)>=(BAL.keyFragM
 // Au retour (bank) : les fragments ramassés rejoignent ceux du lieu ; 3 font une clé.
 function keyBank(){const n=G.loot.keys|0;if(!n)return;const bk=BIOMES[G.biome].id;meta.keyF[bk]=(meta.keyF[bk]|0)+n;
   while(meta.keyF[bk]>=KEY_N){meta.keyF[bk]-=KEY_N;meta.keys[bk]=(meta.keys[bk]|0)+1;const L=LORDS[lordOfBio(G.biome)];
-    toast(`<b style="color:${LORD_C}">Clé d'antre forgée</b> : ${L?L.n+' peut':'le Boss du lieu pourra'} être appelé (écran Mission).`,true)}}
+    toast(`<b style="color:${LORD_C}">Clé d'antre forgée</b> : ${L?L.n+' peut':'le Boss du lieu pourra'} être appelé (panneau Mission).`,true)}}
 /* ---------- Combat ---------- */
 function lordTick(dt){
   if(!G.lordKey||G.over)return;
@@ -124,8 +124,11 @@ function lordMsnDraw(){const sec=$('keySec');if(!sec)return;
   const b=$('keyBtn');b.setAttribute('aria-pressed',String(on));b.disabled=!ok;b.classList.toggle('is-on',on)}
 $('keyBtn').onclick=()=>{if(NET.on)return;meta.keyOn=!meta.keyOn;saveMeta();newGame();refreshMenus()};
 // Accueil : étiquette de la carte de mission quand le Boss est appelé.
-function lordTag(){const bi=clamp(meta.biome|0,0,BIOMES.length-1),id=lordOfBio(bi);
-  return meta.keyOn&&id&&(meta.keys[BIOMES[bi].id]|0)>0&&!NET.on?`<span class="home__tag" style="--c:${LORD_C}">${esc(LORDS[id].n)}</span>`:''}
+const lordCalled=()=>{const bi=clamp(meta.biome|0,0,BIOMES.length-1),id=lordOfBio(bi);return meta.keyOn&&id&&(meta.keys[BIOMES[bi].id]|0)>0&&!NET.on?id:null};
+// v150 : rappel sous les boutons Combattre (accueil et panneau Mission) : « · Bourreau » quand la clé est utilisée.
+const lordBtnTxt=()=>{const id=lordCalled();return id?` · <b>${esc(LORDS[id].sn||LORDS[id].n)}</b>`:''};
+function lordTag(){const id=lordCalled();
+  return id?`<span class="home__tag" style="--c:${LORD_C}">${esc(LORDS[id].n)}</span>`:''}
 /* ---------- Dessins (formes communes aux deux rendus, tournées vers la droite) ---------- */
 function bourreauShape(r,white){const W=white?'#fff':null;
   ctx.fillStyle=W||'#4a1c18';circle(0,0,r);ctx.fill();ctx.strokeStyle=W||'#1c0907';ctx.lineWidth=3;ctx.stroke();

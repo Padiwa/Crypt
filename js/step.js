@@ -78,8 +78,9 @@ function update(dt){
     P.dashHit.add(e);const a=Math.atan2(e.y-P.y,e.x-P.x),k=e.type==='boss'?40:380;e.kx+=Math.cos(a)*k;e.ky+=Math.sin(a)*k;dmgEnemy(e,S.dmg*1.5,false)}
   // attaque
   if(P.swing){P.swing.t+=dt;if(P.swing.t>.2)P.swing=null}
-  if(P.spin>0){P.spin-=dt;P.spinTick-=dt;P.face+=dt*18;
-    if(P.spinTick<=0){P.spinTick=.2;const R=130*(1+S.reach/100)*(1+S.skillRad/100);
+  // v153 : le tournoiement a son propre angle (spinA) : avant, il s'ajoutait à P.face, que la marche remet à chaque image, d'où un héros qui sautait
+  if(P.spin>0){P.spin-=dt;P.spinTick-=dt;P.spinA=(P.spinA||0)+dt*18;
+    if(P.spinTick<=0){P.spinTick=.2;const R=spinR();
       for(const e of G.en){const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy)||1;if(d<R+e.r){const crit=Math.random()*100<S.crit,dd=S.nova*.22*(crit?S.critDmg/100:1);spellHit(e,dd,crit);if(S.leech)heal(dd*S.leech/100);const k=e.type==='boss'?10:90;e.kx+=dx/d*k;e.ky+=dy/d*k}}}}
   let tgt=null,td=1e9;if(!P.down)for(const e of G.en){if(e.downed)continue;const d=Math.hypot(e.x-P.x,e.y-P.y);if(d<td){td=d;tgt=e}}
   if(G.cls==='guerrier'){

@@ -65,10 +65,19 @@ function leapLand(){const P=G.P,k=P.leapK;P.leapK=null;
 function wallReflect(d){const t=nearE(260);if(!t)return;G.inUlt=(G.inUlt|0)+1;try{spellHit(t,d*.5*(1+(S.ultPct||0)/100),false)}finally{G.inUlt--}G.rings.push({x:t.x,y:t.y,t:.2,max:28,col:'255,190,110'})}
 function doNova(){const P=G.P;if(P.down||P.novaCd>0)return;P.fluxB=2;G.inSp=(G.inSp|0)+1;try{doNova0()}finally{G.inSp--}
   if(S.gardA>0){const v=S.hp*S.gardA/100;addShield(v);P.gaS=v;P.gaT=4;burst(P.x,P.y,12,'#bfe0ff',120,2)}}
+// v153 : rayon réel du Tourbillon (portée de frappe et rayon des compétences), le même pour les coups et pour le dessin.
+const spinR=()=>130*(1+S.reach/100)*(1+S.skillRad/100);
+// v153 : aire de la compétence choisie (zone touchée, ou jusqu'où elle va), dessinée autour du héros quand elle est prête
+// (Réglages › Portée des compétences). Mêmes rayons que dans doNova0 ci-dessous.
+function skillRange(){const sp=SPELLS[G.cls].s[(G.kit&&G.kit.s)|0],R=1+S.skillRad/100;
+  return {tourbillon:spinR(),nova:175*R,cri:200*R,bond:300,recul:220,transfert:240,eclair:520*R,chasseur:900*R,volee:640*1.2*R}[sp.k]||0}
+// Couleur de la zone : celle du héros (CLS.col), en « r,g,b » pour le rendu 2D et en nombre pour WebGL.
+const skZoneRGB=()=>{const h=(CLS[G.cls]||CLS.archer).col.slice(1);return [0,2,4].map(i=>parseInt(h.slice(i,i+2),16))};
+const skRangeOn=()=>(typeof SET==='undefined'||SET.skRange!==false)&&!!G&&!!G.P&&!G.P.down&&!(G.P.spin>0)&&(G.P.novaCd||0)<=0;
 function doNova0(){
   const P=G.P;if(P.down)return;if(P.novaCd>0)return;const sp=SPELLS[G.cls].s[(G.kit&&G.kit.s)|0],k=sp.k;
   P.novaCd=P.surT>0?.5:skCd(sp);P.novaMax=P.novaCd;if(sealOn('soin'))netFx('sk',P.x,P.y,Math.max(200,175*(1+S.skillRad/100)));G.hshake=Math.max(G.hshake||0,3.5);SND.play('skill_'+G.cls);
-  if(k==='tourbillon'){P.spin=1.6*(1+S.skillDur/100);P.spinTick=0;return}
+  if(k==='tourbillon'){P.spin=1.6*(1+S.skillDur/100);P.spinTick=0;P.spinA=P.face;return}
   if(k==='volee'){
     for(let i=0;i<24;i++){const a=i/24*Math.PI*2;G.shots.push({kind:'bolt',sp:1,x:P.x,y:P.y,vx:Math.cos(a)*640,vy:Math.sin(a)*640,a,d:S.nova*.35,crit:false,pierce:S.pierce+2,hit:new Set(),life:1.2*(1+S.skillRad/100)})}
     G.rings.push({x:P.x,y:P.y,t:.15,max:80,col:'255,200,120'});return;

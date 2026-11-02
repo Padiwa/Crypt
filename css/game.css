@@ -1067,7 +1067,7 @@ body:has(#over:not([hidden])) .tabbar,body:has(#settings:not([hidden])) .tabbar{
 .tabbar__b--fight .tabbar__i svg{width:32px;height:32px;stroke-width:2.3}
 .tabbar__b--fight.is-on .tabbar__i{transform:none;background:radial-gradient(circle at 50% 35%,#fff0c8,#ffb25a 55%,#c9601a) padding-box,linear-gradient(180deg,#fff,#8a5516) border-box}
 .tabbar__b:focus-visible .tabbar__i{outline:2px solid var(--ember-hi);outline-offset:3px}
-.tabbar__badge{top:-6px;right:calc(50% - 30px)}
+.tabbar__badge{top:-2px;right:calc(50% - 24px);min-width:0;width:12px;height:12px;padding:0;border-radius:50%}
 .tabbar__b--fight .tabbar__badge{top:-38px}
 /* =====================================================================
    Camp : écran plein au-dessus de la barre
@@ -1165,9 +1165,6 @@ body:has(#over:not([hidden])) .tabbar,body:has(#settings:not([hidden])) .tabbar{
    Écran Mission
    ===================================================================== */
 #mission.msn{z-index:21}
-.msn__head{gap:10px}
-.msn__head .cx-screen__brand{flex:1;text-align:center;font-size:24px}
-.msn__sp{width:44px;flex:none}
 .cx-picks--4{grid-template-columns:repeat(2,minmax(0,1fr))}
 .msn .cx-pick{flex-direction:row;justify-content:flex-start;gap:10px;min-height:68px;padding:10px 12px;text-align:left}
 .msn .cx-pick b{font-size:15px}
@@ -1188,20 +1185,15 @@ body:has(#over:not([hidden])) .tabbar,body:has(#settings:not([hidden])) .tabbar{
 .msn__diff .cx-tab[aria-checked="true"]{color:#2a1606;background:linear-gradient(180deg,#fff,var(--dc) 45%,color-mix(in srgb,var(--dc) 55%,#000))}
 .msn__torm{min-width:3.2em;display:grid;place-items:center;font:800 18px/1 var(--font-num);color:#ff6a3a}
 .msn__info{margin:0;padding:10px 12px;border-radius:12px;background:#0b080d;border:1px solid #3a2f42;color:var(--ink)}
-.msn__more{border:0;background:none;min-height:40px;padding:0 4px}
-.msn .cx-screen__foot{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 14px)}
 /* =====================================================================
    Héros : scène, emplacements, tuiles
    ===================================================================== */
-.hcls .cx-tab{flex:1 1 0;color:var(--hc)}
-.hcls .cx-tab[aria-selected="true"]{color:#2a1606}
 .hstage{position:relative;display:grid;grid-template-columns:72px minmax(0,1fr) 72px;gap:8px;align-items:center;min-height:330px}
 .hstage__col{display:flex;flex-direction:column;gap:12px;align-items:center}
 .hstage__mid{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0}
 .hstage__mid::before{content:"";position:absolute;top:8%;width:92%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--hero-c,#f39a3e) 30%,transparent),rgba(0,0,0,0) 68%);pointer-events:none}
 .hstage__mid::after{content:"";position:absolute;top:60%;width:70%;height:44px;border-radius:50%;border:3px solid rgba(255,190,110,.5);box-shadow:0 0 18px rgba(243,154,62,.45);background:radial-gradient(ellipse,rgba(0,0,0,.5),rgba(40,14,6,.2) 70%);pointer-events:none}
 #heroStage{position:relative;z-index:1;width:100%;max-width:220px;height:auto;aspect-ratio:1}
-.hstage__name{position:relative;z-index:1;font:900 20px/1 var(--font-display);letter-spacing:.08em;text-transform:uppercase;color:var(--gold2);text-shadow:0 2px 0 var(--outline)}
 .hstage__mid small{position:relative;z-index:1;font:600 12px/1.2 var(--font-body);color:var(--muted)}
 .hslot{--rar:#5c4a66;position:relative;box-sizing:border-box;width:66px;height:66px;padding:0;margin:0;display:grid;place-items:center;color:var(--rar);cursor:pointer;border:3px solid var(--rar);border-radius:13px;background:radial-gradient(circle at 50% 38%,color-mix(in srgb,var(--rar) 30%,transparent) 0%,rgba(14,10,17,.96) 72%);box-shadow:0 0 0 2px var(--outline),inset 0 0 14px color-mix(in srgb,var(--rar) 28%,transparent),0 4px 0 var(--outline)}
 .hslot::after{content:"";position:absolute;top:-6px;left:-6px;width:9px;height:9px;transform:rotate(45deg);background:var(--rar);border:2px solid var(--outline)}
@@ -1219,16 +1211,7 @@ body:has(#over:not([hidden])) .tabbar,body:has(#settings:not([hidden])) .tabbar{
 .cx-keystats{gap:8px}
 .cx-keystats>div{border:1px solid #3a2f42;border-radius:12px;background:#0b080d;box-shadow:inset 0 2px 6px rgba(0,0,0,.6)}
 .cx-keystats b{font:800 18px/1 var(--font-num)}
-.htiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.htile{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:112px;padding:10px 6px;color:var(--ink);cursor:pointer;text-align:center;border:3px solid transparent;border-radius:14px;background:linear-gradient(180deg,#241c29,#151018) padding-box,var(--frame-iron) border-box;box-shadow:0 0 0 2px var(--outline),0 3px 0 var(--outline)}
-.htile__i svg{width:30px;height:30px;fill:none;stroke:var(--gold2);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.htile b{font:800 13px/1 var(--font-display);letter-spacing:.04em}
-.htile small{font:500 11px/1.2 var(--font-body);color:var(--muted)}
-.htile .cx-tab__badge{top:-7px;right:-7px}
-.hsub__t{margin:0;font:900 18px/1.1 var(--font-display);letter-spacing:.06em;text-transform:uppercase;color:var(--gold2)}
 /* v137 : tuiles verrouillées (Mods, Familier) ; Héros › Équipement (emplacements, objet porté, liste classée par Puissance) */
-.htile.is-locked{opacity:.62}
-.htile.is-locked .htile__i svg{stroke:var(--muted);width:24px;height:24px}
 .gslots{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 8px;width:100%;max-width:380px;margin:0 auto}
 .gslot{--rar:#5c4a66;position:relative;box-sizing:border-box;flex:0 0 calc((100% - 24px)/4);max-width:88px;height:62px;margin:0;padding:0 0 14px;display:grid;place-items:center;color:var(--rar);cursor:pointer;border:3px solid var(--rar);border-radius:12px;background:radial-gradient(circle at 50% 38%,color-mix(in srgb,var(--rar) 26%,transparent) 0%,rgba(14,10,17,.96) 72%);box-shadow:0 0 0 2px var(--outline),0 3px 0 var(--outline);-webkit-tap-highlight-color:transparent}
 .gslot__i svg{display:block;width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
@@ -1326,7 +1309,7 @@ body:has(#over:not([hidden])) .tabbar,body:has(#settings:not([hidden])) .tabbar{
 .choice small{grid-area:rank;justify-self:end;margin:0;font:700 11px/1.2 var(--font-num);letter-spacing:.04em;text-transform:none;color:var(--muted);white-space:nowrap}
 .choice:hover{filter:brightness(1.1)}
 /* ---------- Pause ---------- */
-.bagsum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.bagsum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .bagsum span{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 4px;border-radius:10px;background:#0b080d;border:1px solid #3a2f42;box-shadow:inset 0 2px 6px rgba(0,0,0,.6)}
 .bagsum b{font:800 17px/1 var(--font-num);color:var(--ink)}
 .bagsum b.g{color:var(--gold)}
@@ -1530,3 +1513,47 @@ body:has(#over:not([hidden])) .tabbar,body:has(#settings:not([hidden])) .tabbar{
 .rsub{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;padding-top:8px;border-top:1px dashed var(--line)}
 .rsub b{font:700 13px/1.25 var(--font-body);color:var(--tc)}
 .rsub small{font:600 12px/1.3 var(--font-body);color:var(--muted)}
+/* v149 : onglets du héros (Équipement, Sorts, Mods, Familier, Prestige), point d action, titre avec flèches de héros */
+.cx-tabs.htabs>.cx-tab{flex:1 1 auto;min-width:0;padding-left:4px;padding-right:4px;font-size:12.5px;letter-spacing:0;text-transform:none}
+.cx-tab__dot{position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:#ff5a4f;box-shadow:0 0 0 2px var(--outline)}
+.htitle{display:inline-flex;align-items:center;gap:4px;max-width:100%}
+.htitle__n{min-width:0;overflow:hidden;text-overflow:ellipsis;color:var(--hc,var(--gold2))}
+.htitle__a{flex:none;display:grid;place-items:center;width:36px;height:36px;margin:0;padding:0;border:0;border-radius:50%;background:none;color:var(--muted);cursor:pointer}
+.htitle__a:hover{color:var(--ink)}
+.htitle__a:focus-visible{outline:2px solid var(--ember-hi);outline-offset:1px}
+.htitle__a svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+/* v149 : Mission en panneau qui monte du bas (par-dessus l'accueil) ; 3 modes hors coopération (Brèche cachée) */
+.msn__sheet{max-height:94dvh}
+.msn__body{gap:var(--space-4)}
+.msn .cx-picks--3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.msn .cx-picks--3 .cx-pick{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:76px;padding:10px 6px;text-align:center}
+.msn .cx-picks--3 .cx-pick svg{align-self:center}
+.msn__foot .cx-btn{width:100%}
+/* v151 : barre « Trier et filtrer » commune, pastilles des filtres actifs, panneau de filtres, onglets de la Forge (Fabriquer … Recycler) */
+.cx-tabs.ftabs>.cx-tab{flex:1 0 auto;padding-left:8px;padding-right:8px;font-size:12px;letter-spacing:.03em}
+.fbar{flex-wrap:wrap}
+.fbar__b{display:inline-flex;align-items:center;gap:6px}
+.fbar__b svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.fbar__clr{margin-left:auto;min-height:36px;padding:0 4px;border:0;background:none;color:var(--gold2);font:700 13px/1 var(--font-body);cursor:pointer}
+.fchips{display:flex;flex-wrap:wrap;gap:6px}
+.fchip{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 10px;border-radius:999px;border:1px solid #9a5a2a;background:#2e1f17;color:var(--ink);font:600 13px/1 var(--font-body);cursor:pointer}
+.fchip svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
+.fsec__h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fsec__h .cx-section__label{flex:1}
+.fsec__mode{display:inline-flex;gap:4px}
+.cx-chips.fwrap{flex-wrap:wrap;overflow:visible}
+.fsheet__foot{position:sticky;bottom:0;margin:0;padding:10px 0 4px;background:var(--panel);box-shadow:0 40px 0 var(--panel),0 -8px 12px var(--panel)}
+.fsheet__foot .cx-btn{flex:1}
+.gbar{position:static;margin:0;padding:0;background:none;border:0;box-shadow:none}
+/* v151 : six onglets du héros (Apparence comprise) et nom du héros lisibles sur les petits téléphones */
+@media (max-width:359px){.cx-tabs.htabs>.cx-tab{font-size:11px;padding-left:2px;padding-right:2px}#camp .htitle .htitle__n{font-size:16px}#camp .htitle__a{width:28px}}
+/* v152 : Collection › Uniques (objets des Boss) et Couleurs (gagnées contre les Boss) */
+.uqr__p{color:#ffb8a8!important}
+.uqr.is-lock{opacity:.6;cursor:default}
+.lcol{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;border:2px solid var(--line);background:linear-gradient(180deg,#241c29,#18121c)}
+.lcol.is-lock{opacity:.6}
+.lcol__sw{display:flex;gap:6px;flex:none}
+.lcol__sw i{width:30px;height:30px;border-radius:50%;background:var(--sw);box-shadow:0 0 0 2px var(--outline),inset 0 2px 4px rgba(255,255,255,.15)}
+.lcol__t{display:flex;flex-direction:column;gap:3px;min-width:0}
+.lcol__t b{font:800 15px/1.1 var(--font-display);color:var(--ink)}
+.lcol__t small{font:500 12px/1.3 var(--font-body);color:var(--muted)}

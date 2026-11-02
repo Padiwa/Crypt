@@ -131,4 +131,24 @@ export const tests = [
     t.eq([r.need0, r.need50, r.cap], [K.N, Math.max(K.MIN, Math.round(K.N * .5)), true], 'charge nécessaire, Fureur plafonnée à 50 %');
     t.ok(near(r.gx, K.GX), `ultime contre un Gardien : ×${K.GX} (${r.gx})`);
   } },
+  { name: 'Tourbillon en marchant : le héros garde sa direction, le tournoiement a son propre angle, la zone dessinée est la vraie (v153)', fn: async (b, t) => {
+    const p = t.track(await newPage(b));
+    await startMission(p, { cls: 'guerrier' });
+    await p.evaluate(() => { G.P.novaCd = 0; doNova(); });
+    await p.keyboard.down('d');
+    const a = []; for (let i = 0; i < 4; i++) { await p.waitForTimeout(80); a.push(await p.evaluate(() => [G.P.face, G.P.spinA, G.P.spin > 0])); }
+    await p.keyboard.up('d');
+    t.ok(a.every((x) => Math.abs(x[0]) < 1e-6 && x[2]), 'direction de marche stable pendant le Tourbillon');
+    t.ok(a.every((x, i) => !i || x[1] > a[i - 1][1]), 'angle de tournoiement qui avance');
+    t.eq(await p.evaluate(() => { S.reach = 20; S.skillRad = 50; return Math.round(spinR()); }), Math.round(130 * 1.2 * 1.5), 'rayon : portée de frappe et rayon des compétences');
+  } },
+  { name: 'aire de la compétence : rayon de chaque sort, visible quand elle est prête, cachée en recharge, réglage (v153)', fn: async (b, t) => {
+    const p = t.track(await newPage(b));
+    await startMission(p, { cls: 'magicien' });
+    t.eq(await p.evaluate(() => { S.skillRad = 0; return Math.round(skillRange()); }), 175, 'Nova de givre : 175');
+    t.eq(await p.evaluate(() => { S.skillRad = 20; return Math.round(skillRange()); }), 210, 'rayon des compétences compris');
+    t.eq(await p.evaluate(() => { G.P.novaCd = 0; const a = skRangeOn(); G.P.novaCd = 3; const b2 = skRangeOn(); G.P.novaCd = 0; SET.skRange = false; const c = skRangeOn(); SET.skRange = true; return [a, b2, c]; }), [true, false, false], 'prête : visible ; en recharge ou réglage coupé : cachée');
+    await p.evaluate(() => { openSettings(); });
+    t.ok(await p.evaluate(() => !!document.querySelector('#setBody [data-set="skRange"]')), 'réglage « Portée des compétences »');
+  } },
 ];

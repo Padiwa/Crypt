@@ -29,8 +29,8 @@ function drawCoop(){const body=$('coopBody');if(!body||$('coop').hidden)return;c
     h=`<section class="cx-section"><h3 class="cx-section__label">Ta partie · ${1+open.length} / ${NET_MAX} joueurs</h3>${top}${rosterHtml(rosterList())}
       ${arriving?`<p class="cx-hint" style="margin:0">${arriving} joueur${arriving>1?'s':''} en train d'arriver…</p>`:''}
       ${!relay&&!pend&&!full?`<div class="actions" style="margin:0"><button class="cx-btn${open.length?'':' cx-btn--primary'}" data-coop="add">Inviter un joueur</button></div>`:''}
-      <div class="setrow"><div><b>Mission</b><span>${missionTxt(lobbyInfo())}. Le mode, le niveau et la difficulté se choisissent sur l'écran Mission (touche la carte de mission de l'accueil)${open.length?'':' ; la Brèche demande au moins un autre joueur'}.</span></div></div>
-      ${open.length?`<p style="margin:0">Ferme cette fenêtre et touche « Lancer » : vous partez ensemble. Chacun joue son héros et peut en changer entre deux missions.</p>`:''}${dropHtml()}${RULES}</section>`;
+      <div class="setrow"><div><b>Mission</b><span>${missionTxt(lobbyInfo())}. Le mode, le niveau et la difficulté se choisissent dans le panneau Mission (touche la carte de mission de l'accueil)${open.length?'':' ; la Brèche demande au moins un autre joueur'}.</span></div></div>
+      ${open.length?`<p style="margin:0">Ferme cette fenêtre et touche « Combattre » : vous partez ensemble. Chacun joue son héros et peut en changer entre deux missions.</p>`:''}${dropHtml()}${RULES}</section>`;
     if(pend){const n=pend.slot+1;
       if(pend.state==='offer')h+='<p class="cx-hint">Préparation du code…</p>';
       else h+=`<section class="cx-section"><h3 class="cx-section__label">Inviter le joueur ${n}</h3>${codeBox('1. Fais scanner ou envoie ce code au joueur '+n,pend.code,true)}${pasteBox('2. Colle ou scanne son code de réponse','Valider','answer')}${pend.state==='connecting'?'<p class="cx-hint" style="margin:0">Connexion en cours…</p>':''}<div class="actions"><button class="cx-btn cx-btn--sm" data-coop="cancel">Annuler cette invitation</button></div></section>`}
