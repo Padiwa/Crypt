@@ -102,7 +102,7 @@ function missionDraw(){
   $('diffSeg').innerHTML=DIFF.map((d,i)=>{const lock=!diffOk(i);return `<button class="cx-tab${lock?' is-locked':''}" role="radio" data-diff="${i}" aria-checked="${i===di}" aria-selected="${i===di}" ${lock?'aria-disabled="true"':''} style="--dc:${i?d.c:'#d8d0c4'}">${lock?`<span class="lockmini" aria-hidden="true">${LOCK_SVG}</span>`:''}${d.n}</button>`}).join('');
   const tm=di===3;$('tormRow').hidden=!tm;
   if(tm){const t=dif().tier;$('tormVal').textContent=ROM[t-1];$('tormMinus').disabled=t<=1;$('tormPlus').disabled=t>=tormMax();
-    $('tormDesc').textContent=tormMax()<10?`Palier ${ROM[tormMax()]} : réussis d'abord le palier ${ROM[tormMax()-1]}.`:'Plus haut : monstres plus forts, reliques plus rares'}
+    $('tormDesc').textContent=tormMax()<TORM_TOP?`Palier ${ROM[tormMax()]} : réussis d'abord le palier ${ROM[tormMax()-1]}.`:'Plus haut : monstres plus forts, reliques plus rares'}
   $('diffDesc').textContent=diffLine(di);
   const st=clamp(meta.start|0||1,1,LV_MAX),m=MODES[meta.mode]||MODES.survie;
   if(!$('startBtn2').disabled)$('startBtn2').innerHTML=`Combattre<small>${esc(m.n)} · niveau ${st} · ${esc(dif().n)}${lordBtnTxt()}</small>`;lordMsnDraw()}

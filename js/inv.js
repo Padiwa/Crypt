@@ -7,13 +7,14 @@ const SORT_N={rar:'Rareté',up:'Rang',lvl:'Niveau',new:'Récents',aff:'Valeur de
    à l'autre (choix de l'auteur) ; les pastilles des filtres actifs et « Effacer » le retirent. fR : raretés ; fW : porté par (all, une classe, none) ;
    fO : afficher seulement (all, better = meilleurs que le porté, lock = verrouillés) ; fA : affixes cherchées, fAM : toutes (all) ou au moins une (any). */
 let fR=new Set(),fW='all',fO='all',fA=[],fAM='all';
-const F_ONLY={better:'Meilleurs que le porté',lock:'Verrouillés'};
+const F_ONLY={better:'Meilleurs que le porté',lock:'Verrouillés',sub:'Avec une affixe Sublime'};
 const filtN=()=>fR.size+(fW!=='all'?1:0)+(fO!=='all'?1:0)+fA.length;
 const filtKey=()=>[[...fR].join(),fW,fO,fA.join(),fAM].join('/');
 const affName=k=>AFF_NAME[k]||k;
 function invPass(it){if(fR.size&&!fR.has(it.r))return false;
   if(fW!=='all'){const w=wornBy(it);if(fW==='none'?!!w:w!==fW)return false}
   if(fO==='lock'&&!it.lock)return false;
+  if(fO==='sub'&&!subN(it))return false; // v155
   if(fO==='better'&&(wornBy(it)||!better(it)))return false;
   if(fA.length){const has=k=>!!it.aff&&it.aff[k]!=null;if(fAM==='any'?!fA.some(has):!fA.every(has))return false}
   return true}
@@ -65,7 +66,7 @@ function filtHtml(){const g=gearOn(),S=g?GEAR_SORT_N:SORT_N,cur=g?gearSort:stS,n
     +(g?'':sec('Emplacement',[['all','Tout'],['arme','Arme'],...['armure','amulette','bottes','anneau','dos'].map(k=>[k,SLOT[k]])].map(([k,l])=>chip('slot',k,l,stF===k)).join('')))
     +sec('Rareté',RAR.map((r,i)=>chip('r',i,r.n,fR.has(i),fR.has(i)?'':` style="color:${r.c}"`)).join(''))
     +sec('Porté par',[['all','Tous'],...Object.keys(CLS).map(c=>[c,CLS[c].n]),['none','Personne']].map(([k,l])=>chip('w',k,l,fW===k)).join(''))
-    +sec('Afficher seulement',[['all','Tout'],['better',F_ONLY.better],['lock',F_ONLY.lock]].map(([k,l])=>chip('o',k,l,fO===k)).join(''))
+    +sec('Afficher seulement',[['all','Tout'],['better',F_ONLY.better],['lock',F_ONLY.lock],...(TORM_TOP>10?[['sub',F_ONLY.sub]]:[])].map(([k,l])=>chip('o',k,l,fO===k)).join(''))
     +`<div class="cx-actions fsheet__foot"><button class="cx-btn" data-f="reset">Tout effacer</button><button class="cx-btn cx-btn--primary" data-f="close">Voir ${n} objet${n>1?'s':''}</button></div>`}
 function openFilt(){$('pickTitle').textContent='Trier et filtrer';$('pickBody').innerHTML=filtHtml();$('pickBody').onclick=filtClick;$('pickSheet').hidden=false}
 // Effacer : les filtres du panneau ; « Tout effacer » remet aussi l'emplacement sur Tout.

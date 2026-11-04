@@ -1,6 +1,6 @@
 // Crypte des Cendres — simulateur de progression : lance une carrière complète dans un vrai navigateur sans affichage.
 //   node tools/progression/run.mjs --cls archer --missions 400 --seed 1 --out resultats/archer.jsonl
-// Options : --resume (reprend depuis le dernier état), --rythme long (ou chemin d'un fichier de rythme ; --mode reste accepté), --bal '{"relicMob":0.2}' (réglages d'essai), --hours N (arrêt après N heures de jeu simulées), --policy parcours, --caps 20,20,25,... (plafonds par palier).
+// Options : --resume (reprend depuis le dernier état), --rythme long (ou chemin d'un fichier de rythme ; --mode reste accepté), --bal '{"relicMob":0.2}' (réglages d'essai), --hours N (arrêt après N heures de jeu simulées), --policy parcours, --caps 20,20,25,... (plafonds par palier), --xf 1 (le joueur utilise aussi Forge › Affixes).
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
@@ -40,7 +40,7 @@ async function open(state) {
   await p.reload();
   await p.addScriptTag({ path: path.join(here, 'career.js') });
   if (state) await p.evaluate((C) => { SIM.C = { ...C, log: [] }; heroCls = C.cls; }, state.C);
-  else await p.evaluate(([c, caps]) => SIM.newCareer(c, caps ? { caps: caps.split(',').map(Number) } : {}), [cls, caps]);
+  else await p.evaluate(([c, caps, xf]) => SIM.newCareer(c, { ...(caps ? { caps: caps.split(',').map(Number) } : {}), xf }), [cls, caps, arg('xf', '0') === '1']);
 }
 // --resume : reprend une carrière depuis son dernier état sauvegardé (le journal est gardé jusqu'à cet état)
 let state = process.argv.includes('--resume') && fs.existsSync(etat) ? JSON.parse(fs.readFileSync(etat, 'utf8')) : null, crashes = 0;

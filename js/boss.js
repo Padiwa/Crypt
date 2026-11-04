@@ -34,10 +34,13 @@ function lordInit(){
   const id=lordOfBio(G.biome);G.lordKey=meta.keyOn&&id&&(meta.keys[BIOMES[G.biome].id]|0)>0&&!NET.on?id:null}
 // Fragment de clé sur un Gardien (kill), un au plus par mission.
 function keyDrop(push){if(NET.on||!lordOfBio(G.biome)||(G.keyN|0)>=(BAL.keyFragMax||1))return;
-  if(Math.random()<(BAL.keyFrag||0)){G.keyN=(G.keyN|0)+1;push({kind:'key'},40)}}
+  if(Math.random()<keyFragCh()){G.keyN=(G.keyN|0)+1;push({kind:'key'},40)}} // v155 : plus souvent au-delà du Tourment X (tourment.js)
 // Au retour (bank) : les fragments ramassés rejoignent ceux du lieu ; 3 font une clé.
-function keyBank(){const n=G.loot.keys|0;if(!n)return;const bk=BIOMES[G.biome].id;meta.keyF[bk]=(meta.keyF[bk]|0)+n;
-  while(meta.keyF[bk]>=KEY_N){meta.keyF[bk]-=KEY_N;meta.keys[bk]=(meta.keys[bk]|0)+1;const L=LORDS[lordOfBio(G.biome)];
+function keyBank(){const n=G.loot.keys|0;if(!n)return;keyAdd(G.biome,n)}
+// v155 : fragment de clé donné hors mission (coffre de première victoire, tourment.js) : pour le lieu en cours s'il a son Boss, sinon le premier lieu qui en a un.
+function keyGive(n){const b=lordOfBio(meta.biome|0)?meta.biome|0:LORDS[Object.keys(LORDS)[0]].bio;keyAdd(b,n)}
+function keyAdd(bi,n){const bk=BIOMES[bi].id;meta.keyF[bk]=(meta.keyF[bk]|0)+n;
+  while(meta.keyF[bk]>=KEY_N){meta.keyF[bk]-=KEY_N;meta.keys[bk]=(meta.keys[bk]|0)+1;const L=LORDS[lordOfBio(bi)];
     toast(`<b style="color:${LORD_C}">Clé d'antre forgée</b> : ${L?L.n+' peut':'le Boss du lieu pourra'} être appelé (panneau Mission).`,true)}}
 /* ---------- Combat ---------- */
 function lordTick(dt){
@@ -101,19 +104,21 @@ const ownsUq=k=>meta.stash.some(i=>i&&i.uq===k)||allWorn().some(i=>i.uq===k)||Ob
 function lordKill(e){e.dead=true;
   if(e.stake){if(G.stake===e)G.stake=null;burst(e.x,e.y,18,'#8a7058',180,3);SND.play('crit');return}
   G.kills++;G.lordSt=3;G.sent=null;if(G.stake){G.stake.dead=true;G.stake=null}G.arena=null;G.lordLog.t=Math.round((G.t-G.lordT0)*10)/10;
-  const L=LORDS[e.lord],first=!(meta.lordW[e.lord]>0),dup=ownsUq(L.uq),it=dup?null:uqItem(L.uq,itemLvl());
-  meta.lordW[e.lord]=(meta.lordW[e.lord]|0)+1;if(it)meta.stash.push(it);meta.essence+=LORD_ESS+(dup?UQ_DUP_ESS:0);saveMeta();
+  // v155 : au-delà du Tourment X, pouvoir renforcé (lordUqBonus) ; déjà à toi : le tien prend ce pouvoir s'il est plus fort, sinon l'essence de double
+  const L=LORDS[e.lord],first=!(meta.lordW[e.lord]>0),dup=ownsUq(L.uq),uv=UQ[L.uq].v+lordUqBonus(),it=dup?null:uqItem(L.uq,itemLvl());if(it&&uv>UQ[L.uq].v)it.uqv=uv;
+  const mine=dup?[...meta.stash,...allWorn(),...Object.values(meta.gear||{})].filter(i=>i&&i.uq===L.uq):[],up=mine.length&&uv>Math.max(...mine.map(uqVal));if(up)for(const m of mine)m.uqv=uv;
+  meta.lordW[e.lord]=(meta.lordW[e.lord]|0)+1;if(it)meta.stash.push(it);meta.essence+=LORD_ESS+(dup&&!up?UQ_DUP_ESS:0);if(up)refreshStats();saveMeta();
   const drop=o=>G.drops.push(Object.assign({x:e.x+rand(-40,40),y:e.y+rand(-40,40),t:rand(0,6),age:0,mt:0},o));
   drop({kind:'relic',id:relicDrop(true)});drop({kind:'potion'});for(let i=0;i<10;i++)drop({kind:'gold',amt:Math.max(1,Math.round(12*goldMul(G.level)*rand(.7,1.3)))});
   G.ult=Math.min(ultNeed(),(G.ult||0)+ULT_BOSS);G.lordRes={id:e.lord,item:it?it.name:null,dup,first};
   burst(e.x,e.y,70,LORD_C,340,5);burst(e.x,e.y,24,'#e8853b',140);G.shake=16;SND.play('bossdie');
-  banner(`<span style="color:${LORD_C}">${L.n} vaincu</span> · ${it?esc(it.name)+' rejoint ton coffre':`objet déjà à toi : +${UQ_DUP_ESS} essence`}`,LORD_C,3,true);
+  banner(`<span style="color:${LORD_C}">${L.n} vaincu</span> · ${it?esc(it.name)+' rejoint ton coffre':up?`${esc(UQ[L.uq].n)} renforcé : pouvoir +${uv} %`:`objet déjà à toi : +${UQ_DUP_ESS} essence`}`,LORD_C,3,true);
   if(!G.en.some(o=>o.type==='boss'&&!o.dead))$('bossBar').hidden=true}
 // Écran de fin de mission : le Boss vaincu et son butin.
 function lordOvr(){const R=G.lordRes;if(!R)return '';const L=LORDS[R.id];
   return `<section class="ovr__sec"><h3 class="ovr__lab" style="color:${LORD_C}">${esc(L.n)} vaincu</h3><p class="cx-hint" style="margin:0">${R.item?`<b style="color:${RAR[3].c}">${esc(R.item)}</b> rejoint ton coffre.`:`Tu as déjà son objet unique : +${UQ_DUP_ESS} essence.`} +${LORD_ESS} essence et une relique.${R.first?' Nouvelles couleurs de héros dans Héros › Couleurs.':''}</p></section>`}
 // Couleurs gagnées sur les Boss vaincus, ajoutées au nuancier (Héros › Couleurs).
-const lookSw=k=>LOOK_SW[k].concat(Object.keys(LORDS).filter(id=>meta.lordW[id]>0).map(id=>LORDS[id].sw[k]).filter(c=>!LOOK_SW[k].includes(c)));
+const lookSw=k=>LOOK_SW[k].concat([...Object.keys(LORDS).filter(id=>meta.lordW[id]>0).map(id=>LORDS[id].sw[k]),...tormSw(k)].filter(c=>!LOOK_SW[k].includes(c))); // v155 : couleurs des paliers au-delà du X
 /* ---------- Écran Mission : clé d'antre ---------- */
 function lordMsnDraw(){const sec=$('keySec');if(!sec)return;
   const seen=Object.values(meta.keyF).some(v=>v>0)||Object.values(meta.keys).some(v=>v>0)||Object.values(meta.lordW).some(v=>v>0);sec.hidden=!seen;if(!seen)return;

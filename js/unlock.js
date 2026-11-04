@@ -49,7 +49,8 @@ const UNL=[
 const UNL_BY=Object.fromEntries(UNL.map(u=>[u.k,u]));
 const isUnl=k=>!!(meta.unl[k]||meta.unlAll);
 // Palier de Tourment le plus haut accessible : le suivant de ton meilleur palier réussi.
-const tormMax=()=>meta.unlAll?10:isUnl('diff3')?Math.min(10,(meta.bestTorm|0)+1):0;
+// v155 : les paliers au-delà du X s'ouvrent un par un, même pour une sauvegarde « tout débloqué » (qui garde I à X ouverts)
+const tormMax=()=>{const b=Math.min(TORM_TOP,(meta.bestTorm|0)+1);return meta.unlAll?Math.max(10,b):isUnl('diff3')?b:0};
 const diffOk=i=>i===0||isUnl('diff'+i);
 // Vérifie les conditions ; les nouveaux déblocages sont annoncés (carte « Nouveau » au Camp et sur l'écran de fin de mission), sauf en silencieux.
 function unlockCheck(silent){const got=[];for(const u of UNL){if(isUnl(u.k))continue;let ok=false;try{ok=!!u.when()}catch{}

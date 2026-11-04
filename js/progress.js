@@ -30,12 +30,15 @@ const myPr=()=>prOf(heroCls).lv|0;
 function relicQFix(){const used={};meta.relicQ=(meta.relicQ||[]).filter(q=>{const a=q&&meta.relics[q.id];if(!a||!RELICS[q.id])return false;q.rad=!!q.rad;const k=q.id+'|'+(q.rad?1:0);used[k]=(used[k]||0)+1;return used[k]<=(a[q.rad?1:0]||0)})}
 const relicQN=(id,rad)=>meta.relicQ.filter(q=>q.id===id&&!!q.rad===rad).length;
 const DIFF=[{n:'Normal',iv:60,cnt:1,loot:0,c:'#bdb6a8'},{n:'Difficile',iv:45,cnt:2,loot:.5,c:'#7b95ff'},{n:'Cauchemar',iv:35,cnt:3,loot:1,c:'#f0cf4a'},{n:'Tourment',iv:25,cnt:4,loot:2,c:'#ff6a3a'}];
-const ROM=['I','II','III','IV','V','VI','VII','VIII','IX','X'];
+const ROM=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV'];
+// v155 : paliers au-delà du X jusqu'à BAL.tormTop (15) ; au-delà du X, vie et dégâts des monstres × BAL.tormX (par rapport au X).
+const TORM_TOP=Math.max(10,Math.min(ROM.length,BAL.tormTop||10));
+const tormTopK=t=>t>10?((BAL.tormX||[])[t-11]||1):1;
 // Difficulté en cours : la sienne, ou en coopération celle de l'hôte pendant la mission (G.nd = {d, t}).
 const dsel=()=>{const n=typeof G!=='undefined'&&G&&G.nd&&typeof started!=='undefined'&&started?G.nd:null;return n||{d:meta.diff|0,t:meta.torm|0}};
-const tormT=()=>{const s=dsel();return s.d===3?Math.max(1,Math.min(10,s.t||1)):0};
+const tormT=()=>{const s=dsel();return s.d===3?Math.max(1,Math.min(TORM_TOP,s.t||1)):0};
 const dif=()=>{const i=Math.max(0,Math.min(3,dsel().d)),D=DIFF[i];if(i<3)return Object.assign({hp:1,dm:1,aq:0,anc:0,tier:0},D);
-  const t=tormT();return {n:`Tourment ${ROM[t-1]}`,iv:Math.round(BAL.tormIv[0]+(BAL.tormIv[1]-BAL.tormIv[0])*(t-1)/9),cnt:t>=6?BAL.tormCnt[1]:BAL.tormCnt[0],loot:2+.5*(t-1),c:D.c,hp:1+.5*t,dm:1+.22*t,aq:.05*t,anc:0,tier:t}};
+  const t=tormT();return {n:`Tourment ${ROM[t-1]}`,iv:Math.round(BAL.tormIv[0]+(BAL.tormIv[1]-BAL.tormIv[0])*Math.min(1,(t-1)/9)),cnt:t>=6?BAL.tormCnt[1]:BAL.tormCnt[0],loot:2+.5*(t-1),c:D.c,hp:(1+.5*Math.min(t,10))*tormTopK(t),dm:(1+.22*Math.min(t,10))*tormTopK(t),aq:.05*t,anc:0,tier:t}};
 // Charge de l'ultime (v138) : la jauge part à moitié en début de mission, puis 1 point par seconde ; chaque ennemi abattu ajoute ULT_KILL point (au plus ULT_KMAX par seconde,
 // gardés en réserve jusqu'à ULT_POOL) ; un Gardien abattu en donne ULT_BOSS d'un coup. Il faut ULT_N points, moins Fureur (plafond 50 %) et 20 % avec le Cri de ralliement (v144),
 // jamais moins de ULT_MIN. Les ennemis tués par l'ultime ne la rechargent pas. Avant la v138 : 60 ennemis abattus, 10 par Gardien.

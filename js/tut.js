@@ -20,7 +20,7 @@ const TUT=[
 ];
 const tutStep=()=>TUT.findIndex(s=>!s.o.every(([,f])=>f()));
 // Appelé à la réussite d'une mission (bank).
-function tutWin(){meta.wins=(meta.wins|0)+1;const d=dsel().d;if(d>(meta.bestDiff|0))meta.bestDiff=d;if(d===3)meta.bestTorm=Math.max(meta.bestTorm|0,tormT())}
+function tutWin(){meta.wins=(meta.wins|0)+1;const d=dsel().d;if(d>(meta.bestDiff|0))meta.bestDiff=d;if(d===3){meta.bestTorm=Math.max(meta.bestTorm|0,tormT());tormFirstWin(tormT())}} // v155 : coffre de première victoire au-delà du X
 function tutCard(){if(meta.tutOff)return '';const i=tutStep();if(i<0)return '';const S=TUT[i],done=S.o.filter(([,f])=>f()).length;
   return `<section class="cx-card tutc"><div class="cx-card__head"><div><h4 class="cx-card__title">Parcours · étape ${i+1} / ${TUT.length} : ${S.n}</h4><div class="cx-card__meta">${done} / ${S.o.length} objectif${S.o.length>1?'s':''}</div></div></div>
     <ul class="tutl">${S.o.map(([t,f])=>{const ok=f();return `<li class="${ok?'ok':''}"><span aria-hidden="true">${ok?'✓':'○'}</span>${t}</li>`}).join('')}</ul>

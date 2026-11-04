@@ -152,7 +152,9 @@ function xfDo(){const s=xfGet(xf.src),st=xfState();if(!s||!xfSrcOk(xf.src)||!st|
   const k=xf.k,v=st.nv;
   if(xf.dst[0]==='w'){const wid=xf.dst.slice(2),o=meta.waff[wid]||(meta.waff[wid]={});if(st.mode==='rep')o[xf.rep]=null;o[k]=v;
     if(st.mode==='fuse'){meta.wfz=meta.wfz||{};const f=meta.wfz[wid]||(meta.wfz[wid]={});f[k]=(f[k]||0)+1}}
-  else{const d=xfGet(xf.dst);if(st.mode==='rep')delete d.aff[xf.rep];d.aff[k]=v;if(st.mode==='fuse'){d.fz=d.fz||{};d.fz[k]=(d.fz[k]||0)+1}else if(d.fz)delete d.fz[k]}
+  else{const d=xfGet(xf.dst);if(st.mode==='rep'){delete d.aff[xf.rep];if(d.sub)delete d.sub[xf.rep]}d.aff[k]=v;if(st.mode==='fuse'){d.fz=d.fz||{};d.fz[k]=(d.fz[k]||0)+1}else if(d.fz)delete d.fz[k];
+    // v155 : la marque Sublime suit la valeur (fusion : gardée si l'une des deux l'avait)
+    const sb=st.mode==='fuse'?isSub(d,k)||isSub(s,k):isSub(s,k);if(sb)(d.sub||(d.sub={}))[k]=1;else if(d.sub)delete d.sub[k]}
   if(xf.src[0]==='s'){const i=meta.stash.findIndex(x=>String(x.id)===xf.src.slice(2));if(i>=0)meta.stash.splice(i,1)}
   else if(xf.src[0]==='w')wDestroy(xf.src.slice(2));
   else for(const c in meta.gearBy){const g=meta.gearBy[c];for(const k in g)if(g[k]===s)g[k]=null}

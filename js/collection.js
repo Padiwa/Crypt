@@ -118,7 +118,7 @@ const uqOwned=k=>[...meta.stash,...allWorn()].filter(i=>i&&i.uq===k);
 function uqRow(it,L){const w=wornBy(it),U=UQ[it.uq],affs=Object.keys(it.aff).map(k=>affName(k)).join(' · ');
   return `<button class="gearr uqr${isSel(it)?' is-sel':''}" data-stash="${it.id}" aria-label="${esc(itemName(it))}, ${w?'porté '+parCls(w):'au coffre'}">
     <span class="cx-cell gearr__ic" style="--rar:#ff6a50" aria-hidden="true">${cellIn(it)}${whoTag(w)}</span>
-    <span class="gearr__t"><b style="color:#ff6a50">${esc(itemName(it))}</b><small>${SLOT[it.slot]} · ${esc(L.n)} · niveau ${it.lvl}${w?` · porté ${parCls(w)}`:' · au coffre'}</small><small class="uqr__p">${U.d(U.v)}</small><small>${affs}</small></span></button>`}
+    <span class="gearr__t"><b style="color:#ff6a50">${esc(itemName(it))}</b><small>${SLOT[it.slot]} · ${esc(L.n)} · niveau ${it.lvl}${w?` · porté ${parCls(w)}`:' · au coffre'}</small><small class="uqr__p">${U.d(uqVal(it))}</small><small>${affs}</small></span></button>`}
 function campUniq(){const ids=Object.keys(LORDS);let own=[],miss=[];
   for(const id of ids){const L=LORDS[id],k=L.uq;if(!UQ[k])continue;const its=uqOwned(k);if(its.length)its.forEach(it=>own.push([it,L]));else miss.push(L)}
   const shown=own.filter(([it])=>invPass(it)&&(stF==='all'||stF===it.slot));
@@ -133,8 +133,12 @@ function campColors(){const ids=Object.keys(LORDS);
   const card=id=>{const L=LORDS[id],won=meta.lordW[id]>0;
     return `<div class="lcol${won?'':' is-lock'}"><div class="lcol__sw" aria-hidden="true">${LOOK_PARTS.map(p=>`<i style="--sw:${won?L.sw[p.k]:'#2a2230'}"></i>`).join('')}</div>
       <div class="lcol__t"><b>${esc(L.n)}</b><small>${won?`Gagnées · ${LOOK_PARTS.map(p=>p.n.toLowerCase()).join(', ')} dans les nuanciers`:`Bats ${esc(L.n)} pour les obtenir`}</small></div></div>`};
-  return `<p class="cx-hint" style="margin:0">Chaque Boss vaincu ajoute ses couleurs aux nuanciers de l'Apparence.</p>
-    <div class="col">${ids.map(card).join('')}</div>
+  // v155 : couleurs des paliers au-delà du Tourment X (première victoire, tourment.js), seulement quand ces paliers existent
+  const tcard=t=>{const W=TORM_SW[t],won=!!meta.tormW[t];return `<div class="lcol${won?'':' is-lock'}"><div class="lcol__sw" aria-hidden="true">${LOOK_PARTS.map(p=>`<i style="--sw:${won?W[p.k]:'#2a2230'}"></i>`).join('')}</div>
+      <div class="lcol__t"><b>${esc(W.n)}</b><small>${won?'Gagnées · dans les nuanciers':`Réussis le Tourment ${ROM[t-1]} pour les obtenir`}</small></div></div>`};
+  const tw=Object.keys(TORM_SW).map(Number).filter(t=>t<=TORM_TOP);
+  return `<p class="cx-hint" style="margin:0">Chaque Boss vaincu et chaque palier au-delà du Tourment X réussi ajoutent leurs couleurs aux nuanciers de l'Apparence.</p>
+    <div class="col">${ids.map(card).join('')}${tw.map(tcard).join('')}</div>
     <div class="cx-actions" style="margin:0"><button class="cx-btn cx-btn--sm" data-cact="golook">Changer de couleurs (Héros › Apparence)</button></div>`}
 Object.assign(CAMP_ACT,{
   golook:function(){campTab='equip';heroSub='look';campSel=null;campTop=true;return CAMP_GO},

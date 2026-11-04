@@ -29,9 +29,9 @@ function fzBest(a,b){const k={},cap=fzCap(a,b);let n=0;
 // L'exemplaire gardé tel quel (l'ancienne fusion)
 const fzKeepA=(a,b)=>{const k={};for(const x of fzKeys(a,b))k[x]=a.aff[x]!=null?'a':(AFF[x]&&AFF[x].aby?'b':'');return {base:'a',k}};
 const fzValid=(a,b,sel)=>fzCount(sel)<=fzCap(a,b)&&fzKeys(a,b).every(x=>!(AFF[x]&&AFF[x].aby)||sel.k[x])&&fzKeys(a,b).every(x=>!sel.k[x]||(sel.k[x]==='b'?b:a).aff[x]!=null);
-function fzApply(a,b,sel){const aff={},fz={};
-  for(const x of fzKeys(a,b)){const s=sel.k[x];if(!s)continue;const it=s==='b'?b:a;if(it.aff[x]==null)continue;aff[x]=it.aff[x];if(it.fz&&it.fz[x])fz[x]=it.fz[x]}
-  a.aff=aff;if(Object.keys(fz).length)a.fz=fz;else delete a.fz;
+function fzApply(a,b,sel){const aff={},fz={},sub={};
+  for(const x of fzKeys(a,b)){const s=sel.k[x];if(!s)continue;const it=s==='b'?b:a;if(it.aff[x]==null)continue;aff[x]=it.aff[x];if(it.fz&&it.fz[x])fz[x]=it.fz[x];if(isSub(it,x))sub[x]=1}
+  a.aff=aff;if(Object.keys(fz).length)a.fz=fz;else delete a.fz;if(Object.keys(sub).length)a.sub=sub;else delete a.sub; // v155 : marque Sublime gardée
   if(sel.base==='b'){a.lvl=b.lvl;a.base={...b.base};a.name=b.name;if(b.bio)a.bio=b.bio;else delete a.bio}}
 // Fusion de deux exemplaires : sans choix (Tout fusionner), la meilleure valeur de chaque affixe.
 function fuseGear(keep,eat,sel){if(!keep||!eat||keep===eat||(keep.up|0)>=rankCap(keep)||!fuseFree(eat)||mKey(keep)!==mKey(eat)||(keep.up|0)!==(eat.up|0))return false;const c=gFuseCost(keep);if(meta.gold<c)return false;

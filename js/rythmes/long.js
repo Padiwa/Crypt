@@ -31,4 +31,12 @@ const RYTHME={
   hfMul:.6,            // chance de fragment de harnais sur un Gardien (×)
   keyFrag:.1,          // chance de fragment de clé d'antre sur un Gardien, en solo, dans un lieu qui a son Boss (v147)
   keyFragMax:1,        // … au plus par mission (3 fragments font une clé)
+  // Paliers au-delà du Tourment X (v155, valeurs choisies par l'auteur). Chaque tableau donne XI, XII, XIII, XIV, XV.
+  tormTop:15,          // palier de Tourment le plus haut (10 = pas de palier au-delà du X)
+  tormX:[1.25,1.5,2,2.5,3], // vie et dégâts des monstres, × ceux du Tourment X (butin et qualité des affixes suivent la courbe des paliers I à X)
+  subCh:[.1,.15,.2,.25,.3],  // chance qu'une affixe d'un objet tombé en mission soit Sublime
+  subBonus:[.2,.25,.3,.4,.5],// une affixe Sublime vaut (1 + ce bonus) × sa valeur tirée (au-dessus du maximum habituel)
+  firstEss:[500,1000,1500,2000,2500], // première victoire d'un palier : essence du coffre (avec une relique Abyssale et un fragment de clé d'antre)
+  lordUqStep:10,       // objet unique d'un Boss tué au-delà du Tourment X : pouvoir + lordUqStep points par palier au-dessus du X
+  keyFragTop:.2,       // chance de fragment de clé d'antre sur un Gardien au-delà du Tourment X (au lieu de keyFrag)
 };

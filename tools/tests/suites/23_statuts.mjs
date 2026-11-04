@@ -11,6 +11,9 @@ async function arena(p, cls = 'archer') {
     window.__ov = {};
     window.__set = (o) => { window.__ov = { ...Z, ...o }; Object.assign(S, __ov); };
     window.__mk = (type = 'ghoul', dx = 260, dy = 0) => { spawnEnemy({ type, x: G.P.x + dx, y: G.P.y + dy }); const e = G.en[G.en.length - 1]; e.hp = e.max = 1e9; return e; };
+    // Pour les tests de position : la carte est tirée au hasard, un ennemi posé dans un pilier en est d'abord dégagé (resolve) ; sinon il en
+    // serait repoussé à la première image, même étourdi ou immobilisé, et le test échouerait au hasard.
+    window.__mkFree = (...a) => { const e = __mk(...a); for (let i = 0; i < 30 && resolve(e); i++); return e; };
     window.__run = (n) => { for (let i = 0; i < n; i++) { Object.assign(S, __ov); G.P.fire = 1e9; update(1 / 60); } };
     __set({});
   });
@@ -55,12 +58,12 @@ export const tests = [
     const p = t.track(await newPage(b));
     await arena(p);
     const r = await p.evaluate(() => {
-      const e = __mk('ghoul', 300, 0), x0 = e.x;
+      const e = __mkFree('ghoul', 300, 0), x0 = e.x;
       const ok1 = stunE(e, STUN_T); __run(20); const still = Math.abs(e.x - x0) < 1;
       const again = stunE(e, STUN_T); __run(30); const moved = Math.abs(e.x - x0) > 5;
       __run(80); const ok2 = stunE(e, STUN_T);
-      const boss = __mk('boss', -300, 0); stunE(boss, STUN_T); rootE(boss, 1.5); const bs = [+boss.stun.toFixed(2), +boss.root.toFixed(2)];
-      G.en = []; const a = __mk('archer', 0, 300), y0 = a.y; rootE(a, 1.5); a.timer = .05; const s2 = __mk('archer', 0, -300); stunE(s2, STUN_T); s2.timer = .05; __run(30);
+      const boss = __mkFree('boss', -300, 0); stunE(boss, STUN_T); rootE(boss, 1.5); const bs = [+boss.stun.toFixed(2), +boss.root.toFixed(2)];
+      G.en = []; const a = __mkFree('archer', 0, 300), y0 = a.y; rootE(a, 1.5); a.timer = .05; const s2 = __mkFree('archer', 0, -300); stunE(s2, STUN_T); s2.timer = .05; __run(30);
       return { ok1, still, again, moved, ok2, boss: bs, arch: [Math.abs(a.y - y0) < 1, a.timer > 1, s2.timer === .05] };
     });
     t.eq([r.ok1, r.still, r.again, r.moved, r.ok2], [true, true, false, true, true], 'étourdi 0,6 s, immunité 1,5 s, puis de nouveau');

@@ -15,6 +15,7 @@ Action-RPG de crypte en hordes, jouable au pouce sur mobile et au clavier. Site 
 | `js/game.js` | État d'une mission (`newGame`), ennemis, apparitions, Nécropole des Sables, sol, effets |
 | `js/combat.js` | Dégâts, statuts, explosions, mort d'un ennemi et butin, coups reçus |
 | `js/boss.js` | Boss (v147) : fragments et clé d'antre, arène, Bourreau des Cendres, butin, ligne du panneau Mission, dessins des deux rendus |
+| `js/tourment.js` | Paliers au-delà du Tourment X (v155) : affixes Sublimes, première victoire de chaque palier (coffre, couleurs, titre en coopération), objet unique renforcé des Boss ; valeurs dans le rythme (`tormTop`, `tormX`, `subCh`, `subBonus`, `firstEss`, `lordUqStep`, `keyFragTop`) |
 | `js/spells.js` | Entrées (clavier, souris, tactile), sorts, ultimes, esquive et potion |
 | `js/step.js` | Grille spatiale et pas de simulation `update(dt)` |
 | `js/render.js` | Rendu Canvas 2D, formes communes aux deux rendus (sables, statuts, icônes de butin) et HUD |
@@ -79,8 +80,8 @@ Le rythme chargé est celui de la balise `<script src="js/rythmes/….js">` d'`i
 Une suite unique vérifie le jeu dans un vrai navigateur (Chromium sans affichage) : démarrage, butin, reliques, fabrication et fusion, coffre, affixes, emplacements, missions, contrôles, sauvegarde, parcours, coopération.
 ```
 npm i playwright && npx playwright install chromium
-node tools/tests/run.mjs            # tout (184 tests, ≈ 6 min)
-node tools/tests/run.mjs --quick    # sans la coopération (173 tests)
+node tools/tests/run.mjs            # tout (188 tests, ≈ 6 min)
+node tools/tests/run.mjs --quick    # sans la coopération (177 tests)
 node tools/tests/run.mjs fusion     # seulement les suites dont le fichier contient « fusion »
 ```
 Chaque fichier de `tools/tests/suites/` exporte une liste `tests`. Toute erreur JavaScript dans la page fait échouer le test. **À lancer avant chaque nouvelle version** : la commande sort en erreur si un test échoue.
@@ -96,11 +97,13 @@ Progression dans le stockage du navigateur (`crypte-meta`), réglages dans `cryp
 ```
 node tools/progression/run.mjs --cls archer --missions 150 --seed 1 --out resultats/archer_1.jsonl
 node tools/progression/report.mjs resultats/*.jsonl --notes analyse.html --out rapport.html
+node tools/progression/run.mjs --cls archer --hours 8 --seed 1 --xf 1 --out res/archer_xf1_s1.jsonl   # avec Forge › Affixes
+node tools/progression/compare.mjs res --a xf0 --b xf1 --la "Sans transfert" --lb "Transferts orientés" --out comparaison.html
 node tools/progression/report.mjs resultats/*.jsonl --base ancien/ --base-label v105 --out rapport.html   # comparé à un banc précédent
 node tools/progression/ablate.mjs resultats/archer_1_etat.json
 node tools/progression/builds.mjs resultats 4 tank feu   # exemples de builds, à partir des états <classe>_1_etat.json
 ```
-`run.mjs` écrit une ligne par mission (palier, niveau, mort, butin, puissance, économie), les jalons et l'état de la sauvegarde. `--caps 5,1,1,...` change le niveau à atteindre sur chaque palier avant de passer au suivant (13 paliers, de Normal à Tourment X). `report.mjs` trace les courbes et les tableaux ; `ablate.mjs` montre d'où vient la puissance du héros en retirant une source à la fois. `builds.mjs` joue les six exemples de builds du document de conception des mods (Poison, Feu, Contrôle, Tank, Critique, Esquive) et le build du bot, à partir d'un état de fin de carrière, tous les mods au rang maximum : morts, manches, ennemis tués par minute, Gardiens. Même graine, même carrière. Compter 5 à 15 s par mission.
+`run.mjs` écrit une ligne par mission (palier, niveau, mort, butin, puissance, économie), les jalons et l'état de la sauvegarde. `--caps 5,1,1,...` change le niveau à atteindre sur chaque palier avant de passer au suivant (13 paliers, de Normal à Tourment X). `--xf 1` fait aussi utiliser Forge › Affixes au bot (`SIM.affixPass` dans `career.js`) : il prend une affixe sur un objet à recycler ou une arme qu'aucun héros ne porte et la transfère sur son équipement porté, en visant un build (dégâts critiques, dégâts, critique jusqu'à 75 %, dégâts des statuts si ses mods posent des statuts, projectiles et transpercement pour l'Archer, survie après une mort), sans perte de survie, après avoir réservé l'essence du prochain rang de ses mods. `report.mjs` trace les courbes et les tableaux ; `compare.mjs` compare deux séries de carrières nommées `<classe>_<série>_s<graine>.jsonl` dans une page HTML autonome (moyenne et plage des graines heure par heure, valeur au choix, tableau de fin, détail des transferts) ; `ablate.mjs` montre d'où vient la puissance du héros en retirant une source à la fois. `builds.mjs` joue les six exemples de builds du document de conception des mods (Poison, Feu, Contrôle, Tank, Critique, Esquive) et le build du bot, à partir d'un état de fin de carrière, tous les mods au rang maximum : morts, manches, ennemis tués par minute, Gardiens. Même graine, même carrière. Compter 5 à 15 s par mission.
 
 ## Coopération
 

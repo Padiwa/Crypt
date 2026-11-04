@@ -22,12 +22,12 @@ const cmpV=(k,v)=>v==null?'—':fmtN(v)+(CMP_PCT(k)?' %':'');
 const cmpD=(k,d)=>Math.abs(d)<1e-9?'<span class="d eq">=</span>':`<span class="d ${d>0?'up':'dn'}">${d>0?'▲ +':'▼ −'}${fmtN(Math.abs(d))}${CMP_PCT(k)?' %':''}</span>`;
 // Ligne d'affixe d'une fiche : abyssale mise en avant ; propre à une autre classe que c, ou Projectiles et Transpercement hors arme (v146),
 // barrée et marquée « sans effet ».
-const affLi=(k,txt,c=heroCls,it)=>affOff(k,c,it)?`<li class="affoff"><s>${txt}</s> <span class="affoff__tag">sans effet · ${affOnly(k,it,c)}</span></li>`:`<li${AFF[k]&&AFF[k].aby?' class="abyp"':''}>${txt}</li>`;
+const affLi=(k,txt,c=heroCls,it)=>affOff(k,c,it)?`<li class="affoff"><s>${txt}</s> <span class="affoff__tag">sans effet · ${affOnly(k,it,c)}</span></li>`:`<li${AFF[k]&&AFF[k].aby?' class="abyp"':''}>${txt}${isSub(it,k)?' '+subTag:''}</li>`; // v155 : affixe Sublime marquée
 const affV=(it,k)=>it&&it.aff[k]!=null?(NOSCALE[k]?it.aff[k]:it.aff[k]*upMul(it.up)):null;
 function cmpObjet(eq,it,heroRows=true){
   const tk=slotFor(eq,it)||it.slot,cur=eq[tk];
   // une affixe d'une autre classe est grisée, marquée « sans effet », et ne compte ni en gain ni en perte
-  const row=(cls,k,lab,o,n)=>{const off=affOff(k,heroCls,it);return `<div class="cx-cmp__row${off?cls.replace(/ is-(gain|lost)/,'')+' is-off':cls}"><span class="k"${off?` data-off="${affOnly(k,it)}"`:''}>${lab}</span><span class="o">${cmpV(k,o)}</span><span class="n">${cmpV(k,n)}</span>${off?'<span class="d eq">—</span>':cmpD(k,(n||0)-(o||0))}</div>`};
+  const row=(cls,k,lab,o,n)=>{const off=affOff(k,heroCls,it),sb=cls.includes('is-lost')?isSub(cur,k):isSub(it,k);return `<div class="cx-cmp__row${off?cls.replace(/ is-(gain|lost)/,'')+' is-off':cls}"><span class="k"${off?` data-off="${affOnly(k,it)}"`:''}>${lab}${sb?' '+subTag:''}</span><span class="o">${cmpV(k,o)}</span><span class="n">${cmpV(k,n)}</span>${off?'<span class="d eq">—</span>':cmpD(k,(n||0)-(o||0))}</div>`};
   const bk=it.base.k,bo=cur&&cur.base?cur.base.v*upMul(cur.up):null,bn=it.base.v*upMul(it.up);
   const base=row(' is-base',bk,BASE_N[bk]||AFF_NAME[bk]||bk,bo,bn);
   const ka=Object.keys(it.aff),ko=cur?Object.keys(cur.aff):[];
@@ -75,7 +75,7 @@ function campDockHtml(){
   const wc=it.wid?wornBy(it):null,whoW=othC||(wc&&wc!==heroCls?wc:null);
   const nav=idx>=0?`<span class="cx-dock__nav"><button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-cact="dnav" data-arg="-1" ${idx>0?'':'disabled'} aria-label="Objet précédent">${XSVG.prev}</button><button class="cx-icon-btn cx-icon-btn--ghost cx-icon-btn--sm" data-cact="dnav" data-arg="1" ${idx<list.length-1?'':'disabled'} aria-label="Objet suivant">${XSVG.next}</button></span>`:'';
   const n=it.up||0;
-  const affs=`<ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.35"><li>${baseTxtOf(it.slot,fmtN(it.base.v*upMul(it.up)))}</li>${Object.keys(it.aff).map(kk=>affLi(kk,AFF[kk].t(NOSCALE[kk]?it.aff[kk]:fmtN(it.aff[kk]*upMul(it.up))),it.wid?it.cls:heroCls,it)).join('')}${it.seal&&SEALS[it.seal]?`<li class="sealp">${sealTxt(it.seal)}</li>`:''}${it.uq&&UQ[it.uq]?`<li class="sealp">${uqTxt(it.uq)}</li>`:''}</ul>`;
+  const affs=`<ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.35"><li>${baseTxtOf(it.slot,fmtN(it.base.v*upMul(it.up)))}</li>${Object.keys(it.aff).map(kk=>affLi(kk,AFF[kk].t(NOSCALE[kk]?it.aff[kk]:fmtN(it.aff[kk]*upMul(it.up))),it.wid?it.cls:heroCls,it)).join('')}${it.seal&&SEALS[it.seal]?`<li class="sealp">${sealTxt(it.seal)}</li>`:''}${it.uq&&UQ[it.uq]?`<li class="sealp">${uqTxt(it.uq,uqVal(it))}</li>`:''}</ul>`;
   const tk=it.wid?'arme':slotFor(eq,it),cur=tk?eq[tk]:null;
   let main='',more=[];
   const btn=(cls,act,arg,svg,lab,dis)=>`<button class="cx-btn${cls}" data-cact="${act}"${arg!=null?` data-arg="${arg}"`:''} ${dis?'disabled':''}>${svg}${lab}</button>`;

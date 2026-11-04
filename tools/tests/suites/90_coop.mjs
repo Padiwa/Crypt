@@ -197,6 +197,8 @@ export const tests = [
     t.ok(await A.evaluate(() => /a rejoint la partie/.test($('toast').textContent)), 'l\'hôte est prévenu de l\'arrivée');
     await A.click('#coopBody [data-coop="kick"][data-arg="1"]');
     await wf(B, () => !NET.on && /retiré de la partie/.test($('coopBody').textContent), 'B attend d\'être retiré', 8000, A);
+    // l'hôte retire le joueur de sa liste 150 ms après lui avoir envoyé « kick » (netKick) : on attend, sans lire trop tôt
+    await wf(A, () => NET.peers.length === 0, 'A attend que le joueur quitte sa liste', 3000);
     t.eq(await A.evaluate(() => NET.peers.length), 0, 'l\'hôte n\'a plus de joueur');
     await A.click('#coopBody [data-coop="newcode"]');
     await wf(A, () => NET.relay === 'on' && /^\d{4}$/.test(($('coopCode4') || {}).textContent || ''), 'A attend le nouveau code', 8000);

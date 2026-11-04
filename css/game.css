@@ -1531,3 +1531,6 @@ body:has(#over:not([hidden])) .tabbar,body:has(#settings:not([hidden])) .tabbar{
 .lcol__t{display:flex;flex-direction:column;gap:3px;min-width:0}
 .lcol__t b{font:800 15px/1.1 var(--font-display);color:var(--ink)}
 .lcol__t small{font:500 12px/1.3 var(--font-body);color:var(--muted)}
+/* v155 : affixe Sublime (au-delà du Tourment X) et titre du plus haut palier réussi en coopération */
+.subt{display:inline-block;margin-left:4px;padding:1px 6px;border-radius:999px;border:1px solid #ffd86b;color:#ffd86b;background:rgba(255,216,107,.12);font:800 10px/1.4 var(--font-body);letter-spacing:.06em;text-transform:uppercase;vertical-align:1px}
+.ttb{display:inline-grid;place-items:center;min-width:22px;height:18px;margin-right:4px;padding:0 4px;border-radius:5px;background:linear-gradient(180deg,#ff8a4a,#b5361a);color:#fff;font:800 10px/1 var(--font-num);letter-spacing:.02em;vertical-align:1px}

@@ -149,7 +149,7 @@ export const tests = [
     t.ok(await p.evaluate(() => !$('campDock').hidden && /Chaîne du Condamné/.test($('campDock').textContent) && !!document.querySelector('#campDock [data-cact="equip"]')), 'fiche avec Équiper');
     await p.evaluate(() => { fA = []; campSel = null; });
     await campView(p, 'colors');
-    t.ok(await p.evaluate(() => !document.querySelector('.lcol.is-lock') && /Gagnées/.test($('campBody').textContent)), 'Couleurs : celles du Bourreau gagnées');
+    t.ok(await p.evaluate(() => { const c = document.querySelector('.lcol'); return !c.classList.contains('is-lock') && /Bourreau/.test(c.textContent) && /Gagnées/.test(c.textContent); }), 'Couleurs : celles du Bourreau gagnées');
     await p.click('[data-cact="golook"]');
     t.eq(await p.evaluate(() => [campTab, heroSub, lookSw('cloak').includes(LORDS.bourreau.sw.cloak)]), ['equip', 'look', true], 'le bouton ouvre Héros › Apparence, avec la couleur du Bourreau');
   } },
