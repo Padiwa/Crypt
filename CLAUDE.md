@@ -10,7 +10,7 @@ Jeu d'action-RPG en hordes (survivor façon Diablo / Warframe), en français, jo
 - **Sauvegarde des joueurs** : ne jamais conseiller d'effacer les données du site sans avoir d'abord exporté la sauvegarde (Réglages › Sauvegarde › Exporter). Une version ne doit jamais casser une sauvegarde : prévoir une conversion dans `progress.js` / `equip.js` / `mods.js` si un format change.
 - **Git** : ne pousser ou publier sur GitHub que si l'auteur le demande. Jusqu'à la v146, l'auteur déposait lui-même le contenu du dossier à la racine du dépôt.
 - **Avant de livrer une version** :
-  - incrémenter `VERSION` en haut de `sw.js` (`crypte-v156`…) ;
+  - incrémenter `VERSION` en haut de `sw.js` (`crypte-v157`…) ;
   - un nouveau script se déclare dans `index.html`, à la bonne place, et dans la liste `CORE` de `sw.js` ;
   - lancer la suite de tests ;
   - mettre à jour le guide (`aide/index.html`), les textes du jeu touchés et `README.md` si la structure change.
@@ -44,7 +44,7 @@ Pièges connus :
 - **`pkill -f "<motif>"`** tue aussi le shell qui lance la commande, puisqu'elle contient le motif. Tuer par numéro de processus.
 - **Navigateur de test** : il coupe le réseau, donc pas de PixiJS ; le rendu WebGL est testé avec `tools/tests/fixtures/pixi-mock.js`.
 
-## État au 3 novembre 2026 : v155
+## État au 5 novembre 2026 : v156
 
 v147 : Boss et clé d'antre, avec des valeurs provisoires. v148 : valeurs du Bourreau réglées au banc et validées par l'auteur (vie 4 Gardiens, hordes ×0,5 pendant le combat).
 
@@ -62,11 +62,13 @@ Héros › Équipement (demande de l'auteur) : la fiche de l'objet est dans la p
 
 v155 : **paliers au-delà du Tourment X** (XI à XV, choix de l'auteur après le banc du 3 novembre 2026 : `tools/progression/rapports/2026-11-03_transferts_affixes/`). Toutes les valeurs sont dans le rythme (`js/rythmes/*.js` : `tormTop`, `tormX`, `subCh`, `subBonus`, `firstEss`, `lordUqStep`, `keyFragTop`), le code dans `js/tourment.js` :
 
-- difficulté : vie et dégâts du Tourment X × 1,25 / 1,5 / 2 / 2,5 / 3 (`tormTopK` dans `dif()`, `js/progress.js`), butin et qualité des affixes suivent la courbe ; ouverture un par un, même pour une sauvegarde « tout débloqué » (`tormMax`, `js/unlock.js`) ;
+- difficulté : vie et dégâts du Tourment X × 2 / 3 / 4,5 / 6 / 8 depuis la v156 (banc du 5 novembre 2026 : `tools/progression/rapports/2026-11-05_paliers_tourment/` ; v155 : × 1,25 à 3, trop facile) (`tormTopK` dans `dif()`, `js/progress.js`), butin et qualité des affixes suivent la courbe ; ouverture un par un, même pour une sauvegarde « tout débloqué » (`tormMax`, `js/unlock.js`) ;
 - **affixes Sublimes** (`subRoll`, `it.sub`) : 10 à 30 % par affixe, +20 à +50 % au-dessus de la valeur tirée ; pas sur les armes ni les objets fabriqués ; la marque suit le transfert (`xfDo`) et la fusion (`fzApply`) ; filtre « Avec une affixe Sublime » ;
 - **première victoire** de chaque palier (`tormFirstWin` depuis `tutWin`, `meta.tormW`) : relique Abyssale, essence, fragment de clé (`keyGive`), couleurs (`TORM_SW`, `lookSw`), titre en coopération (`myTT`, `ttBadge`, champ `tt` des messages) ;
 - **Boss** : pouvoir de l'objet unique + `lordUqStep` par palier (`it.uqv`, `uqVal`, compté dans `stats()`), le sien est renforcé s'il est déjà possédé ; fragments de clé 20 % (`keyFragCh`).
 - Tests : `tools/tests/suites/30_tourment.mjs`. Guide : section « Au-delà du Tourment X ».
+
+v156 : paliers XI à XV recalés au banc (`tormX` ×2 / ×3 / ×4,5 / ×6 / ×8, choix de l'auteur) ; test `30_tourment` et guide mis à jour.
 
 v154 : nettoyage (code mort de la vue « Par héros », CSS sans usage, rangées d'onglets factorisées avec `tabRow`), doc remise à jour ; version incrémentée pour que les joueurs reçoivent la mise à jour.
 
@@ -100,7 +102,7 @@ La v146 a été réglée au banc avant d'être codée, à partir d'une copie d'e
 
 ## Travaux ouverts (décisions de l'auteur en attente)
 
-- **Fin de jeu** : paliers XI à XV ajoutés en v155. Reste à voir au banc (avec transferts d'affixes, `--xf 1`) si leurs valeurs tiennent, et l'écart entre héros : le Guerrier reste très au-dessus, l'Archer fragile (banc du 3 novembre 2026).
+- **Fin de jeu** : paliers XI à XV ajoutés en v155, recalés en v156 (×2 à ×8). Au banc du 5 novembre 2026, le Guerrier avec transferts d'affixes ne meurt pas même à ×12 : il empile de la vie par transfert (12 000 à 16 600, contre 9 000 sans). Un plafond de la portée de frappe a été essayé (+100 à +300 %), sans effet net : il n'est pas codé. L'Archer avec transferts reste fragile quand ses objets lui donnent peu de vie (6 600 sur une graine).
 - **Calcul de la Puissance** : sans limite, il atteint des milliards en fin de carrière, avec l'ultime à 92-100 % du total. Piste : ne pas compter les dégâts au-delà de la vie d'un monstre du palier, et compter l'ultime selon le temps où il sert vraiment.
 - **Rééquilibrage des styles**, remis à plus tard par l'auteur : l'éclair en chaîne domine (Arc électrique, Surtension) ; poison, saignement et feu sont en retrait.
 - Écarts de textes de mods relevés en v145 ; morts de la première heure plus fréquentes au banc depuis la v142 (cause non trouvée).

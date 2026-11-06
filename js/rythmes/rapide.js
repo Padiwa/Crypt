@@ -33,7 +33,7 @@ const RYTHME={
   keyFragMax:1,        // … au plus par mission (3 fragments font une clé). Simulateur : 1re clé en 0,4 à 1,4 h, puis une toutes les 20 à 30 min
   // Paliers au-delà du Tourment X (v155, valeurs choisies par l'auteur). Chaque tableau donne XI, XII, XIII, XIV, XV.
   tormTop:15,          // palier de Tourment le plus haut (10 = pas de palier au-delà du X)
-  tormX:[1.25,1.5,2,2.5,3], // vie et dégâts des monstres, × ceux du Tourment X (butin et qualité des affixes suivent la courbe des paliers I à X)
+  tormX:[2,3,4.5,6,8], // vie et dégâts des monstres, × ceux du Tourment X (v156, banc du 5 novembre 2026) (butin et qualité des affixes suivent la courbe des paliers I à X)
   subCh:[.1,.15,.2,.25,.3],  // chance qu'une affixe d'un objet tombé en mission soit Sublime
   subBonus:[.2,.25,.3,.4,.5],// une affixe Sublime vaut (1 + ce bonus) × sa valeur tirée (au-dessus du maximum habituel)
   firstEss:[500,1000,1500,2000,2500], // première victoire d'un palier : essence du coffre (avec une relique Abyssale et un fragment de clé d'antre)
